@@ -6,7 +6,7 @@
 *   **Platform**: Windows (Local Development), ready for any Python-supported OS.
 
 ## Critical Dependencies
-1.  **python-telegram-bot**: Core wrapper.
+1.  **python-telegram-bot**: Core wrapper. Using `ChatMemberHandler` for channel updates.
 2.  **python-dotenv**: For managing secrets.
 
 ## Development Setup
@@ -15,8 +15,8 @@
     *   `BOT_TOKEN`: The bot's API key.
     *   `CHANNEL_ID`: ID/Username of the channel to enforce.
     *   `CHANNEL_URL`: Public link for users to join.
-    *   `GROUP_ID`: ID/Username of the group (optional filter).
-3.  **Logging**: `logging` library configured for INFO level, with specific HTTPX request logging.
+    *   `GROUP_ID`: **REQUIRED**. ID/Username of the group where restrictions apply.
+3.  **Logging**: `logging` library configured for INFO level.
 
 ## Constraints & Solutions
 *   **Permission Deprecation**: `can_send_media_messages` was removed. **Solution**: Use specific flags (`can_send_photos`, `can_send_videos`, etc.).

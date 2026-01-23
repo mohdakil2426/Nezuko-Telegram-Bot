@@ -1,7 +1,7 @@
 # Project Brief
 
 ## Project Name
-Telegram Channel Verification Bot (Force Subscribe Bot)
+Telegram Channel Verification Bot
 
 ## Overview
 A Telegram bot that enforces channel membership as a prerequisite for sending messages in a linked discussion group. Users who are not subscribers of a specific channel are automatically muted in the group until they join.

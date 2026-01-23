@@ -1,19 +1,19 @@
 # Active Context
 
 ## Current Status
-**Project Completed (v1.0)**. The Channel Verification Bot is fully functional and successfully tested. The Memory Bank has been updated to reflect the deployed state.
+**Project Active (v1.1)**. The Channel Verification Bot has been upgraded with **Strict Verification Mode**. It now proactively polices user joins and channel leaves, rather than just reacting to messages.
 
 ## Recent Changes
-*   **Implementation**: Built `main.py` using `python-telegram-bot` v20+.
-*   **Fixes**: Resolved "Error Unmuting" by updating `ChatPermissions` usage to granular fields (Media, Photos, Videos).
-*   **Optimization**: Enabled `concurrent_updates` and added in-memory membership caching (5 min TTL) to fix latency.
-*   **Validation**: Confirmed working flow for Join -> Mute -> Verify -> Unmute.
-*   **Archive**: Archived `init-channel-verification-bot` OpenSpec proposal.
+*   **Feature (Strict Leave Detection)**: Implemented `ChatMemberHandler` to detect when a user *leaves* the channel. If they do, they are immediately restricted in the group.
+*   **Feature (Instant Join Check)**: Added `NEW_CHAT_MEMBERS` handler to verify users the moment they join the group, providing an immediate verification prompt.
+*   **Refactor**: Updated `check_membership` logic to be robust against text/ID channel configurations.
+*   **Requirement**: Made `GROUP_ID` mandatory for the strict leave detection feature to work.
 
 ## Active Decisions
-*   **Architecture**: Python (Async/Await) with Polling. Hosted locally for now.
-*   **Permissions Model**: Bot grants `can_send_messages` explicitly. Other permissions are granularly set to avoid "depreciated" errors.
-*   **Performance**: Local caching is used to reduce API calls to `getChatMember`.
+*   **Strict Enforcement**: We logic now prioritizes "Zero Trust". New members are checked instantly, and existing members are watched for channel exit events.
+*   **Admin Requirement**: The bot **MUST** be an Admin in the Channel to receive `ChatMember` updates. This is a critical setup step for the user.
 
 ## Next Steps
-(No immediate actions pending. Ready for future feature requests).
+*   Restart the bot to apply changes.
+*   Verify that `GROUP_ID` is set in `.env` (Confirmed: `@astrixforge`).
+*   Ensure Bot is Admin in `@devicemasker` channel.

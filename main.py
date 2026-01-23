@@ -1,8 +1,9 @@
 import os
 import logging
+import time
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ChatMemberHandler, filters, ContextTypes
 from telegram.constants import ChatMemberStatus
 
 # Load environment variables
@@ -12,7 +13,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 CHANNEL_URL = os.getenv("CHANNEL_URL")
-GROUP_ID = os.getenv("GROUP_ID")  # Optional: Enforce only in specific group if needed
+GROUP_ID = os.getenv("GROUP_ID") 
 
 # Setup logging
 logging.basicConfig(
@@ -24,7 +25,6 @@ logger = logging.getLogger(__name__)
 CALLBACK_VERIFY = "verify_membership"
 
 # Simple in-memory cache for membership {user_id: (status, timestamp)}
-import time
 membership_cache = {}
 CACHE_TTL = 300  # 5 minutes
 
@@ -55,11 +55,6 @@ async def restrict_user(chat_id: int, user_id: int, context: ContextTypes.DEFAUL
 
 async def unmute_user(chat_id: int, user_id: int, context: ContextTypes.DEFAULT_TYPE):
     """Unmutes the user in the group."""
-    # Minimal permissions to restore ability to chat
-    # We avoid setting 'can_invite_users' or 'can_send_polls' as they might cause failures
-    # if the bot itself lacks these rights or group settings check them.
-    # Updated permissions for recent Telegram API versions:
-    # `can_send_media_messages` is deprecated/removed in favor of granular permissions.
     permissions = ChatPermissions(
         can_send_messages=True,
         can_send_audios=True,
@@ -72,6 +67,98 @@ async def unmute_user(chat_id: int, user_id: int, context: ContextTypes.DEFAULT_
         can_add_web_page_previews=True
     )
     await context.bot.restrict_chat_member(chat_id=chat_id, user_id=user_id, permissions=permissions)
+
+async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Immediately checks membership when a new user joins the group.
+    """
+    if not update.effective_chat or not update.message or not update.message.new_chat_members:
+        return
+
+    chat_id = update.effective_chat.id
+    
+    for user in update.message.new_chat_members:
+        if user.is_bot:
+            continue
+
+        user_id = user.id
+        # Check membership
+        is_member = await check_membership(user_id, context)
+        
+        if not is_member:
+            # Mute immediately
+            await restrict_user(chat_id, user_id, context)
+            
+            # Send Warning
+            keyboard = [
+                [InlineKeyboardButton("Join Channel", url=CHANNEL_URL)],
+                [InlineKeyboardButton("I have joined", callback_data=CALLBACK_VERIFY)]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"Welcome {user.mention_html()}! You must join the channel to speak in this group.",
+                reply_markup=reply_markup,
+                parse_mode="HTML"
+            )
+
+async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Detects if a user LEAVES the Channel.
+    If they do, and we have a GROUP_ID configured, we verify/restrict them in the group.
+    
+    IMPORTANT: Bot must be ADMIN in the Channel to receive these updates.
+    """
+    # Verify this update is from our monitored channel
+    if not update.chat_member or not update.chat_member.chat:
+        return
+
+    chat = update.chat_member.chat
+    target_channel = str(CHANNEL_ID).strip()
+    
+    # Check match:
+    # 1. Direct ID match (e.g. "-1001234")
+    # 2. Username match (e.g. "devicemasker" vs "@devicemasker")
+    is_id_match = str(chat.id) == target_channel
+    is_username_match = False
+    if chat.username:
+        # Compare usernames case-insensitive, stripping '@' from both sides
+        is_username_match = chat.username.lower() == target_channel.replace("@", "").lower()
+
+    if not (is_id_match or is_username_match):
+        return
+
+    old_status = update.chat_member.old_chat_member.status
+    new_status = update.chat_member.new_chat_member.status
+    user = update.chat_member.new_chat_member.user
+
+    # Initial Statuses considered "Member"
+    was_member = old_status in [ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
+    # New Statuses considered "Not Member"
+    is_left = new_status in [ChatMemberStatus.LEFT, ChatMemberStatus.BANNED]
+
+    if was_member and is_left:
+        # User left the channel!
+        logger.info(f"User {user.id} ({user.first_name}) left the channel. Restricting in Group...")
+
+        # We need GROUP_ID to know where to restrict them
+        if not GROUP_ID:
+            logger.warning("User left channel, but GROUP_ID is not set. Cannot enforce strict restriction.")
+            return
+
+        try:
+            # Force remove from cache so they aren't marked as 'safe'
+            if user.id in membership_cache:
+                del membership_cache[user.id]
+
+            # Restrict in the Group
+            # Note: We can't send a message to the group easily without an 'update' object context 
+            # unless we just use bot.send_message directly.
+            await restrict_user(GROUP_ID, user.id, context)
+            
+        except Exception as e:
+            logger.error(f"Failed to restrict user {user.id} after channel leave: {e}")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Intercepts messages, checks membership, and restricts if necessary."""
@@ -87,8 +174,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = update.effective_chat.id
 
         # 1. Check if user is Admin in the group (Admins are immune)
-        # Note: We don't cache this as frequently because admin status changes are critical.
-        # But for performance, we might just rely on 'get_chat_member' flow or accept the API hit.
         try:
             chat_member = await context.bot.get_chat_member(chat_id=chat_id, user_id=user_id)
             if chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
@@ -168,6 +253,9 @@ def main():
     if not BOT_TOKEN:
         print("Error: BOT_TOKEN not found in .env")
         return
+    
+    if not GROUP_ID:
+        print("Warning: GROUP_ID not set. Strict 'Leave Detection' will not work.")
 
     # Enable concurrent updates for performance
     application = Application.builder().token(BOT_TOKEN).concurrent_updates(True).build()
@@ -176,12 +264,18 @@ def main():
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CallbackQueryHandler(handle_callback_verify, pattern=f"^{CALLBACK_VERIFY}$"))
     
+    # NEW: Handle new members joining the group
+    application.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_member))
+    
+    # NEW: Handle users leaving the channel (ChatMemberUpdated)
+    application.add_handler(ChatMemberHandler(handle_channel_leave, ChatMemberHandler.CHAT_MEMBER))
+
     # Message handler 
     group_filter = filters.ChatType.GROUPS | filters.ChatType.SUPERGROUP
     application.add_handler(MessageHandler(group_filter & ~filters.StatusUpdate.ALL, handle_message))
 
     print("Bot is starting...")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    application.run_polling(allowed_updates=[Update.MESSAGE, Update.CALLBACK_QUERY, Update.CHAT_MEMBER, Update.MY_CHAT_MEMBER])
 
 if __name__ == "__main__":
     main()
