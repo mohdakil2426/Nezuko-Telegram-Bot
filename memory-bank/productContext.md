@@ -11,7 +11,7 @@ An automated Telegram bot that acts as a gatekeeper. It listens to group message
 
 ## User Experience
 1.  **New User Joins Group**: Bot -> "Welcome! Join @Channel to speak" -> User joins channel -> Clicks "I have joined" -> Bot unmutes.
-2.  **User Leaves Channel**: Bot detects leave event -> Instantly mutes user in Group.
+2.  **User Leaves Channel**: Bot detects leave event -> Instantly mutes user in Group -> **Sends Warning**: "Permissions revoked, join back to chat".
 3.  **Non-Member Speaks**: Message deleted -> Bot warns -> User verifies -> Bot unmutes.
 4.  **Admin**: Adds bot to Group and Channel (as Admin) -> Sets `GROUP_ID` -> Bot handles the rest.
 

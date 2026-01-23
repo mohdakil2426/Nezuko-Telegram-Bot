@@ -6,6 +6,8 @@
 ## Recent Changes
 *   **Feature (Strict Leave Detection)**: Implemented `ChatMemberHandler` to detect when a user *leaves* the channel. If they do, they are immediately restricted in the group.
 *   **Feature (Instant Join Check)**: Added `NEW_CHAT_MEMBERS` handler to verify users the moment they join the group, providing an immediate verification prompt.
+*   **UX Improvement (Restrict & Inform)**: When a user leaves the channel, the bot now immediately sends a warning message to the group explaining why they were mute.
+*   **Robustness**: Added error handling for "Query is too old" in callback verification to prevent terminal noise.
 *   **Refactor**: Updated `check_membership` logic to be robust against text/ID channel configurations.
 *   **Requirement**: Made `GROUP_ID` mandatory for the strict leave detection feature to work.
 

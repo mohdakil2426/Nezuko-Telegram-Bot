@@ -153,9 +153,21 @@ async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYP
                 del membership_cache[user.id]
 
             # Restrict in the Group
-            # Note: We can't send a message to the group easily without an 'update' object context 
-            # unless we just use bot.send_message directly.
             await restrict_user(GROUP_ID, user.id, context)
+            
+            # UX Improvement: Inform the user immediately why they were muted
+            keyboard = [
+                [InlineKeyboardButton("Join Channel", url=CHANNEL_URL)],
+                [InlineKeyboardButton("I have joined", callback_data=CALLBACK_VERIFY)]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            await context.bot.send_message(
+                chat_id=GROUP_ID,
+                text=f"⚠️ {user.mention_html()}, your messaging permissions have been revoked because you left the channel.\n\nPlease join back to chat.",
+                reply_markup=reply_markup,
+                parse_mode="HTML"
+            )
             
         except Exception as e:
             logger.error(f"Failed to restrict user {user.id} after channel leave: {e}")
@@ -233,18 +245,29 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
             await unmute_user(chat_id, user_id, context)
             
             # Answer query
-            await query.answer("Verification successful! You can now chat.", show_alert=True)
+            try:
+                await query.answer("Verification successful! You can now chat.", show_alert=True)
+            except Exception:
+                pass # Ignore if query is old
             
             # Delete the warning message
-            await query.delete_message()
+            try:
+                await query.delete_message()
+            except Exception:
+                pass
             
         except Exception as e:
             logger.error(f"Error unmuting user: {e}", exc_info=True)
-            # Send the precise error message to the user for debugging
-            await query.answer(f"Error: {str(e)[:180]}", show_alert=True)
+            try:
+                await query.answer(f"Error: {str(e)[:180]}", show_alert=True)
+            except Exception:
+                pass
     else:
         # Still not a member
-        await query.answer("You still have not joined the channel! Please join first.", show_alert=True)
+        try:
+            await query.answer("You still have not joined the channel! Please join first.", show_alert=True)
+        except Exception:
+            pass
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Bot is running. Add me to a group as Admin!")

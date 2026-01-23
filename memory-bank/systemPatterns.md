@@ -33,7 +33,7 @@ The system follows a standard Telegram Bot architecture:
 2.  **Strict Leave**:
     *   **Trigger**: `ChatMemberHandler` (Admin in Channel).
     *   **Logic**: Detects `update.chat_member.new_chat_member.status == LEFT`.
-    *   **Enforcement**: Uses `GROUP_ID` to find the user in the target group and applies `restrict_chat_member`.
+    *   **Enforcement**: Uses `GROUP_ID` to find the user in the target group -> Mutes them -> Sends Warning Message.
 
 *   **Async Concurrency**: Usage of `concurrent_updates(True)` in Application Builder.
 
