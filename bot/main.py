@@ -1,50 +1,86 @@
 """
 GMBot v2.0 - Main entry point
 Production-ready multi-tenant Telegram bot for channel verification.
+
+Phase 4 Monitoring Features:
+- Structured logging (JSON in production)
+- Prometheus metrics at /metrics
+- Health check endpoint at /health
+- Sentry error tracking (when configured)
 """
 
 import sys
-import logging
 import asyncio
 from telegram import Update
-from telegram.ext import Application, CommandHandler
+from telegram.ext import Application
 
 from bot.config import config
-from bot.core.database import init_db, close_db
+from bot.core.database import init_db, close_db, get_session
 from bot.core.rate_limiter import create_rate_limiter
 from bot.core.cache import get_redis_client, close_redis_connection
 from bot.core.loader import register_handlers
+from bot.database.crud import get_all_protected_groups
 
-# Setup logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO if config.is_development else logging.WARNING,
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler("bot.log")
-    ]
+# Phase 4: Monitoring imports
+from bot.utils.logging import configure_logging, get_logger, log_startup, log_shutdown
+from bot.utils.metrics import (
+    set_bot_start_time,
+    set_active_groups_count,
+    set_redis_connected,
+    set_db_connected
 )
-logger = logging.getLogger(__name__)
+from bot.utils.sentry import init_sentry, flush as sentry_flush
+from bot.utils.health import start_health_server, stop_health_server
+
+# Configure structured logging (JSON for production, pretty for development)
+configure_logging()
+logger = get_logger(__name__)
+
+
+async def update_active_groups_gauge():
+    """Update the active groups Prometheus gauge."""
+    try:
+        async with get_session() as session:
+            groups = await get_all_protected_groups(session)
+            set_active_groups_count(len(groups))
+            logger.debug(f"Active groups gauge updated: {len(groups)}")
+    except Exception as e:
+        logger.error(f"Failed to update active groups gauge: {e}")
 
 
 async def post_init(application: Application) -> None:
     """Initialize database and other resources after app creation."""
     logger.info("Initializing database...")
     await init_db()
+    set_db_connected(True)
     logger.info("Database initialized successfully")
     
-   # Initialize Redis (graceful degradation if unavailable)
+    # Initialize Redis (graceful degradation if unavailable)
     logger.info("Initializing Redis cache...")
     redis_client = await get_redis_client(config.REDIS_URL)
     if redis_client:
+        set_redis_connected(True)
         logger.info("✅ Redis cache initialized successfully")
     else:
+        set_redis_connected(False)
         logger.warning("⚠️ Redis unavailable - running in degraded mode (direct API calls)")
+    
+    # Update metrics
+    await update_active_groups_gauge()
 
 
 async def post_shutdown(application: Application) -> None:
     """Cleanup resources on shutdown."""
+    log_shutdown()
     logger.info("Shutting down gracefully...")
+    
+    # Stop health server
+    await stop_health_server()
+    
+    # Flush Sentry events
+    sentry_flush(timeout=2)
+    
+    # Close connections
     await close_redis_connection()
     await close_db()
     logger.info("All connections closed")
@@ -53,6 +89,9 @@ async def post_shutdown(application: Application) -> None:
 async def run_polling():
     """Run bot in polling mode (development)."""
     logger.info("Starting bot in POLLING mode...")
+    
+    # Start health check server (port 8000)
+    await start_health_server(port=8000)
     
     # Build application with rate limiter
     application = (
@@ -88,6 +127,9 @@ async def run_webhook():
     if not config.WEBHOOK_URL or not config.WEBHOOK_SECRET:
         logger.error("WEBHOOK_URL and WEBHOOK_SECRET are required for webhook mode")
         sys.exit(1)
+    
+    # Start health check server (port 8000, separate from webhook port)
+    await start_health_server(port=8000)
     
     # Build application
     application = (
@@ -127,14 +169,30 @@ def main():
         # Validate configuration
         config.validate()
         
-        logger.info("="*60)
+        # Initialize Sentry (if configured)
+        init_sentry()
+        
+        # Record bot start time for metrics
+        set_bot_start_time()
+        
+        # Log startup
+        log_startup(
+            mode="webhook" if config.use_webhooks else "polling",
+            database=config.DATABASE_URL,
+            redis=bool(config.REDIS_URL)
+        )
+        
+        logger.info("=" * 60)
         logger.info("GMBot v2.0 - Multi-Tenant Channel Verification Bot")
-        logger.info("="*60)
+        logger.info("=" * 60)
         logger.info(f"Environment: {config.ENVIRONMENT}")
         logger.info(f"Mode: {'WEBHOOK' if config.use_webhooks else 'POLLING'}")
         logger.info(f"Database: {config.DATABASE_URL.split('://')[0]}")
         logger.info(f"Redis: {'Enabled' if config.REDIS_URL else 'Disabled (degraded mode)'}")
-        logger.info("="*60)
+        logger.info(f"Sentry: {'Enabled' if config.SENTRY_DSN else 'Disabled'}")
+        logger.info(f"Health: http://localhost:8000/health")
+        logger.info(f"Metrics: http://localhost:8000/metrics")
+        logger.info("=" * 60)
         
         # Run appropriate mode
         if config.use_webhooks:

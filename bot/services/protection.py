@@ -3,12 +3,16 @@ Protection service for muting and unmuting users.
 
 Handles user restriction/unmuting with proper error handling,
 retries, and logging.
+
+Phase 4: Integrated with Prometheus metrics for monitoring.
 """
 import logging
 import asyncio
 from telegram import ChatPermissions
 from telegram.ext import ContextTypes
 from telegram.error import TelegramError, RetryAfter
+
+from bot.utils.metrics import record_api_call, record_rate_limit_delay, record_error
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +50,7 @@ async def restrict_user(
     
     for attempt in range(1, MAX_RETRIES + 1):
         try:
+            record_api_call("restrictChatMember")
             await context.bot.restrict_chat_member(
                 chat_id=chat_id,
                 user_id=user_id,
@@ -58,6 +63,7 @@ async def restrict_user(
         except RetryAfter as e:
             # Telegram rate limit - wait and retry
             wait_time = e.retry_after
+            record_rate_limit_delay()
             logger.warning(
                 f"Rate limit hit when muting user {user_id}. "
                 f"Waiting {wait_time}s (attempt {attempt}/{MAX_RETRIES})"
@@ -66,6 +72,7 @@ async def restrict_user(
                 await asyncio.sleep(wait_time)
             else:
                 _error_count += 1
+                record_error("telegram_error")
                 return False
                 
         except TelegramError as e:
@@ -78,6 +85,7 @@ async def restrict_user(
                 await asyncio.sleep(RETRY_DELAY * (2 ** (attempt - 1)))
             else:
                 _error_count += 1
+                record_error("telegram_error")
                 return False
                 
         except Exception as e:
@@ -86,6 +94,7 @@ async def restrict_user(
                 exc_info=True
             )
             _error_count += 1
+            record_error("unknown")
             return False
     
     return False
@@ -128,6 +137,7 @@ async def unmute_user(
     
     for attempt in range(1, MAX_RETRIES + 1):
         try:
+            record_api_call("restrictChatMember")
             await context.bot.restrict_chat_member(
                 chat_id=chat_id,
                 user_id=user_id,
@@ -139,6 +149,7 @@ async def unmute_user(
             
         except RetryAfter as e:
             wait_time = e.retry_after
+            record_rate_limit_delay()
             logger.warning(
                 f"Rate limit hit when unmuting user {user_id}. "
                 f"Waiting {wait_time}s (attempt {attempt}/{MAX_RETRIES})"
@@ -147,6 +158,7 @@ async def unmute_user(
                 await asyncio.sleep(wait_time)
             else:
                 _error_count += 1
+                record_error("telegram_error")
                 return False
                 
         except TelegramError as e:
@@ -158,6 +170,7 @@ async def unmute_user(
                 await asyncio.sleep(RETRY_DELAY * (2 ** (attempt - 1)))
             else:
                 _error_count += 1
+                record_error("telegram_error")
                 return False
                 
         except Exception as e:
@@ -166,6 +179,7 @@ async def unmute_user(
                 exc_info=True
             )
             _error_count += 1
+            record_error("unknown")
             return False
     
     return False

@@ -3,6 +3,8 @@ Verification service with cache-aware membership checking.
 
 Handles membership verification with Redis caching, TTL jitter,
 and graceful fallback to Telegram API on cache miss.
+
+Phase 4: Integrated with Prometheus metrics for monitoring.
 """
 import logging
 from typing import Optional
@@ -10,6 +12,14 @@ from telegram.ext import ContextTypes
 from telegram.constants import ChatMemberStatus
 
 from bot.core.cache import cache_get, cache_set, cache_delete, get_ttl_with_jitter
+from bot.utils.metrics import (
+    record_verification_start,
+    record_verification_end,
+    record_cache_hit,
+    record_cache_miss,
+    record_api_call,
+    record_error
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +58,9 @@ async def check_membership(
     """
     global _cache_hits, _cache_misses
     
+    # Start timing for metrics
+    start_time = record_verification_start()
+    
     # Construct cache key
     cache_key = f"verify:{user_id}:{channel_id}"
     
@@ -56,17 +69,22 @@ async def check_membership(
         cached_value = await cache_get(cache_key)
         if cached_value is not None:
             _cache_hits += 1
+            record_cache_hit()
             logger.debug(f"✅ Cache HIT: {cache_key}")
-            return cached_value == "1"  # "1" = member, "0" = non-member
+            is_member = cached_value == "1"
+            record_verification_end(start_time, "verified" if is_member else "restricted")
+            return is_member
     except Exception as e:
         logger.warning(f"Cache check error: {e}")
     
     # Step 2: Cache miss - call Telegram API
     _cache_misses += 1
+    record_cache_miss()
     logger.debug(f"❌ Cache MISS: {cache_key} - calling API")
     
     is_member = False
     try:
+        record_api_call("getChatMember")
         member = await context.bot.get_chat_member(
             chat_id=channel_id, 
             user_id=user_id
@@ -83,6 +101,8 @@ async def check_membership(
         )
     except Exception as e:
         logger.error(f"Error checking membership for user {user_id} in {channel_id}: {e}")
+        record_error("telegram_error")
+        record_verification_end(start_time, "error")
         # Fail-safe: Return False on error (deny access)
         return False
     
@@ -98,6 +118,10 @@ async def check_membership(
             logger.debug(f"📦 Cached negative result: {cache_key} (TTL: {ttl}s)")
     except Exception as e:
         logger.warning(f"Failed to cache result: {e}")
+        record_error("cache_error")
+    
+    # Record final verification outcome
+    record_verification_end(start_time, "verified" if is_member else "restricted")
     
     return is_member
 

@@ -357,102 +357,102 @@ This document breaks down the transformation into small, verifiable tasks across
 **Goal**: Production-grade observability, metrics, logging, error tracking
 
 ### 4.1 Prometheus Metrics
-- [ ] 4.1.1 Install `prometheus-client`
-- [ ] 4.1.2 Create `bot/utils/metrics.py`
-- [ ] 4.1.3 Define Counter: `bot_verifications_total{status="verified|restricted|error"}`
-- [ ] 4.1.4 Define Counter: `bot_api_calls_total{method="getChatMember|restrictChatMember|..."}`
-- [ ] 4.1.5 Define Counter: `bot_cache_hits_total`, `bot_cache_misses_total`
-- [ ] 4.1.6 Define Counter: `bot_rate_limit_delays_total`
-- [ ] 4.1.7 Define Histogram: `bot_verification_latency_seconds` (buckets: 0.01, 0.05, 0.1, 0.5, 1.0, 2.0)
-- [ ] 4.1.8 Define Histogram: `db_query_duration_seconds`
-- [ ] 4.1.9 Define Gauge: `bot_active_groups` (number of enabled groups)
-- [ ] 4.1.10 Expose `/metrics` endpoint via HTTP handler
+- [x] 4.1.1 Install `prometheus-client`
+- [x] 4.1.2 Create `bot/utils/metrics.py`
+- [x] 4.1.3 Define Counter: `bot_verifications_total{status="verified|restricted|error"}`
+- [x] 4.1.4 Define Counter: `bot_api_calls_total{method="getChatMember|restrictChatMember|..."}`
+- [x] 4.1.5 Define Counter: `bot_cache_hits_total`, `bot_cache_misses_total`
+- [x] 4.1.6 Define Counter: `bot_rate_limit_delays_total`
+- [x] 4.1.7 Define Histogram: `bot_verification_latency_seconds` (buckets: 0.01, 0.05, 0.1, 0.5, 1.0, 2.0)
+- [x] 4.1.8 Define Histogram: `db_query_duration_seconds`
+- [x] 4.1.9 Define Gauge: `bot_active_groups` (number of enabled groups)
+- [x] 4.1.10 Expose `/metrics` endpoint via HTTP handler
 
-**Validation**: `curl http://localhost:8000/metrics` shows Prometheus format metrics
+**Validation**: ✅ `curl http://localhost:8000/metrics` shows Prometheus format metrics
 
 ---
 
 ### 4.2 Metric Integration
-- [ ] 4.2.1 Update `verification.py` to increment verification counters
-- [ ] 4.2.2 Update `verification.py` to record latency histogram
-- [ ] 4.2.3 Update `cache.py` to increment cache hit/miss counters
-- [ ] 4.2.4 Update `crud.py` to record query duration histogram
-- [ ] 4.2.5 Update `rate_limiter.py` to increment delay counter
-- [ ] 4.2.6 Update `main.py` to update active_groups gauge on startup
+- [x] 4.2.1 Update `verification.py` to increment verification counters
+- [x] 4.2.2 Update `verification.py` to record latency histogram
+- [x] 4.2.3 Update `cache.py` to increment cache hit/miss counters
+- [x] 4.2.4 Update `crud.py` to record query duration histogram
+- [x] 4.2.5 Update `rate_limiter.py` to increment delay counter
+- [x] 4.2.6 Update `main.py` to update active_groups gauge on startup
 
-**Validation**: Metrics increment correctly when operations performed
+**Validation**: ✅ Metrics increment correctly when operations performed
 
 ---
 
 ### 4.3 Structured Logging
-- [ ] 4.3.1 Install `structlog`
-- [ ] 4.3.2 Create `bot/utils/logging.py`
-- [ ] 4.3.3 Configure structured logging (JSON format for production)
-- [ ] 4.3.4 Add context fields: timestamp, level, logger, user_id, group_id, channel_id
-- [ ] 4.3.5 Update all handlers to use structured logger
-- [ ] 4.3.6 Log key events: Protection activated, user verified, user restricted, errors
+- [x] 4.3.1 Install `structlog`
+- [x] 4.3.2 Create `bot/utils/logging.py`
+- [x] 4.3.3 Configure structured logging (JSON format for production)
+- [x] 4.3.4 Add context fields: timestamp, level, logger, user_id, group_id, channel_id
+- [x] 4.3.5 Update all handlers to use structured logger
+- [x] 4.3.6 Log key events: Protection activated, user verified, user restricted, errors
 
-**Validation**: Log output shows JSON format with context fields
+**Validation**: ✅ Log output shows JSON format with context fields
 
 ---
 
 ### 4.4 Health Check Endpoint
-- [ ] 4.4.1 Update `bot/main.py` to add `/health` endpoint
-- [ ] 4.4.2 Check database connection (simple SELECT 1)
-- [ ] 4.4.3 Check Redis connection (PING command, graceful fail if optional)
-- [ ] 4.4.4 Return JSON: `{"status": "healthy|degraded|unhealthy", "uptime": seconds, "checks": {}}`
-- [ ] 4.4.5 Return 200 OK if healthy, 503 Service Unavailable if unhealthy
+- [x] 4.4.1 Update `bot/main.py` to add `/health` endpoint
+- [x] 4.4.2 Check database connection (simple SELECT 1)
+- [x] 4.4.3 Check Redis connection (PING command, graceful fail if optional)
+- [x] 4.4.4 Return JSON: `{"status": "healthy|degraded|unhealthy", "uptime": seconds, "checks": {}}`
+- [x] 4.4.5 Return 200 OK if healthy, 503 Service Unavailable if unhealthy
 
-**Validation**: `curl /health` returns correct status based on dependencies
+**Validation**: ✅ `curl /health` returns correct status based on dependencies
 
 ---
 
 ### 4.5 Sentry Error Tracking
-- [ ] 4.5.1 Install `sentry-sdk`
-- [ ] 4.5.2 Create `bot/utils/sentry.py`
-- [ ] 4.5.3 Initialize Sentry with DSN from environment variable (optional)
-- [ ] 4.5.4 Configure integrations: logging, sqlalchemy, redis
-- [ ] 4.5.5 Set environment tag: development|production
-- [ ] 4.5.6 Add user context: user_id, group_id
-- [ ] 4.5.7 Test error capture (throw exception, verify in Sentry dashboard)
+- [x] 4.5.1 Install `sentry-sdk`
+- [x] 4.5.2 Create `bot/utils/sentry.py`
+- [x] 4.5.3 Initialize Sentry with DSN from environment variable (optional)
+- [x] 4.5.4 Configure integrations: logging, sqlalchemy, redis
+- [x] 4.5.5 Set environment tag: development|production
+- [x] 4.5.6 Add user context: user_id, group_id
+- [x] 4.5.7 Test error capture (throw exception, verify in Sentry dashboard)
 
-**Validation**: Errors show up in Sentry with full context
+**Validation**: ✅ Errors show up in Sentry with full context
 
 ---
 
 ### 4.6 Alerting Rules Documentation
-- [ ] 4.6.1 Create `docs/alerting_rules.md`
-- [ ] 4.6.2 Document Prometheus alert: `HighErrorRate` (error_rate >1% for 5 minutes)
-- [ ] 4.6.3 Document Prometheus alert: `HighLatency` (p95 >500ms for 5 minutes)
-- [ ] 4.6.4 Document Prometheus alert: `DatabaseDown` (health check failing)
-- [ ] 4.6.5 Document Prometheus alert: `LowCacheHitRate` (<50% for 15 minutes)
-- [ ] 4.6.6 Add recommended thresholds and escalation procedures
+- [x] 4.6.1 Create `docs/alerting_rules.md`
+- [x] 4.6.2 Document Prometheus alert: `HighErrorRate` (error_rate >1% for 5 minutes)
+- [x] 4.6.3 Document Prometheus alert: `HighLatency` (p95 >500ms for 5 minutes)
+- [x] 4.6.4 Document Prometheus alert: `DatabaseDown` (health check failing)
+- [x] 4.6.5 Document Prometheus alert: `LowCacheHitRate` (<50% for 15 minutes)
+- [x] 4.6.6 Add recommended thresholds and escalation procedures
 
-**Validation**: Documentation complete, rules ready for Prometheus/Alertmanager setup
+**Validation**: ✅ Documentation complete, rules ready for Prometheus/Alertmanager setup
 
 ---
 
 ### 4.7 Error Handling & Resilience
-- [ ] 4.7.1 Update all Telegram API calls to use try/except with retries
-- [ ] 4.7.2 Implement exponential backoff for retries (1s, 2s, 4s)
-- [ ] 4.7.3 Add circuit breaker for database queries (fail fast after 3 consecutive errors)
-- [ ] 4.7.4 Add graceful degradation for Redis (skip cache, continue with API calls)
-- [ ] 4.7.5 Log all errors with full context (user_id, group_id, operation)
+- [x] 4.7.1 Update all Telegram API calls to use try/except with retries
+- [x] 4.7.2 Implement exponential backoff for retries (1s, 2s, 4s)
+- [x] 4.7.3 Add circuit breaker for database queries (fail fast after 3 consecutive errors)
+- [x] 4.7.4 Add graceful degradation for Redis (skip cache, continue with API calls)
+- [x] 4.7.5 Log all errors with full context (user_id, group_id, operation)
 
-**Validation**: Bot continues operating during transient failures (Redis down, DB slow)
+**Validation**: ✅ Bot continues operating during transient failures (Redis down, DB slow)
 
 ---
 
 ### 4.8 Documentation Updates
-- [ ] 4.8.1 Update `README.md` with new architecture overview
-- [ ] 4.8.2 Add setup instructions (database, Redis, environment variables)
-- [ ] 4.8.3 Add admin command reference
-- [ ] 4.8.4 Document environment variables (required vs optional)
-- [ ] 4.8.5 Add troubleshooting section (common errors, solutions)
-- [ ] 4.8.6 Create `docs/architecture.md` with diagrams
-- [ ] 4.8.7 Create `docs/deployment.md` (placeholder for deferred Phase 5)
+- [x] 4.8.1 Update `README.md` with new architecture overview
+- [x] 4.8.2 Add setup instructions (database, Redis, environment variables)
+- [x] 4.8.3 Add admin command reference
+- [x] 4.8.4 Document environment variables (required vs optional)
+- [x] 4.8.5 Add troubleshooting section (common errors, solutions)
+- [x] 4.8.6 Create `docs/architecture.md` with diagrams
+- [x] 4.8.7 Create `docs/deployment.md` (placeholder for deferred Phase 5)
 
-**Validation**: New users can follow README to set up local development environment
+**Validation**: ✅ New users can follow README to set up local development environment
 
 ---
 
