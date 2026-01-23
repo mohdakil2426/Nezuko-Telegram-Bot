@@ -240,7 +240,7 @@ async def handle_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(message, parse_mode="Markdown")
         
     except Exception as e:
-        logger.error(f "Error in settings command: {e}", exc_info=True)
+        logger.error(f"Error in settings command: {e}", exc_info=True)
         await update.message.reply_text(
             "❌ An error occurred while loading settings. Please try again."
         )

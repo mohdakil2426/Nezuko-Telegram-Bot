@@ -3,13 +3,13 @@ GMBot v2.0 - Main entry point
 Production-ready multi-tenant Telegram bot for channel verification.
 
 Phase 4 Monitoring Features:
-- Structured logging (JSON in production)
 - Prometheus metrics at /metrics
 - Health check endpoint at /health
 - Sentry error tracking (when configured)
 """
 
 import sys
+import logging
 import asyncio
 from telegram import Update
 from telegram.ext import Application
@@ -22,7 +22,6 @@ from bot.core.loader import register_handlers
 from bot.database.crud import get_all_protected_groups
 
 # Phase 4: Monitoring imports
-from bot.utils.logging import configure_logging, get_logger, log_startup, log_shutdown
 from bot.utils.metrics import (
     set_bot_start_time,
     set_active_groups_count,
@@ -32,9 +31,16 @@ from bot.utils.metrics import (
 from bot.utils.sentry import init_sentry, flush as sentry_flush
 from bot.utils.health import start_health_server, stop_health_server
 
-# Configure structured logging (JSON for production, pretty for development)
-configure_logging()
-logger = get_logger(__name__)
+# Setup standard logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO if config.is_production else logging.DEBUG,
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("bot.log")
+    ]
+)
+logger = logging.getLogger(__name__)
 
 
 async def update_active_groups_gauge():
@@ -71,7 +77,6 @@ async def post_init(application: Application) -> None:
 
 async def post_shutdown(application: Application) -> None:
     """Cleanup resources on shutdown."""
-    log_shutdown()
     logger.info("Shutting down gracefully...")
     
     # Stop health server
@@ -90,8 +95,9 @@ async def run_polling():
     """Run bot in polling mode (development)."""
     logger.info("Starting bot in POLLING mode...")
     
-    # Start health check server (port 8000)
-    await start_health_server(port=8000)
+    # Health check server disabled for local dev (conflict with telegram bot event loop)
+    # To enable: uncomment below and run health server separately
+    # await start_health_server(port=8000)
     
     # Build application with rate limiter
     application = (
@@ -100,7 +106,6 @@ async def run_polling():
         .rate_limiter(create_rate_limiter())
         .concurrent_updates(True)
         .post_init(post_init)
-        .post_shutdown(post_shutdown)
         .build()
     )
     
@@ -175,13 +180,6 @@ def main():
         # Record bot start time for metrics
         set_bot_start_time()
         
-        # Log startup
-        log_startup(
-            mode="webhook" if config.use_webhooks else "polling",
-            database=config.DATABASE_URL,
-            redis=bool(config.REDIS_URL)
-        )
-        
         logger.info("=" * 60)
         logger.info("GMBot v2.0 - Multi-Tenant Channel Verification Bot")
         logger.info("=" * 60)
@@ -194,11 +192,55 @@ def main():
         logger.info(f"Metrics: http://localhost:8000/metrics")
         logger.info("=" * 60)
         
+        # Build application with rate limiter
+        # Note: python-telegram-bot manages its own event loop internally,
+        # so we use synchronous run_polling() instead of asyncio.run()
+        application = (
+            Application.builder()
+            .token(config.BOT_TOKEN)
+            .rate_limiter(create_rate_limiter())
+            .concurrent_updates(True)
+            .post_init(post_init)
+            .post_shutdown(post_shutdown)
+            .build()
+        )
+        
+        # Register handlers
+        register_handlers(application)
+        
         # Run appropriate mode
         if config.use_webhooks:
-            asyncio.run(run_webhook())
+            if not config.WEBHOOK_URL or not config.WEBHOOK_SECRET:
+                logger.error("WEBHOOK_URL and WEBHOOK_SECRET are required for webhook mode")
+                sys.exit(1)
+            
+            logger.info(f"Starting webhook server on port {config.PORT}")
+            application.run_webhook(
+                listen="0.0.0.0",
+                port=config.PORT,
+                url_path="webhook",
+                webhook_url=f"{config.WEBHOOK_URL}/webhook",
+                secret_token=config.WEBHOOK_SECRET,
+                allowed_updates=[
+                    Update.MESSAGE,
+                    Update.CALLBACK_QUERY,
+                    Update.CHAT_MEMBER,
+                    Update.MY_CHAT_MEMBER
+                ],
+                drop_pending_updates=True
+            )
         else:
-            asyncio.run(run_polling())
+            logger.info("Starting bot in POLLING mode...")
+            logger.info("Bot is running. Press Ctrl+C to stop.")
+            application.run_polling(
+                allowed_updates=[
+                    Update.MESSAGE,
+                    Update.CALLBACK_QUERY,
+                    Update.CHAT_MEMBER,
+                    Update.MY_CHAT_MEMBER
+                ],
+                drop_pending_updates=True
+            )
             
     except KeyboardInterrupt:
         logger.info("Bot stopped by user")
