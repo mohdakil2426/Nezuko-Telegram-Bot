@@ -1,21 +1,36 @@
 # Active Context
 
 ## Current Status
-**Project Active (v1.1)**. The Channel Verification Bot has been upgraded with **Strict Verification Mode**. It now proactively polices user joins and channel leaves, rather than just reacting to messages.
+**Planning Phase: v2.0 Production SaaS Transformation**. The v1.1 single-instance bot is complete and functional. We're now in the planning stage for transforming it into a production-ready multi-tenant SaaS platform.
 
 ## Recent Changes
-*   **Feature (Strict Leave Detection)**: Implemented `ChatMemberHandler` to detect when a user *leaves* the channel. If they do, they are immediately restricted in the group.
-*   **Feature (Instant Join Check)**: Added `NEW_CHAT_MEMBERS` handler to verify users the moment they join the group, providing an immediate verification prompt.
-*   **UX Improvement (Restrict & Inform)**: When a user leaves the channel, the bot now immediately sends a warning message to the group explaining why they were mute.
-*   **Robustness**: Added error handling for "Query is too old" in callback verification to prevent terminal noise.
-*   **Refactor**: Updated `check_membership` logic to be robust against text/ID channel configurations.
-*   **Requirement**: Made `GROUP_ID` mandatory for the strict leave detection feature to work.
+*   **OpenSpec Proposal Created** (2026-01-23): Comprehensive proposal for `transform-to-production-saas` validated and ready
+*   **Documentation**: Created 3 core documents (proposal.md, design.md, tasks.md) and 6 spec deltas
+*   **Scope Defined**: 4 development phases (Foundation, Multi-Tenancy, Scale & Performance, Monitoring)
+*   **Architecture Designed**: Modular monolith with PostgreSQL, Redis, AIORateLimiter, Prometheus, Sentry
+*   **Timeline Estimated**: 4-5 weeks of development work across 100+ granular tasks
 
 ## Active Decisions
-*   **Strict Enforcement**: We logic now prioritizes "Zero Trust". New members are checked instantly, and existing members are watched for channel exit events.
-*   **Admin Requirement**: The bot **MUST** be an Admin in the Channel to receive `ChatMember` updates. This is a critical setup step for the user.
+*   **Modular Monolith Architecture**: Chose simplicity over microservices for easier operations
+*   **PostgreSQL + SQLAlchemy Async**: Production-grade persistence with Alembic migrations
+*   **Redis with TTL Jitter**: Distributed caching to prevent thundering herd scenarios
+*   **Priority Queue Rate Limiting**: User interactions (P0) always prioritized over bulk operations (P2)
+*   **Auto-Detect Mode**: Polling for dev, Webhooks for production based on environment variables
+*   **Deployment Deferred**: Focus on development phases 1-4 first; deployment (Phase 5) comes after validation
+
+## Key Architectural Patterns
+*   **Database-Driven Multi-Tenancy**: Replace `.env` config with self-service `/protect` command
+*   **Graceful Degradation**: Bot works without Redis (degraded performance, not broken)
+*   **Many-to-Many Relationships**: One channel protects many groups, one group requires many channels
+*   **Zero Data Loss Migration**: v1.1 has no persistent state, so migration is clean
 
 ## Next Steps
-*   Restart the bot to apply changes.
-*   Verify that `GROUP_ID` is set in `.env` (Confirmed: `@astrixforge`).
-*   Ensure Bot is Admin in `@devicemasker` channel.
+1.  **Review OpenSpec Proposal**: Examine `proposal.md`, `design.md`, `tasks.md` in `openspec/changes/transform-to-production-saas/`
+2.  **Approve Proposal**: Confirm scope, timeline, and architectural decisions
+3.  **Begin Phase 1 Implementation**: Start with modular architecture + PostgreSQL foundation
+4.  **Setup Development Environment**: Install PostgreSQL 16+, Redis 7+, update dependencies
+
+## Current Focus
+**Status**: Awaiting proposal approval before implementation begins  
+**Blocking**: None - proposal is validated and ready  
+**Risk**: Timeline assumes sequential work; parallelizing Phase 3 + 4 can reduce to 4 weeks

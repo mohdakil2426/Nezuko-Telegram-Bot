@@ -1,12 +1,34 @@
 # System Patterns
 
-## Architecture
+## Current Architecture (v1.1)
 The system follows a standard Telegram Bot architecture:
 1.  **Telegram Bot API**: The interface for interacting with Telegram.
 2.  **Bot Logic (Backend)**: Python (`python-telegram-bot` v20+) application.
 3.  **Polling**: `Application.run_polling` with **Concurrent Updates** enabled for performance.
 
-## Key Components
+## Planned Architecture (v2.0)
+**Status**: Designed, awaiting implementation
+
+### Core Stack
+*   **Runtime**: Python 3.13+ (AsyncIO)
+*   **Framework**: `python-telegram-bot` v20+ with `concurrent_updates=True`
+*   **Database**: PostgreSQL (production) / SQLite (development) via SQLAlchemy Async + Alembic
+*   **Caching**: Redis (async) for distributed state, verification cache
+*   **Rate Limiting**: AIORateLimiter (30msg/sec with priority queuing)
+*   **Update Mode**: Auto-detect (polling for dev, webhooks for production)
+*   **Monitoring**: Prometheus + Sentry
+
+### Modular Monolith Structure
+```
+bot/
+├── core/          # Database, cache, rate limiter, handler loader
+├── database/      # Models, CRUD, migrations
+├── handlers/      # Admin, events, verification
+├── services/      # Protection, verification, Telegram API wrappers
+└── utils/         # Metrics, logging
+```
+
+## Key Components (v1.1)
 1.  **Message Handler**: Intercepts group messages (text/media) via `filters.ChatType.GROUPS`.
 2.  **Join Handler**: Intercepts `NEW_CHAT_MEMBERS` to immediately verify users entering the group.
 3.  **Channel Watcher**: listens to `ChatMemberUpdated` events from the **Channel**.
@@ -20,11 +42,26 @@ The system follows a standard Telegram Bot architecture:
     *   Unmutes: Grants specific granular permissions (`can_send_photos`, `can_send_videos`, etc.).
 6.  **Interaction Manager**: Handles "Join" (URL) and "Verify" (Callback) button clicks.
 
-## Design Patterns
+## Enhanced Components (v2.0)
+1.  **Database Layer**: PostgreSQL with async session management, connection pooling
+2.  **Distributed Cache**: Redis with TTL jitter (10min positive, 1min negative)
+3.  **Priority Rate Limiter**: P0 (user interactions) > P1 (enforcement) > P2 (bulk operations)
+4.  **Admin Command Handlers**: `/protect`, `/status`, `/unprotect`, `/settings`
+5.  **Observability Stack**: Prometheus metrics, structured logs, health checks, Sentry
+
+## Design Patterns (v1.1)
 *   **Event-Driven**: Actions are triggered by Telegram events (New Message, Callback Query, **Chat Member Update**).
 *   **Proactive Policing**: Instead of waiting for a violation (message), we catch the state change (Join/Leave).
 *   **Fail-Safe**: If membership check fails (e.g., API timeout), it logs error and denies access (Strict Mode).
 *   **Caching**: In-memory dictionary `membership_cache[user_id] = (status, timestamp)` to minimize API rate limits.
+
+## Enhanced Patterns (v2.0)
+*   **Multi-Tenant**: Database-driven configuration supporting 100+ groups independently
+*   **Graceful Degradation**: Redis failure → falls back to API calls (degraded, not broken)
+*   **Zero Trust**: New members verified on join, existing members watched for channel exit
+*   **Horizontal Scaling**: Shared Redis/DB allows multiple bot instances
+*   **Observable by Default**: All operations emit metrics, logs include full context
+*   **Priority Queuing**: User-facing actions never delayed by background operations
 
 ### Strict Verification Logic (v1.1)
 1.  **Instant Join**:
@@ -37,7 +74,13 @@ The system follows a standard Telegram Bot architecture:
 
 *   **Async Concurrency**: Usage of `concurrent_updates(True)` in Application Builder.
 
-## Data Flow
+### Multi-Tenant Verification (v2.0 - Planned)
+1.  **Database Query**: Lookup `protected_groups` and `group_channel_links` for group
+2.  **Cache-Aware Check**: Query Redis before Telegram API (70%+ hit rate)
+3.  **Multi-Channel Support**: Verify membership in ALL linked channels (AND logic)
+4.  **Batched Operations**: Warm cache for large groups (100k+ members)
+
+## Data Flow (v1.1)
 ```mermaid
 graph TD
     %% Events
@@ -59,3 +102,13 @@ graph TD
     
     StrictMute --> Restrict
 ```
+
+## Performance Targets (v2.0)
+| Metric | v1.1 (Current) | v2.0 (Target) |
+|--------|----------------|---------------|
+| Verification Latency | ~500ms | <100ms (p95) |
+| Cache Hit Rate | N/A (in-memory) | >70% (Redis) |
+| Database Query | N/A | <50ms (p95) |
+| Throughput | ~50/min | 1000/min |
+| Multi-Tenancy | 1 group | 100+ groups |
+
