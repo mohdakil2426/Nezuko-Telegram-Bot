@@ -44,22 +44,22 @@ def register_handlers(application: Application) -> None:
     # Priority: Highest (processed first)
     
     application.add_handler(CommandHandler("start", handle_start))
-    logger.debug("✓ Registered /start command")
+    logger.debug("[OK] Registered /start command")
     
     application.add_handler(CommandHandler("help", handle_help))
-    logger.debug("✓ Registered /help command")
+    logger.debug("[OK] Registered /help command")
     
     application.add_handler(CommandHandler("protect", handle_protect))
-    logger.debug("✓ Registered /protect command")
+    logger.debug("[OK] Registered /protect command")
     
     application.add_handler(CommandHandler("status", handle_status))
-    logger.debug("✓ Registered /status command")
+    logger.debug("[OK] Registered /status command")
     
     application.add_handler(CommandHandler("unprotect", handle_unprotect))
-    logger.debug("✓ Registered /unprotect command")
+    logger.debug("[OK] Registered /unprotect command")
     
     application.add_handler(CommandHandler("settings", handle_settings))
-    logger.debug("✓ Registered /settings command")
+    logger.debug("[OK] Registered /settings command")
     
     # ==================== CALLBACK QUERIES ====================
     # Priority: High (before event handlers)
@@ -70,7 +70,7 @@ def register_handlers(application: Application) -> None:
             pattern=f"^{CALLBACK_VERIFY}$"
         )
     )
-    logger.debug("✓ Registered verify callback handler")
+    logger.debug("[OK] Registered verify callback handler")
     
     # ==================== EVENT HANDLERS ====================
     # Priority: Medium (specific events before general messages)
@@ -82,7 +82,7 @@ def register_handlers(application: Application) -> None:
             handle_new_member
         )
     )
-    logger.debug("✓ Registered new member handler")
+    logger.debug("[OK] Registered new member handler")
     
     # ChatMemberHandler (channel leave detection)
     # NOTE: Bot must be admin in channels to receive these updates
@@ -92,7 +92,7 @@ def register_handlers(application: Application) -> None:
             ChatMemberHandler.CHAT_MEMBER
         )
     )
-    logger.debug("✓ Registered channel leave handler")
+    logger.debug("[OK] Registered channel leave handler")
     
     # ==================== MESSAGE HANDLERS ====================
     # Priority: Lowest (catch-all for unhandled messages)
@@ -105,9 +105,9 @@ def register_handlers(application: Application) -> None:
             handle_message
         )
     )
-    logger.debug("✓ Registered message verification handler")
+    logger.debug("[OK] Registered message verification handler")
     
     logger.info(
-        "✅ All handlers registered successfully "
+        "[SUCCESS] All handlers registered "
         "(6 commands, 1 callback, 2 events, 1 message)"
     )

@@ -3,6 +3,7 @@ Async SQLAlchemy database session factory and connection management.
 """
 
 from typing import AsyncGenerator
+from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
@@ -71,6 +72,7 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
     return _session_factory
 
 
+@asynccontextmanager
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """
     Dependency for FastAPI/handlers to get database session.

@@ -139,7 +139,7 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # All checks passed! Setup protection in database
     try:
-        async for session in get_session():
+        async with get_session() as session:
             # Create owner record
             username = update.effective_user.username
             await create_owner(session, user_id, username)

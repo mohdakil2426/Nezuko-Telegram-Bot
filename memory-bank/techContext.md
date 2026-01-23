@@ -5,14 +5,14 @@
 *   **Library**: `python-telegram-bot` v20.8+ (Async, HTTPX backend).
 *   **Platform**: Windows (Local Development), ready for any Python-supported OS.
 
-## Technology Stack (v2.0 - Planned)
+## Technology Stack (v2.0 - VALIDATED ✅)
 *   **Language**: Python 3.13+
-*   **Framework**: `python-telegram-bot` v20.8+ (Async)
+*   **Framework**: `python-telegram-bot` v22.5+ (Async) - **CRITICAL: v20.x has Python 3.13 bugs**
 *   **Database**: PostgreSQL 16+ (production) / SQLite (development)
 *   **ORM**: SQLAlchemy 2.0+ with async support
 *   **Migrations**: Alembic
-*   **Cache**: Redis 7+ with async client
-*   **Rate Limiting**: telegram-ext-rate-limiter
+*   **Cache**: Redis 7+ with async client (optional, graceful degradation)
+*   **Rate Limiting**: Built-in AIORateLimiter
 *   **Monitoring**: Prometheus (prometheus-client), Sentry (sentry-sdk)
 *   **Platform**: Cross-platform (Windows dev, Linux production)
 
