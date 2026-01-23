@@ -56,3 +56,19 @@ Thumbs.db
 # Logs
 *.log
 logs/
+error.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+gmbot.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# Alembic
+bot/database/migrations/__pycache__/

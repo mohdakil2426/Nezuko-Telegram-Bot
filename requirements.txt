@@ -1,2 +1,26 @@
-python-telegram-bot
-python-dotenv
+# Core dependencies (v1.1)
+python-telegram-bot[rate-limiter]>=20.8
+python-dotenv>=1.0.0
+
+# Phase 1: Database and ORM
+sqlalchemy[asyncio]>=2.0.23
+asyncpg>=0.29.0  # PostgreSQL async driver
+aiosqlite>=0.19.0  # SQLite async driver (development)
+alembic>=1.13.0  # Database migrations
+
+# Phase 2: Distributed Caching
+redis[asyncio]>=5.0.0
+
+# Phase 2: Webhook Server
+aiohttp>=3.9.0
+
+# Phase 4: Monitoring and Observability
+prometheus-client>=0.19.0  # Metrics
+sentry-sdk>=1.39.0  # Error tracking
+structlog>=24.1.0  # Structured logging
+
+# Development and Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.12.0
+pytest-cov>=4.1.0
