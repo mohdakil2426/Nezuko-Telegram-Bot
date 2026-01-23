@@ -74,11 +74,6 @@ htmlcov/
 bot/database/migrations/__pycache__/
 
 # Development Artifacts (AI/Agent Files)
-memory-bank/
-openspec/
-.agent/
-AGENTS.md
-GEMINI.md
 
 # Internal Development Docs (not for public repo)
 docs/development-notes/
