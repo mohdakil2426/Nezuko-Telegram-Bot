@@ -1,6 +1,6 @@
 """
-Simple test to verify Phase 1 implementation.
-Tests database operations and imports.
+Test configuration and database setup.
+Tests environment loading, database operations, and module imports.
 """
 
 import asyncio
@@ -15,26 +15,26 @@ from bot.core.database import get_session, init_db
 from bot.database.crud import create_owner, get_owner, create_protected_group, link_group_channel
 
 
-async def test_phase1():
-    """Test Phase 1 implementation."""
+async def test_configuration():
+    """Test configuration and database setup."""
     print("="*60)
-    print("Phase 1 Implementation Test")
+    print("Configuration & Database Test")
     print("="*60)
     
     # Test 1: Configuration
-    print("\n✓ Configuration loaded successfully")
+    print("\n[OK] Configuration loaded successfully")
     print(f"  Environment: {config.ENVIRONMENT}")
     print(f"  Database: {config.DATABASE_URL.split('://')[0]}")
     print(f"  Mode: {'webhooks' if config.use_webhooks else 'polling'}")
     
     # Test 2: Database initialization
-    print("\n✓ Initializing database...")
+    print("\n[OK] Initializing database...")
     await init_db()
     print("  Database tables created")
     
     # Test 3: CRUD operations
-    print("\n✓ Testing CRUD operations...")
-    async for session in get_session():
+    print("\n[OK] Testing CRUD operations...")
+    async with get_session() as session:
         # Create owner
         owner = await create_owner(session, user_id=12345, username="test_user")
         print(f"  Created owner: {owner}")
@@ -64,27 +64,26 @@ async def test_phase1():
         )
         print(f"  Linked channel to group")
     
-    print("\n✓ All CRUD operations successful")
+    print("\n[OK] All CRUD operations successful")
     
     # Test 4: Handler imports
-    print("\n✓ Testing handler imports...")
+    print("\n[OK] Testing handler imports...")
     from bot.handlers.admin.help import start_command, help_command
     from bot.handlers.admin.setup import protect_command
     print("  All handlers imported successfully")
     
     print("\n" + "="*60)
-    print("✅ PHASE 1 VALIDATION COMPLETE")
+    print("[SUCCESS] CONFIGURATION & DATABASE TEST COMPLETE")
     print("="*60)
     print("\nAll core components working:")
-    print("  • Configuration management ✓")
-    print("  • Database layer (async SQLAlchemy) ✓")
-    print("  • Database models ✓")
-    print("  • CRUD operations ✓")
-    print("  • Admin command handlers ✓")
-    print("  • Rate limiter setup ✓")
-    print("\nReady for Phase 2: Multi-Tenancy")
+    print("  - Configuration management")
+    print("  - Database layer (async SQLAlchemy)")
+    print("  - Database models")
+    print("  - CRUD operations")
+    print("  - Admin command handlers")
+    print("  - Rate limiter setup")
     print("="*60)
 
 
 if __name__ == "__main__":
-    asyncio.run(test_phase1())
+    asyncio.run(test_configuration())

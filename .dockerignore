@@ -1,0 +1,68 @@
+# ============================================================
+# GMBot - Docker Build Ignore Patterns
+# ============================================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache
+.mypy_cache
+.ruff_cache
+*.egg-info
+dist
+build
+
+# Virtual Environment
+venv
+.venv
+env
+.env.local
+.env.*.local
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Testing
+tests
+*.test.py
+test_*.py
+coverage.xml
+.coverage
+htmlcov
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Memory Bank & OpenSpec
+memory-bank
+openspec
+.agent
+
+# Development files
+*.log
+*.tmp
+*.bak
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.docker
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
+*.sqlite3

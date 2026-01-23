@@ -1,5 +1,5 @@
 """
-Unit tests for Phase 2: Multi-Tenancy
+Unit tests for bot services.
 
 Tests for verification service, protection service, and cache operations.
 """
@@ -7,7 +7,7 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-# Test verification service
+
 @pytest.mark.asyncio
 async def test_cache_ttl_jitter():
     """Test TTL jitter prevents thundering herd."""
@@ -22,7 +22,7 @@ async def test_cache_ttl_jitter():
     # Should have variety (not all the same)
     assert len(set(results)) > 10
     
-    print(f"✅ TTL jitter working: {min(results)}s - {max(results)}s (base: 600s)")
+    print(f"[OK] TTL jitter working: {min(results)}s - {max(results)}s (base: 600s)")
 
 
 @pytest.mark.asyncio
@@ -51,7 +51,7 @@ async def test_verification_service_cache_logic():
         context.bot.get_chat_member.assert_called_once()
         mock_cache_set.assert_called_once()
         
-        print("✅ Verification service: cache miss → API call → cache set")
+        print("[OK] Verification service: cache miss -> API call -> cache set")
 
 
 @pytest.mark.asyncio
@@ -79,7 +79,7 @@ async def test_protection_service_retry_logic():
     assert result is True
     assert call_count == 3  # Failed 2 times, succeeded on 3rd
     
-    print("✅ Protection service: retries on failure (3 attempts)")
+    print("[OK] Protection service: retries on failure (3 attempts)")
 
 
 @pytest.mark.asyncio
@@ -99,7 +99,7 @@ async def test_cache_graceful_degradation():
         success = await cache_set("test_key", "value", 60)
         assert success is False
         
-        print("✅ Cache: graceful degradation works (no crash when Redis down)")
+        print("[OK] Cache: graceful degradation works (no crash when Redis down)")
 
 
 def test_protection_stats_tracking():
@@ -114,7 +114,7 @@ def test_protection_stats_tracking():
     assert stats["unmute_count"] == 0
     assert stats["error_count"] == 0
     
-    print("✅ Protection stats: tracking initialized correctly")
+    print("[OK] Protection stats: tracking initialized correctly")
 
 
 def test_verification_stats_tracking():
@@ -129,10 +129,9 @@ def test_verification_stats_tracking():
     assert stats["cache_misses"] == 0
     assert stats["hit_rate_percent"] == 0.0
     
-    print("✅ Verification stats: tracking initialized correctly")
+    print("[OK] Verification stats: tracking initialized correctly")
 
 
-# Integration test (optional, requires database)
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_database_crud_operations():
@@ -157,14 +156,14 @@ async def test_database_crud_operations():
             assert fetched is not None
             assert fetched.username == "testuser"
         
-        print("✅ Database CRUD: create and get operations work")
+        print("[OK] Database CRUD: create and get operations work")
     finally:
         await close_db()
 
 
 if __name__ == "__main__":
     """Run tests manually without pytest."""
-    print("Running Phase 2 Unit Tests...\n")
+    print("Running Service Unit Tests...\n")
     
     # Run async tests
     asyncio.run(test_cache_ttl_jitter())
@@ -176,5 +175,5 @@ if __name__ == "__main__":
     test_protection_stats_tracking()
     test_verification_stats_tracking()
     
-    print("\n✅ All core tests passed!")
-    print("\nTo run integration tests: pytest tests/test_phase2.py -m integration")
+    print("\n[SUCCESS] All service tests passed!")
+    print("\nTo run integration tests: pytest tests/test_services.py -m integration")

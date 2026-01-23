@@ -1,0 +1,111 @@
+# ============================================================
+# GMBot v2.0 - Docker Compose Configuration
+# ============================================================
+# Development & Production multi-container setup
+# Usage:
+#   Development: docker-compose up -d
+#   Production:  docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# ============================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================
+  # GMBot Application
+  # ==========================================================
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: gmbot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - DATABASE_URL=postgresql+asyncpg://gmbot:${POSTGRES_PASSWORD:-gmbot_secret}@postgres:5432/gmbot
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - gmbot-network
+    volumes:
+      - bot-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ==========================================================
+  # PostgreSQL Database
+  # ==========================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: gmbot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gmbot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gmbot_secret}
+      POSTGRES_DB: gmbot
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - gmbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gmbot -d gmbot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # Uncomment to expose PostgreSQL for local debugging
+    # ports:
+    #   - "5432:5432"
+
+  # ==========================================================
+  # Redis Cache
+  # ==========================================================
+  redis:
+    image: redis:7-alpine
+    container_name: gmbot-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - gmbot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    # Uncomment to expose Redis for local debugging
+    # ports:
+    #   - "6379:6379"
+
+# ==========================================================
+# Networks
+# ==========================================================
+networks:
+  gmbot-network:
+    driver: bridge
+    name: gmbot-network
+
+# ==========================================================
+# Volumes
+# ==========================================================
+volumes:
+  postgres-data:
+    name: gmbot-postgres-data
+  redis-data:
+    name: gmbot-redis-data
+  bot-logs:
+    name: gmbot-logs

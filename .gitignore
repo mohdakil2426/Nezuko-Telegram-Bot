@@ -72,3 +72,33 @@ htmlcov/
 
 # Alembic
 bot/database/migrations/__pycache__/
+
+# Development Artifacts (AI/Agent Files)
+memory-bank/
+openspec/
+.agent/
+AGENTS.md
+GEMINI.md
+
+# Internal Development Docs (not for public repo)
+docs/development-notes/
+docs/prd-planning/
+
+# Coverage reports
+coverage.xml
+
+# Ruff cache
+.ruff_cache/
+
+# MyPy cache
+.mypy_cache/
+
+# Secrets (never commit!)
+.env
+*.pem
+*.key
+
+# Legacy/backup files
+main_v1.py
+verify_install.py
+
