@@ -8,24 +8,24 @@
 
 ### 1.1 Recommended Setup (GitHub Student Pack)
 
-| Component | Resource | Cost |
-|-----------|----------|------|
-| **VPS** | DigitalOcean Droplet 2GB | $12/mo → FREE |
-| **Domain** | Namecheap .me | FREE (1 year) |
-| **SSL** | Caddy Auto-SSL | FREE |
-| **Database** | Self-hosted PostgreSQL | Included |
-| **Cache** | Self-hosted Redis | Included |
+| Component    | Resource                 | Cost          |
+| ------------ | ------------------------ | ------------- |
+| **VPS**      | DigitalOcean Droplet 2GB | $12/mo → FREE |
+| **Domain**   | Namecheap .me            | FREE (1 year) |
+| **SSL**      | Caddy Auto-SSL           | FREE          |
+| **Database** | Self-hosted PostgreSQL   | Included      |
+| **Cache**    | Self-hosted Redis        | Included      |
 
 ### 1.2 Service Ports
 
-| Service | Internal Port | External Access |
-|---------|---------------|-----------------|
-| Caddy | 80, 443 | Public |
-| Next.js (web) | 3000 | Via Caddy |
-| FastAPI (api) | 8080 | Via Caddy |
-| Telegram Bot | 8000, 8443 | Via Caddy |
-| PostgreSQL | 5432 | Internal only |
-| Redis | 6379 | Internal only |
+| Service       | Internal Port | External Access |
+| ------------- | ------------- | --------------- |
+| Caddy         | 80, 443       | Public          |
+| Next.js (web) | 3000          | Via Caddy       |
+| FastAPI (api) | 8080          | Via Caddy       |
+| Telegram Bot  | 8000, 8443    | Via Caddy       |
+| PostgreSQL    | 5432          | Internal only   |
+| Redis         | 6379          | Internal only   |
 
 ---
 
@@ -33,12 +33,12 @@
 
 ### 2.1 DNS Records (Namecheap/Cloudflare)
 
-| Type | Host | Value | TTL |
-|------|------|-------|-----|
-| A | @ | `<droplet-ip>` | 300 |
-| A | admin | `<droplet-ip>` | 300 |
-| A | api | `<droplet-ip>` | 300 |
-| CNAME | www | yourdomain.me | 300 |
+| Type  | Host  | Value          | TTL |
+| ----- | ----- | -------------- | --- |
+| A     | @     | `<droplet-ip>` | 300 |
+| A     | admin | `<droplet-ip>` | 300 |
+| A     | api   | `<droplet-ip>` | 300 |
+| CNAME | www   | yourdomain.me  | 300 |
 
 ### 2.2 Subdomain Structure
 
@@ -410,11 +410,11 @@ crontab -e
 
 ### 8.1 Endpoints
 
-| Endpoint | Expected Response |
-|----------|-------------------|
-| `https://yourdomain.me/health` | `{"status": "healthy"}` |
+| Endpoint                              | Expected Response       |
+| ------------------------------------- | ----------------------- |
+| `https://yourdomain.me/health`        | `{"status": "healthy"}` |
 | `https://api.yourdomain.me/v1/health` | `{"status": "healthy"}` |
-| `https://admin.yourdomain.me` | HTML page |
+| `https://admin.yourdomain.me`         | HTML page               |
 
 ### 8.2 External Monitoring (Free)
 
@@ -428,12 +428,12 @@ crontab -e
 
 ### 9.1 Common Issues
 
-| Issue | Solution |
-|-------|----------|
-| SSL not working | Wait 5 min for Caddy to obtain cert |
-| Database connection refused | Check postgres container health |
-| 502 Bad Gateway | Service not started, check logs |
-| Permission denied | Check file ownership |
+| Issue                       | Solution                            |
+| --------------------------- | ----------------------------------- |
+| SSL not working             | Wait 5 min for Caddy to obtain cert |
+| Database connection refused | Check postgres container health     |
+| 502 Bad Gateway             | Service not started, check logs     |
+| Permission denied           | Check file ownership                |
 
 ### 9.2 Debug Commands
 
@@ -455,12 +455,12 @@ docker compose -f docker-compose.full.yml exec postgres psql -U nezuko -d nezuko
 
 ## 10. Cost Summary
 
-| Resource | Monthly | With Student Pack |
-|----------|---------|-------------------|
-| DigitalOcean 2GB | $12 | **FREE** (16+ months) |
-| Namecheap .me | ~$1 | **FREE** (1 year) |
-| Total Year 1 | ~$156 | **$0** |
+| Resource         | Monthly | With Student Pack     |
+| ---------------- | ------- | --------------------- |
+| DigitalOcean 2GB | $12     | **FREE** (16+ months) |
+| Namecheap .me    | ~$1     | **FREE** (1 year)     |
+| Total Year 1     | ~$156   | **$0**                |
 
 ---
 
-[← Back to Security](./07-SECURITY.md) | [Back to Index](./README.md)
+[← Back to Advanced Security](./07a-SECURITY-ADVANCED.md) | [Back to Index](./README.md)

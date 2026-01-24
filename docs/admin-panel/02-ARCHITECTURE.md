@@ -101,169 +101,74 @@ The Nezuko Admin Panel follows a **decoupled full-stack architecture** with clea
 
 ## 2. Component Architecture
 
-### 2.1 Frontend Architecture (Next.js 15)
+> 📁 **Complete Structure:** See [02a-FOLDER-STRUCTURE.md](./02a-FOLDER-STRUCTURE.md) for full folder structure with naming conventions.
+
+### 2.1 Frontend Architecture (Next.js 16)
 
 ```
-apps/web/
-├── app/                          # App Router (Next.js 13+)
-│   ├── (auth)/                   # Auth route group (no layout)
-│   │   ├── login/
-│   │   │   └── page.tsx
-│   │   └── layout.tsx
-│   │
-│   ├── (dashboard)/              # Dashboard route group
-│   │   ├── layout.tsx            # Shared dashboard layout
-│   │   ├── page.tsx              # Main dashboard
-│   │   │
-│   │   ├── groups/
-│   │   │   ├── page.tsx          # Groups list
-│   │   │   └── [id]/
-│   │   │       └── page.tsx      # Group details
-│   │   │
-│   │   ├── channels/
-│   │   │   ├── page.tsx
-│   │   │   └── [id]/
-│   │   │       └── page.tsx
-│   │   │
-│   │   ├── config/
-│   │   │   ├── page.tsx
-│   │   │   ├── environment/
-│   │   │   ├── messages/
-│   │   │   └── webhook/
-│   │   │
-│   │   ├── logs/
-│   │   │   └── page.tsx
-│   │   │
-│   │   ├── database/
-│   │   │   ├── page.tsx
-│   │   │   └── [table]/
-│   │   │       └── page.tsx
-│   │   │
-│   │   └── analytics/
-│   │       └── page.tsx
-│   │
-│   ├── api/                      # API routes (if needed)
-│   │   └── [...proxy]/           # Proxy to FastAPI
-│   │
-│   ├── layout.tsx                # Root layout
-│   ├── loading.tsx               # Global loading
-│   ├── error.tsx                 # Global error
-│   └── not-found.tsx             # 404 page
-│
-├── components/
-│   ├── ui/                       # shadcn/ui components
-│   │   ├── button.tsx
-│   │   ├── card.tsx
-│   │   ├── dialog.tsx
-│   │   ├── dropdown-menu.tsx
-│   │   ├── input.tsx
-│   │   ├── table.tsx
-│   │   └── ...
-│   │
-│   ├── dashboard/                # Dashboard-specific components
-│   │   ├── sidebar.tsx
-│   │   ├── header.tsx
-│   │   ├── stats-card.tsx
-│   │   ├── activity-feed.tsx
-│   │   └── ...
-│   │
-│   ├── forms/                    # Form components
-│   │   ├── group-form.tsx
-│   │   ├── channel-form.tsx
-│   │   └── config-form.tsx
-│   │
-│   └── charts/                   # Data visualization
-│       ├── line-chart.tsx
-│       ├── bar-chart.tsx
-│       └── heatmap.tsx
-│
-├── lib/
-│   ├── api/                      # Auto-generated API client
-│   │   ├── index.ts
-│   │   ├── types.ts
-│   │   └── endpoints/
-│   │
-│   ├── hooks/                    # Custom React hooks
-│   │   ├── use-auth.ts
-│   │   ├── use-websocket.ts
-│   │   └── use-groups.ts
-│   │
-│   ├── utils/                    # Utility functions
-│   │   ├── format.ts
-│   │   └── validators.ts
-│   │
-│   └── constants.ts
-│
-├── stores/                       # State management (Zustand)
-│   ├── auth-store.ts
-│   └── ui-store.ts
-│
-└── styles/
-    └── globals.css               # Tailwind base styles
+apps/web/src/
+├── app/                    # Next.js App Router
+│   ├── (auth)/             #   └── Login, forgot password
+│   ├── (dashboard)/        #   └── Protected dashboard routes
+│   │   ├── groups/         #       └── Groups management
+│   │   ├── channels/       #       └── Channels management
+│   │   ├── config/         #       └── Configuration pages
+│   │   ├── logs/           #       └── Real-time logs
+│   │   ├── database/       #       └── Database browser
+│   │   ├── analytics/      #       └── Analytics charts
+│   │   └── settings/       #       └── Admin settings
+│   └── api/                #   └── API routes (optional)
+├── components/             # Shared UI components
+│   ├── ui/                 #   └── shadcn/ui primitives
+│   ├── layout/             #   └── Sidebar, header
+│   ├── dashboard/          #   └── Stats cards, feeds
+│   ├── forms/              #   └── Form components
+│   ├── charts/             #   └── Data visualization
+│   └── shared/             #   └── Cross-feature components
+├── lib/                    # Utilities & services
+│   ├── api/                #   └── API client
+│   ├── hooks/              #   └── Custom React hooks
+│   ├── utils/              #   └── Helper functions
+│   └── animations/         #   └── Motion presets
+├── stores/                 # State management (Zustand)
+├── providers/              # React context providers
+└── types/                  # TypeScript definitions
 ```
 
 ### 2.2 Backend Architecture (FastAPI)
 
 ```
-apps/api/
-├── main.py                       # Application entry point
-├── config.py                     # Configuration management
-│
-├── routers/                      # API endpoints (by feature)
-│   ├── __init__.py
-│   ├── auth.py                   # Authentication endpoints
-│   ├── dashboard.py              # Dashboard data endpoints
-│   ├── groups.py                 # Groups CRUD
-│   ├── channels.py               # Channels CRUD
-│   ├── config.py                 # Configuration management
-│   ├── logs.py                   # Log streaming
-│   ├── database.py               # Database management
-│   ├── analytics.py              # Analytics data
-│   └── health.py                 # Health checks
-│
-├── services/                     # Business logic layer
-│   ├── __init__.py
-│   ├── auth_service.py
-│   ├── group_service.py
-│   ├── channel_service.py
-│   ├── config_service.py
-│   ├── log_service.py
-│   ├── db_service.py
-│   └── analytics_service.py
-│
-├── models/                       # Pydantic models (DTOs)
-│   ├── __init__.py
-│   ├── auth.py                   # Token, User models
-│   ├── group.py                  # Group request/response
-│   ├── channel.py                # Channel request/response
-│   ├── config.py                 # Config models
-│   └── analytics.py              # Analytics models
-│
-├── middleware/
-│   ├── __init__.py
-│   ├── auth.py                   # JWT validation
-│   ├── rate_limit.py             # Rate limiting
-│   └── logging.py                # Request logging
-│
-├── websocket/                    # WebSocket handlers
-│   ├── __init__.py
-│   ├── manager.py                # Connection manager
-│   └── handlers/
-│       ├── logs.py               # Log streaming
-│       └── metrics.py            # Metrics streaming
-│
-├── utils/
-│   ├── __init__.py
-│   ├── security.py               # Password hashing, JWT
-│   └── validators.py
-│
-└── tests/
-    ├── __init__.py
-    ├── conftest.py
-    ├── test_auth.py
-    ├── test_groups.py
-    └── ...
+apps/api/src/
+├── core/                   # Core configuration
+│   └── config, database, redis, security
+├── api/                    # API layer
+│   ├── v1/endpoints/       #   └── REST endpoints
+│   └── websocket/          #   └── WebSocket handlers
+├── schemas/                # Pydantic models (request/response)
+├── models/                 # SQLAlchemy ORM models
+├── services/               # Business logic layer
+├── repositories/           # Data access layer (optional)
+├── middleware/             # Request middleware
+└── utils/                  # Shared utilities
 ```
+
+### 2.3 Monorepo Structure
+
+```
+nezuko-admin-panel/
+├── apps/
+│   ├── web/                # Next.js frontend
+│   └── api/                # FastAPI backend
+├── packages/
+│   ├── types/              # Shared TypeScript types
+│   ├── config/             # Shared ESLint/TS configs
+│   └── utils/              # Cross-platform utilities
+├── docker/                 # Container configurations
+├── scripts/                # Automation scripts
+└── docs/                   # Documentation
+```
+
+
 
 ---
 
@@ -628,4 +533,4 @@ See [07-SECURITY.md](./07-SECURITY.md) for detailed security considerations.
 
 ---
 
-[← Back to Requirements](./01-REQUIREMENTS.md) | [Back to Index](./README.md) | [Next: Tech Stack →](./03-TECH-STACK.md)
+[← Back to Requirements](./01-REQUIREMENTS.md) | [Back to Index](./README.md) | [Next: Folder Structure →](./02a-FOLDER-STRUCTURE.md)

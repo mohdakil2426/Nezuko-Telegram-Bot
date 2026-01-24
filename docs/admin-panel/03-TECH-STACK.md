@@ -1,34 +1,37 @@
 # 🛠️ Technology Stack
 
 > **Nezuko Admin Panel - Technology Choices & Justifications**
+> 
+> **Last Updated**: January 24, 2026  
+> **All versions verified against npm, PyPI, and official sources**
 
 ---
 
-## 1. Stack Overview
+## 1. Stack Overview (Latest Versions - January 2026)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           NEZUKO ADMIN PANEL STACK                          │
+│                    NEZUKO ADMIN PANEL STACK (JAN 2026)                      │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  FRONTEND                                                                   │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  Next.js 15      │  React 19       │  TypeScript 5.4+              │   │
-│  │  shadcn/ui       │  Tailwind CSS   │  TanStack Query               │   │
-│  │  Recharts        │  Zustand        │  React Hook Form              │   │
+│  │  Next.js 16.1     │  React 19.2.3    │  TypeScript 5.9.3           │   │
+│  │  shadcn@3.7.0     │  Tailwind 4.1.18 │  TanStack Query 5.90.20     │   │
+│  │  Recharts 3.7.0   │  Zustand 5.0.10  │  React Hook Form 7.71.1     │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │  BACKEND                                                                    │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  FastAPI 0.115+  │  Python 3.13+   │  Pydantic v2                  │   │
-│  │  SQLAlchemy 2.0  │  Alembic        │  python-jose (JWT)            │   │
-│  │  Structlog       │  aiohttp        │  websockets                   │   │
+│  │  FastAPI 0.124.4  │  Python 3.13+    │  Pydantic 2.12.5            │   │
+│  │  SQLAlchemy 2.0.46│  Alembic 1.18.1  │  python-jose 3.5.0          │   │
+│  │  Uvicorn 0.40.0   │  asyncpg 0.31.0  │  Structlog 25.1+            │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │  INFRASTRUCTURE                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  PostgreSQL 16   │  Redis 7        │  Docker                       │   │
-│  │  Caddy           │  GitHub Actions │  DigitalOcean                 │   │
+│  │  PostgreSQL 18    │  Redis 8         │  Docker 27+                 │   │
+│  │  Caddy 2.10.2     │  Turborepo 2.7   │  DigitalOcean               │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -38,19 +41,20 @@
 
 ## 2. Frontend Technologies
 
-### 2.1 Next.js 15 (App Router)
+### 2.1 Next.js 16 (App Router)
 
 | Aspect | Details |
 |--------|---------|
-| **Version** | 15.x (Latest Stable) |
+| **Version** | 16.1.4 (Latest Stable - Jan 2026) |
 | **Router** | App Router (not Pages Router) |
 | **Rendering** | Server Components + Client Components |
+| **Bundler** | Turbopack (now default in v16!) |
 
-#### Why Next.js 15?
+#### Why Next.js 16?
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        NEXT.JS 15 ADVANTAGES                                │
+│                        NEXT.JS 16 ADVANTAGES                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ✅ SERVER COMPONENTS                                                       │
@@ -63,16 +67,29 @@
 │     • Improved concurrent rendering                                         │
 │     • Better Suspense handling                                              │
 │                                                                             │
-│  ✅ TURBOPACK                                                               │
+│  ✅ TURBOPACK (NOW DEFAULT!)                                                │
 │     • 10x faster dev server than Webpack                                   │
+│     • Turbopack File System Caching (stable in 16.1)                       │
 │     • Instant hot module replacement                                        │
 │     • Faster production builds                                              │
+│                                                                             │
+│  ✅ CACHE COMPONENTS (NEW IN V16)                                           │
+│     • New caching primitives for data                                      │
+│     • Fine-grained cache control                                           │
+│                                                                             │
+│  ✅ REACT COMPILER SUPPORT (STABLE)                                         │
+│     • Automatic memoization                                                 │
+│     • Better performance out of the box                                    │
 │                                                                             │
 │  ✅ APP ROUTER FEATURES                                                     │
 │     • Nested layouts (shared dashboard shell)                              │
 │     • Loading states (loading.tsx)                                         │
 │     • Error boundaries (error.tsx)                                         │
 │     • Parallel routes                                                       │
+│                                                                             │
+│  ✅ EASIER DEBUGGING                                                        │
+│     • next dev --inspect support                                           │
+│     • New Bundle Analyzer (experimental)                                   │
 │                                                                             │
 │  ✅ VERCEL ECOSYSTEM                                                        │
 │     • Excellent documentation                                               │
@@ -84,26 +101,29 @@
 
 #### Next.js vs Alternatives
 
-| Feature | Next.js 15 | Vite + React | Remix | SvelteKit |
+| Feature | Next.js 16 | Vite + React | Remix | SvelteKit |
 |---------|-----------|--------------|-------|-----------|
 | **SSR/SSG** | ✅ Built-in | ❌ Manual | ✅ Built-in | ✅ Built-in |
 | **App Router** | ✅ Nested layouts | ❌ React Router | ✅ Similar | ✅ Similar |
+| **Turbopack** | ✅ Default now | ❌ Vite (fast) | ❌ Vite | ❌ Vite |
+| **React Compiler** | ✅ Stable | ⚠️ Manual | ⚠️ Manual | N/A |
 | **Ecosystem** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
 | **Learning Curve** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
 | **TypeScript** | ✅ First-class | ✅ Good | ✅ Good | ✅ Good |
 | **Bundle Size** | Medium | Small | Medium | Small |
 | **Admin Templates** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐ |
 
-**Verdict**: Next.js 15 wins for admin dashboards due to nested layouts (perfect for sidebars), excellent TypeScript support, and vast ecosystem of admin templates.
+**Verdict**: Next.js 16 wins for admin dashboards due to nested layouts (perfect for sidebars), Turbopack speed, React Compiler support, and vast ecosystem of admin templates.
 
 ---
 
-### 2.2 shadcn/ui
+### 2.2 shadcn/ui (v3.7.0)
 
 | Aspect | Details |
 |--------|---------|
 | **Type** | Component collection (not library) |
-| **Styling** | Tailwind CSS |
+| **Version** | 3.7.0 (Latest - Jan 2026) |
+| **Styling** | Tailwind CSS 4 |
 | **Accessibility** | Radix UI primitives |
 
 #### Why shadcn/ui?
@@ -134,6 +154,12 @@
 │     • Charts (recharts)                                                    │
 │     • Dialogs, Dropdowns, Sheets                                           │
 │                                                                             │
+│  ✅ NEW IN V3.7.0 (JAN 2026)                                                │
+│     • npx shadcn create for customization                                  │
+│     • 5 new visual styles: Vega, Nova, Maia, Lyra, Mira                   │
+│     • Base UI component documentation                                       │
+│     • inline-start/inline-end support                                      │
+│                                                                             │
 │  ✅ ACTIVE DEVELOPMENT                                                      │
 │     • Regular updates                                                       │
 │     • Growing component library                                             │
@@ -157,17 +183,89 @@
 
 ---
 
-### 2.3 TanStack Query (React Query)
+### 2.3 Tailwind CSS 4 (MAJOR UPDATE!)
 
 | Aspect | Details |
 |--------|---------|
-| **Version** | v5.x |
+| **Version** | 4.1.18 (Latest - Dec 2025) |
+| **Config** | CSS-first (@theme directive) |
+| **Performance** | 5x faster builds |
+
+#### What's New in Tailwind CSS 4?
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        TAILWIND CSS 4 NEW FEATURES                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ✅ HIGH-PERFORMANCE ENGINE                                                 │
+│     • 5x faster full builds                                                │
+│     • 100x+ faster incremental builds                                      │
+│     • Near-instant HMR                                                     │
+│                                                                             │
+│  ✅ CSS-FIRST CONFIGURATION                                                 │
+│     • Configure via CSS instead of tailwind.config.js                      │
+│     • @theme directive for customization                                   │
+│     • More intuitive for CSS developers                                    │
+│                                                                             │
+│  ✅ MODERN CSS FEATURES                                                     │
+│     • Cascade layers (@layer)                                              │
+│     • color-mix() for dynamic colors                                       │
+│     • Container queries built-in                                           │
+│                                                                             │
+│  ✅ P3 WIDE-GAMUT COLOR PALETTE                                             │
+│     • Modernized color system                                              │
+│     • More vibrant colors on supported displays                            │
+│     • oklch() color space support                                          │
+│                                                                             │
+│  ✅ SIMPLIFIED SETUP                                                        │
+│     • Automatic content detection                                          │
+│     • Built-in import support                                              │
+│     • No PostCSS config needed                                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Tailwind 4 CSS-First Configuration Example
+
+```css
+/* app/globals.css - New Tailwind 4 approach */
+@import "tailwindcss";
+
+/* Custom theme using @theme directive (replaces tailwind.config.js) */
+@theme {
+  /* Colors using oklch for P3 wide gamut */
+  --color-primary-50: oklch(0.97 0.02 265);
+  --color-primary-500: oklch(0.55 0.25 265);
+  --color-primary-900: oklch(0.30 0.15 265);
+  
+  /* Semantic colors */
+  --color-success: oklch(0.65 0.20 145);
+  --color-warning: oklch(0.75 0.18 70);
+  --color-error: oklch(0.60 0.25 25);
+  
+  /* Dark mode backgrounds */
+  --color-background: oklch(0.10 0.01 265);
+  --color-surface: oklch(0.15 0.01 265);
+  
+  /* Typography */
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+```
+
+---
+
+### 2.4 TanStack Query (React Query) v5.90
+
+| Aspect | Details |
+|--------|---------|
+| **Version** | 5.90.20 (Latest - Jan 2026) |
 | **Purpose** | Server state management |
 
 #### Why TanStack Query?
 
 ```typescript
-// Without TanStack Query
+// Without TanStack Query ❌
 const [groups, setGroups] = useState([]);
 const [loading, setLoading] = useState(true);
 const [error, setError] = useState(null);
@@ -185,7 +283,7 @@ useEffect(() => {
 // Caching? Build your own...
 // Background updates? Good luck...
 
-// With TanStack Query ✨
+// With TanStack Query ✅
 const { data: groups, isLoading, error, refetch } = useQuery({
   queryKey: ['groups'],
   queryFn: () => api.getGroups(),
@@ -205,28 +303,63 @@ const { data: groups, isLoading, error, refetch } = useQuery({
 
 ---
 
-### 2.4 Other Frontend Dependencies
+### 2.5 Zod 4 (MAJOR UPDATE!)
 
-| Package | Purpose | Why This Choice |
-|---------|---------|-----------------|
-| **TypeScript** | Type safety | Catch errors at compile time |
-| **Zustand** | Client state | Simpler than Redux, smaller than Jotai |
-| **React Hook Form** | Forms | Best performance, minimal re-renders |
-| **Zod** | Validation | TypeScript-first schema validation |
-| **Recharts** | Charts | React-native, composable, customizable |
-| **date-fns** | Dates | Modular, tree-shakeable date lib |
-| **Lucide React** | Icons | Open source, consistent, tree-shakeable |
+| Aspect | Details |
+|--------|---------|
+| **Version** | 4.3.6 (Latest - Jan 2026) |
+| **Purpose** | Schema validation |
+
+#### What's New in Zod 4?
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           ZOD 4 NEW FEATURES                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ✅ PERFORMANCE                                                             │
+│     • Faster parsing than Zod 3                                            │
+│     • Smaller bundle size                                                   │
+│     • Better TypeScript compiler (tsc) performance                         │
+│                                                                             │
+│  ✅ NEW FEATURES                                                            │
+│     • Built-in JSON Schema conversion (z.toJSONSchema())                   │
+│     • Codecs for encoding/decoding                                         │
+│     • Improved error messages                                              │
+│     • Better discriminated unions                                          │
+│                                                                             │
+│  ✅ MIGRATION FROM ZOD 3                                                    │
+│     • Most schemas work unchanged                                          │
+│     • Some API refinements                                                 │
+│     • See zod.dev for migration guide                                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 2.6 Other Frontend Dependencies
+
+| Package | Version | Purpose | Why This Choice |
+|---------|---------|---------|-----------------|
+| **React** | 19.2.3 | UI library | Latest with Actions, use() hook |
+| **TypeScript** | 5.9.3 | Type safety | Catch errors at compile time |
+| **Zustand** | 5.0.10 | Client state | Simpler than Redux, smaller than Jotai |
+| **React Hook Form** | 7.71.1 | Forms | Best performance, minimal re-renders |
+| **Recharts** | 3.7.0 | Charts | React-native, composable, customizable |
+| **date-fns** | 4.1.0 | Dates | Modular, tree-shakeable, timezone support |
+| **Lucide React** | 0.563.0 | Icons | Open source, consistent, tree-shakeable |
 
 ---
 
 ## 3. Backend Technologies
 
-### 3.1 FastAPI
+### 3.1 FastAPI (v0.124.4)
 
 | Aspect | Details |
 |--------|---------|
-| **Version** | 0.115+ |
-| **Python** | 3.13+ |
+| **Version** | 0.124.4 (Latest - Dec 2025) |
+| **Python** | 3.13+ required |
 
 #### Why FastAPI?
 
@@ -288,8 +421,9 @@ const { data: groups, isLoading, error, refetch } = useQuery({
 
 | Aspect | Details |
 |--------|---------|
-| **SQLAlchemy** | 2.0+ (async mode) |
-| **Alembic** | Latest |
+| **SQLAlchemy** | 2.0.46 (Latest - Jan 2026) |
+| **Alembic** | 1.18.1 (Latest - Jan 2026) |
+| **Driver** | asyncpg 0.31.0 |
 
 #### Why SQLAlchemy 2.0?
 
@@ -318,7 +452,7 @@ class ProtectedGroup(Base):
 **Benefits**:
 - **Shared models**: Bot and admin use same ORM models
 - **Async support**: Native async with asyncpg
-- **Migration support**: Alembic for schema evolution
+- **Migration support**: Alembic 1.18 with new plugin system
 - **Type safety**: mypy plugin for static analysis
 
 ---
@@ -327,7 +461,7 @@ class ProtectedGroup(Base):
 
 | Aspect | Details |
 |--------|---------|
-| **Library** | python-jose[cryptography] |
+| **Library** | python-jose[cryptography] 3.5.0 |
 | **Algorithm** | HS256 (symmetric) |
 
 #### Why JWT?
@@ -373,30 +507,33 @@ class ProtectedGroup(Base):
 
 ## 4. Infrastructure Technologies
 
-### 4.1 PostgreSQL 16
+### 4.1 PostgreSQL 18
 
 | Aspect | Details |
 |--------|---------|
-| **Version** | 16 (Alpine image) |
-| **Driver** | asyncpg |
+| **Version** | 18.1 (Latest major - Nov 2025) |
+| **Driver** | asyncpg 0.31.0 |
+| **Image** | postgres:18-alpine |
 
-**Why PostgreSQL?**
+**Why PostgreSQL 18?**
 - ✅ Already used by bot (shared database)
 - ✅ ACID compliant
 - ✅ JSON support for flexible config storage
 - ✅ Excellent async driver (asyncpg)
 - ✅ Battle-tested at scale
+- ✅ Latest performance improvements
 
 ---
 
-### 4.2 Redis 7
+### 4.2 Redis 8
 
 | Aspect | Details |
 |--------|---------|
-| **Version** | 7 (Alpine image) |
-| **Driver** | redis-py (async) |
+| **Version** | 8.0 (Latest major) or 7.4.7 LTS |
+| **Driver** | redis-py 5.2.1 (async) |
+| **Image** | redis:8-alpine |
 
-**Why Redis?**
+**Why Redis 8?**
 - ✅ Session storage (JWT refresh tokens)
 - ✅ Caching (dashboard stats, user data)
 - ✅ Pub/Sub (real-time log streaming)
@@ -405,12 +542,12 @@ class ProtectedGroup(Base):
 
 ---
 
-### 4.3 Caddy (Reverse Proxy)
+### 4.3 Caddy 2.10 (Reverse Proxy)
 
 | Aspect | Details |
 |--------|---------|
-| **Version** | 2.x |
-| **Purpose** | Reverse proxy, SSL |
+| **Version** | 2.10.2 (Latest stable) |
+| **Purpose** | Reverse proxy, Auto-SSL |
 
 #### Why Caddy?
 
@@ -433,6 +570,8 @@ class ProtectedGroup(Base):
 │     • HTTP/2 and HTTP/3 support                                            │
 │     • WebSocket proxying                                                   │
 │     • Automatic OCSP stapling                                              │
+│     • Encrypted ClientHello (ECH) in 2.10                                  │
+│     • Post-quantum key exchange in 2.10                                    │
 │                                                                             │
 │  ✅ SINGLE BINARY                                                           │
 │     • No dependencies                                                       │
@@ -444,12 +583,13 @@ class ProtectedGroup(Base):
 
 #### Caddy vs Nginx
 
-| Feature | Caddy | Nginx |
+| Feature | Caddy 2.10 | Nginx |
 |---------|-------|-------|
 | **Auto SSL** | ✅ Built-in | ❌ Certbot required |
 | **Config** | Simple Caddyfile | Complex nginx.conf |
 | **HTTP/3** | ✅ Built-in | ⚠️ Experimental |
 | **WebSocket** | ✅ Automatic | ⚠️ Manual config |
+| **Post-Quantum** | ✅ v2.10+ | ❌ No |
 | **Resource Usage** | Low | Low |
 | **Learning Curve** | ⭐⭐⭐⭐⭐ | ⭐⭐ |
 
@@ -457,12 +597,13 @@ class ProtectedGroup(Base):
 
 ---
 
-### 4.4 Docker + Docker Compose
+### 4.4 Docker + Turborepo
 
 | Aspect | Details |
 |--------|---------|
-| **Docker** | 24.x |
-| **Compose** | v2.x |
+| **Docker** | 27.x |
+| **Compose** | v2.32+ |
+| **Turborepo** | 2.7.0 (Monorepo) |
 
 **Why Docker?**
 - ✅ Consistent environments (dev = prod)
@@ -470,6 +611,12 @@ class ProtectedGroup(Base):
 - ✅ Service isolation
 - ✅ Already used by bot
 - ✅ Works with GitHub Student Pack hosting
+
+**Why Turborepo 2.7?**
+- ✅ Fast monorepo builds
+- ✅ Shared dependencies
+- ✅ Parallel task execution
+- ✅ Remote caching
 
 ---
 
@@ -501,56 +648,71 @@ class ProtectedGroup(Base):
 
 ### 5.2 Linting & Formatting
 
-| Tool | Purpose | Configuration |
-|------|---------|---------------|
-| **Ruff** (Python) | Linting + Formatting | `ruff.toml` |
-| **Pylint** (Python) | Additional linting | `.pylintrc` |
-| **ESLint** (TS/JS) | Linting | `eslint.config.mjs` |
-| **Prettier** (TS/JS) | Formatting | `.prettierrc` |
+| Tool | Version | Purpose | Configuration |
+|------|---------|---------|---------------|
+| **Ruff** (Python) | 0.9.3 | Linting + Formatting | `ruff.toml` |
+| **Pylint** (Python) | 3.3+ | Additional linting | `.pylintrc` |
+| **ESLint** (TS/JS) | 9.18+ | Linting | `eslint.config.mjs` |
+| **Prettier** (TS/JS) | 3.4+ | Formatting | `.prettierrc` |
 
 ### 5.3 Testing Stack
 
-| Layer | Tool | Purpose |
-|-------|------|---------|
-| **Python Unit** | pytest + pytest-asyncio | API testing |
-| **Python Coverage** | pytest-cov | Code coverage |
-| **TypeScript Unit** | Vitest | Component testing |
-| **E2E** | Playwright | Full flow testing |
+| Layer | Tool | Version | Purpose |
+|-------|------|---------|---------|
+| **Python Unit** | pytest | 8.3+ | API testing |
+| **Python Async** | pytest-asyncio | 0.25+ | Async support |
+| **Python Coverage** | pytest-cov | 6.0+ | Code coverage |
+| **TypeScript Unit** | Vitest | 3.0+ | Component testing |
+| **E2E** | Playwright | 1.50+ | Full flow testing |
 
 ---
 
-## 6. Package Versions Summary
+## 6. Complete Package Versions
 
 ### 6.1 Frontend (package.json)
 
 ```json
 {
+  "name": "nezuko-admin",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbo",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "generate-api": "openapi-ts"
+  },
   "dependencies": {
-    "next": "^15.1.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "@tanstack/react-query": "^5.62.0",
-    "zustand": "^5.0.0",
-    "react-hook-form": "^7.54.0",
-    "zod": "^3.24.0",
-    "@hookform/resolvers": "^3.9.0",
-    "recharts": "^2.15.0",
+    "next": "^16.1.4",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "@tanstack/react-query": "^5.90.20",
+    "zustand": "^5.0.10",
+    "react-hook-form": "^7.71.1",
+    "zod": "^4.3.6",
+    "@hookform/resolvers": "^4.1.0",
+    "recharts": "^3.7.0",
     "date-fns": "^4.1.0",
-    "lucide-react": "^0.469.0",
-    "clsx": "^2.1.0",
-    "tailwind-merge": "^2.6.0"
+    "lucide-react": "^0.563.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.0.0",
+    "class-variance-authority": "^0.7.1"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
+    "typescript": "^5.9.3",
     "@types/react": "^19.0.0",
-    "@types/node": "^22.0.0",
-    "tailwindcss": "^3.4.0",
-    "autoprefixer": "^10.4.0",
-    "postcss": "^8.4.0",
-    "eslint": "^9.17.0",
-    "@hey-api/openapi-ts": "^0.61.0",
-    "vitest": "^2.1.0",
-    "@playwright/test": "^1.49.0"
+    "@types/node": "^22.10.0",
+    "tailwindcss": "^4.1.18",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "^16.1.0",
+    "prettier": "^3.4.2",
+    "@hey-api/openapi-ts": "^0.66.0",
+    "vitest": "^3.0.4",
+    "@playwright/test": "^1.50.0"
   }
 }
 ```
@@ -558,37 +720,79 @@ class ProtectedGroup(Base):
 ### 6.2 Backend (requirements-admin.txt)
 
 ```
-# Core
-fastapi>=0.115.0
-uvicorn[standard]>=0.34.0
-python-jose[cryptography]>=3.3.0
+# ===========================================
+# NEZUKO ADMIN API - PYTHON DEPENDENCIES
+# Last Updated: January 24, 2026
+# ===========================================
+
+# Core Framework
+fastapi>=0.124.4
+uvicorn[standard]>=0.40.0
+python-multipart>=0.0.20
+
+# Authentication
+python-jose[cryptography]>=3.5.0
 passlib[argon2]>=1.7.4
-python-multipart>=0.0.18
-
-# Database (shared with bot)
-sqlalchemy>=2.0.0
-asyncpg>=0.30.0
-alembic>=1.14.0
-
-# Cache (shared with bot)
-redis>=5.0.0
 
 # Validation
-pydantic>=2.10.0
+pydantic>=2.12.5
+pydantic-settings>=2.7.0
 email-validator>=2.2.0
 
-# WebSocket
-websockets>=14.0
+# Database
+sqlalchemy[asyncio]>=2.0.46
+asyncpg>=0.31.0
+alembic>=1.18.1
 
-# Utilities
-structlog>=24.0.0
-httpx>=0.28.0
+# Cache
+redis>=5.2.1
+
+# HTTP & WebSocket
+httpx>=0.28.1
+websockets>=14.1
+
+# Logging
+structlog>=25.1.0
+
+# Monitoring (Optional)
+prometheus-client>=0.21.0
+sentry-sdk[fastapi]>=2.19.0
 
 # Development
-pytest>=8.0.0
-pytest-asyncio>=0.24.0
+pytest>=8.3.4
+pytest-asyncio>=0.25.2
 pytest-cov>=6.0.0
-ruff>=0.8.0
+ruff>=0.9.3
+mypy>=1.14.0
+```
+
+### 6.3 Docker Image Versions
+
+```yaml
+# Recommended Docker images (January 2026)
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    
+  redis:
+    image: redis:8-alpine
+    # Alternative LTS: redis:7.4-alpine
+    
+  caddy:
+    image: caddy:2.10-alpine
+    
+  # Node.js for Next.js
+  web:
+    build:
+      args:
+        NODE_VERSION: "22"  # LTS
+        
+  # Python for FastAPI
+  api:
+    build:
+      args:
+        PYTHON_VERSION: "3.13"
 ```
 
 ---
@@ -597,14 +801,39 @@ ruff>=0.8.0
 
 | Decision | Options Considered | Choice | Rationale |
 |----------|-------------------|--------|-----------|
-| **Frontend Framework** | Next.js, Vite+React, Remix, SvelteKit | Next.js 15 | App Router, ecosystem, templates |
-| **Component Library** | shadcn/ui, MUI, Chakra, Ant | shadcn/ui | Ownership, Tailwind, customization |
-| **State Management** | Redux, Zustand, Jotai | Zustand | Simplicity, bundle size |
-| **Backend Framework** | FastAPI, Django, Flask | FastAPI | Async, Python, OpenAPI |
-| **Database** | PostgreSQL, MySQL, SQLite | PostgreSQL | Already in use, JSON support |
-| **Cache** | Redis, Memcached | Redis | Already in use, Pub/Sub |
-| **Reverse Proxy** | Caddy, Nginx, Traefik | Caddy | Auto-SSL, simplicity |
+| **Frontend Framework** | Next.js, Vite+React, Remix, SvelteKit | Next.js 16 | Turbopack default, React Compiler, ecosystem |
+| **Component Library** | shadcn/ui, MUI, Chakra, Ant | shadcn/ui 3.7 | Ownership, Tailwind 4, customization |
+| **CSS Framework** | Tailwind, CSS Modules, Styled | Tailwind 4 | 5x faster, CSS-first config |
+| **State Management** | Redux, Zustand, Jotai | Zustand 5 | Simplicity, bundle size |
+| **Validation** | Zod, Yup, Joi | Zod 4 | TypeScript-first, faster |
+| **Backend Framework** | FastAPI, Django, Flask | FastAPI 0.124 | Async, Python, OpenAPI |
+| **Database** | PostgreSQL, MySQL, SQLite | PostgreSQL 18 | Already in use, JSON support |
+| **Cache** | Redis, Memcached | Redis 8 | Already in use, Pub/Sub |
+| **Reverse Proxy** | Caddy, Nginx, Traefik | Caddy 2.10 | Auto-SSL, simplicity, HTTP/3 |
 | **Auth** | JWT, Sessions, OAuth | JWT | Stateless, cross-service |
+| **Monorepo** | Turborepo, Nx, Lerna | Turborepo 2.7 | Simple, fast, Vercel |
+
+---
+
+## 8. Version Upgrade Notes & Coming Soon
+
+### 8.1 Breaking Changes to Watch
+
+| Package | Change | Migration Required |
+|---------|--------|-------------------|
+| **Tailwind 4** | CSS-first config | Convert tailwind.config.js to @theme CSS |
+| **Zod 4** | API refinements | Minor schema updates |
+| **Next.js 16** | Turbopack default | Usually automatic |
+| **React 19** | Stricter StrictMode | Check for side effects |
+
+### 8.2 Coming Soon (2026 Roadmap)
+
+| Package | Version | Expected | Notes |
+|---------|---------|----------|-------|
+| **TypeScript** | 6.0 | Q1 2026 (Feb/Mar) | Final JS-based compiler |
+| **TypeScript** | 7.0 (Corsa) | Summer 2026 | Go-based rewrite, 10x faster |
+| **SQLAlchemy** | 2.1 | Q1 2026 | Beta available now |
+| **Caddy** | 2.11 | Q1 2026 | In beta now |
 
 ---
 
