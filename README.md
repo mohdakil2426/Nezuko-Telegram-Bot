@@ -1,6 +1,6 @@
-# GMBot v2.0 - Multi-Tenant Channel Verification Bot
+# Nezuko - The Ultimate All-In-One Bot
 
-A **production-ready, multi-tenant** Telegram bot that enforces channel membership for group participants. Designed to scale to **100+ groups simultaneously** with **<100ms latency**.
+A **production-ready, multi-tenant** Telegram bot that enforces channel membership for group participants. Designed to scale to **hundreds of groups simultaneously** with **<100ms latency**.
 
 ## 🚀 Features
 
@@ -13,12 +13,12 @@ A **production-ready, multi-tenant** Telegram bot that enforces channel membersh
 
 ### Performance & Scale
 - **< 100ms Verification Latency** (p95)
-- **Redis Distributed Cache** with 70%+ hit rate
+- **Redis Distributed Cache** with 90%+ hit rate
 - **Horizontal Scaling**: Multiple bot instances with shared state
 - **Rate Limiting**: AIORateLimiter prevents API bans
-- **Batch Verification**: Cache warming for large groups (100k+ members)
+- **Batch Verification**: Cache warming for large groups
 
-### Production-Grade Observability (Phase 4)
+### Production-Grade Observability
 - **Prometheus Metrics** at `/metrics`
 - **Health Check Endpoint** at `/health`
 - **Structured Logging** (JSON format for production)

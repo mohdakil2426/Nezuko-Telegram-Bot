@@ -7,7 +7,7 @@ to prevent thundering herd problem.
 """
 import random
 import logging
-from typing import Optional
+from typing import Optional, Awaitable, cast
 from redis.asyncio import Redis, ConnectionError as RedisConnectionError
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ async def get_redis_client(redis_url: Optional[str] = None) -> Optional[Redis]:
                 health_check_interval=30
             )
             # Test connection
-            await _redis_client.ping()
+            await cast(Awaitable[bool], _redis_client.ping())
             logger.info("Redis connection established")
             _redis_available = True
         except RedisConnectionError as e:

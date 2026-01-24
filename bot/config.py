@@ -3,7 +3,7 @@ Configuration management and environment variable validation.
 """
 
 import os
-from typing import Optional
+from typing import Optional, overload
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -37,7 +37,7 @@ class Config:
         self.environment = self._get_optional("ENVIRONMENT", "development")
         self.database_url = self._get_optional(
             "DATABASE_URL",
-            "sqlite+aiosqlite:///./gmbot.db"  # Default to async SQLite for development
+            "sqlite+aiosqlite:///./nezuko.db"  # Default to async SQLite for development
         )
 
         # Optional - Webhook
@@ -60,6 +60,12 @@ class Config:
                 f"Please set {key} in your .env file or environment."
             )
         return value
+
+    @overload
+    def _get_optional(self, key: str) -> Optional[str]: ...
+
+    @overload
+    def _get_optional(self, key: str, default: str) -> str: ...
 
     def _get_optional(self, key: str, default: Optional[str] = None) -> Optional[str]:
         """Get optional environment variable with default."""

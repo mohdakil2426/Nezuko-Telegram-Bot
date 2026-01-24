@@ -62,7 +62,7 @@ async def handle_start(update: Update, _context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type != "private":
         # Brief response in groups
         await update.message.reply_text(
-            "👋 Hi! I'm **GMBot** - the channel verification bot.\n\n"
+            "👋 Hi! I'm **Nezuko** - the ultimate all-in-one bot.\n\n"
             "Use `/protect @YourChannel` to activate protection for this group.\n\n"
             "💬 _DM me for more info!_",
             parse_mode="Markdown"
@@ -74,7 +74,7 @@ async def handle_start(update: Update, _context: ContextTypes.DEFAULT_TYPE):
 
     welcome_message = (
         f"👋 **Hey {user_name}!**\n\n"
-        "Welcome to **GMBot v2.0** - your powerful channel membership enforcer!\n\n"
+        "Welcome to **Nezuko** - your powerful all-in-one bot!\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
         "🛡️ **What I Do:**\n"
         "I ensure users must join your channel before they can chat in your group.\n\n"
@@ -103,7 +103,7 @@ async def handle_help(update: Update, _context: ContextTypes.DEFAULT_TYPE):
     is_private = update.effective_chat.type == "private"
 
     help_message = (
-        "📚 **GMBot Help Center**\n\n"
+        "📚 **Nezuko Help Center**\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
         "**🔧 Requirements:**\n"
         "• I need **Admin** in your **Group**\n"
@@ -162,7 +162,7 @@ async def show_main_menu(query):
 
     welcome_message = (
         f"👋 **Hey {user_name}!**\n\n"
-        "Welcome to **GMBot v2.0** - your powerful channel membership enforcer!\n\n"
+        "Welcome to **Nezuko** - your powerful all-in-one bot!\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
         "🛡️ **What I Do:**\n"
         "I ensure users must join your channel before they can chat in your group.\n\n"
@@ -212,7 +212,7 @@ async def show_setup_guide(query):
 async def show_how_it_works(query):
     """Show how the bot works."""
     how_it_works_message = (
-        "💡 **How GMBot Works**\n\n"
+        "💡 **How Nezuko Works**\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "**🔍 Verification Flow:**\n\n"
         "1⃣ User sends a message in your protected group\n\n"

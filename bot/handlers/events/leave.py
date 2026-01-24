@@ -5,6 +5,7 @@ Monitors ChatMemberUpdated events to detect when users leave
 enforced channels, then restricts them in all linked groups.
 """
 import logging
+from typing import cast
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from telegram.constants import ChatMemberStatus
@@ -91,7 +92,7 @@ async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYP
 
         # Restrict user in all linked groups
         for group in protected_groups:
-            group_id = group.group_id
+            group_id = cast(int, group.group_id)
 
             try:
                 # Restrict the user

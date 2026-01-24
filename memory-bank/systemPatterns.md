@@ -1,134 +1,65 @@
-# System Patterns
+# System Patterns: Nezuko - The Ultimate All-In-One Bot
 
-## Current Architecture (v1.1)
-The system follows a standard Telegram Bot architecture:
-1.  **Telegram Bot API**: The interface for interacting with Telegram.
-2.  **Bot Logic (Backend)**: Python (`python-telegram-bot` v20+) application.
-3.  **Polling**: `Application.run_polling` with **Concurrent Updates** enabled for performance.
+## System Architecture
+Nezuko is built as a modular, event-driven monolith designed for high performance and horizontal scalability.
 
-### Core Stack
-*   **Runtime**: Python 3.13+ (AsyncIO)
-*   **Framework**: `python-telegram-bot` v20+ with `concurrent_updates=True`
-*   **Database**: PostgreSQL (production) / SQLite (development) via SQLAlchemy Async + Alembic
-*   **Caching**: Redis (async) for distributed state, verification cache
-*   **Rate Limiting**: AIORateLimiter (30msg/sec with priority queuing)
-*   **Update Mode**: Auto-detect (polling for dev, webhooks for production)
-*   **Monitoring**: Prometheus + Sentry
+### Core Architecture Components
+1.  **Event Processor**: Built on `python-telegram-bot` v22+, using `concurrent_updates` for asynchronous processing of Telegram's MTProto stream.
+2.  **Multi-Tenant Intelligence**: A database-driven logic layer that looks up group-channel links in real-time, allowing one bot instance to serve unlimited independent groups.
+3.  **Hybrid Caching Layer**:
+    *   **External**: Redis for distributed state and membership caching across multiple bot instances.
+    *   **Local**: In-memory caching for extremely fast lookups of hot configuration data.
+4.  **Resilience Engine**: Implements Circuit Breakers, Exponential Backoff, and Graceful Degradation (e.g., bot continues to work via direct API calls if Redis is unavailable).
 
-### Modular Monolith Structure
-```
-bot/
-├── core/          # Database, cache, rate limiter, handler loader
-├── database/      # Models, CRUD, migrations
-├── handlers/      # Admin, events, verification
-├── services/      # Protection, verification, Telegram API wrappers
-└── utils/         # Metrics, logging
-```
+## Technical Patterns
 
-## Key Components (v1.1)
-1.  **Message Handler**: Intercepts group messages (text/media) via `filters.ChatType.GROUPS`.
-2.  **Join Handler**: Intercepts `NEW_CHAT_MEMBERS` to immediately verify users entering the group.
-3.  **Channel Watcher**: listens to `ChatMemberUpdated` events from the **Channel**.
-    *   Detects `LEFT` status.
-    *   Triggers immediate restriction in the Group (referenced by `GROUP_ID`).
-4.  **Membership Checker**:
-    *   Checks in-memory **LRU Cache** (5-minute TTL) first.
-    *   Calls `getChatMember` on cache miss.
-5.  **Restriction Engine**:
-    *   Mutes: `can_send_messages=False`.
-    *   Unmutes: Grants specific granular permissions (`can_send_photos`, `can_send_videos`, etc.).
-6.  **Interaction Manager**: Handles "Join" (URL) and "Verify" (Callback) button clicks.
+### 1. Zero-Trust Enforcement
+*   **Proactive**: Intercepts `ChatMemberUpdated` and `NewChatMembers` events to restrict users *before* they even try to speak.
+*   **Reactive**: Checks every message against the cache/API to ensure compliance for existing members.
+*   **Strict Leave**: Real-time monitoring of channel leave events to revoke access immediately.
 
-## Enhanced Components (v2.0)
-1.  **Database Layer**: PostgreSQL with async session management, connection pooling
-2.  **Distributed Cache**: Redis with TTL jitter (10min positive, 1min negative)
-3.  **Priority Rate Limiter**: P0 (user interactions) > P1 (enforcement) > P2 (bulk operations)
-4.  **Admin Command Handlers**: `/protect`, `/status`, `/unprotect`, `/settings`
-5.  **Observability Stack**: Prometheus metrics, structured logs, health checks, Sentry
-6.  **UX/UI Layer**: Inline keyboard navigation, command menus, personalized welcome
+### 2. High-Performance Verification Flow
+*   **Query Path**: Check local cache → Check Redis → Telegram API → Write to Redis → Grant Access.
+*   **Multi-Channel Logic**: Supports "AND" logic where a user must be a member of all linked channels to gain permission.
+*   **Rate-Limit Management**: Intelligent `AIORateLimiter` capped at 25msg/sec to prevent bans while maintaining high throughput.
 
-## Design Patterns (v1.1)
-*   **Event-Driven**: Actions are triggered by Telegram events (New Message, Callback Query, **Chat Member Update**).
-*   **Proactive Policing**: Instead of waiting for a violation (message), we catch the state change (Join/Leave).
-*   **Fail-Safe**: If membership check fails (e.g., API timeout), it logs error and denies access (Strict Mode).
-*   **Caching**: In-memory dictionary `membership_cache[user_id] = (status, timestamp)` to minimize API rate limits.
+### 3. Database Schema
+*   **Owners**: Tracks administrative users.
+*   **ProtectedGroups**: Stores group-specific settings and state.
+*   **EnforcedChannels**: Unified channel metadata for deduplication.
+*   **GroupChannelLinks**: M:N mapping for complex protection scenarios.
 
-## Enhanced Patterns (v2.0)
-*   **Multi-Tenant**: Database-driven configuration supporting 100+ groups independently
-*   **Graceful Degradation**: Redis failure → falls back to API calls (degraded, not broken)
-*   **Zero Trust**: New members verified on join, existing members watched for channel exit
-*   **Horizontal Scaling**: Shared Redis/DB allows multiple bot instances
-*   **Observable by Default**: All operations emit metrics, logs include full context
-*   **Priority Queuing**: User-facing actions never delayed by background operations
+## Design Principles
+*   **stateless Instances**: All critical state is in PostgreSQL/Redis, allowing new bot instances to be spun up instantly.
+*   **Observable by Default**: Integrated Prometheus metrics, structured logging (JSON for prod), and Sentry error tracking.
+*   **Premium UX**: All user-facing strings use consistent emoji-rich formatting and interactive inline keyboards.
 
-### Strict Verification Logic (v1.1)
-1.  **Instant Join**:
-    *   **Trigger**: `filters.StatusUpdate.NEW_CHAT_MEMBERS`.
-    *   **Action**: Iterate users -> Check Subscription -> Mute if false -> Send Welcome/Warn.
-2.  **Strict Leave**:
-    *   **Trigger**: `ChatMemberHandler` (Admin in Channel).
-    *   **Logic**: Detects `update.chat_member.new_chat_member.status == LEFT`.
-    *   **Enforcement**: Uses `GROUP_ID` to find the user in the target group -> Mutes them -> Sends Warning Message.
-
-*   **Async Concurrency**: Usage of `concurrent_updates(True)` in Application Builder.
-
-### Multi-Tenant Verification (v2.0 - Planned)
-1.  **Database Query**: Lookup `protected_groups` and `group_channel_links` for group
-2.  **Cache-Aware Check**: Query Redis before Telegram API (70%+ hit rate)
-3.  **Multi-Channel Support**: Verify membership in ALL linked channels (AND logic)
-4.  **Batched Operations**: Warm cache for large groups (100k+ members)
-
-## Data Flow (v1.1)
-```mermaid
-graph TD
-    %% Events
-    Msg[User Sends Message] --> Logic
-    Join[User Joins Group] --> Logic
-    Leave[User Leaves Channel] -->|Bot is Admin in Channel| LeaveLogic[Check Status Change]
-
-    %% Logic Flow
-    LeaveLogic -->|Status == LEFT| StrictMute[Find & Mute in Group]
-    
-    Logic -->|Check Cache/API| IsMember{Is Member?}
-    IsMember -- Yes --> Allow[Allow / Do Nothing]
-    IsMember -- No --> Restrict[Restrict & Warn]
-
-    %% Actions
-    Restrict -->|Send Button| UserUI[User Sees Verify Btn]
-    UserUI -->|Clicks Joined| Callback[Verify Callback]
-    Callback -->|Re-Check| IsMember
-    
-    StrictMute --> Restrict
-```
+## Standards & Quality
+*   **Code Quality**: Strict adherence to Pylint (Score: 9.99/10).
+*   **Lazy Logging**: Using `%` formatting for performance in logger calls.
+*   **Async-First**: Native `asyncIO` from the database driver up to the handler logic.
 
 ## Python Quality Standards
 
-To maintain high code quality (Pylint score > 9.5), the following standards apply:
+To maintain high code quality (**Pylint score 10.00/10** & **Pyrefly 0 Errors**), the following standards apply:
 
-### 1. Naming Conventions
-*   **Attributes/Variables**: Always use `snake_case` for instance attributes (e.g., `config.bot_token`).
-*   **Constants**: Use `UPPER_CASE` for module-level constants (e.g., `BATCH_SIZE`).
-*   **Global State**: Module-level variables used for state management should be `_snake_case` with `# pylint: disable=invalid-name` if they are modified.
+### 1. Static Analysis & Typing (Strict)
+*   **Zero Errors**: All code must pass `python -m pyrefly check` with 0 errors.
+*   **None Safety**: Use rigorous assertions (`assert var is not None`) before accessing attributes of optional objects (e.g., `update.message`).
+*   **Type Casting**: Prefer `cast(Type, val)` over constructor calls when dealing with stubs or ORM attributes to satisfy static analysis without runtime overhead.
+*   **Awaitables**: Explicitly await all awaitable calls (e.g., Redis commands) and cast return types if the library stubs are missing generic support.
 
-### 2. String Formatting & Logging
-*   **Lazy Logging**: ALWAYS use `%` formatting in `logger` calls (e.g., `logger.info("User %s joined", user_id)`). This prevents string construction if the log level is disabled.
-*   **Everything Else**: Use `f-strings` for `print()`, `ValueError`, and user-facing message templates for better readability.
+### 2. Naming Conventions & Structure
+*   **Snake Case**: Use `snake_case` for variables/methods.
+*   **Upper Case**: Use `UPPER_CASE` for constants.
+*   **Line Length**: Hard limit of **100 characters**. Break long lines in function calls or variable assignments using parentheses.
+*   **No Duplication**: Logic blocks > 5 lines appearing twice must be refactored into a utility function (e.g., `check_db_connectivity`).
 
-### 3. Imports & Global Scope
-*   **Toplevel Imports**: All imports should be at the top level to avoid `import-outside-toplevel` and facilitate testing.
-*   **Global Statements**: Minimize usage of the `global` keyword. If required for singletons/state flags, use `# pylint: disable=global-statement` at the module level.
+### 3. Modern Python Practices
+*   **Dates**: **NEVER** use `datetime.utcnow()`. ALWAYS use `datetime.now(timezone.utc)` fortimezone-aware timestamps.
+*   **Logging**: Use lazy `%` formatting in `logger` calls (`logger.info("Msg %s", arg)`). Use f-strings everywhere else.
+*   **Imports**: No unused imports. Remove them immediately. Group imports: stdlib, third-party, local.
 
 ### 4. Exception Handling
-*   **Specific Exceptions**: Never use broad `except Exception:`. Always catch specific errors (e.g., `SQLAlchemyError`, `TelegramError`, `RedisConnectionError`).
-*   **Graceful Degradation**: Implement fallbacks for external service failures (e.g., Redis down -> Direct API).
-
-## Performance Targets (v2.0)
-| Metric | v1.1 (Current) | v2.0 (Target) |
-|--------|----------------|---------------|
-| Verification Latency | ~500ms | <100ms (p95) |
-| Cache Hit Rate | N/A (in-memory) | >70% (Redis) |
-| Database Query | N/A | <50ms (p95) |
-| Throughput | ~50/min | 1000/min |
-| Pylint Score | 6.55/10 | >9.5/10 |
-| Multi-Tenancy | 1 group | 100+ groups |
-
+*   **Specific Exceptions**: Never use broad `except Exception:`. Catch specific errors (`SQLAlchemyError`, `TelegramError`).
+*   **Graceful Degradation**: Implement resilience patterns (Circuit Breakers) for external dependencies like Redis and Database.

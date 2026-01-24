@@ -5,7 +5,7 @@ Verification service with cache-aware membership checking.
 Handles membership verification with Redis caching, TTL jitter,
 and graceful fallback to Telegram API on cache miss.
 
-Phase 4: Integrated with Prometheus metrics for monitoring.
+Integrated with Prometheus metrics for operational monitoring.
 """
 import logging
 from typing import List, Any
@@ -30,7 +30,7 @@ POSITIVE_CACHE_TTL = 600  # 10 minutes for members
 NEGATIVE_CACHE_TTL = 60   # 1 minute for non-members
 CACHE_JITTER_PERCENT = 15  # ±15% jitter
 
-# Metrics counters (will be replaced with Prometheus in Phase 4)
+# Metrics counters for prometheus tracking
 _cache_hits = 0  # pylint: disable=invalid-name
 _cache_misses = 0  # pylint: disable=invalid-name
 

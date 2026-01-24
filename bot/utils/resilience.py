@@ -1,6 +1,6 @@
 # pylint: disable=global-statement
 """
-Resilience patterns for GMBot v2.0.
+Resilience patterns for Nezuko.
 
 Provides:
 - Circuit breaker for database operations
@@ -233,6 +233,7 @@ def async_retry(
                             max_attempts, func.__name__, e
                         )
 
+            assert last_exception is not None
             raise last_exception
 
         return wrapper

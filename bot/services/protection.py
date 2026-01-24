@@ -5,10 +5,11 @@ Protection service for muting and unmuting users.
 Handles user restriction/unmuting with proper error handling,
 retries, and logging.
 
-Phase 4: Integrated with Prometheus metrics for monitoring.
+Integrated with Prometheus metrics for operational monitoring.
 """
 import logging
 import asyncio
+from typing import cast
 from telegram import ChatPermissions
 from telegram.ext import ContextTypes
 from telegram.error import TelegramError, RetryAfter
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 MAX_RETRIES = 3
 RETRY_DELAY = 1.0  # seconds
 
-# Metrics counters (will be replaced with Prometheus in Phase 4)
+# Metrics counters for prometheus tracking
 _mute_count = 0  # pylint: disable=invalid-name
 _unmute_count = 0  # pylint: disable=invalid-name
 _error_count = 0  # pylint: disable=invalid-name
@@ -84,7 +85,7 @@ async def restrict_user(
                 user_id, wait_time, attempt, MAX_RETRIES
             )
             if attempt < MAX_RETRIES:
-                await asyncio.sleep(wait_time)
+                await asyncio.sleep(cast(float, wait_time))
             else:
                 _error_count += 1
                 record_error("telegram_error")
@@ -147,7 +148,7 @@ async def unmute_user(
                 user_id, wait_time, attempt, MAX_RETRIES
             )
             if attempt < MAX_RETRIES:
-                await asyncio.sleep(wait_time)
+                await asyncio.sleep(cast(float, wait_time))
             else:
                 _error_count += 1
                 record_error("telegram_error")

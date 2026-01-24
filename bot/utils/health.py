@@ -1,6 +1,6 @@
 # pylint: disable=global-statement, invalid-name
 """
-Health check endpoint for GMBot v2.0.
+Health check endpoint for Nezuko.
 
 Provides:
 - HTTP /health endpoint returning system status
@@ -13,11 +13,11 @@ Provides:
 import time
 import asyncio
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Awaitable, cast
 from aiohttp import web
 
 from bot.config import config
-from bot.core.database import get_session
+from bot.core.database import check_db_connectivity
 from bot.core.cache import _redis_client, _redis_available
 from bot.utils.metrics import (
     get_metrics,
@@ -25,6 +25,7 @@ from bot.utils.metrics import (
     set_db_connected,
     set_redis_connected
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -50,10 +51,8 @@ async def check_database() -> dict:
     """
     try:
         start = time.perf_counter()
-        async with get_session() as session:
-            # Simple query to test connectivity
-            result = await session.execute("SELECT 1")
-            result.scalar()
+        start = time.perf_counter()
+        await check_db_connectivity()
 
         latency_ms = (time.perf_counter() - start) * 1000
         set_db_connected(True)
@@ -62,7 +61,7 @@ async def check_database() -> dict:
             "healthy": True,
             "latency_ms": round(latency_ms, 2)
         }
-    except (ConnectionError, TimeoutError, OSError) as e:
+    except (ConnectionError, TimeoutError, OSError, Exception) as e:  # pylint: disable=broad-exception-caught
         logger.error("Database health check failed: %s", e)
         set_db_connected(False)
         return {
@@ -97,7 +96,7 @@ async def check_redis() -> dict:
 
     try:
         start = time.perf_counter()
-        pong = await _redis_client.ping()
+        pong = await cast(Awaitable[bool], _redis_client.ping())
         latency_ms = (time.perf_counter() - start) * 1000
 
         if pong:
@@ -152,7 +151,7 @@ async def get_health_status() -> Dict[str, Any]:
         "status": overall_status,
         "uptime_seconds": round(get_uptime_seconds(), 2),
         "timestamp": time.time(),
-        "version": "2.0.0",
+        "version": "1.0.0",
         "environment": config.environment,
         "checks": {
             "database": db_check,
@@ -224,8 +223,8 @@ async def metrics_handler(_request: web.Request) -> web.Response:
 async def root_handler(_request: web.Request) -> web.Response:
     """Handle GET / requests with basic info."""
     return web.json_response({
-        "name": "GMBot",
-        "version": "2.0.0",
+        "name": "Nezuko",
+        "version": "1.0.0",
         "endpoints": {
             "/health": "Health check (detailed)",
             "/ready": "Readiness probe",

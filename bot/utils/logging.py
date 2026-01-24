@@ -1,5 +1,5 @@
 """
-Structured logging configuration for GMBot v2.0.
+Structured logging configuration for Nezuko.
 
 Uses structlog for structured, context-rich logging with JSON output
 for production and pretty-printed output for development.
@@ -14,7 +14,7 @@ Features:
 
 import logging
 import sys
-from typing import Optional
+from typing import Any, Optional
 import structlog
 from structlog.types import EventDict, WrappedLogger
 
@@ -29,8 +29,8 @@ def add_environment(_logger: WrappedLogger, _method_name: str, event_dict: Event
 
 def add_app_info(_logger: WrappedLogger, _method_name: str, event_dict: EventDict) -> EventDict:
     """Add application info to all log entries."""
-    event_dict["app"] = "gmbot"
-    event_dict["version"] = "2.0.0"
+    event_dict["app"] = "nezuko"
+    event_dict["version"] = "1.0.0"
     return event_dict
 
 
@@ -46,7 +46,7 @@ def extract_context(_logger: WrappedLogger, _method_name: str, event_dict: Event
     return event_dict
 
 
-def configure_logging(json_format: bool = None) -> None:
+def configure_logging(json_format: Optional[bool] = None) -> None:
     """
     Configure structlog and stdlib logging integration.
 
@@ -174,7 +174,7 @@ def log_protection_activated(group_id: int, channel_id: int, owner_id: int):
     log = get_logger("protection")
     log.info(
         "Protection activated",
-        event="protection_activated",
+        event_type="protection_activated",
         group_id=group_id,
         channel_id=channel_id,
         owner_id=owner_id
@@ -186,7 +186,7 @@ def log_user_verified(user_id: int, group_id: int, channel_id: int, cached: bool
     log = get_logger("verification")
     log.info(
         "User verified",
-        event="user_verified",
+        event_type="user_verified",
         user_id=user_id,
         group_id=group_id,
         channel_id=channel_id,
@@ -199,7 +199,7 @@ def log_user_restricted(user_id: int, group_id: int, reason: str = "not_member")
     log = get_logger("protection")
     log.info(
         "User restricted",
-        event="user_restricted",
+        event_type="user_restricted",
         user_id=user_id,
         group_id=group_id,
         reason=reason
@@ -211,34 +211,39 @@ def log_user_unrestricted(user_id: int, group_id: int):
     log = get_logger("protection")
     log.info(
         "User unrestricted",
-        event="user_unrestricted",
+        event_type="user_unrestricted",
         user_id=user_id,
         group_id=group_id
     )
 
 
-def log_api_call(method: str, params: dict = None, duration_ms: float = None):
+def log_api_call(method: str, params: Optional[dict] = None, duration_ms: Optional[float] = None):
     """Log Telegram API call."""
     log = get_logger("telegram")
     log.debug(
         f"API call: {method}",
-        event="api_call",
+        event_type="api_call",
         method=method,
         params=params or {},
         duration_ms=duration_ms
     )
 
 
-def log_cache_event(operation: str, key: str, hit: bool = None, ttl: int = None):
+def log_cache_event(
+    operation: str,
+    key: str,
+    hit: Optional[bool] = None,
+    ttl: Optional[int] = None
+):
     """Log cache operation."""
     log = get_logger("cache")
-    extra = {"operation": operation, "key": key}
+    extra: dict[str, Any] = {"operation": operation, "key": key}
     if hit is not None:
         extra["hit"] = hit
     if ttl is not None:
         extra["ttl"] = ttl
 
-    log.debug(f"Cache {operation}", event="cache_operation", **extra)
+    log.debug(f"Cache {operation}", event_type="cache_operation", **extra)
 
 
 def log_error(message: str, error: Exception, **context):
@@ -253,7 +258,7 @@ def log_error(message: str, error: Exception, **context):
     log = get_logger("error")
     log.error(
         message,
-        event="error",
+        event_type="error",
         error_type=type(error).__name__,
         error_message=str(error),
         **context
@@ -265,7 +270,7 @@ def log_startup(mode: str, database: str, redis: bool):
     log = get_logger("startup")
     log.info(
         "Bot starting",
-        event="startup",
+        event_type="startup",
         mode=mode,
         database=database.split("://")[0] if "://" in database else database,
         redis_enabled=redis
@@ -275,7 +280,7 @@ def log_startup(mode: str, database: str, redis: bool):
 def log_shutdown():
     """Log bot shutdown."""
     log = get_logger("shutdown")
-    log.info("Bot shutting down", event="shutdown")
+    log.info("Bot shutting down", event_type="shutdown")
 
 
 # Initialize logging on import (development mode by default)

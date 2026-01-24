@@ -1,18 +1,14 @@
-# Project Brief
-
-## Project Name
-Telegram Channel Verification Bot
+# Project Brief: Nezuko
 
 ## Overview
-A Telegram bot that enforces channel membership as a prerequisite for sending messages in a linked discussion group. Users who are not subscribers of a specific channel are automatically muted in the group until they join.
+Nezuko is the ultimate all-in-one Telegram bot designed to empower community managers with a growing suite of multi-talented features. Beginning with production-grade channel enforcement, it is built to scale into a comprehensive platform for group management, growth, and interaction.
 
 ## Core Goals
-1.  **Enforce Membership**: Automatically mute group members who are not subscribed to the target channel.
-2.  **User Guidance**: Provide clear instructions and a link to join the channel when a user is restricted.
-3.  **Easy Verification**: Allow users to re-verify their status with a single click after joining.
-4.  **Admin Convenience**: Automate the policing of group members to drive channel growth.
+1.  **Automated Membership Enforcement**: Intercept group interactions and immediately restrict users who haven't joined the required channel(s).
+2.  **Premium User Experience**: Provide intuitive, interactive guidance via inline keyboards and personalized messaging to help users verify their status with a single click.
+3.  **Scalable Multi-Tenancy**: Support hundreds of independent group-channel pairs from a single bot instance using database-driven configuration.
+4.  **Operational Excellence**: Maintain high performance (<100ms latency) and reliability through advanced caching, rate limiting, and observability.
 
-## Scope
-*   **Target Users**: Group Administrators and Group Members.
-*   **Platform**: Telegram (Mobile & Desktop).
-*   **Key Function**: Restrict text/media permissions for non-subscribers.
+## Value Proposition
+*   **For Admins**: Instant, zero-config growth for Telegram channels by converting group participants into subscribers.
+*   **For Users**: Clear, non-intrusive verification flows that don't disrupt the community experience once completed.

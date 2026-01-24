@@ -1,11 +1,11 @@
 """
-GMBot v2.0 - Main entry point
-Production-ready multi-tenant Telegram bot for channel verification.
+Nezuko - Main entry point
+Production-ready multi-tenant Telegram bot for channel membership enforcement.
 
-Phase 4 Monitoring Features:
+Operational Features:
 - Prometheus metrics at /metrics
-- Health check endpoint at /health
-- Sentry error tracking (when configured)
+- Health check endpoints at /health
+- Sentry error tracking
 """
 
 import sys
@@ -28,7 +28,7 @@ from bot.utils.metrics import (
     set_db_connected
 )
 from bot.utils.sentry import init_sentry, flush as sentry_flush
-from bot.utils.health import start_health_server, stop_health_server
+from bot.utils.health import stop_health_server
 
 # Setup standard logging with UTF-8 support for Windows console
 # Windows cp1252 can't handle Unicode emojis - use 'replace' mode to avoid crashes
@@ -102,81 +102,7 @@ async def post_shutdown(_application: Application) -> None:
     logger.info("All connections closed")
 
 
-async def run_polling():
-    """Run bot in polling mode (development)."""
-    logger.info("Starting bot in POLLING mode...")
 
-    # Health check server disabled for local dev (conflict with telegram bot event loop)
-    # To enable: uncomment below and run health server separately
-    # await start_health_server(port=8000)
-
-    # Build application with rate limiter
-    application = (
-        Application.builder()
-        .token(config.bot_token)
-        .rate_limiter(create_rate_limiter())
-        .concurrent_updates(True)
-        .post_init(post_init)
-        .build()
-    )
-
-    # Register handlers
-    register_handlers(application)
-
-    # Run polling
-    logger.info("Bot is running in polling mode. Press Ctrl+C to stop.")
-    await application.run_polling(
-        allowed_updates=[
-            Update.MESSAGE,
-            Update.CALLBACK_QUERY,
-            Update.CHAT_MEMBER,
-            Update.MY_CHAT_MEMBER
-        ],
-        drop_pending_updates=True
-    )
-
-
-async def run_webhook():
-    """Run bot in webhook mode (production)."""
-    logger.info("Starting bot in WEBHOOK mode...")
-
-    if not config.webhook_url or not config.webhook_secret:
-        logger.error("WEBHOOK_URL and WEBHOOK_SECRET are required for webhook mode")
-        sys.exit(1)
-
-    # Start health check server (port 8000, separate from webhook port)
-    await start_health_server(port=8000)
-
-    # Build application
-    application = (
-        Application.builder()
-        .token(config.bot_token)
-        .rate_limiter(create_rate_limiter())
-        .concurrent_updates(True)
-        .post_init(post_init)
-        .post_shutdown(post_shutdown)
-        .build()
-    )
-
-    # Register handlers
-    register_handlers(application)
-
-    # Run webhook
-    logger.info("Starting webhook server on port %s", config.port)
-    await application.run_webhook(
-        listen="0.0.0.0",
-        port=config.port,
-        url_path="webhook",
-        webhook_url=f"{config.webhook_url}/webhook",
-        secret_token=config.webhook_secret,
-        allowed_updates=[
-            Update.MESSAGE,
-            Update.CALLBACK_QUERY,
-            Update.CHAT_MEMBER,
-            Update.MY_CHAT_MEMBER
-        ],
-        drop_pending_updates=True
-    )
 
 
 def main():
@@ -192,7 +118,7 @@ def main():
         set_bot_start_time()
 
         logger.info("=" * 60)
-        logger.info("GMBot v2.0 - Multi-Tenant Channel Verification Bot")
+        logger.info("Nezuko - The Ultimate All-In-One Bot")
         logger.info("=" * 60)
         logger.info("Environment: %s", config.environment)
         logger.info("Mode: %s", "WEBHOOK" if config.use_webhooks else "POLLING")

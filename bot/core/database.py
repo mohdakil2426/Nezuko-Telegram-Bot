@@ -114,3 +114,17 @@ async def close_db():
         await _engine.dispose()
         _engine = None
         _session_factory = None
+
+
+async def check_db_connectivity() -> bool:
+    """
+    Check if the database is reachable.
+
+    Returns:
+        True if connected, False (or raises Exception) otherwise.
+    """
+    from sqlalchemy import text  # pylint: disable=import-outside-toplevel
+    async with get_session() as session:
+        result = await session.execute(text("SELECT 1"))
+        result.scalar()
+    return True

@@ -5,6 +5,7 @@ Handles user verification button clicks, re-checks membership,
 and unmutes if all channels are verified.
 """
 import logging
+from typing import cast
 from telegram import Update
 from telegram.ext import ContextTypes
 from telegram.error import TelegramError
@@ -35,6 +36,9 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
         context: Telegram context
     """
     try:
+        if not update.effective_user or not update.effective_chat:
+            return
+
         query = update.callback_query
         user_id = update.effective_user.id
         chat_id = update.effective_chat.id
@@ -66,7 +70,7 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
 
         # Invalidate cache for all channels (force fresh verification)
         for channel in channels:
-            await invalidate_cache(user_id, channel.channel_id)
+            await invalidate_cache(user_id, cast(int, channel.channel_id))
 
         # Re-check membership in all channels
         missing_channels = await check_multi_membership(

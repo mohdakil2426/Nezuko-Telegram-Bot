@@ -1,8 +1,8 @@
-"""Initial schema v2
+"""Initial Schema Release v1.0.0
 
-Revision ID: cc37bc6a6e16
-Revises:
-Create Date: 2026-01-24 00:13:17.214886
+Revision ID: c1f7ecc2c523
+Revises: 
+Create Date: 2026-01-24 13:07:26.921544
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'cc37bc6a6e16'
+revision: str = 'c1f7ecc2c523'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,6 +24,7 @@ def upgrade() -> None:
     op.create_table('enforced_channels',
     sa.Column('channel_id', sa.BigInteger(), nullable=False),
     sa.Column('title', sa.String(length=255), nullable=True),
+    sa.Column('username', sa.String(length=255), nullable=True),
     sa.Column('invite_link', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),

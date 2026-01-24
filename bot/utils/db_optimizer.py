@@ -11,7 +11,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.core.database import get_session, get_engine
+from bot.core.database import get_session, get_engine, check_db_connectivity
 from bot.database.crud import (
     get_protected_group,
     get_group_channels,
@@ -205,9 +205,8 @@ async def check_database_health() -> Dict[str, Any]:
     try:
         # Test connection with simple query
         start = time.perf_counter()
-        async with get_session() as session:
-            result = await session.execute(text("SELECT 1"))
-            result.scalar()
+        start = time.perf_counter()
+        await check_db_connectivity()
 
         health["latency_ms"] = round((time.perf_counter() - start) * 1000, 2)
         health["connected"] = True

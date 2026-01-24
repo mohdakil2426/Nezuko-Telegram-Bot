@@ -1,5 +1,5 @@
 """
-Performance benchmarking suite for GMBot.
+Performance benchmarking suite for Nezuko.
 
 Measures baseline performance metrics for:
 - Database queries
@@ -242,7 +242,7 @@ async def run_all_benchmarks() -> Dict[str, Any]:
         Dict with all benchmark results
     """
     print("="*70)
-    print("GMBOT PERFORMANCE BENCHMARKING SUITE")
+    print("NEZUKO PERFORMANCE BENCHMARKING SUITE")
     print("="*70)
     print("Targets:")
     print(f"  Database Query:  <{TARGET_DB_QUERY_MS}ms")

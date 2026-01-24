@@ -6,8 +6,8 @@ and reduce API calls during peak activity periods.
 """
 import asyncio
 import logging
-from typing import List
-from datetime import datetime
+from typing import List, cast
+from datetime import datetime, timezone
 from telegram.ext import ContextTypes
 from telegram.error import TelegramError
 
@@ -47,7 +47,7 @@ async def warm_cache_for_group(
     Returns:
         Dict with verification stats
     """
-    start_time = datetime.utcnow()
+    start_time = datetime.now(timezone.utc)
     stats = {
         "total_users": 0,
         "verified": 0,
@@ -104,7 +104,7 @@ async def warm_cache_for_group(
                     for channel in channels:
                         is_member = await check_membership(
                             user_id,
-                            channel.channel_id,
+                            cast(int, channel.channel_id),
                             context
                         )
                         if not is_member:
@@ -134,7 +134,7 @@ async def warm_cache_for_group(
         stats["errors"] += 1
 
     finally:
-        duration = (datetime.utcnow() - start_time).total_seconds()
+        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
         stats["duration_seconds"] = round(duration, 2)
 
         rate = stats['total_users'] / duration if duration > 0 else 0
@@ -206,7 +206,7 @@ async def warm_cache_for_all_groups(
         "duration_seconds": 0.0
     }
 
-    start_time = datetime.utcnow()
+    start_time = datetime.now(timezone.utc)
 
     try:
         async with get_session() as session:
@@ -219,7 +219,7 @@ async def warm_cache_for_all_groups(
             try:
                 group_name = group.title or str(group.group_id)
                 logger.info("Processing group: %s", group_name)
-                stats = await warm_cache_for_group(group.group_id, context)
+                stats = await warm_cache_for_group(cast(int, group.group_id), context)
 
                 # Aggregate stats
                 aggregated_stats["total_users"] += stats["total_users"]
@@ -236,7 +236,7 @@ async def warm_cache_for_all_groups(
         logger.error("Fatal error warming cache for all groups: %s", e)
 
     finally:
-        duration = (datetime.utcnow() - start_time).total_seconds()
+        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
         aggregated_stats["duration_seconds"] = round(duration, 2)
 
         logger.info(

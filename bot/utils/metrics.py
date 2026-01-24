@@ -1,5 +1,5 @@
 """
-Prometheus metrics for GMBot v2.0.
+Prometheus metrics for Nezuko.
 
 Exposes key operational metrics for monitoring and alerting:
 - Verification counts (verified, restricted, error)

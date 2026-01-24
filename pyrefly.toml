@@ -1,0 +1,44 @@
+# Pyrefly Configuration for GMBot Production Readiness
+
+# Source Code Inclusion
+# Explicitly targeting the main bot logic and entry point
+project-includes = ["bot", "main.py"]
+
+# Exclusion Patterns
+# Excluding tests, virtual environments, and cache to improve performance and focus on production code
+project-excludes = [
+    "**/tests/**",
+    "**/venv/**",
+    "**/__pycache__/**",
+    "**/.git/**"
+]
+
+# Respect .gitignore
+use-ignore-files = true
+
+# Environment Configuration
+# Targeting Python 3.13 as specified in techContext.md
+python-version = "3.13"
+python-platform = "windows"
+
+# Search Path
+search-path = ["."]
+
+# Type Checking Strictness
+# "check-and-infer-return-type" ensures function bodies without return annotations are still checked (Pyright behavior)
+untyped-def-behavior = "check-and-infer-return-type"
+
+# Generated Code
+ignore-errors-in-generated-code = true
+
+# Strict Import Handling
+# We want to catch missing imports to ensure dependency clarity
+ignore-missing-imports = []
+replace-imports-with-any = []
+
+# Error Configuration
+# By default, Pyrefly enables all errors. 
+# We keep this section to explicitly document that we are NOT disabling any errors.
+[errors]
+# No errors disabled. 
+# To disable an error, set it to false (e.g., bad-assignment = false)

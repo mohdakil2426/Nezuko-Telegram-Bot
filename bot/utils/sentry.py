@@ -1,6 +1,6 @@
 # pylint: disable=global-statement
 """
-Sentry error tracking integration for GMBot v2.0.
+Sentry error tracking integration for Nezuko.
 
 Provides:
 - Automatic exception capture and reporting
@@ -11,7 +11,7 @@ Provides:
 """
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, cast
 from functools import wraps
 
 # Sentry SDK (optional - graceful when not installed/configured)
@@ -57,6 +57,7 @@ def init_sentry(dsn: Optional[str] = None, environment: Optional[str] = None) ->
         logger.info("SENTRY_DSN not configured - error tracking disabled")
         return False
 
+    assert sentry_sdk is not None
     try:
         sentry_sdk.init(
             dsn=dsn,
@@ -76,7 +77,7 @@ def init_sentry(dsn: Optional[str] = None, environment: Optional[str] = None) ->
             traces_sample_rate=0.1,
 
             # Release info
-            release="gmbot@2.0.0",
+            release="nezuko@1.0.0",
 
             # Don't send PII by default
             send_default_pii=False,
@@ -85,17 +86,18 @@ def init_sentry(dsn: Optional[str] = None, environment: Optional[str] = None) ->
             attach_stacktrace=True,
 
             # Before send hook to filter/modify events
-            before_send=_before_send,
+            before_send=cast(Any, _before_send),
 
             # Additional context
-            _experiments={
+            _experiments=cast(Any, {
                 "profiles_sample_rate": 0.1,  # Profile 10% of transactions
-            }
+            })
         )
 
         # Set initial tags
-        sentry_sdk.set_tag("app", "gmbot")
-        sentry_sdk.set_tag("version", "2.0.0")
+        # Set initial tags
+        sentry_sdk.set_tag("app", "nezuko")
+        sentry_sdk.set_tag("version", "1.0.0")
 
         _sentry_initialized = True
         logger.info("Sentry initialized (%s)", environment)
@@ -147,6 +149,7 @@ def set_user_context(user_id: int, username: Optional[str] = None):
     if not _sentry_initialized or not SENTRY_AVAILABLE:
         return
 
+    assert sentry_sdk is not None
     sentry_sdk.set_user({
         "id": str(user_id),
         "username": username or f"user_{user_id}"
@@ -164,6 +167,7 @@ def set_chat_context(group_id: int, channel_id: Optional[int] = None):
     if not _sentry_initialized or not SENTRY_AVAILABLE:
         return
 
+    assert sentry_sdk is not None
     sentry_sdk.set_context("chat", {
         "group_id": str(group_id),
         "channel_id": str(channel_id) if channel_id else None
@@ -190,6 +194,7 @@ def add_breadcrumb(
     if not _sentry_initialized or not SENTRY_AVAILABLE:
         return
 
+    assert sentry_sdk is not None
     sentry_sdk.add_breadcrumb(
         message=message,
         category=category,
@@ -210,6 +215,7 @@ def capture_exception(error: Exception, **context):
         logger.error("Error (Sentry disabled): %s", error, exc_info=True)
         return
 
+    assert sentry_sdk is not None
     with sentry_sdk.push_scope() as scope:
         for key, value in context.items():
             scope.set_extra(key, value)
@@ -228,10 +234,11 @@ def capture_message(message: str, level: str = "info", **context):
     if not _sentry_initialized or not SENTRY_AVAILABLE:
         return
 
+    assert sentry_sdk is not None
     with sentry_sdk.push_scope() as scope:
         for key, value in context.items():
             scope.set_extra(key, value)
-        sentry_sdk.capture_message(message, level=level)
+        sentry_sdk.capture_message(message, level=cast(Any, level))
 
 
 def sentry_trace(func):
@@ -248,6 +255,7 @@ def sentry_trace(func):
         if not _sentry_initialized or not SENTRY_AVAILABLE:
             return await func(*args, **kwargs)
 
+        assert sentry_sdk is not None
         with sentry_sdk.start_transaction(
             op="handler",
             name=func.__name__
@@ -292,6 +300,7 @@ def start_transaction(name: str, op: str = "task"):
                 """Set transaction status (no-op)."""
         return NoOpTransaction()
 
+    assert sentry_sdk is not None
     return sentry_sdk.start_transaction(name=name, op=op)
 
 
@@ -307,6 +316,7 @@ def flush(timeout: int = 2):
     if not _sentry_initialized or not SENTRY_AVAILABLE:
         return
 
+    assert sentry_sdk is not None
     sentry_sdk.flush(timeout=timeout)
     logger.info("Sentry events flushed")
 

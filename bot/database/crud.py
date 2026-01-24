@@ -1,5 +1,5 @@
 """
-Database CRUD operations for GMBot.
+Database CRUD operations for Nezuko.
 All operations use async SQLAlchemy sessions.
 """
 

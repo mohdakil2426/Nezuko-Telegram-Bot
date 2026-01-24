@@ -1,6 +1,5 @@
 """Alembic migrations environment for async SQLAlchemy."""
 import asyncio
-import os
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -11,7 +10,7 @@ from alembic import context
 
 # Import models to register them with Base.metadata
 from bot.core.database import Base
-from bot.database import models  # noqa: F401
+from bot.database import models  # noqa: F401 # pylint: disable=unused-import
 from bot.config import config as app_config
 
 # this is the Alembic Config object
@@ -25,8 +24,8 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 # Override sqlalchemy.url from environment variable
-if app_config.DATABASE_URL:
-    config.set_main_option("sqlalchemy.url", app_config.DATABASE_URL)
+if app_config.database_url:
+    config.set_main_option("sqlalchemy.url", app_config.database_url)
 
 
 def run_migrations_offline() -> None:
