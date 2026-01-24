@@ -35,9 +35,62 @@ Nezuko is built as a modular, event-driven monolith designed for high performanc
 *   **Premium UX**: All user-facing strings use consistent emoji-rich formatting and interactive inline keyboards.
 
 ## Standards & Quality
-*   **Code Quality**: Strict adherence to Pylint (Score: 9.99/10).
+*   **Code Quality**: Strict adherence to Pylint (Score: 10.00/10).
 *   **Lazy Logging**: Using `%` formatting for performance in logger calls.
 *   **Async-First**: Native `asyncIO` from the database driver up to the handler logic.
+
+---
+
+## Admin Panel Patterns (Planned)
+
+### Architecture Pattern: Decoupled Full-Stack
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  Next.js 16     │────▶│  FastAPI        │────▶│  PostgreSQL     │
+│  (Frontend)     │     │  (API)          │     │  + Redis        │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                              │
+                              ▼
+                        ┌─────────────────┐
+                        │  Telegram Bot   │
+                        │  (Existing)     │
+                        └─────────────────┘
+```
+
+### Error Handling Pattern: RFC 9457 Problem Details
+```json
+{
+  "type": "https://api.nezuko.bot/errors/auth/invalid-credentials",
+  "title": "Invalid Credentials",
+  "status": 401,
+  "detail": "The provided email or password is incorrect.",
+  "code": "AUTH_001",
+  "trace_id": "abc123-def456"
+}
+```
+
+### Logging Pattern: Structlog + JSON
+```python
+logger.info(
+    "user_login_success",
+    user_id="uuid-123",
+    email="user@example.com",
+    ip_address="192.168.1.1",
+    trace_id=get_trace_id(),
+)
+```
+
+### Resilience Patterns
+1.  **Retry with Exponential Backoff**: For transient failures
+2.  **Circuit Breaker**: Prevent cascading failures to external services
+3.  **Graceful Degradation**: Cache-first with database fallback
+
+### Security Patterns
+1.  **Zero Trust**: Verify every request regardless of source
+2.  **Least Privilege**: RBAC with Owner → Admin → Viewer hierarchy
+3.  **Defense in Depth**: Multiple security layers (TLS, JWT, CORS, CSP)
+
+---
 
 ## Python Quality Standards
 
@@ -56,10 +109,45 @@ To maintain high code quality (**Pylint score 10.00/10** & **Pyrefly 0 Errors**)
 *   **No Duplication**: Logic blocks > 5 lines appearing twice must be refactored into a utility function (e.g., `check_db_connectivity`).
 
 ### 3. Modern Python Practices
-*   **Dates**: **NEVER** use `datetime.utcnow()`. ALWAYS use `datetime.now(timezone.utc)` fortimezone-aware timestamps.
+*   **Dates**: **NEVER** use `datetime.utcnow()`. ALWAYS use `datetime.now(timezone.utc)` for timezone-aware timestamps.
 *   **Logging**: Use lazy `%` formatting in `logger` calls (`logger.info("Msg %s", arg)`). Use f-strings everywhere else.
 *   **Imports**: No unused imports. Remove them immediately. Group imports: stdlib, third-party, local.
 
 ### 4. Exception Handling
 *   **Specific Exceptions**: Never use broad `except Exception:`. Catch specific errors (`SQLAlchemyError`, `TelegramError`).
 *   **Graceful Degradation**: Implement resilience patterns (Circuit Breakers) for external dependencies like Redis and Database.
+
+---
+
+## TypeScript/Frontend Quality Standards
+
+### 1. Naming Conventions
+*   **Files/Folders**: `kebab-case` (e.g., `stats-card.tsx`)
+*   **Components**: `PascalCase` (e.g., `StatsCard`)
+*   **Hooks**: `camelCase` with `use` prefix (e.g., `useAuth`)
+*   **Variables**: `camelCase`
+*   **Constants**: `UPPER_SNAKE_CASE`
+
+### 2. Import Organization
+```typescript
+// 1. React/Next.js
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+// 2. Third-party
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
+// 3. Local
+import { useAuth } from '@/lib/hooks/use-auth';
+import type { User } from '@/types/models';
+```
+
+### 3. Component Structure
+```typescript
+// 1. Imports
+// 2. Types/Interfaces
+// 3. Component
+// 4. Subcomponents (if small)
+// 5. Exports
+```
