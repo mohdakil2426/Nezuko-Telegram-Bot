@@ -1,6 +1,6 @@
 # pylint: disable=wrong-import-order, wrong-import-position, import-outside-toplevel, unused-import, trailing-whitespace, pointless-string-statement, broad-exception-caught, too-many-arguments, too-many-positional-arguments, logging-fstring-interpolation
 """
-Handler Tests for GMBot v2.0
+Handler Tests for Nezuko - The Ultimate All-In-One Bot
 
 Tests for:
 - Command handlers (/start, /help, /protect, /status, /unprotect, /settings)
@@ -416,7 +416,7 @@ async def test_verify_callback_wrong_user():
 if __name__ == "__main__":
     """Run all handler tests."""
     print("=" * 60)
-    print("Running Handler Tests for GMBot v2.0")
+    print("Running Handler Tests for Nezuko")
     print("=" * 60)
     print()
 

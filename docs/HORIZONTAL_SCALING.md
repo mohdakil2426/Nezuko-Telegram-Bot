@@ -2,7 +2,7 @@
 
 ## Overview
 
-GMBot v2.0 is designed for horizontal scaling - running multiple bot instances simultaneously to handle higher load. This document covers architecture, deployment patterns, and validation procedures.
+Nezuko is designed for horizontal scaling - running multiple bot instances simultaneously to handle higher load. This document covers architecture, deployment patterns, and validation procedures.
 
 ---
 
@@ -66,7 +66,7 @@ services:
     environment:
       - WEBHOOK_URL=https://bot.example.com
       - PORT=8443
-      - DATABASE_URL=postgresql+asyncpg://user:pass@db:5432/gmbot
+      - DATABASE_URL=postgresql+asyncpg://user:pass@db:5432/nezuko
       - REDIS_URL=redis://redis:6379/0
     ports:
       - "8443:8443"
@@ -76,7 +76,7 @@ services:
     environment:
       - WEBHOOK_URL=https://bot.example.com
       - PORT=8444
-      - DATABASE_URL=postgresql+asyncpg://user:pass@db:5432/gmbot
+      - DATABASE_URL=postgresql+asyncpg://user:pass@db:5432/nezuko
       - REDIS_URL=redis://redis:6379/0
     ports:
       - "8444:8444"
@@ -220,7 +220,7 @@ max_overflow = 10
 2. Check PostgreSQL connections:
    ```sql
    SELECT count(*) FROM pg_stat_activity 
-   WHERE datname = 'gmbot';
+   WHERE datname = 'nezuko';
    ```
 3. Should see ~60 active connections
 
@@ -300,14 +300,14 @@ ngrok http 8443
 # Terminal 4: Instance 1
 export WEBHOOK_URL=https://abc123.ngrok.io
 export PORT=8443
-export DATABASE_URL=postgresql+asyncpg://localhost/gmbot
+export DATABASE_URL=postgresql+asyncpg://localhost/nezuko
 export REDIS_URL=redis://localhost:6379/0
 python -m bot.main
 
 # Terminal 5: Instance 2 (different port)
 export WEBHOOK_URL=https://abc123.ngrok.io
 export PORT=8444  # Different port
-export DATABASE_URL=postgresql+asyncpg://localhost/gmbot
+export DATABASE_URL=postgresql+asyncpg://localhost/nezuko
 export REDIS_URL=redis://localhost:6379/0
 python -m bot.main
 ```
@@ -336,4 +336,4 @@ python -m bot.main
 
 ---
 
-**Conclusion**: GMBot v2.0 architecture supports horizontal scaling out of the box. No code changes required - just deploy multiple instances with shared database and Redis.
+**Conclusion**: Nezuko's architecture supports horizontal scaling out of the box. No code changes required - just deploy multiple instances with shared database and Redis.

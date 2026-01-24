@@ -1,6 +1,6 @@
 # Progress Status: Nezuko
 
-## Status: PRODUCTION READY ✅ 🚀
+## Status: PRODUCTION READY v1.0.0 ✅ 🚀
 The bot is fully developed, tested, and audited. Version 1.0.0 represents a complete multi-tenant Telegram moderation solution.
 
 ## Release Features (Complete) ✅
@@ -29,21 +29,38 @@ The bot is fully developed, tested, and audited. Version 1.0.0 represents a comp
 - [x] **Error Tracking**: Full Sentry integration with transaction tracing.
 - [x] **Code Quality**: Pylint score of 10.00/10 and Pyrefly static analysis (0 errors).
 
+### 5. Documentation & Developer Experience
+- [x] **AGENTS.md**: Comprehensive AI assistant instructions with mandatory coding rules reference.
+- [x] **GEMINI.md**: Identical instructions for Gemini-based assistants.
+- [x] **README.md**: Modern 2025-2026 design with hero section, badges, feature grid, collapsible sections.
+- [x] **Version Consistency**: All files standardized to v1.0.0.
+
 ## Code Quality Metrics
 *   **Pylint Score**: 10.00 / 10.0
 *   **Static Analysis**: Pyrefly Passed (0 errors).
 *   **Test Status**: All 37 tests PASSED (Unit, Integration, Edge, Load).
 *   **Duplication rate**: < 5% (optimized via shared utilities).
 *   **Performance**: Verified < 50ms database query time and < 100ms E2E verification.
+*   **Version**: 1.0.0 (standardized across all files).
 
 ## Production Roadmap
 1.  [x] **System Architecture**: Multi-tenant engine & Scalable database schema.
 2.  [x] **Core Services**: Distributed caching, rate limiting, and batch verification.
 3.  [x] **Observability**: Prometheus metrics and real-time health monitoring.
 4.  [x] **UX Polish**: Custom inline keyboards and message formatting.
-5.  [ ] **Launch**: Production release 1.0.0.
+5.  [x] **Documentation**: AGENTS.md, GEMINI.md, README.md redesign.
+6.  [x] **Version Standardization**: All files at v1.0.0.
+7.  [ ] **Launch**: Production deployment v1.0.0.
+
+## Session Updates (2026-01-24)
+*   Added mandatory coding rules reference to AGENTS.md and GEMINI.md
+*   Fixed version inconsistencies (pyproject.toml, architecture.md: 2.0.0 → 1.0.0)
+*   Complete README.md redesign following 2025-2026 GitHub best practices
+*   Updated memory bank files
 
 ## Known Limitations / Future Enhancements
 *   Custom warning messages (currently default provided, backend supports JSON params).
 *   Member Whitelisting (future UI enhancement).
 *   Multi-language support (i18n).
+*   Admin Dashboard (web-based management interface).
+*   Banner asset needed: `docs/assets/nezuko-banner.svg`.

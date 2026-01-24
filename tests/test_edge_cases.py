@@ -1,6 +1,6 @@
 # pylint: disable=wrong-import-order, wrong-import-position, import-outside-toplevel, unused-import, trailing-whitespace, pointless-string-statement, broad-exception-caught, logging-fstring-interpolation
 """
-Comprehensive Edge Case Tests for GMBot v2.0
+Comprehensive Edge Case Tests for Nezuko - The Ultimate All-In-One Bot
 
 Tests for:
 - Edge cases in user verification
@@ -488,7 +488,7 @@ if __name__ == "__main__":
     import sys
     
     print("=" * 60)
-    print("Running Edge Case Tests for GMBot v2.0")
+    print("Running Edge Case Tests for Nezuko")
     print("=" * 60)
     print()
     

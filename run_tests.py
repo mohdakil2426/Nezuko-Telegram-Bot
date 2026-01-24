@@ -1,6 +1,6 @@
 # pylint: disable=import-outside-toplevel, too-many-locals, broad-exception-caught, duplicate-code, cyclic-import
 """
-Test Runner for GMBot v2.0
+Test Runner for Nezuko - The Ultimate All-In-One Bot
 
 Runs all test suites with proper path setup.
 Usage: python run_tests.py [--verbose] [--edge] [--handlers] [--services] [--all]
@@ -194,7 +194,7 @@ def print_summary():
 
 def main():
     """Main entry point for test runner."""
-    parser = argparse.ArgumentParser(description="GMBot Test Runner")
+    parser = argparse.ArgumentParser(description="Nezuko Test Runner")
     parser.add_argument("--edge", action="store_true", help="Run edge case tests")
     parser.add_argument("--handlers", action="store_true", help="Run handler tests")
     parser.add_argument("--services", action="store_true", help="Run service tests")

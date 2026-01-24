@@ -1,12 +1,12 @@
-# GMBot v2.0 Architecture
+# Nezuko Architecture
 
-This document describes the system architecture, design decisions, and data flows for GMBot v2.0.
+This document describes the system architecture, design decisions, and data flows for Nezuko - The Ultimate All-In-One Bot.
 
 ---
 
 ## System Overview
 
-GMBot is a **multi-tenant, horizontally-scalable** Telegram bot for channel membership enforcement. It follows a **modular monolith** architecture with clear separation of concerns.
+Nezuko is a **multi-tenant, horizontally-scalable** Telegram bot for channel membership enforcement. It follows a **modular monolith** architecture with clear separation of concerns.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -15,7 +15,7 @@ GMBot is a **multi-tenant, horizontally-scalable** Telegram bot for channel memb
                              │ Updates (Polling/Webhook)
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                         GMBot v2.0                               │
+│                         Nezuko Bot                               │
 │  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────┐  │
 │  │   Handlers   │  │   Services   │  │        Core           │  │
 │  │ ┌──────────┐ │  │ ┌──────────┐ │  │ ┌─────────────────┐   │  │
@@ -292,7 +292,7 @@ All state is stored externally:
          │                   │                   │
          ▼                   ▼                   ▼
 ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│   GMBot #1      │ │   GMBot #2      │ │   GMBot #3      │
+│   Nezuko #1    │ │   Nezuko #2    │ │   Nezuko #3    │
 │  (Webhook Mode) │ │  (Webhook Mode) │ │  (Webhook Mode) │
 └────────┬────────┘ └────────┬────────┘ └────────┬────────┘
          │                   │                   │
@@ -344,8 +344,8 @@ Production logs are JSON-formatted for aggregation:
     "group_id": "-100123456789",
     "channel_id": "-100987654321",
     "cache_hit": true,
-    "app": "gmbot",
-    "version": "2.0.0"
+    "app": "nezuko",
+    "version": "1.0.0"
 }
 ```
 

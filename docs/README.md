@@ -1,6 +1,6 @@
 # Documentation
 
-This directory contains technical documentation for GMBot v2.0.
+This directory contains technical documentation for Nezuko - The Ultimate All-In-One Bot.
 
 ## Contents
 

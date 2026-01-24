@@ -1,6 +1,6 @@
 # pylint: disable=wrong-import-order, wrong-import-position, import-outside-toplevel, unused-import, trailing-whitespace, pointless-string-statement, broad-exception-caught
 """
-Database Integration Tests for GMBot v2.0
+Database Integration Tests for Nezuko - The Ultimate All-In-One Bot
 
 Tests for:
 - Database CRUD operations
@@ -454,7 +454,7 @@ async def test_special_chars_in_invite_link():
 if __name__ == "__main__":
     """Run all database tests."""
     print("=" * 60)
-    print("Running Database Integration Tests for GMBot v2.0")
+    print("Running Database Integration Tests for Nezuko")
     print("=" * 60)
     print()
     

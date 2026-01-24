@@ -2,11 +2,9 @@
 
 ## Purpose
 
-**GMBot** is a Telegram bot designed to enforce channel membership as a prerequisite for participating in linked discussion groups. The bot automatically restricts non-subscribers from sending messages until they join the required channel(s).
+**Nezuko - The Ultimate All-In-One Bot** is a Telegram bot designed to enforce channel membership as a prerequisite for participating in linked discussion groups. The bot automatically restricts non-subscribers from sending messages until they join the required channel(s).
 
-**Current State (v1.1)**: Single-instance bot with `.env` configuration supporting one group-channel pair.
-
-**Target State (v2.0)**: Production-ready multi-tenant SaaS platform supporting 100+ groups with database-driven configuration, distributed caching, and production-grade observability.
+**Current State (v2.0)**: Production-ready multi-tenant platform with database-driven configuration, distributed caching, and production-grade observability.
 
 **Core Goals**:
 1. Automate channel membership enforcement at scale
@@ -178,10 +176,10 @@ docs(openspec): add transform-to-production-saas proposal
 
 **Bot Types**:
 - **Regular Bot**: One-to-one interactions with users
-- **Group Bot**: Operates in group chats (GMBot's primary use case)
-- **Channel Bot**: Posts to channels (GMBot needs admin access to monitor channels)
+- **Group Bot**: Operates in group chats (Nezuko's primary use case)
+- **Channel Bot**: Posts to channels (Nezuko needs admin access to monitor channels)
 
-**Update Types** (GMBot uses all three):
+**Update Types** (Nezuko uses all three):
 1. **Message**: User sends text/media in group (trigger verification)
 2. **CallbackQuery**: User clicks inline button (verify button)
 3. **ChatMember**: User joins/leaves group/channel (instant enforcement)
@@ -219,7 +217,7 @@ docs(openspec): add transform-to-production-saas proposal
 - Temporary ban (minutes to hours)
 - Permanent ban (repeated violations)
 
-**GMBot's Solution**:
+**Nezuko's Solution**:
 - AIORateLimiter caps at 25 msg/sec (5 msg/sec safety buffer)
 - Priority queue: User interactions (P0) > Enforcement (P1) > Bulk operations (P2)
 - Exponential backoff on retries (1s, 2s, 4s)

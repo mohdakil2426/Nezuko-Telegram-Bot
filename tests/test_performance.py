@@ -1,6 +1,6 @@
 # pylint: disable=wrong-import-order, wrong-import-position, import-outside-toplevel, unused-import, trailing-whitespace, pointless-string-statement, broad-exception-caught, unused-variable, too-many-locals, too-few-public-methods, logging-fstring-interpolation
 """
-Load testing suite for GMBot performance validation.
+Load testing suite for Nezuko performance validation.
 
 Tests verification throughput, latency, and system behavior under load.
 Uses pytest-benchmark for performance testing.

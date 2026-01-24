@@ -1,35 +1,35 @@
-# Alerting Rules for GMBot v2.0
+# Alerting Rules for Nezuko
 
-This document defines Prometheus alerting rules for monitoring GMBot in production.
+This document defines Prometheus alerting rules for monitoring Nezuko in production.
 These rules can be deployed to Prometheus/Alertmanager for automated alerting.
 
 ---
 
 ## Prometheus Alert Rules
 
-Save this as `gmbot_alerts.yml` in your Prometheus rules directory.
+Save this as `nezuko_alerts.yml` in your Prometheus rules directory.
 
 ```yaml
 groups:
-  - name: gmbot_alerts
+  - name: nezuko_alerts
     interval: 30s
     rules:
       # ============================================
       # Critical Alerts (Immediate attention required)
       # ============================================
       
-      - alert: GMBotDatabaseDown
+      - alert: NezukoDatabaseDown
         expr: bot_db_connected == 0
         for: 1m
         labels:
           severity: critical
-          service: gmbot
+          service: nezuko
         annotations:
-          summary: "GMBot database connection lost"
+          summary: "Nezuko database connection lost"
           description: "Database connection has been down for more than 1 minute. Bot cannot function without database."
-          runbook_url: "https://github.com/your-org/gmbot/wiki/Runbook-Database-Down"
+          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-Database-Down"
       
-      - alert: GMBotHighErrorRate
+      - alert: NezukoHighErrorRate
         expr: |
           (
             rate(bot_errors_total[5m]) / 
@@ -38,39 +38,39 @@ groups:
         for: 5m
         labels:
           severity: critical
-          service: gmbot
+          service: nezuko
         annotations:
-          summary: "GMBot error rate exceeds 1%"
+          summary: "Nezuko error rate exceeds 1%"
           description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
-          runbook_url: "https://github.com/your-org/gmbot/wiki/Runbook-High-Error-Rate"
+          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-High-Error-Rate"
 
       # ============================================
       # Warning Alerts (Investigate soon)
       # ============================================
       
-      - alert: GMBotHighLatency
+      - alert: NezukoHighLatency
         expr: histogram_quantile(0.95, rate(bot_verification_latency_seconds_bucket[5m])) > 0.5
         for: 5m
         labels:
           severity: warning
-          service: gmbot
+          service: nezuko
         annotations:
-          summary: "GMBot verification latency exceeds 500ms (p95)"
+          summary: "Nezuko verification latency exceeds 500ms (p95)"
           description: "P95 verification latency is {{ $value | humanizeDuration }}. Target is <100ms."
-          runbook_url: "https://github.com/your-org/gmbot/wiki/Runbook-High-Latency"
+          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-High-Latency"
       
-      - alert: GMBotRedisDown
+      - alert: NezukoRedisDown
         expr: bot_redis_connected == 0
         for: 5m
         labels:
           severity: warning
-          service: gmbot
+          service: nezuko
         annotations:
-          summary: "GMBot Redis connection lost (degraded mode)"
+          summary: "Nezuko Redis connection lost (degraded mode)"
           description: "Redis has been unavailable for 5 minutes. Bot is running in degraded mode with direct API calls."
-          runbook_url: "https://github.com/your-org/gmbot/wiki/Runbook-Redis-Down"
+          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-Redis-Down"
       
-      - alert: GMBotLowCacheHitRate
+      - alert: NezukoLowCacheHitRate
         expr: |
           (
             rate(bot_cache_hits_total[15m]) /
@@ -79,56 +79,56 @@ groups:
         for: 15m
         labels:
           severity: warning
-          service: gmbot
+          service: nezuko
         annotations:
-          summary: "GMBot cache hit rate below 50%"
+          summary: "Nezuko cache hit rate below 50%"
           description: "Cache hit rate is {{ $value | humanizePercentage }}. Expected >70%."
-          runbook_url: "https://github.com/your-org/gmbot/wiki/Runbook-Low-Cache-Hit-Rate"
+          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-Low-Cache-Hit-Rate"
       
-      - alert: GMBotHighRateLimitDelays
+      - alert: NezukoHighRateLimitDelays
         expr: rate(bot_rate_limit_delays_total[5m]) > 0.1
         for: 5m
         labels:
           severity: warning
-          service: gmbot
+          service: nezuko
         annotations:
-          summary: "GMBot hitting Telegram rate limits"
+          summary: "Nezuko hitting Telegram rate limits"
           description: "Rate limit delays occurring at {{ $value }} per second. May impact user experience."
-          runbook_url: "https://github.com/your-org/gmbot/wiki/Runbook-Rate-Limits"
+          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-Rate-Limits"
       
-      - alert: GMBotSlowDatabaseQueries
+      - alert: NezukoSlowDatabaseQueries
         expr: histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m])) > 0.05
         for: 5m
         labels:
           severity: warning
-          service: gmbot
+          service: nezuko
         annotations:
-          summary: "GMBot database queries slow (p95 > 50ms)"
+          summary: "Nezuko database queries slow (p95 > 50ms)"
           description: "P95 database query duration is {{ $value | humanizeDuration }}. Target is <50ms."
-          runbook_url: "https://github.com/your-org/gmbot/wiki/Runbook-Slow-Queries"
+          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-Slow-Queries"
 
       # ============================================
       # Informational Alerts (For awareness)
       # ============================================
       
-      - alert: GMBotNoActiveGroups
+      - alert: NezukoNoActiveGroups
         expr: bot_active_groups == 0
         for: 1h
         labels:
           severity: info
-          service: gmbot
+          service: nezuko
         annotations:
-          summary: "GMBot has no active protected groups"
+          summary: "Nezuko has no active protected groups"
           description: "No groups are currently protected. This may be expected if bot was just deployed."
 
-      - alert: GMBotLowThroughput
+      - alert: NezukoLowThroughput
         expr: rate(bot_verifications_total[5m]) < 0.01
         for: 30m
         labels:
           severity: info
-          service: gmbot
+          service: nezuko
         annotations:
-          summary: "GMBot low verification throughput"
+          summary: "Nezuko low verification throughput"
           description: "Less than 1 verification per 100 seconds. May indicate low usage or connectivity issues."
 ```
 
@@ -181,23 +181,23 @@ Configure in Alertmanager:
 
 ```yaml
 receivers:
-  - name: 'gmbot-critical'
+  - name: 'nezuko-critical'
     pagerduty_configs:
       - service_key: '<YOUR_PAGERDUTY_KEY>'
     
-  - name: 'gmbot-warnings'
+  - name: 'nezuko-warnings'
     slack_configs:
       - api_url: '<YOUR_SLACK_WEBHOOK>'
-        channel: '#gmbot-alerts'
+        channel: '#nezuko-alerts'
         send_resolved: true
     
-  - name: 'gmbot-info'
+  - name: 'nezuko-info'
     email_configs:
       - to: 'team@example.com'
         send_resolved: true
 
 route:
-  receiver: 'gmbot-info'
+  receiver: 'nezuko-info'
   group_by: ['alertname', 'service']
   group_wait: 30s
   group_interval: 5m
@@ -205,11 +205,11 @@ route:
   routes:
     - match:
         severity: critical
-      receiver: 'gmbot-critical'
+      receiver: 'nezuko-critical'
       repeat_interval: 1h
     - match:
         severity: warning
-      receiver: 'gmbot-warnings'
+      receiver: 'nezuko-warnings'
       repeat_interval: 2h
 ```
 

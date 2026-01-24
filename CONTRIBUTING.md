@@ -1,6 +1,6 @@
-# Contributing to GMBot
+# Contributing to Nezuko - The Ultimate All-In-One Bot
 
-Thank you for considering contributing to GMBot! This document provides guidelines and steps for contributing.
+Thank you for considering contributing to Nezuko! This document provides guidelines and steps for contributing.
 
 ## 📋 Code of Conduct
 
@@ -173,4 +173,4 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 ## 🙏 Thank You!
 
-Your contributions make GMBot better for everyone. We appreciate your time and effort!
+Your contributions make Nezuko better for everyone. We appreciate your time and effort!

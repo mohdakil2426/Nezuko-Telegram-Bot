@@ -1,11 +1,11 @@
 [project]
-name = "gmbot"
-version = "2.0.0"
-description = "Multi-tenant Telegram Group Manager Bot"
+name = "nezuko"
+version = "1.0.0"
+description = "Nezuko - The Ultimate All-In-One Telegram Bot"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.13"
-authors = [{ name = "GMBot Team" }]
+authors = [{ name = "Nezuko Team" }]
 keywords = ["telegram", "bot", "group-manager", "verification"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
