@@ -27,7 +27,7 @@ groups:
         annotations:
           summary: "Nezuko database connection lost"
           description: "Database connection has been down for more than 1 minute. Bot cannot function without database."
-          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-Database-Down"
+          runbook_url: "https://github.com/mohdakil2426/Nezuko-Telegram-Bot/wiki/Runbook-Database-Down"
       
       - alert: NezukoHighErrorRate
         expr: |
@@ -42,7 +42,7 @@ groups:
         annotations:
           summary: "Nezuko error rate exceeds 1%"
           description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
-          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-High-Error-Rate"
+          runbook_url: "https://github.com/mohdakil2426/Nezuko-Telegram-Bot/wiki/Runbook-High-Error-Rate"
 
       # ============================================
       # Warning Alerts (Investigate soon)
@@ -57,7 +57,7 @@ groups:
         annotations:
           summary: "Nezuko verification latency exceeds 500ms (p95)"
           description: "P95 verification latency is {{ $value | humanizeDuration }}. Target is <100ms."
-          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-High-Latency"
+          runbook_url: "https://github.com/mohdakil2426/Nezuko-Telegram-Bot/wiki/Runbook-High-Latency"
       
       - alert: NezukoRedisDown
         expr: bot_redis_connected == 0
@@ -68,7 +68,7 @@ groups:
         annotations:
           summary: "Nezuko Redis connection lost (degraded mode)"
           description: "Redis has been unavailable for 5 minutes. Bot is running in degraded mode with direct API calls."
-          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-Redis-Down"
+          runbook_url: "https://github.com/mohdakil2426/Nezuko-Telegram-Bot/wiki/Runbook-Redis-Down"
       
       - alert: NezukoLowCacheHitRate
         expr: |
@@ -83,7 +83,7 @@ groups:
         annotations:
           summary: "Nezuko cache hit rate below 50%"
           description: "Cache hit rate is {{ $value | humanizePercentage }}. Expected >70%."
-          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-Low-Cache-Hit-Rate"
+          runbook_url: "https://github.com/mohdakil2426/Nezuko-Telegram-Bot/wiki/Runbook-Low-Cache-Hit-Rate"
       
       - alert: NezukoHighRateLimitDelays
         expr: rate(bot_rate_limit_delays_total[5m]) > 0.1
@@ -94,7 +94,7 @@ groups:
         annotations:
           summary: "Nezuko hitting Telegram rate limits"
           description: "Rate limit delays occurring at {{ $value }} per second. May impact user experience."
-          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-Rate-Limits"
+          runbook_url: "https://github.com/mohdakil2426/Nezuko-Telegram-Bot/wiki/Runbook-Rate-Limits"
       
       - alert: NezukoSlowDatabaseQueries
         expr: histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m])) > 0.05
@@ -105,7 +105,7 @@ groups:
         annotations:
           summary: "Nezuko database queries slow (p95 > 50ms)"
           description: "P95 database query duration is {{ $value | humanizeDuration }}. Target is <50ms."
-          runbook_url: "https://github.com/your-org/nezuko/wiki/Runbook-Slow-Queries"
+          runbook_url: "https://github.com/mohdakil2426/Nezuko-Telegram-Bot/wiki/Runbook-Slow-Queries"
 
       # ============================================
       # Informational Alerts (For awareness)

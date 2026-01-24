@@ -1,7 +1,7 @@
 <div align="center">
 
 <!-- HERO SECTION -->
-<img src="https://raw.githubusercontent.com/mohdakil2426/Telegram-Channel-Verification-Bot/main/docs/assets/nezuko-banner.svg" alt="Nezuko Banner" width="800"/>
+<img src="https://raw.githubusercontent.com/mohdakil2426/Nezuko-Telegram-Bot/main/docs/assets/nezuko-banner.svg" alt="Nezuko Banner" width="800"/>
 
 <br/>
 
@@ -14,7 +14,7 @@
 <br/>
 
 <!-- BADGES - Row 1: Version & Status -->
-[![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square&labelColor=000000)](https://github.com/mohdakil2426/Telegram-Channel-Verification-Bot/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square&labelColor=000000)](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/releases)
 [![Python](https://img.shields.io/badge/python-3.13+-3776AB?style=flat-square&logo=python&logoColor=white&labelColor=000000)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square&labelColor=000000)](LICENSE)
 [![Telegram Bot API](https://img.shields.io/badge/Bot_API-v22.5+-26A5E4?style=flat-square&logo=telegram&logoColor=white&labelColor=000000)](https://python-telegram-bot.org/)
@@ -34,7 +34,7 @@
 <br/>
 
 <!-- QUICK LINKS -->
-[**Documentation**](docs/) | [**Architecture**](docs/architecture/architecture.md) | [**Contributing**](CONTRIBUTING.md) | [**Report Bug**](https://github.com/mohdakil2426/Telegram-Channel-Verification-Bot/issues)
+[**Documentation**](docs/) | [**Architecture**](docs/architecture/architecture.md) | [**Contributing**](CONTRIBUTING.md) | [**Report Bug**](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/issues)
 
 <br/>
 
@@ -187,8 +187,8 @@ Error Rate:       0.02%
 
 ```bash
 # Clone repository
-git clone https://github.com/mohdakil2426/Telegram-Channel-Verification-Bot.git
-cd Telegram-Channel-Verification-Bot
+git clone https://github.com/mohdakil2426/Nezuko-Telegram-Bot.git
+cd Nezuko-Telegram-Bot
 
 # Create virtual environment
 python -m venv venv
@@ -362,7 +362,7 @@ Nezuko is built to evolve. The modular architecture supports:
 - [ ] **Scheduled Messages** - Timed announcements and reminders
 - [ ] **Integration Plugins** - Connect to external services
 
-*Have a feature idea? [Open an issue](https://github.com/mohdakil2426/Telegram-Channel-Verification-Bot/issues)!*
+*Have a feature idea? [Open an issue](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/issues)!*
 
 ---
 
@@ -480,7 +480,7 @@ Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 <br/>
 
-[![GitHub Stars](https://img.shields.io/github/stars/mohdakil2426/Telegram-Channel-Verification-Bot?style=social)](https://github.com/mohdakil2426/Telegram-Channel-Verification-Bot/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/mohdakil2426/Nezuko-Telegram-Bot?style=social)](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/stargazers)
 
 *If you find Nezuko useful, consider giving it a star!*
 

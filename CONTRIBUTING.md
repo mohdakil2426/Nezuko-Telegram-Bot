@@ -19,8 +19,8 @@ Please be respectful and constructive in all interactions. We're building someth
 
 2. **Clone your fork**:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/Telegram-Channel-Verification-Bot.git
-   cd Telegram-Channel-Verification-Bot
+   git clone https://github.com/YOUR_USERNAME/Nezuko-Telegram-Bot.git
+   cd Nezuko-Telegram-Bot
    ```
 
 3. **Set up virtual environment**:
