@@ -1,8 +1,9 @@
+from collections.abc import Callable
+
 from fastapi import Depends, HTTPException, status
-from typing import Callable
 
 from apps.api.src.api.v1.dependencies.auth import get_current_active_user
-from apps.api.src.core.permissions import Role, Permission, ROLE_PERMISSIONS
+from apps.api.src.core.permissions import ROLE_PERMISSIONS, Permission, Role
 
 
 def require_permission(permission: Permission) -> Callable:
@@ -15,7 +16,8 @@ def require_permission(permission: Permission) -> Callable:
             user_role = Role(user_role_str)
         except ValueError:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid user role configuration"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid user role configuration",
             )
 
         allowed_permissions = ROLE_PERMISSIONS.get(user_role, [])

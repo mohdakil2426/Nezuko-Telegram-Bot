@@ -1,15 +1,13 @@
-from typing import Any
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import get_settings
 from src.core.database import get_session
 from src.core.security import decode_token
 from src.models.admin_user import AdminUser
-from src.services.auth_service import AuthService
 from src.schemas.auth import UserResponse
 
 settings = get_settings()
@@ -18,7 +16,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_BASE_URL}/api/v1/a
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_session)
+    token: str = Depends(oauth2_scheme),
+    session: AsyncSession = Depends(get_session),
 ) -> UserResponse:
     """
     Validate JWT access token and return current user.
@@ -32,7 +31,7 @@ async def get_current_user(
     try:
         payload = decode_token(token)
         user_id: str = payload.get("sub")
-        session_id: str = payload.get("session_id")
+        payload.get("session_id")
         if user_id is None:
             raise credentials_exception
     except JWTError:
@@ -48,8 +47,6 @@ async def get_current_user(
     # Since we need to check is_active, let's fetch the user.
     # To avoid DB hit on every request, we could cache this in Redis.
     # But for Phase 1, DB fetch.
-
-    from sqlalchemy import select
 
     stmt = select(AdminUser).where(AdminUser.id == user_id)
     result = await session.execute(stmt)

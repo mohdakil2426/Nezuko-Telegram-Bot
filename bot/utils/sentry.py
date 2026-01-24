@@ -11,15 +11,16 @@ Provides:
 """
 
 import logging
-from typing import Optional, Dict, Any, cast
 from functools import wraps
+from typing import Any, cast
 
 # Sentry SDK (optional - graceful when not installed/configured)
 try:
     import sentry_sdk
     from sentry_sdk.integrations.logging import LoggingIntegration
-    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
     from sentry_sdk.integrations.redis import RedisIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+
     SENTRY_AVAILABLE = True
 except ImportError:
     SENTRY_AVAILABLE = False
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 _sentry_initialized = False  # pylint: disable=invalid-name
 
 
-def init_sentry(dsn: Optional[str] = None, environment: Optional[str] = None) -> bool:
+def init_sentry(dsn: str | None = None, environment: str | None = None) -> bool:
     """
     Initialize Sentry error tracking.
 
@@ -62,36 +63,32 @@ def init_sentry(dsn: Optional[str] = None, environment: Optional[str] = None) ->
         sentry_sdk.init(
             dsn=dsn,
             environment=environment,
-
             # Integrations
             integrations=[
                 LoggingIntegration(
-                    level=logging.INFO,        # Capture INFO and above as breadcrumbs
-                    event_level=logging.ERROR  # Send ERROR and above to Sentry
+                    level=logging.INFO,  # Capture INFO and above as breadcrumbs
+                    event_level=logging.ERROR,  # Send ERROR and above to Sentry
                 ),
                 SqlalchemyIntegration(),
                 RedisIntegration(),
             ],
-
             # Performance monitoring (sample 10% of transactions)
             traces_sample_rate=0.1,
-
             # Release info
             release="nezuko@1.0.0",
-
             # Don't send PII by default
             send_default_pii=False,
-
             # Attach stacktrace to all message events
             attach_stacktrace=True,
-
             # Before send hook to filter/modify events
             before_send=cast(Any, _before_send),
-
             # Additional context
-            _experiments=cast(Any, {
-                "profiles_sample_rate": 0.1,  # Profile 10% of transactions
-            })
+            _experiments=cast(
+                Any,
+                {
+                    "profiles_sample_rate": 0.1,  # Profile 10% of transactions
+                },
+            ),
         )
 
         # Set initial tags
@@ -108,7 +105,7 @@ def init_sentry(dsn: Optional[str] = None, environment: Optional[str] = None) ->
         return False
 
 
-def _before_send(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _before_send(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any] | None:
     """
     Pre-process events before sending to Sentry.
 
@@ -138,7 +135,7 @@ def _before_send(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[s
     return event
 
 
-def set_user_context(user_id: int, username: Optional[str] = None):
+def set_user_context(user_id: int, username: str | None = None):
     """
     Set user context for Sentry error tracking.
 
@@ -150,13 +147,10 @@ def set_user_context(user_id: int, username: Optional[str] = None):
         return
 
     assert sentry_sdk is not None
-    sentry_sdk.set_user({
-        "id": str(user_id),
-        "username": username or f"user_{user_id}"
-    })
+    sentry_sdk.set_user({"id": str(user_id), "username": username or f"user_{user_id}"})
 
 
-def set_chat_context(group_id: int, channel_id: Optional[int] = None):
+def set_chat_context(group_id: int, channel_id: int | None = None):
     """
     Set chat context for Sentry error tracking.
 
@@ -168,17 +162,13 @@ def set_chat_context(group_id: int, channel_id: Optional[int] = None):
         return
 
     assert sentry_sdk is not None
-    sentry_sdk.set_context("chat", {
-        "group_id": str(group_id),
-        "channel_id": str(channel_id) if channel_id else None
-    })
+    sentry_sdk.set_context(
+        "chat", {"group_id": str(group_id), "channel_id": str(channel_id) if channel_id else None}
+    )
 
 
 def add_breadcrumb(
-    message: str,
-    category: str = "info",
-    level: str = "info",
-    data: Optional[Dict[str, Any]] = None
+    message: str, category: str = "info", level: str = "info", data: dict[str, Any] | None = None
 ):
     """
     Add a breadcrumb to the Sentry trail.
@@ -195,12 +185,7 @@ def add_breadcrumb(
         return
 
     assert sentry_sdk is not None
-    sentry_sdk.add_breadcrumb(
-        message=message,
-        category=category,
-        level=level,
-        data=data or {}
-    )
+    sentry_sdk.add_breadcrumb(message=message, category=category, level=level, data=data or {})
 
 
 def capture_exception(error: Exception, **context):
@@ -250,16 +235,14 @@ def sentry_trace(func):
         async def my_handler(update, context):
             ...
     """
+
     @wraps(func)
     async def wrapper(*args, **kwargs):
         if not _sentry_initialized or not SENTRY_AVAILABLE:
             return await func(*args, **kwargs)
 
         assert sentry_sdk is not None
-        with sentry_sdk.start_transaction(
-            op="handler",
-            name=func.__name__
-        ) as transaction:
+        with sentry_sdk.start_transaction(op="handler", name=func.__name__) as transaction:
             try:
                 result = await func(*args, **kwargs)
                 transaction.set_status("ok")
@@ -292,12 +275,16 @@ def start_transaction(name: str, op: str = "task"):
         # Return a no-op context manager
         class NoOpTransaction:
             """No-op transaction when Sentry is unavailable."""
+
             def __enter__(self):
                 return self
+
             def __exit__(self, *args):
                 pass
+
             def set_status(self, _status):
                 """Set transaction status (no-op)."""
+
         return NoOpTransaction()
 
     assert sentry_sdk is not None

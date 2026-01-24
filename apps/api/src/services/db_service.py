@@ -1,22 +1,15 @@
-from sqlalchemy import text, inspect
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Dict, Any, Tuple
 import logging
 
-from ..core.database import get_session
-from ..schemas.database import (
-    TableInfo,
-    TableDataResponse,
-    ColumnInfo,
-    MigrationInfo,
-    MigrationStatusResponse,
-)
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.schemas.database import ColumnInfo, MigrationStatusResponse, TableDataResponse, TableInfo
 
 logger = logging.getLogger(__name__)
 
 
 class DatabaseService:
-    async def get_tables(self, session: AsyncSession) -> List[TableInfo]:
+    async def get_tables(self, session: AsyncSession) -> list[TableInfo]:
         """
         Retrieves list of tables using SQL inspection.
         Note: Standard SQLAlchemy inspector is sync, so we run it in a run_sync block within session?
@@ -44,7 +37,7 @@ class DatabaseService:
             table_name = row.table_name
             # simplified column fetch
             col_query = text(
-                "SELECT column_name FROM information_schema.columns WHERE table_name = :table_name"
+                "SELECT column_name FROM information_schema.columns WHERE table_name = :table_name",
             )
             col_result = await session.execute(col_query, {"table_name": table_name})
             columns = [r.column_name for r in col_result]
@@ -55,13 +48,17 @@ class DatabaseService:
                     row_count=row.row_count,
                     size_bytes=row.size_bytes,
                     columns=columns,
-                )
+                ),
             )
 
         return tables
 
     async def get_table_data(
-        self, session: AsyncSession, table_name: str, page: int = 1, per_page: int = 50
+        self,
+        session: AsyncSession,
+        table_name: str,
+        page: int = 1,
+        per_page: int = 50,
     ) -> TableDataResponse:
         """
         Fetches raw data from a table with pagination.
@@ -71,7 +68,7 @@ class DatabaseService:
 
         # 1. Validate table exists
         check_query = text(
-            "SELECT 1 FROM information_schema.tables WHERE table_name = :table_name AND table_schema = 'public'"
+            "SELECT 1 FROM information_schema.tables WHERE table_name = :table_name AND table_schema = 'public'",
         )
         result = await session.execute(check_query, {"table_name": table_name})
         if not result.scalar():
@@ -88,17 +85,17 @@ class DatabaseService:
         columns = []
         for r in col_result:
             columns.append(
-                ColumnInfo(name=r.column_name, type=r.data_type, nullable=r.is_nullable == "YES")
+                ColumnInfo(name=r.column_name, type=r.data_type, nullable=r.is_nullable == "YES"),
             )
 
         # 3. Get total count
         # Use safe string formatting for table name since we validated it
-        count_query = text(f"SELECT COUNT(*) FROM {table_name}")
+        count_query = text(f"SELECT COUNT(*) FROM {table_name}")  # noqa: S608
         total_rows = (await session.execute(count_query)).scalar() or 0
 
         # 4. Fetch data
         offset = (page - 1) * per_page
-        data_query = text(f"SELECT * FROM {table_name} LIMIT :limit OFFSET :offset")
+        data_query = text(f"SELECT * FROM {table_name} LIMIT :limit OFFSET :offset")  # noqa: S608
         data_result = await session.execute(data_query, {"limit": per_page, "offset": offset})
 
         rows = []
@@ -112,7 +109,11 @@ class DatabaseService:
             rows.append(row_dict)
 
         return TableDataResponse(
-            columns=columns, rows=rows, total_rows=total_rows, page=page, per_page=per_page
+            columns=columns,
+            rows=rows,
+            total_rows=total_rows,
+            page=page,
+            per_page=per_page,
         )
 
     async def get_migrations(self, session: AsyncSession) -> MigrationStatusResponse:

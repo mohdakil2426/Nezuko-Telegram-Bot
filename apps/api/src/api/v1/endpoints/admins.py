@@ -1,13 +1,13 @@
+from collections.abc import Sequence
 from uuid import UUID
-from typing import Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from apps.api.src.api.v1.dependencies.permissions import Permission, require_permission
 from apps.api.src.core.database import get_session
 from apps.api.src.schemas.admin import AdminCreateRequest, AdminResponse, AdminUpdateRequest
 from apps.api.src.services.admin_service import AdminService
-from apps.api.src.api.v1.dependencies.permissions import require_permission, Permission
 
 router = APIRouter()
 
@@ -69,7 +69,8 @@ async def delete_admin(
     # Prevent self-deletion
     if str(admin_id) == current_user.get("sub"):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete yourself"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete yourself",
         )
 
     service = AdminService(session)

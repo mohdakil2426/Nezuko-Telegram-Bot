@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.database import get_session
-from src.schemas.auth import LoginRequest, AuthResponse, RefreshRequest, RefreshResponse
-from src.services.auth_service import AuthService
 from src.core.config import get_settings
+from src.core.database import get_session
+from src.schemas.auth import AuthResponse, LoginRequest, RefreshRequest, RefreshResponse
+from src.services.auth_service import AuthService
 
 settings = get_settings()
 router = APIRouter()
@@ -76,7 +76,8 @@ async def refresh(
 
     if not refresh_token:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token missing"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token missing",
         )
 
     auth_service = AuthService(session)
@@ -84,7 +85,9 @@ async def refresh(
     user_agent = request.headers.get("user-agent")
 
     access_token, new_refresh_token, expires_in = await auth_service.refresh_session(
-        refresh_token, ip, user_agent
+        refresh_token,
+        ip,
+        user_agent,
     )
 
     # Set new refresh token cookie
@@ -102,8 +105,10 @@ async def refresh(
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
-    request: Request, response: Response, session: AsyncSession = Depends(get_session)
-):
+    request: Request,
+    response: Response,
+    session: AsyncSession = Depends(get_session),
+) -> None:
     """
     Logout user (revoke session).
     """
@@ -113,4 +118,3 @@ async def logout(
         await auth_service.revoke_session(refresh_token)
 
     response.delete_cookie(key="refresh_token")
-    return None

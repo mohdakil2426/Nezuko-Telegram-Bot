@@ -3,7 +3,8 @@ Configuration management and environment variable validation.
 """
 
 import os
-from typing import Optional, overload
+from typing import overload
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -20,15 +21,15 @@ class Config:
     database_url: str
 
     # Optional - Webhook
-    webhook_url: Optional[str] = None
-    webhook_secret: Optional[str] = None
+    webhook_url: str | None = None
+    webhook_secret: str | None = None
     port: int = 8443
 
     # Optional - Redis
-    redis_url: Optional[str] = None
+    redis_url: str | None = None
 
     # Optional - Monitoring
-    sentry_dsn: Optional[str] = None
+    sentry_dsn: str | None = None
 
     def __init__(self):
         """Initialize and validate configuration from environment variables."""
@@ -37,7 +38,7 @@ class Config:
         self.environment = self._get_optional("ENVIRONMENT", "development")
         self.database_url = self._get_optional(
             "DATABASE_URL",
-            "sqlite+aiosqlite:///./nezuko.db"  # Default to async SQLite for development
+            "sqlite+aiosqlite:///./nezuko.db",  # Default to async SQLite for development
         )
 
         # Optional - Webhook
@@ -62,12 +63,12 @@ class Config:
         return value
 
     @overload
-    def _get_optional(self, key: str) -> Optional[str]: ...
+    def _get_optional(self, key: str) -> str | None: ...
 
     @overload
     def _get_optional(self, key: str, default: str) -> str: ...
 
-    def _get_optional(self, key: str, default: Optional[str] = None) -> Optional[str]:
+    def _get_optional(self, key: str, default: str | None = None) -> str | None:
         """Get optional environment variable with default."""
         return os.getenv(key, default)
 
@@ -95,9 +96,7 @@ class Config:
         """Validate configuration consistency."""
         # Webhook validation
         if self.use_webhooks and not self.webhook_secret:
-            raise ValueError(
-                "WEBHOOK_SECRET is required when using webhooks in production mode"
-            )
+            raise ValueError("WEBHOOK_SECRET is required when using webhooks in production mode")
 
         # Redis warning
         if self.is_production and not self.redis_url:

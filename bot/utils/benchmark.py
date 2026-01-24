@@ -8,28 +8,29 @@ Measures baseline performance metrics for:
 
 Run: python -m bot.utils.benchmark
 """
+
 import asyncio
-import time
-import statistics
 import logging
-from typing import List, Dict, Any
+import statistics
+import time
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
+from bot.config import config
+from bot.core.cache import cache_get, cache_set, get_redis_client, get_ttl_with_jitter
 from bot.core.database import get_session
-from bot.core.cache import cache_get, cache_set, get_ttl_with_jitter, get_redis_client
 from bot.database.crud import (
-    get_protected_group,
-    get_group_channels,
-    link_group_channel,
+    create_owner,
     create_protected_group,
-    create_owner
+    get_group_channels,
+    get_protected_group,
+    link_group_channel,
 )
 from bot.services.verification import check_membership, reset_cache_stats
-from bot.config import config
 
 logging.basicConfig(
     level=logging.WARNING,  # Suppress debug logs for clean output
-    format='%(message)s'
+    format="%(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,8 @@ TARGET_E2E_VERIFICATION_MS = 100  # End-to-end (cache miss)
 # pylint: disable=too-many-instance-attributes, too-few-public-methods
 class BenchmarkResult:
     """Container for benchmark results."""
-    def __init__(self, name: str, times_ms: List[float], target_ms: float):
+
+    def __init__(self, name: str, times_ms: list[float], target_ms: float):
         self.name = name
         self.times_ms = sorted(times_ms)
         self.target_ms = target_ms
@@ -111,11 +113,7 @@ async def benchmark_database_join_query() -> BenchmarkResult:
     # Setup: Create test group with channels
     async with get_session() as session:
         await link_group_channel(
-            session,
-            -1001111111111,
-            -1001222222222,
-            "https://t.me/benchmark",
-            "Benchmark Channel"
+            session, -1001111111111, -1001222222222, "https://t.me/benchmark", "Benchmark Channel"
         )
 
     # Benchmark
@@ -228,22 +226,20 @@ async def benchmark_e2e_verification() -> BenchmarkResult:
         assert is_member is True
 
     return BenchmarkResult(
-        "End-to-End Verification (cache miss)",
-        times,
-        TARGET_E2E_VERIFICATION_MS
+        "End-to-End Verification (cache miss)", times, TARGET_E2E_VERIFICATION_MS
     )
 
 
-async def run_all_benchmarks() -> Dict[str, Any]:
+async def run_all_benchmarks() -> dict[str, Any]:
     """
     Run all performance benchmarks and generate report.
 
     Returns:
         Dict with all benchmark results
     """
-    print("="*70)
+    print("=" * 70)
     print("NEZUKO PERFORMANCE BENCHMARKING SUITE")
-    print("="*70)
+    print("=" * 70)
     print("Targets:")
     print(f"  Database Query:  <{TARGET_DB_QUERY_MS}ms")
     print(f"  Cache Operation: <{TARGET_CACHE_READ_MS}ms")
@@ -275,31 +271,31 @@ async def run_all_benchmarks() -> Dict[str, Any]:
         results["e2e_verification"] = await benchmark_e2e_verification()
 
         # Print results
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("BENCHMARK RESULTS")
-        print("="*70)
+        print("=" * 70)
 
         for _, result in results.items():
             print(result)
             if not result.passed:
                 all_passed = False
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         if all_passed:
             print("✅ ALL BENCHMARKS PASSED")
         else:
             print("❌ SOME BENCHMARKS FAILED - Review results above")
-        print("="*70)
+        print("=" * 70)
 
         # Summary table
         print("\n📊 SUMMARY TABLE")
-        print("-"*70)
+        print("-" * 70)
         print(f"{'Benchmark':<40} {'Avg (ms)':<12} {'Target':<12} {'Status':<8}")
-        print("-"*70)
+        print("-" * 70)
         for _, result in results.items():
             status = "PASS" if result.passed else "FAIL"
             print(f"{result.name:<40} {result.avg:<12.2f} <{result.target_ms:<11.2f} {status}")
-        print("-"*70)
+        print("-" * 70)
 
     except (RuntimeError, OSError) as e:
         logger.error("Benchmark error: %s", e, exc_info=True)

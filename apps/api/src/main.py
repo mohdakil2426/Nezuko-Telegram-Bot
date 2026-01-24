@@ -1,14 +1,23 @@
 """Main FastAPI application entry point."""
 
+import asyncio
+import contextlib
+
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .api.v1.router import api_router
+from .api.websocket.handlers import logs
+from .api.websocket.redis_listener import redis_log_listener
 from .core.config import get_settings
 from .core.logging import configure_logging
-from .api.v1.router import api_router
-from .middleware.rate_limit import setup_rate_limiting
+from .middleware.audit import AuditMiddleware
 from .middleware.error_handler import register_exception_handlers
+from .middleware.logging import RequestLoggingMiddleware
+from .middleware.rate_limit import setup_rate_limiting
+from .middleware.request_id import RequestIDMiddleware
+from .middleware.security import SecurityHeadersMiddleware
 
 # Get settings first
 settings = get_settings()
@@ -39,11 +48,6 @@ setup_rate_limiting(app)
 
 # Include Routers
 app.include_router(api_router, prefix="/api/v1")
-
-from .middleware.audit import AuditMiddleware
-from .middleware.request_id import RequestIDMiddleware
-from .middleware.logging import RequestLoggingMiddleware
-from .middleware.security import SecurityHeadersMiddleware
 
 # Middleware registration (Applied inside-out: Last added is First executed on Request)
 # The order below results in: Request -> CORS -> Security -> RequestID -> Logging -> Audit -> App
@@ -76,10 +80,6 @@ async def health_check() -> dict[str, str]:
     return {"status": "healthy", "version": "0.1.0"}
 
 
-import asyncio
-from .api.websocket.handlers import logs
-from .api.websocket.redis_listener import redis_log_listener
-
 # Include WebSocket Router
 app.include_router(logs.router)
 
@@ -103,7 +103,5 @@ async def shutdown_event() -> None:
     # Cancel Redis Log Listener
     if hasattr(app.state, "redis_listener_task"):
         app.state.redis_listener_task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await app.state.redis_listener_task
-        except asyncio.CancelledError:
-            pass

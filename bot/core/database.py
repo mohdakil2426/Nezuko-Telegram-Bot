@@ -2,13 +2,14 @@
 Async SQLAlchemy database session factory and connection management.
 """
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+
 from sqlalchemy.ext.asyncio import (
-    create_async_engine,
-    async_sessionmaker,
+    AsyncEngine,
     AsyncSession,
-    AsyncEngine
+    async_sessionmaker,
+    create_async_engine,
 )
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import NullPool, QueuePool
@@ -39,7 +40,7 @@ def get_engine() -> AsyncEngine:
                 config.database_url,
                 echo=config.is_development,  # Log SQL in development
                 poolclass=NullPool,
-                connect_args={"check_same_thread": False}
+                connect_args={"check_same_thread": False},
             )
         else:
             # PostgreSQL with connection pooling
@@ -75,7 +76,7 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
 
 
 @asynccontextmanager
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_session() -> AsyncGenerator[AsyncSession]:
     """
     Dependency for FastAPI/handlers to get database session.
 
@@ -97,7 +98,6 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 async def init_db():
     """Initialize database (create tables if needed)."""
     # Import models to register them
-    import bot.database.models  # pylint: disable=unused-import, import-outside-toplevel, cyclic-import
 
     engine = get_engine()
     async with engine.begin() as conn:
@@ -124,6 +124,7 @@ async def check_db_connectivity() -> bool:
         True if connected, False (or raises Exception) otherwise.
     """
     from sqlalchemy import text  # pylint: disable=import-outside-toplevel
+
     async with get_session() as session:
         result = await session.execute(text("SELECT 1"))
         result.scalar()

@@ -1,5 +1,4 @@
-from typing import Any
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class ConfigBot(BaseModel):

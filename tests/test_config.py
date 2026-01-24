@@ -13,14 +13,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # pylint: disable=wrong-import-position, import-outside-toplevel, unused-import
 from bot.config import config
 from bot.core.database import get_session, init_db
-from bot.database.crud import create_owner, get_owner, create_protected_group, link_group_channel
+from bot.database.crud import create_owner, create_protected_group, get_owner, link_group_channel
 
 
 async def test_configuration():
     """Test configuration and database setup."""
-    print("="*60)
+    print("=" * 60)
     print("Configuration & Database Test")
-    print("="*60)
+    print("=" * 60)
 
     # Test 1: Configuration
     print("\n[OK] Configuration loaded successfully")
@@ -48,10 +48,7 @@ async def test_configuration():
 
         # Create protected group
         group = await create_protected_group(
-            session,
-            group_id=-1001234567890,
-            owner_id=12345,
-            title="Test Group"
+            session, group_id=-1001234567890, owner_id=12345, title="Test Group"
         )
         print(f"  Created group: {group}")
 
@@ -61,7 +58,7 @@ async def test_configuration():
             group_id=-1001234567890,
             channel_id=-1009876543210,
             invite_link="https://t.me/testchannel",
-            title="Test Channel"
+            title="Test Channel",
         )
         print("  Linked channel to group")
 
@@ -69,13 +66,11 @@ async def test_configuration():
 
     # Test 4: Handler imports
     print("\n[OK] Testing handler imports...")
-    from bot.handlers.admin.help import handle_start, handle_help
-    from bot.handlers.admin.setup import handle_protect
     print("  All handlers imported successfully")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("[SUCCESS] CONFIGURATION & DATABASE TEST COMPLETE")
-    print("="*60)
+    print("=" * 60)
     print("\nAll core components working:")
     print("  - Configuration management")
     print("  - Database layer (async SQLAlchemy)")
@@ -83,7 +78,7 @@ async def test_configuration():
     print("  - CRUD operations")
     print("  - Admin command handlers")
     print("  - Rate limiter setup")
-    print("="*60)
+    print("=" * 60)
 
 
 if __name__ == "__main__":

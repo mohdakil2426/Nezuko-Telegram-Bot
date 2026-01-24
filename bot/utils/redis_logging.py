@@ -1,8 +1,9 @@
-import logging
 import json
-import time
+import logging
 from datetime import datetime
+
 from redis import Redis
+
 from bot.config import config
 
 

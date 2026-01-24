@@ -1,12 +1,13 @@
-from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-from starlette.exceptions import HTTPException as StarletteHTTPException
-from datetime import datetime, timezone
-import structlog
+from datetime import UTC, datetime
 
-from apps.api.src.core.exceptions import AppException
+import structlog
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from apps.api.src.core.context import get_trace_id
+from apps.api.src.core.exceptions import AppException
 
 logger = structlog.get_logger()
 
@@ -56,7 +57,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             "detail": exc.detail,
             "instance": request.url.path,
             "code": exc.code,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "trace_id": trace_id,
         }
 
@@ -71,7 +72,8 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
-        request: Request, exc: RequestValidationError
+        request: Request,
+        exc: RequestValidationError,
     ) -> JSONResponse:
         """Handle Pydantic validation errors"""
         trace_id = get_trace_id()
@@ -83,7 +85,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             # Pydantic v2 usually has loc present.
             loc = error.get("loc", ())
             field = (
-                ".".join(str(l) for l in loc[1:])
+                ".".join(str(val) for val in loc[1:])
                 if len(loc) > 1
                 else str(loc[0])
                 if loc
@@ -95,7 +97,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                     "field": field,
                     "message": error.get("msg", "Invalid value"),
                     "type": error.get("type", "value_error"),
-                }
+                },
             )
 
         logger.warning(
@@ -115,7 +117,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "detail": "Request body contains invalid or missing fields.",
                 "instance": request.url.path,
                 "code": "VAL_001",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "trace_id": trace_id,
                 "errors": errors,
             },
@@ -144,7 +146,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "detail": str(exc.detail),
                 "instance": request.url.path,
                 "code": f"HTTP_{exc.status_code}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "trace_id": trace_id,
             },
         )
@@ -174,7 +176,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "detail": "An unexpected error occurred. Please try again later.",
                 "instance": request.url.path,
                 "code": "SRV_001",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "trace_id": trace_id,  # Include trace_id for support tickets
             },
         )

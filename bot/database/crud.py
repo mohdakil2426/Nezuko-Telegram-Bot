@@ -3,21 +3,18 @@ Database CRUD operations for Nezuko.
 All operations use async SQLAlchemy sessions.
 """
 
-from typing import List, Optional
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from bot.database.models import Owner, ProtectedGroup, EnforcedChannel, GroupChannelLink
-
+from bot.database.models import EnforcedChannel, GroupChannelLink, Owner, ProtectedGroup
 
 # ==================== Owner Operations ====================
 
-async def get_owner(session: AsyncSession, user_id: int) -> Optional[Owner]:
+
+async def get_owner(session: AsyncSession, user_id: int) -> Owner | None:
     """Get owner by user_id."""
-    result = await session.execute(
-        select(Owner).where(Owner.user_id == user_id)
-    )
+    result = await session.execute(select(Owner).where(Owner.user_id == user_id))
     return result.scalar_one_or_none()
 
 
@@ -36,7 +33,8 @@ async def create_owner(session: AsyncSession, user_id: int, username: str | None
 
 # ==================== Protected Group Operations ====================
 
-async def get_protected_group(session: AsyncSession, group_id: int) -> Optional[ProtectedGroup]:
+
+async def get_protected_group(session: AsyncSession, group_id: int) -> ProtectedGroup | None:
     """Get protected group by group_id with loaded channel links."""
     result = await session.execute(
         select(ProtectedGroup)
@@ -47,18 +45,11 @@ async def get_protected_group(session: AsyncSession, group_id: int) -> Optional[
 
 
 async def create_protected_group(
-    session: AsyncSession,
-    group_id: int,
-    owner_id: int,
-    title: str | None = None
+    session: AsyncSession, group_id: int, owner_id: int, title: str | None = None
 ) -> ProtectedGroup:
     """Create new protected group."""
     group = ProtectedGroup(
-        group_id=group_id,
-        owner_id=owner_id,
-        title=title,
-        enabled=True,
-        params={}
+        group_id=group_id, owner_id=owner_id, title=title, enabled=True, params={}
     )
     session.add(group)
     await session.commit()
@@ -69,9 +60,7 @@ async def create_protected_group(
 async def toggle_protection(session: AsyncSession, group_id: int, enabled: bool) -> None:
     """Enable or disable protection for a group."""
     await session.execute(
-        update(ProtectedGroup)
-        .where(ProtectedGroup.group_id == group_id)
-        .values(enabled=enabled)
+        update(ProtectedGroup).where(ProtectedGroup.group_id == group_id).values(enabled=enabled)
     )
     await session.commit()
 
@@ -79,16 +68,15 @@ async def toggle_protection(session: AsyncSession, group_id: int, enabled: bool)
 async def update_group_params(session: AsyncSession, group_id: int, params: dict) -> None:
     """Update custom parameters for a group."""
     await session.execute(
-        update(ProtectedGroup)
-        .where(ProtectedGroup.group_id == group_id)
-        .values(params=params)
+        update(ProtectedGroup).where(ProtectedGroup.group_id == group_id).values(params=params)
     )
     await session.commit()
 
 
 # ==================== Enforced Channel Operations ====================
 
-async def get_enforced_channel(session: AsyncSession, channel_id: int) -> Optional[EnforcedChannel]:
+
+async def get_enforced_channel(session: AsyncSession, channel_id: int) -> EnforcedChannel | None:
     """Get enforced channel by channel_id."""
     result = await session.execute(
         select(EnforcedChannel).where(EnforcedChannel.channel_id == channel_id)
@@ -101,7 +89,7 @@ async def create_enforced_channel(
     channel_id: int,
     title: str | None = None,
     username: str | None = None,
-    invite_link: str | None = None
+    invite_link: str | None = None,
 ) -> EnforcedChannel:
     """Create new enforced channel or return existing."""
     existing = await get_enforced_channel(session, channel_id)
@@ -118,10 +106,7 @@ async def create_enforced_channel(
         return existing
 
     channel = EnforcedChannel(
-        channel_id=channel_id,
-        title=title,
-        username=username,
-        invite_link=invite_link
+        channel_id=channel_id, title=title, username=username, invite_link=invite_link
     )
     session.add(channel)
     await session.commit()
@@ -131,7 +116,8 @@ async def create_enforced_channel(
 
 # ==================== Group-Channel Link Operations ====================
 
-async def get_group_channels(session: AsyncSession, group_id: int) -> List[EnforcedChannel]:
+
+async def get_group_channels(session: AsyncSession, group_id: int) -> list[EnforcedChannel]:
     """Get all channels enforced for a group."""
     result = await session.execute(
         select(EnforcedChannel)
@@ -148,7 +134,7 @@ async def link_group_channel(
     channel_id: int,
     invite_link: str | None = None,
     title: str | None = None,
-    username: str | None = None
+    username: str | None = None,
 ) -> None:
     """
     Link a group to a channel (create relationship).
@@ -160,8 +146,7 @@ async def link_group_channel(
     # Check if link already exists
     result = await session.execute(
         select(GroupChannelLink).where(
-            GroupChannelLink.group_id == group_id,
-            GroupChannelLink.channel_id == channel_id
+            GroupChannelLink.group_id == group_id, GroupChannelLink.channel_id == channel_id
         )
     )
     existing_link = result.scalar_one_or_none()
@@ -174,20 +159,18 @@ async def link_group_channel(
 
 async def unlink_all_channels(session: AsyncSession, group_id: int) -> None:
     """Remove all channel links for a group."""
-    await session.execute(
-        delete(GroupChannelLink).where(GroupChannelLink.group_id == group_id)
-    )
+    await session.execute(delete(GroupChannelLink).where(GroupChannelLink.group_id == group_id))
     await session.commit()
 
 
-async def get_groups_for_channel(session: AsyncSession, channel_id: int) -> List[ProtectedGroup]:
+async def get_groups_for_channel(session: AsyncSession, channel_id: int) -> list[ProtectedGroup]:
     """Get all protected groups that require this channel (for leave detection)."""
     result = await session.execute(
         select(ProtectedGroup)
         .join(GroupChannelLink, GroupChannelLink.group_id == ProtectedGroup.group_id)
         .where(
             GroupChannelLink.channel_id == channel_id,
-            ProtectedGroup.enabled.is_(True)  # Only active groups
+            ProtectedGroup.enabled.is_(True),  # Only active groups
         )
     )
     return list(result.scalars().all())
@@ -195,9 +178,8 @@ async def get_groups_for_channel(session: AsyncSession, channel_id: int) -> List
 
 # ==================== Utility Operations ====================
 
-async def get_all_protected_groups(session: AsyncSession) -> List[ProtectedGroup]:
+
+async def get_all_protected_groups(session: AsyncSession) -> list[ProtectedGroup]:
     """Get all protected groups (for metrics/admin purposes)."""
-    result = await session.execute(
-        select(ProtectedGroup).where(ProtectedGroup.enabled.is_(True))
-    )
+    result = await session.execute(select(ProtectedGroup).where(ProtectedGroup.enabled.is_(True)))
     return list(result.scalars().all())

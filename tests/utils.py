@@ -1,8 +1,11 @@
 """
 Utility functions for bot tests.
 """
+
 from unittest.mock import AsyncMock, MagicMock
+
 from telegram.constants import ChatMemberStatus
+
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
 def create_mock_update(
@@ -12,7 +15,7 @@ def create_mock_update(
     username="testuser",
     is_bot=False,
     text="/start",
-    message_id=100
+    message_id=100,
 ):
     """Create a mock Update object for testing."""
     update = MagicMock()

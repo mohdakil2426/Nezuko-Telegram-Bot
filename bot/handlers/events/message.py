@@ -4,16 +4,18 @@ Message handler for multi-tenant verification.
 Intercepts group messages, checks membership against all linked channels,
 and restricts users who aren't subscribed.
 """
+
 import logging
+
 from telegram import Update
-from telegram.ext import ContextTypes
 from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
+from telegram.ext import ContextTypes
 
-from bot.database.crud import get_group_channels
-from bot.services.verification import check_multi_membership
-from bot.services.protection import restrict_user
 from bot.core.database import get_session
+from bot.database.crud import get_group_channels
+from bot.services.protection import restrict_user
+from bot.services.verification import check_multi_membership
 from bot.utils.ui import send_verification_warning
 
 logger = logging.getLogger(__name__)
@@ -48,10 +50,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Step 1: Check if user is admin in the group (admins are immune)
         try:
-            chat_member = await context.bot.get_chat_member(
-                chat_id=chat_id,
-                user_id=user_id
-            )
+            chat_member = await context.bot.get_chat_member(chat_id=chat_id, user_id=user_id)
             admin_statuses = [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
             if chat_member.status in admin_statuses:
                 logger.debug("User %s is admin in %s, skipping verification", user_id, chat_id)
@@ -70,15 +69,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         logger.debug(
-            "Verifying user %s in group %s against %d channel(s)",
-            user_id, chat_id, len(channels)
+            "Verifying user %s in group %s against %d channel(s)", user_id, chat_id, len(channels)
         )
 
         # Step 3: Check membership in ALL linked channels
         missing_channels = await check_multi_membership(
-            user_id=user_id,
-            channels=channels,
-            context=context
+            user_id=user_id, channels=channels, context=context
         )
 
         # Step 4: If all channels verified, allow message
@@ -89,7 +85,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Step 5: User missing subscription - restrict and warn
         logger.info(
             "Restricting user %s in %s (missing %d channel(s))",
-            user_id, chat_id, len(missing_channels)
+            user_id,
+            chat_id,
+            len(missing_channels),
         )
 
         # Delete the unauthorized message
@@ -107,10 +105,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Send warning with buttons
         await send_verification_warning(
-            update=update,
-            context=context,
-            missing_channels=missing_channels,
-            is_new_member=False
+            update=update, context=context, missing_channels=missing_channels, is_new_member=False
         )
 
     except TelegramError as e:

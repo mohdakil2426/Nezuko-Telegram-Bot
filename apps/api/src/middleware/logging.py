@@ -1,7 +1,9 @@
 import time
+
 import structlog
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+
 from apps.api.src.core.context import get_trace_id
 
 logger = structlog.get_logger()
@@ -43,7 +45,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
             # Log failed request (unhandled exception)
             # The global exception handler usually catches this, but if it fails...
-            logger.error(
+            logger.exception(
                 "request_failed",
                 method=request.method,
                 path=request.url.path,
@@ -51,4 +53,4 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 duration_ms=round(process_time * 1000, 2),
                 trace_id=trace_id,
             )
-            raise e
+            raise

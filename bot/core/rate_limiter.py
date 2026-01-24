@@ -21,10 +21,10 @@ def create_rate_limiter() -> AIORateLimiter:
     """
     rate_limiter = AIORateLimiter(
         max_retries=3,
-        overall_max_rate=25,      # Messages per second (buffer below 30/sec limit)
+        overall_max_rate=25,  # Messages per second (buffer below 30/sec limit)
         overall_time_period=1.0,  # Time period in seconds
-        group_max_rate=20,        # Messages per chat
-        group_time_period=60.0,   # Time period in seconds
+        group_max_rate=20,  # Messages per chat
+        group_time_period=60.0,  # Time period in seconds
     )
 
     return rate_limiter

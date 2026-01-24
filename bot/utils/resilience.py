@@ -11,20 +11,22 @@ Provides:
 
 import asyncio
 import logging
-import time
 import random
-from typing import Callable, Optional, Any
-from functools import wraps
-from enum import Enum
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from enum import Enum
+from functools import wraps
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class CircuitState(Enum):
     """Circuit breaker states."""
-    CLOSED = "closed"      # Normal operation
-    OPEN = "open"          # Failing, reject requests
+
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Failing, reject requests
     HALF_OPEN = "half_open"  # Testing recovery
 
 
@@ -54,10 +56,11 @@ class CircuitBreaker:
             else:
                 raise CircuitBreakerOpenError("Database circuit open")
     """
+
     name: str
-    failure_threshold: int = 3        # Failures before opening circuit
-    recovery_timeout: float = 30.0    # Seconds before trying half-open
-    success_threshold: int = 2        # Successes needed to close from half-open
+    failure_threshold: int = 3  # Failures before opening circuit
+    recovery_timeout: float = 30.0  # Seconds before trying half-open
+    success_threshold: int = 2  # Successes needed to close from half-open
 
     # Internal state
     state: CircuitState = field(default=CircuitState.CLOSED, init=False)
@@ -113,7 +116,9 @@ class CircuitBreaker:
             if new_state == CircuitState.OPEN:
                 logger.warning(
                     "Circuit breaker '%s' OPENED (failures: %d, threshold: %d)",
-                    self.name, self.failure_count, self.failure_threshold
+                    self.name,
+                    self.failure_count,
+                    self.failure_threshold,
                 )
             elif new_state == CircuitState.HALF_OPEN:
                 logger.info("Circuit breaker '%s' HALF-OPEN (testing recovery)", self.name)
@@ -127,7 +132,7 @@ class CircuitBreaker:
             "state": self.state.value,
             "failure_count": self.failure_count,
             "last_failure": self.last_failure_time,
-            "recovery_timeout": self.recovery_timeout
+            "recovery_timeout": self.recovery_timeout,
         }
 
 
@@ -154,11 +159,9 @@ def get_telegram_circuit() -> CircuitBreaker:
 # Retry Patterns
 # ====================
 
+
 def exponential_backoff(
-    attempt: int,
-    base_delay: float = 1.0,
-    max_delay: float = 30.0,
-    jitter: bool = True
+    attempt: int, base_delay: float = 1.0, max_delay: float = 30.0, jitter: bool = True
 ) -> float:
     """
     Calculate exponential backoff delay with optional jitter.
@@ -187,7 +190,7 @@ def async_retry(
     exceptions: tuple = (Exception,),
     base_delay: float = 1.0,
     max_delay: float = 30.0,
-    on_retry: Optional[Callable] = None
+    on_retry: Callable | None = None,
 ):
     """
     Decorator for async functions with retry logic.
@@ -204,6 +207,7 @@ def async_retry(
         async def query_database():
             ...
     """
+
     def decorator(func: Callable):
         @wraps(func)
         async def wrapper(*args, **kwargs):
@@ -220,7 +224,11 @@ def async_retry(
 
                         logger.warning(
                             "Retry %d/%d for %s: %s. Waiting %.2fs",
-                            attempt, max_attempts, func.__name__, e, delay
+                            attempt,
+                            max_attempts,
+                            func.__name__,
+                            e,
+                            delay,
                         )
 
                         if on_retry:
@@ -229,14 +237,14 @@ def async_retry(
                         await asyncio.sleep(delay)
                     else:
                         logger.error(
-                            "All %d attempts failed for %s: %s",
-                            max_attempts, func.__name__, e
+                            "All %d attempts failed for %s: %s", max_attempts, func.__name__, e
                         )
 
             assert last_exception is not None
             raise last_exception
 
         return wrapper
+
     return decorator
 
 
@@ -249,6 +257,7 @@ def circuit_protected(circuit: CircuitBreaker):
         async def query_database():
             ...
     """
+
     def decorator(func: Callable):
         @wraps(func)
         async def wrapper(*args, **kwargs):
@@ -267,6 +276,7 @@ def circuit_protected(circuit: CircuitBreaker):
                 raise
 
         return wrapper
+
     return decorator
 
 
@@ -274,12 +284,8 @@ def circuit_protected(circuit: CircuitBreaker):
 # Graceful Degradation
 # ====================
 
-async def with_fallback(
-    primary: Callable,
-    fallback: Callable,
-    *args,
-    **kwargs
-) -> Any:
+
+async def with_fallback(primary: Callable, fallback: Callable, *args, **kwargs) -> Any:
     """
     Execute primary function, fall back to secondary on failure.
 
@@ -306,12 +312,10 @@ async def with_fallback(
 # Health Tracking
 # ====================
 
+
 def get_all_circuit_status() -> dict:
     """Get status of all circuit breakers."""
-    return {
-        "database": _database_circuit.get_status(),
-        "telegram": _telegram_circuit.get_status()
-    }
+    return {"database": _database_circuit.get_status(), "telegram": _telegram_circuit.get_status()}
 
 
 def reset_all_circuits():

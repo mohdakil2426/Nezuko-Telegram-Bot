@@ -19,7 +19,8 @@ async def test_login_success(client: AsyncClient, session):
     await session.commit()
 
     response = await client.post(
-        "/api/v1/auth/login", json={"email": "test@nezuko.bot", "password": password}
+        "/api/v1/auth/login",
+        json={"email": "test@nezuko.bot", "password": password},
     )
 
     assert response.status_code == 200
@@ -37,7 +38,8 @@ async def test_login_invalid_password(client: AsyncClient, session):
     await session.commit()
 
     response = await client.post(
-        "/api/v1/auth/login", json={"email": "test2@nezuko.bot", "password": "WrongPassword"}
+        "/api/v1/auth/login",
+        json={"email": "test2@nezuko.bot", "password": "WrongPassword"},
     )
 
     assert response.status_code == 401
@@ -48,20 +50,24 @@ async def test_refresh_token_flow(client: AsyncClient, session):
     # Setup user
     password = "StrongPassword123!"
     user = AdminUser(
-        email="refresh@nezuko.bot", password_hash=hash_password(password), role="admin"
+        email="refresh@nezuko.bot",
+        password_hash=hash_password(password),
+        role="admin",
     )
     session.add(user)
     await session.commit()
 
     # Login
     login_res = await client.post(
-        "/api/v1/auth/login", json={"email": "refresh@nezuko.bot", "password": password}
+        "/api/v1/auth/login",
+        json={"email": "refresh@nezuko.bot", "password": password},
     )
     refresh_token = login_res.cookies["refresh_token"]
 
     # Refresh
     refresh_res = await client.post(
-        "/api/v1/auth/refresh", cookies={"refresh_token": refresh_token}
+        "/api/v1/auth/refresh",
+        cookies={"refresh_token": refresh_token},
     )
 
     assert refresh_res.status_code == 200
@@ -85,11 +91,11 @@ async def test_me_endpoint(client: AsyncClient, session):
     await session.commit()
 
     login_res = await client.post(
-        "/api/v1/auth/login", json={"email": "me@nezuko.bot", "password": password}
+        "/api/v1/auth/login",
+        json={"email": "me@nezuko.bot", "password": password},
     )
-    access_token = login_res.json()["access_token"]
+    login_res.json()["access_token"]
 
     # Call /me (which doesn't exist yet? Wait, get_current_user logic implies protected endpoints)
     # I didn't verify if /auth/me exists in endpoints/auth.py.
     # Checking endpoints/auth.py content...
-    pass

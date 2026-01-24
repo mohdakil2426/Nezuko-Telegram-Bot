@@ -10,29 +10,30 @@ Provides:
 - JSON response format compatible with load balancers and monitoring
 """
 
-import time
 import asyncio
 import logging
-from typing import Dict, Any, Optional, Awaitable, cast
+import time
+from collections.abc import Awaitable
+from typing import Any, cast
+
 from aiohttp import web
 
 from bot.config import config
+from bot.core.cache import _redis_available, _redis_client
 from bot.core.database import check_db_connectivity
-from bot.core.cache import _redis_client, _redis_available
 from bot.utils.metrics import (
     get_metrics,
     get_metrics_content_type,
     set_db_connected,
-    set_redis_connected
+    set_redis_connected,
 )
-
 
 logger = logging.getLogger(__name__)
 
 # Global state
 _start_time: float = 0  # pylint: disable=invalid-name
-_app: Optional[web.Application] = None  # pylint: disable=invalid-name
-_runner: Optional[web.AppRunner] = None  # pylint: disable=invalid-name
+_app: web.Application | None = None  # pylint: disable=invalid-name
+_runner: web.AppRunner | None = None  # pylint: disable=invalid-name
 
 
 def get_uptime_seconds() -> float:
@@ -57,17 +58,11 @@ async def check_database() -> dict:
         latency_ms = (time.perf_counter() - start) * 1000
         set_db_connected(True)
 
-        return {
-            "healthy": True,
-            "latency_ms": round(latency_ms, 2)
-        }
+        return {"healthy": True, "latency_ms": round(latency_ms, 2)}
     except (ConnectionError, TimeoutError, OSError, Exception) as e:  # pylint: disable=broad-exception-caught
         logger.error("Database health check failed: %s", e)
         set_db_connected(False)
-        return {
-            "healthy": False,
-            "error": str(e)
-        }
+        return {"healthy": False, "error": str(e)}
 
 
 async def check_redis() -> dict:
@@ -82,7 +77,7 @@ async def check_redis() -> dict:
         return {
             "healthy": True,  # Not an error if Redis not configured
             "optional": True,
-            "status": "not_configured"
+            "status": "not_configured",
         }
 
     if not _redis_available or _redis_client is None:
@@ -91,7 +86,7 @@ async def check_redis() -> dict:
             "healthy": False,
             "optional": True,
             "status": "unavailable",
-            "error": "Connection lost or never established"
+            "error": "Connection lost or never established",
         }
 
     try:
@@ -101,28 +96,16 @@ async def check_redis() -> dict:
 
         if pong:
             set_redis_connected(True)
-            return {
-                "healthy": True,
-                "optional": True,
-                "latency_ms": round(latency_ms, 2)
-            }
+            return {"healthy": True, "optional": True, "latency_ms": round(latency_ms, 2)}
         set_redis_connected(False)
-        return {
-            "healthy": False,
-            "optional": True,
-            "error": "Ping failed"
-        }
+        return {"healthy": False, "optional": True, "error": "Ping failed"}
     except (ConnectionError, TimeoutError, OSError) as e:
         logger.error("Redis health check failed: %s", e)
         set_redis_connected(False)
-        return {
-            "healthy": False,
-            "optional": True,
-            "error": str(e)
-        }
+        return {"healthy": False, "optional": True, "error": str(e)}
 
 
-async def get_health_status() -> Dict[str, Any]:
+async def get_health_status() -> dict[str, Any]:
     """
     Get complete health status of the bot.
 
@@ -130,10 +113,7 @@ async def get_health_status() -> Dict[str, Any]:
         Dict with overall status and component checks
     """
     # Perform checks concurrently
-    db_check, redis_check = await asyncio.gather(
-        check_database(),
-        check_redis()
-    )
+    db_check, redis_check = await asyncio.gather(check_database(), check_redis())
 
     # Determine overall status
     # - healthy: All required services working
@@ -142,7 +122,7 @@ async def get_health_status() -> Dict[str, Any]:
 
     if not db_check["healthy"]:
         overall_status = "unhealthy"
-    elif not redis_check["healthy"] and not redis_check.get("status") == "not_configured":
+    elif not redis_check["healthy"] and redis_check.get("status") != "not_configured":
         overall_status = "degraded"
     else:
         overall_status = "healthy"
@@ -153,16 +133,14 @@ async def get_health_status() -> Dict[str, Any]:
         "timestamp": time.time(),
         "version": "1.0.0",
         "environment": config.environment,
-        "checks": {
-            "database": db_check,
-            "redis": redis_check
-        }
+        "checks": {"database": db_check, "redis": redis_check},
     }
 
 
 # ====================
 # HTTP Handlers
 # ====================
+
 
 async def health_handler(_request: web.Request) -> web.Response:
     """
@@ -214,29 +192,29 @@ async def metrics_handler(_request: web.Request) -> web.Response:
     Returns:
         Prometheus text format metrics
     """
-    return web.Response(
-        body=get_metrics(),
-        content_type=get_metrics_content_type()
-    )
+    return web.Response(body=get_metrics(), content_type=get_metrics_content_type())
 
 
 async def root_handler(_request: web.Request) -> web.Response:
     """Handle GET / requests with basic info."""
-    return web.json_response({
-        "name": "Nezuko",
-        "version": "1.0.0",
-        "endpoints": {
-            "/health": "Health check (detailed)",
-            "/ready": "Readiness probe",
-            "/live": "Liveness probe",
-            "/metrics": "Prometheus metrics"
+    return web.json_response(
+        {
+            "name": "Nezuko",
+            "version": "1.0.0",
+            "endpoints": {
+                "/health": "Health check (detailed)",
+                "/ready": "Readiness probe",
+                "/live": "Liveness probe",
+                "/metrics": "Prometheus metrics",
+            },
         }
-    })
+    )
 
 
 # ====================
 # Server Management
 # ====================
+
 
 def create_health_app() -> web.Application:
     """
@@ -294,7 +272,8 @@ async def stop_health_server() -> None:
 # Integration Function
 # ====================
 
-async def run_health_check_once() -> Dict[str, Any]:
+
+async def run_health_check_once() -> dict[str, Any]:
     """
     Run a one-time health check (for CLI or testing).
 

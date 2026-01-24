@@ -3,16 +3,16 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...core.database import get_db
-from ...core.security import get_current_active_user
-from ...models.admin_user import AdminUser
-from ...schemas.config import (
+from src.api.core.database import get_db
+from src.api.core.security import get_current_active_user
+from src.api.models.admin_user import AdminUser
+from src.api.schemas.config import (
     ConfigResponse,
     ConfigUpdateRequest,
     ConfigUpdateResponse,
     WebhookTestResult,
 )
-from ...services.config_service import ConfigService
+from src.api.services.config_service import ConfigService
 
 router = APIRouter()
 

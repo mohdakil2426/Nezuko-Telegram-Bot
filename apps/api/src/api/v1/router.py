@@ -1,15 +1,16 @@
 from fastapi import APIRouter
+
 from src.api.v1.endpoints import (
-    auth,
-    dashboard,
-    groups,
-    channels,
-    config,
-    database,
-    logs,
+    admins,
     analytics,
     audit,
-    admins,
+    auth,
+    channels,
+    config,
+    dashboard,
+    database,
+    groups,
+    logs,
 )
 
 api_router = APIRouter()

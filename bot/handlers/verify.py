@@ -4,16 +4,19 @@ Verify callback handler for "I have joined" button.
 Handles user verification button clicks, re-checks membership,
 and unmutes if all channels are verified.
 """
+
+import contextlib
 import logging
 from typing import cast
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.error import TelegramError
 
-from bot.database.crud import get_group_channels
-from bot.services.verification import check_multi_membership, invalidate_cache
-from bot.services.protection import unmute_user
+from telegram import Update
+from telegram.error import TelegramError
+from telegram.ext import ContextTypes
+
 from bot.core.database import get_session
+from bot.database.crud import get_group_channels
+from bot.services.protection import unmute_user
+from bot.services.verification import check_multi_membership, invalidate_cache
 
 logger = logging.getLogger(__name__)
 
@@ -55,18 +58,13 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
         if not channels:
             # Group not protected (unlikely, but handle gracefully)
             logger.warning("No linked channels for group %s", chat_id)
-            try:
+            with contextlib.suppress(TelegramError):
                 await query.answer(
-                    "Group protection not configured. Please contact admin.",
-                    show_alert=True
+                    "Group protection not configured. Please contact admin.", show_alert=True
                 )
-            except TelegramError:
-                pass
             return
 
-        logger.debug(
-            "Re-verifying user %s against %d channel(s)", user_id, len(channels)
-        )
+        logger.debug("Re-verifying user %s against %d channel(s)", user_id, len(channels))
 
         # Invalidate cache for all channels (force fresh verification)
         for channel in channels:
@@ -74,21 +72,18 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
 
         # Re-check membership in all channels
         missing_channels = await check_multi_membership(
-            user_id=user_id,
-            channels=channels,
-            context=context
+            user_id=user_id, channels=channels, context=context
         )
 
         # If still missing channels, show error
         if missing_channels:
-            channel_names = ", ".join([
-                f"@{ch.title}" if ch.title else str(ch.channel_id)
-                for ch in missing_channels
-            ])
+            channel_names = ", ".join(
+                [f"@{ch.title}" if ch.title else str(ch.channel_id) for ch in missing_channels]
+            )
             try:
                 await query.answer(
                     f"You still haven't joined: {channel_names}. Please join first!",
-                    show_alert=True
+                    show_alert=True,
                 )
             except TelegramError as e:
                 logger.warning("Failed to answer callback query: %s", e)
@@ -100,21 +95,13 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
         success = await unmute_user(chat_id, user_id, context)
         if not success:
             logger.error("Failed to unmute user %s", user_id)
-            try:
-                await query.answer(
-                    "Error unmuting you. Please contact admin.",
-                    show_alert=True
-                )
-            except TelegramError:
-                pass
+            with contextlib.suppress(TelegramError):
+                await query.answer("Error unmuting you. Please contact admin.", show_alert=True)
             return
 
         # Success - answer query and delete warning message
         try:
-            await query.answer(
-                "Verification successful! You can now chat.",
-                show_alert=True
-            )
+            await query.answer("Verification successful! You can now chat.", show_alert=True)
             logger.debug("Answered callback query for user %s", user_id)
         except TelegramError as e:
             logger.warning("Failed to answer callback query: %s", e)
@@ -131,8 +118,7 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
         try:
             if update.callback_query:
                 await update.callback_query.answer(
-                    "An error occurred. Please try again or contact admin.",
-                    show_alert=True
+                    "An error occurred. Please try again or contact admin.", show_alert=True
                 )
         except TelegramError:
             pass

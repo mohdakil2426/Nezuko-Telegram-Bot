@@ -7,27 +7,29 @@ and graceful fallback to Telegram API on cache miss.
 
 Integrated with Prometheus metrics for operational monitoring.
 """
+
 import logging
-from typing import List, Any
-from telegram.ext import ContextTypes
+from typing import Any
+
 from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
+from telegram.ext import ContextTypes
 
-from bot.core.cache import cache_get, cache_set, cache_delete, get_ttl_with_jitter
+from bot.core.cache import cache_delete, cache_get, cache_set, get_ttl_with_jitter
 from bot.utils.metrics import (
-    record_verification_start,
-    record_verification_end,
+    record_api_call,
     record_cache_hit,
     record_cache_miss,
-    record_api_call,
-    record_error
+    record_error,
+    record_verification_end,
+    record_verification_start,
 )
 
 logger = logging.getLogger(__name__)
 
 # Cache TTLs (in seconds)
 POSITIVE_CACHE_TTL = 600  # 10 minutes for members
-NEGATIVE_CACHE_TTL = 60   # 1 minute for non-members
+NEGATIVE_CACHE_TTL = 60  # 1 minute for non-members
 CACHE_JITTER_PERCENT = 15  # ±15% jitter
 
 # Metrics counters for prometheus tracking
@@ -36,9 +38,7 @@ _cache_misses = 0  # pylint: disable=invalid-name
 
 
 async def check_membership(
-    user_id: int,
-    channel_id: str | int,
-    context: ContextTypes.DEFAULT_TYPE
+    user_id: int, channel_id: str | int, context: ContextTypes.DEFAULT_TYPE
 ) -> bool:
     """
     Check if user is a member of the specified channel with caching.
@@ -87,20 +87,16 @@ async def check_membership(
     is_member = False
     try:
         record_api_call("getChatMember")
-        member = await context.bot.get_chat_member(
-            chat_id=channel_id,
-            user_id=user_id
-        )
+        member = await context.bot.get_chat_member(chat_id=channel_id, user_id=user_id)
         is_member = member.status in [
             ChatMemberStatus.MEMBER,
             ChatMemberStatus.ADMINISTRATOR,
-            ChatMemberStatus.OWNER
+            ChatMemberStatus.OWNER,
         ]
 
         status_str = "MEMBER" if is_member else "NOT_MEMBER"
         logger.debug(
-            "User %s in channel %s: %s (status: %s)",
-            user_id, channel_id, status_str, member.status
+            "User %s in channel %s: %s (status: %s)", user_id, channel_id, status_str, member.status
         )
     except TelegramError as e:
         logger.error("Error checking membership for user %s in %s: %s", user_id, channel_id, e)
@@ -130,10 +126,8 @@ async def check_membership(
 
 
 async def check_multi_membership(
-    user_id: int,
-    channels: List[Any],
-    context: ContextTypes.DEFAULT_TYPE
-) -> List[Any]:
+    user_id: int, channels: list[Any], context: ContextTypes.DEFAULT_TYPE
+) -> list[Any]:
     """
     Check membership in multiple channels.
 
@@ -148,9 +142,7 @@ async def check_multi_membership(
     missing_channels = []
     for channel in channels:
         is_member = await check_membership(
-            user_id=user_id,
-            channel_id=channel.channel_id,
-            context=context
+            user_id=user_id, channel_id=channel.channel_id, context=context
         )
         if not is_member:
             missing_channels.append(channel)
@@ -198,7 +190,7 @@ def get_cache_stats() -> dict:
         "cache_hits": _cache_hits,
         "cache_misses": _cache_misses,
         "total_checks": total,
-        "hit_rate_percent": round(hit_rate, 2)
+        "hit_rate_percent": round(hit_rate, 2),
     }
 
 

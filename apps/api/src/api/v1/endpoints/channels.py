@@ -3,16 +3,16 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...core.database import get_session
-from ...api.v1.dependencies.auth import get_current_active_user
-from ...models.admin_user import AdminUser
-from ...schemas.channel import (
-    ChannelListResponse,
-    ChannelDetailResponse,
+from src.api.api.v1.dependencies.auth import get_current_active_user
+from src.api.core.database import get_session
+from src.api.models.admin_user import AdminUser
+from src.api.schemas.channel import (
     ChannelCreateRequest,
+    ChannelDetailResponse,
+    ChannelListResponse,
     ChannelResponse,
 )
-from ...services import channel_service
+from src.api.services import channel_service
 
 router = APIRouter()
 
@@ -29,7 +29,10 @@ async def read_channels(
     Retrieve channels with pagination.
     """
     return await channel_service.get_channels(
-        session=session, page=page, per_page=per_page, search=search
+        session=session,
+        page=page,
+        per_page=per_page,
+        search=search,
     )
 
 

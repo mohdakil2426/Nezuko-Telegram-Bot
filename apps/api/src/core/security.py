@@ -1,8 +1,9 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from jose import jwt, JWTError
+from jose import jwt
 from passlib.context import CryptContext
+
 from src.core.config import get_settings
 
 settings = get_settings()
@@ -42,18 +43,16 @@ def create_access_token(user_id: str, role: str, session_id: str) -> str:
         "session_id": str(session_id),
         "iss": settings.ADMIN_JWT_ISSUER,
         "aud": settings.ADMIN_JWT_AUDIENCE,
-        "exp": datetime.now(timezone.utc)
-        + timedelta(minutes=settings.ADMIN_JWT_ACCESS_EXPIRE_MINUTES),
-        "iat": datetime.now(timezone.utc),
-        "nbf": datetime.now(timezone.utc),
+        "exp": datetime.now(UTC) + timedelta(minutes=settings.ADMIN_JWT_ACCESS_EXPIRE_MINUTES),
+        "iat": datetime.now(UTC),
+        "nbf": datetime.now(UTC),
     }
 
     # Read private key
     with open(settings.ADMIN_JWT_PRIVATE_KEY_PATH, "rb") as f:
         private_key = f.read()
 
-    encoded_jwt = jwt.encode(to_encode, private_key, algorithm="ES256")
-    return encoded_jwt
+    return jwt.encode(to_encode, private_key, algorithm="ES256")
 
 
 def create_refresh_token(user_id: str) -> str:
@@ -64,17 +63,16 @@ def create_refresh_token(user_id: str) -> str:
         "sub": str(user_id),
         "iss": settings.ADMIN_JWT_ISSUER,
         "aud": settings.ADMIN_JWT_AUDIENCE,
-        "exp": datetime.now(timezone.utc) + timedelta(days=settings.ADMIN_JWT_REFRESH_EXPIRE_DAYS),
-        "iat": datetime.now(timezone.utc),
-        "nbf": datetime.now(timezone.utc),
+        "exp": datetime.now(UTC) + timedelta(days=settings.ADMIN_JWT_REFRESH_EXPIRE_DAYS),
+        "iat": datetime.now(UTC),
+        "nbf": datetime.now(UTC),
     }
 
     # Read private key
     with open(settings.ADMIN_JWT_PRIVATE_KEY_PATH, "rb") as f:
         private_key = f.read()
 
-    encoded_jwt = jwt.encode(to_encode, private_key, algorithm="ES256")
-    return encoded_jwt
+    return jwt.encode(to_encode, private_key, algorithm="ES256")
 
 
 def decode_token(token: str) -> dict[str, Any]:
@@ -85,7 +83,7 @@ def decode_token(token: str) -> dict[str, Any]:
     with open(settings.ADMIN_JWT_PUBLIC_KEY_PATH, "rb") as f:
         public_key = f.read()
 
-    payload = jwt.decode(
+    return jwt.decode(
         token,
         public_key,
         algorithms=["ES256"],
@@ -99,4 +97,3 @@ def decode_token(token: str) -> dict[str, Any]:
             "require": ["iss", "aud", "exp", "sub"],
         },
     )
-    return payload

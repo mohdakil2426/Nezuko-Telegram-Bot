@@ -38,16 +38,7 @@ dev = [
 requires = ["setuptools>=75.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.ruff]
-line-length = 100
-target-version = "py313"
 
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP", "ANN", "ASYNC", "S", "B", "A", "COM", "C4", "DTZ", "T10", "ISC", "ICN", "G", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SIM", "TID", "TCH", "ARG", "PTH", "ERA", "PL", "TRY", "NPY", "RUF"]
-ignore = ["ANN101", "ANN102", "S101", "S104"]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "PLR2004", "ANN"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

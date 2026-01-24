@@ -9,8 +9,8 @@ NOTE: Auto-delete only works in GROUP chats, not private chats.
 
 import asyncio
 import logging
-from typing import Optional
-from telegram import Message, Chat
+
+from telegram import Chat, Message
 from telegram.error import TelegramError
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_DELETE_DELAY = 60
 
 
-def is_group_chat(chat: Optional[Chat]) -> bool:
+def is_group_chat(chat: Chat | None) -> bool:
     """Check if the chat is a group or supergroup."""
     if not chat:
         return False
@@ -30,7 +30,7 @@ async def schedule_delete(
     message: Message,
     delay: int = DEFAULT_DELETE_DELAY,
     delete_command: bool = True,
-    command_message: Optional[Message] = None
+    command_message: Message | None = None,
 ) -> None:
     """
     Schedule a message for automatic deletion after a delay.
@@ -77,7 +77,7 @@ async def reply_and_delete(
     text: str,
     delay: int = DEFAULT_DELETE_DELAY,
     delete_command: bool = True,
-    **kwargs
+    **kwargs,
 ) -> Message:
     """
     Send a reply and schedule both messages for auto-deletion (groups only).
@@ -100,10 +100,7 @@ async def reply_and_delete(
 
     # Schedule deletion (only works in groups)
     await schedule_delete(
-        response,
-        delay=delay,
-        delete_command=delete_command,
-        command_message=message
+        response, delay=delay, delete_command=delete_command, command_message=message
     )
 
     return response

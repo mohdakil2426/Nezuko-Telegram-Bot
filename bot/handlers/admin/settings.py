@@ -4,14 +4,16 @@ Admin command handlers for configuration management.
 Handles /status, /unprotect, and /settings commands.
 All responses auto-delete after 60 seconds in group chats to keep them clean.
 """
+
 import logging
+
 from telegram import Update
-from telegram.ext import ContextTypes
 from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
+from telegram.ext import ContextTypes
 
-from bot.database.crud import get_protected_group, get_group_channels, toggle_protection
 from bot.core.database import get_session
+from bot.database.crud import get_group_channels, get_protected_group, toggle_protection
 from bot.utils.auto_delete import schedule_delete
 
 logger = logging.getLogger(__name__)
@@ -63,7 +65,7 @@ async def handle_status(update: Update, _context: ContextTypes.DEFAULT_TYPE):
                     f"1. Add me as admin in this group\n"
                     f"2. Add me as admin in your channel\n"
                     f"3. Run `/protect @YourChannel`",
-                    parse_mode="Markdown"
+                    parse_mode="Markdown",
                 )
                 # Schedule auto-delete
                 await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
@@ -84,7 +86,7 @@ async def handle_status(update: Update, _context: ContextTypes.DEFAULT_TYPE):
         lines = [
             f"{status_emoji} **Protection Status: {status_text}**",
             f"**Group:** _{group.title or chat_title}_",
-            ""  # Single blank line before channels
+            "",  # Single blank line before channels
         ]
 
         if channels:
@@ -100,21 +102,17 @@ async def handle_status(update: Update, _context: ContextTypes.DEFAULT_TYPE):
         lines.append("")  # Single blank line before commands
 
         if group.enabled:
-            lines.extend([
-                "**Commands:**",
-                "`/unprotect` - Disable protection",
-                "`/settings` - View configuration"
-            ])
+            lines.extend(
+                [
+                    "**Commands:**",
+                    "`/unprotect` - Disable protection",
+                    "`/settings` - View configuration",
+                ]
+            )
         else:
-            lines.extend([
-                "**Commands:**",
-                "`/protect @YourChannel` - Re-enable protection"
-            ])
+            lines.extend(["**Commands:**", "`/protect @YourChannel` - Re-enable protection"])
 
-        response = await update.message.reply_text(
-            "\n".join(lines),
-            parse_mode="Markdown"
-        )
+        response = await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
         # Schedule auto-delete for both command and response
         await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
@@ -148,17 +146,12 @@ async def handle_unprotect(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Only work in group chats
         if update.effective_chat.type == "private":
-            await update.message.reply_text(
-                "⚠️ This command only works in group chats."
-            )
+            await update.message.reply_text("⚠️ This command only works in group chats.")
             return
 
         # Check if user is admin
         try:
-            chat_member = await context.bot.get_chat_member(
-                chat_id=chat_id,
-                user_id=user_id
-            )
+            chat_member = await context.bot.get_chat_member(chat_id=chat_id, user_id=user_id)
             if chat_member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
                 response = await update.message.reply_text(
                     "❌ Only group administrators can disable protection."
@@ -180,9 +173,7 @@ async def handle_unprotect(update: Update, context: ContextTypes.DEFAULT_TYPE):
             group = await get_protected_group(session, chat_id)
 
             if not group:
-                response = await update.message.reply_text(
-                    "ℹ️ This group is not protected."
-                )
+                response = await update.message.reply_text("ℹ️ This group is not protected.")
                 await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
                 return
 
@@ -190,7 +181,7 @@ async def handle_unprotect(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 response = await update.message.reply_text(
                     "ℹ️ Protection is already disabled.\n\n"
                     "Use `/protect @YourChannel` to re-enable.",
-                    parse_mode="Markdown"
+                    parse_mode="Markdown",
                 )
                 await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
                 return
@@ -202,7 +193,7 @@ async def handle_unprotect(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🔓 **Protection Disabled**\n\n"
             "Members can now speak freely without channel verification.\n\n"
             "_Your configuration is saved. Use `/protect @YourChannel` to re-enable._",
-            parse_mode="Markdown"
+            parse_mode="Markdown",
         )
 
         # Schedule auto-delete
@@ -239,9 +230,7 @@ async def handle_settings(update: Update, _context: ContextTypes.DEFAULT_TYPE):
 
         # Only work in group chats
         if update.effective_chat.type == "private":
-            await update.message.reply_text(
-                "⚠️ This command only works in group chats."
-            )
+            await update.message.reply_text("⚠️ This command only works in group chats.")
             return
 
         logger.info("Settings requested for group %s", chat_id)
@@ -252,8 +241,7 @@ async def handle_settings(update: Update, _context: ContextTypes.DEFAULT_TYPE):
 
             if not group:
                 response = await update.message.reply_text(
-                    "❌ This group is not protected. Use `/protect` first.",
-                    parse_mode="Markdown"
+                    "❌ This group is not protected. Use `/protect` first.", parse_mode="Markdown"
                 )
                 await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
                 return

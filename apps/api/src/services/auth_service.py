@@ -1,27 +1,25 @@
-from datetime import datetime, timezone, timedelta
-from typing import Tuple
 import uuid
+from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select, update, delete
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.config import get_settings
 from src.core.security import (
-    verify_password,
     create_access_token,
     create_refresh_token,
     decode_token,
-    hash_password,
+    verify_password,
 )
-from src.models.admin_user import AdminUser
 from src.models.admin_session import AdminSession
-from src.core.config import get_settings
+from src.models.admin_user import AdminUser
 
 settings = get_settings()
 
 
 class AuthService:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     async def authenticate_user(self, email: str, password: str) -> AdminUser | None:
@@ -37,17 +35,21 @@ class AuthService:
 
         if not user.is_active:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User account is inactive",
             )
 
         # Update last login
-        user.last_login = datetime.now(timezone.utc)
+        user.last_login = datetime.now(UTC)
         await self.session.commit()
         await self.session.refresh(user)
         return user
 
     async def create_session(
-        self, user_id: uuid.UUID, ip_address: str | None, user_agent: str | None
+        self,
+        user_id: uuid.UUID,
+        ip_address: str | None,
+        user_agent: str | None,
     ) -> AdminSession:
         """
         Create a new session (refresh token) for a user.
@@ -55,8 +57,8 @@ class AuthService:
         refresh_token = create_refresh_token(str(user_id))
 
         # Calculate expiry based on config
-        expires_at = datetime.now(timezone.utc) + timedelta(
-            days=settings.ADMIN_JWT_REFRESH_EXPIRE_DAYS
+        expires_at = datetime.now(UTC) + timedelta(
+            days=settings.ADMIN_JWT_REFRESH_EXPIRE_DAYS,
         )
 
         # We store the raw token in the DB to match against.
@@ -99,8 +101,11 @@ class AuthService:
         await self.session.commit()
 
     async def refresh_session(
-        self, refresh_token: str, ip_address: str | None, user_agent: str | None
-    ) -> Tuple[str, str, int]:
+        self,
+        refresh_token: str,
+        ip_address: str | None,
+        user_agent: str | None,
+    ) -> tuple[str, str, int]:
         """
         Rotate refresh token and issue new access token.
         Returns: (new_access_token, new_refresh_token, expires_in)
@@ -113,7 +118,8 @@ class AuthService:
             # Actually if it expired, we might still want to check if it WAS valid to detect reuse if we kept history.
             # But here we just fail.
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
             )
 
         user_id = uuid.UUID(payload["sub"])
@@ -138,7 +144,7 @@ class AuthService:
             )
 
         # 3. Check expiry (DB field)
-        if db_session.expires_at < datetime.now(timezone.utc):
+        if db_session.expires_at < datetime.now(UTC):
             await self.revoke_session(refresh_token)
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expired")
 

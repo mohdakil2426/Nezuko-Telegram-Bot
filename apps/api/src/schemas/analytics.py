@@ -1,12 +1,12 @@
+from typing import Any
+
 from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
-from datetime import date, datetime
 
 
 class DataPoint(BaseModel):
     date: str  # YYYY-MM-DD or timestamp
     value: int
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
 
 class UserGrowthSeries(BaseModel):
@@ -18,8 +18,8 @@ class UserGrowthSeries(BaseModel):
 class UserGrowthResponse(BaseModel):
     period: str
     granularity: str
-    series: List[UserGrowthSeries]
-    summary: Dict[str, Any]  # total_new_users, growth_rate
+    series: list[UserGrowthSeries]
+    summary: dict[str, Any]  # total_new_users, growth_rate
 
 
 class VerificationTrendSeries(BaseModel):
@@ -31,5 +31,5 @@ class VerificationTrendSeries(BaseModel):
 
 class VerificationTrendResponse(BaseModel):
     period: str
-    series: List[VerificationTrendSeries]
-    summary: Dict[str, Any]  # total_verifications, success_rate
+    series: list[VerificationTrendSeries]
+    summary: dict[str, Any]  # total_verifications, success_rate

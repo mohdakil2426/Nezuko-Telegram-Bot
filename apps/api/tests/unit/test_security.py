@@ -1,4 +1,3 @@
-import pytest
 from src.core.security import hash_password, verify_password
 
 

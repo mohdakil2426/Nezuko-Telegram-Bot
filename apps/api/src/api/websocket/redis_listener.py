@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+
 from redis.asyncio import Redis
 
 from ...core.config import get_settings
@@ -9,7 +10,7 @@ from .manager import manager
 logger = logging.getLogger(__name__)
 
 
-async def redis_log_listener():
+async def redis_log_listener() -> None:
     """
     Connects to Redis Pub/Sub and listens for log messages.
     Broadcasts received messages to connected WebSocket clients.
@@ -33,7 +34,7 @@ async def redis_log_listener():
                 except json.JSONDecodeError:
                     logger.warning("Received invalid JSON from Redis log channel")
                 except Exception as e:
-                    logger.error(f"Error broadcasting log message: {e}")
+                    logger.exception(f"Error broadcasting log message: {e}")
     except asyncio.CancelledError:
         logger.info("Redis log listener cancelled")
     finally:

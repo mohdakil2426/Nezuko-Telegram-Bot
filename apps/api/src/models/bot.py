@@ -1,6 +1,8 @@
-from datetime import datetime, timezone
-from sqlalchemy import String, BigInteger, Boolean, DateTime, Text, ForeignKey, JSON
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from datetime import UTC, datetime
+
+from sqlalchemy import JSON, BigInteger, Boolean, DateTime, ForeignKey, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from .base import Base
 
 
@@ -12,17 +14,20 @@ class Owner(Base):
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     username: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
+        DateTime,
+        default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     # Relationships
     protected_groups: Mapped[list["ProtectedGroup"]] = relationship(
-        "ProtectedGroup", back_populates="owner", cascade="all, delete-orphan"
+        "ProtectedGroup",
+        back_populates="owner",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:
@@ -36,24 +41,28 @@ class ProtectedGroup(Base):
 
     group_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     owner_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("owners.user_id", ondelete="CASCADE")
+        BigInteger,
+        ForeignKey("owners.user_id", ondelete="CASCADE"),
     )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     params: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
+        DateTime,
+        default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     # Relationships
     owner: Mapped["Owner"] = relationship("Owner", back_populates="protected_groups")
     channel_links: Mapped[list["GroupChannelLink"]] = relationship(
-        "GroupChannelLink", back_populates="group", cascade="all, delete-orphan"
+        "GroupChannelLink",
+        back_populates="group",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:
@@ -70,17 +79,20 @@ class EnforcedChannel(Base):
     username: Mapped[str | None] = mapped_column(String(255), nullable=True)
     invite_link: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
+        DateTime,
+        default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     # Relationships
     group_links: Mapped[list["GroupChannelLink"]] = relationship(
-        "GroupChannelLink", back_populates="channel", cascade="all, delete-orphan"
+        "GroupChannelLink",
+        back_populates="channel",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:
@@ -94,19 +106,23 @@ class GroupChannelLink(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     group_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("protected_groups.group_id", ondelete="CASCADE")
+        BigInteger,
+        ForeignKey("protected_groups.group_id", ondelete="CASCADE"),
     )
     channel_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("enforced_channels.channel_id", ondelete="CASCADE")
+        BigInteger,
+        ForeignKey("enforced_channels.channel_id", ondelete="CASCADE"),
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
+        DateTime,
+        default=lambda: datetime.now(UTC),
     )
 
     # Relationships
     group: Mapped["ProtectedGroup"] = relationship("ProtectedGroup", back_populates="channel_links")
     channel: Mapped["EnforcedChannel"] = relationship(
-        "EnforcedChannel", back_populates="group_links"
+        "EnforcedChannel",
+        back_populates="group_links",
     )
 
     def __repr__(self) -> str:

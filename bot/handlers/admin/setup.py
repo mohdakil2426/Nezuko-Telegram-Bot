@@ -4,16 +4,17 @@ Allows group admins to setup channel verification.
 """
 
 import logging
+
 from telegram import Update
-from telegram.ext import ContextTypes
 from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
+from telegram.ext import ContextTypes
 
 from bot.core.database import get_session
 from bot.database.crud import (
     create_owner,
-    get_protected_group,
     create_protected_group,
+    get_protected_group,
     link_group_channel,
 )
 from bot.utils.auto_delete import schedule_delete
@@ -38,8 +39,7 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Only work in groups/supergroups
     if update.effective_chat.type not in ["group", "supergroup"]:
         await update.message.reply_text(
-            "⚠️ This command only works in groups.\n"
-            "Add me to your group and try again."
+            "⚠️ This command only works in groups.\nAdd me to your group and try again."
         )
         return
 
@@ -50,9 +50,7 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         member = await context.bot.get_chat_member(group_id, user_id)
         if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
-            await update.message.reply_text(
-                "⚠️ Only group admins can run this command."
-            )
+            await update.message.reply_text("⚠️ Only group admins can run this command.")
             return
     except TelegramError as e:
         logger.error("Error checking admin status: %s", e)
@@ -62,9 +60,8 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Parse channel argument
     if not context.args or len(context.args) == 0:
         await update.message.reply_text(
-            "⚠️ **Usage:** `/protect @ChannelUsername`\n\n"
-            "Example: `/protect @MyChannel`",
-            parse_mode="Markdown"
+            "⚠️ **Usage:** `/protect @ChannelUsername`\n\nExample: `/protect @MyChannel`",
+            parse_mode="Markdown",
         )
         return
 
@@ -100,7 +97,7 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Make sure:\n"
             "• The username is correct\n"
             "• The channel is public OR I'm a member",
-            parse_mode="Markdown"
+            parse_mode="Markdown",
         )
         return
 
@@ -114,7 +111,7 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "1️⃣ Go to the channel\n"
                 "2️⃣ Add me as administrator\n"
                 "3️⃣ Run `/protect @{channel_username}` again",
-                parse_mode="Markdown"
+                parse_mode="Markdown",
             )
             return
     except TelegramError as e:
@@ -122,7 +119,7 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"❌ I'm not a member of `@{channel_username}`.\n\n"
             "Add me as **Admin** to the channel first.",
-            parse_mode="Markdown"
+            parse_mode="Markdown",
         )
         return
 
@@ -135,7 +132,7 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Please promote me to administrator with:\n"
                 "• Manage members (to restrict users)\n"
                 "• Delete messages (to remove unauthorized posts)",
-                parse_mode="Markdown"
+                parse_mode="Markdown",
             )
             return
     except TelegramError as e:
@@ -156,7 +153,7 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     f"⚠️ This group is already protected.\n\n"
                     f"Current channel: `@{channel_username}`\n\n"
                     f"To change, run `/unprotect` first, then `/protect @NewChannel`",
-                    parse_mode="Markdown"
+                    parse_mode="Markdown",
                 )
                 return
 
@@ -171,7 +168,7 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 channel_id,
                 invite_link=invite_link,
                 title=channel_title,
-                username=channel_username
+                username=channel_username,
             )
 
         # Success message
@@ -183,23 +180,19 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"✅ Instant join verification enabled\n"
             f"✅ Leave detection enabled\n\n"
             f"Use `/status` to check configuration.",
-            parse_mode="Markdown"
+            parse_mode="Markdown",
         )
 
         # Schedule auto-delete
         await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
 
         logger.info(
-            "Protection activated: group=%s, channel=%s, admin=%s",
-            group_id,
-            channel_id,
-            user_id
+            "Protection activated: group=%s, channel=%s, admin=%s", group_id, channel_id, user_id
         )
 
     except TelegramError as e:
         logger.error("Error setting up protection: %s", e, exc_info=True)
         response = await update.message.reply_text(
-            "❌ Database error while setting up protection.\n"
-            "Please try again or contact support."
+            "❌ Database error while setting up protection.\nPlease try again or contact support."
         )
         await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)

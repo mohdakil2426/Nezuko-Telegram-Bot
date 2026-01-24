@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Literal
 
-from ...core.database import get_session
-from ...services.analytics_service import analytics_service
-from ...schemas.base import SuccessResponse
-from ...schemas.analytics import UserGrowthResponse, VerificationTrendResponse
-from ..dependencies.auth import get_current_admin_user
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.api.core.database import get_session
+from src.api.schemas.analytics import UserGrowthResponse, VerificationTrendResponse
+from src.api.schemas.base import SuccessResponse
+from src.api.services.analytics_service import analytics_service
+from src.api.v1.dependencies.auth import get_current_admin_user
 
 router = APIRouter()
 

@@ -1,6 +1,4 @@
 from enum import Enum
-from fastapi import Depends, HTTPException, status
-from typing import Callable, Any
 
 
 class Role(str, Enum):

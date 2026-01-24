@@ -1,9 +1,11 @@
 """
 UI utilities for Telegram bot handlers.
 """
+
 import logging
-from typing import List, Any, Optional
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from typing import Any
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 logger = logging.getLogger(__name__)
@@ -12,7 +14,7 @@ logger = logging.getLogger(__name__)
 CALLBACK_VERIFY = "verify_membership"
 
 
-def get_membership_keyboard(missing_channels: List[Any]) -> InlineKeyboardMarkup:
+def get_membership_keyboard(missing_channels: list[Any]) -> InlineKeyboardMarkup:
     """
     Build the verification keyboard for missing channels.
 
@@ -27,12 +29,12 @@ def get_membership_keyboard(missing_channels: List[Any]) -> InlineKeyboardMarkup
     primary_channel = missing_channels[0]
 
     # Build invite URL
-    channel_id_str = str(primary_channel.channel_id).strip('@')
+    channel_id_str = str(primary_channel.channel_id).strip("@")
     invite_url = primary_channel.invite_link or f"https://t.me/{channel_id_str}"
 
     keyboard = [
         [InlineKeyboardButton("Join Channel", url=invite_url)],
-        [InlineKeyboardButton("I have joined", callback_data=CALLBACK_VERIFY)]
+        [InlineKeyboardButton("I have joined", callback_data=CALLBACK_VERIFY)],
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -40,9 +42,9 @@ def get_membership_keyboard(missing_channels: List[Any]) -> InlineKeyboardMarkup
 async def send_verification_warning(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
-    missing_channels: List[Any],
-    is_new_member: bool = False
-) -> Optional[int]:
+    missing_channels: list[Any],
+    is_new_member: bool = False,
+) -> int | None:
     """
     Send a verification warning message to the user.
 
@@ -62,10 +64,7 @@ async def send_verification_warning(
     user = update.effective_user
     primary_channel = missing_channels[0]
 
-    if primary_channel.title:
-        channel_mention = f"@{primary_channel.title}"
-    else:
-        channel_mention = "the channel"
+    channel_mention = f"@{primary_channel.title}" if primary_channel.title else "the channel"
 
     reply_markup = get_membership_keyboard(missing_channels)
 
@@ -76,16 +75,12 @@ async def send_verification_warning(
         )
     else:
         text = (
-            f"Hello {user.mention_html()}, "
-            f"you must join {channel_mention} to speak in this group."
+            f"Hello {user.mention_html()}, you must join {channel_mention} to speak in this group."
         )
 
     try:
         message = await context.bot.send_message(
-            chat_id=chat_id,
-            text=text,
-            reply_markup=reply_markup,
-            parse_mode="HTML"
+            chat_id=chat_id, text=text, reply_markup=reply_markup, parse_mode="HTML"
         )
         return message.message_id
     except Exception as e:  # pylint: disable=broad-exception-caught

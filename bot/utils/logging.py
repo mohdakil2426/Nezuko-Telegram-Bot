@@ -14,7 +14,8 @@ Features:
 
 import logging
 import sys
-from typing import Any, Optional
+from typing import Any
+
 import structlog
 from structlog.types import EventDict, WrappedLogger
 
@@ -46,7 +47,7 @@ def extract_context(_logger: WrappedLogger, _method_name: str, event_dict: Event
     return event_dict
 
 
-def configure_logging(json_format: Optional[bool] = None) -> None:
+def configure_logging(json_format: bool | None = None) -> None:
     """
     Configure structlog and stdlib logging integration.
 
@@ -73,32 +74,24 @@ def configure_logging(json_format: Optional[bool] = None) -> None:
         # Production: JSON format for log aggregation (Loki, ELK, etc.)
         processors = shared_processors + [
             structlog.processors.format_exc_info,
-            structlog.processors.JSONRenderer()
+            structlog.processors.JSONRenderer(),
         ]
 
         # Configure stdlib logging for JSON as well
         logging.basicConfig(
             format="%(message)s",
             level=logging.INFO,
-            handlers=[
-                logging.StreamHandler(sys.stdout),
-                logging.FileHandler("bot.log")
-            ]
+            handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler("bot.log")],
         )
     else:
         # Development: Pretty console output
-        processors = shared_processors + [
-            structlog.dev.ConsoleRenderer(colors=True)
-        ]
+        processors = shared_processors + [structlog.dev.ConsoleRenderer(colors=True)]
 
         # Configure stdlib logging with readable format
         logging.basicConfig(
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             level=logging.DEBUG,
-            handlers=[
-                logging.StreamHandler(sys.stdout),
-                logging.FileHandler("bot.log")
-            ]
+            handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler("bot.log")],
         )
 
     # Configure structlog
@@ -107,11 +100,11 @@ def configure_logging(json_format: Optional[bool] = None) -> None:
         wrapper_class=structlog.stdlib.BoundLogger,
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
-        cache_logger_on_first_use=True
+        cache_logger_on_first_use=True,
     )
 
 
-def get_logger(name: Optional[str] = None) -> structlog.stdlib.BoundLogger:
+def get_logger(name: str | None = None) -> structlog.stdlib.BoundLogger:
     """
     Get a structlog logger instance.
 
@@ -169,6 +162,7 @@ class LogContext:
 # Pre-configured Loggers for Key Events
 # ====================
 
+
 def log_protection_activated(group_id: int, channel_id: int, owner_id: int):
     """Log when protection is activated for a group."""
     log = get_logger("protection")
@@ -177,7 +171,7 @@ def log_protection_activated(group_id: int, channel_id: int, owner_id: int):
         event_type="protection_activated",
         group_id=group_id,
         channel_id=channel_id,
-        owner_id=owner_id
+        owner_id=owner_id,
     )
 
 
@@ -190,7 +184,7 @@ def log_user_verified(user_id: int, group_id: int, channel_id: int, cached: bool
         user_id=user_id,
         group_id=group_id,
         channel_id=channel_id,
-        cache_hit=cached
+        cache_hit=cached,
     )
 
 
@@ -202,7 +196,7 @@ def log_user_restricted(user_id: int, group_id: int, reason: str = "not_member")
         event_type="user_restricted",
         user_id=user_id,
         group_id=group_id,
-        reason=reason
+        reason=reason,
     )
 
 
@@ -210,14 +204,11 @@ def log_user_unrestricted(user_id: int, group_id: int):
     """Log when a user is unrestricted/unmuted."""
     log = get_logger("protection")
     log.info(
-        "User unrestricted",
-        event_type="user_unrestricted",
-        user_id=user_id,
-        group_id=group_id
+        "User unrestricted", event_type="user_unrestricted", user_id=user_id, group_id=group_id
     )
 
 
-def log_api_call(method: str, params: Optional[dict] = None, duration_ms: Optional[float] = None):
+def log_api_call(method: str, params: dict | None = None, duration_ms: float | None = None):
     """Log Telegram API call."""
     log = get_logger("telegram")
     log.debug(
@@ -225,16 +216,11 @@ def log_api_call(method: str, params: Optional[dict] = None, duration_ms: Option
         event_type="api_call",
         method=method,
         params=params or {},
-        duration_ms=duration_ms
+        duration_ms=duration_ms,
     )
 
 
-def log_cache_event(
-    operation: str,
-    key: str,
-    hit: Optional[bool] = None,
-    ttl: Optional[int] = None
-):
+def log_cache_event(operation: str, key: str, hit: bool | None = None, ttl: int | None = None):
     """Log cache operation."""
     log = get_logger("cache")
     extra: dict[str, Any] = {"operation": operation, "key": key}
@@ -261,7 +247,7 @@ def log_error(message: str, error: Exception, **context):
         event_type="error",
         error_type=type(error).__name__,
         error_message=str(error),
-        **context
+        **context,
     )
 
 
@@ -273,7 +259,7 @@ def log_startup(mode: str, database: str, redis: bool):
         event_type="startup",
         mode=mode,
         database=database.split("://")[0] if "://" in database else database,
-        redis_enabled=redis
+        redis_enabled=redis,
     )
 
 

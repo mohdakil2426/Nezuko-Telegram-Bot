@@ -2,7 +2,8 @@ import contextvars
 from uuid import uuid4
 
 _trace_id_ctx_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "trace_id", default=None
+    "trace_id",
+    default=None,
 )
 
 

@@ -5,11 +5,12 @@ Load testing suite for Nezuko performance validation.
 Tests verification throughput, latency, and system behavior under load.
 Uses pytest-benchmark for performance testing.
 """
-import pytest
+
 import asyncio
 import time
-from typing import List
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 # Test configuration
 TARGET_P95_LATENCY_MS = 100  # Per design.md
@@ -19,6 +20,7 @@ CONCURRENT_REQUESTS = 100  # Simultaneous verification requests
 
 class MockContext:
     """Mock Telegram context for load testing."""
+
     def __init__(self):
         self.bot = AsyncMock()
         self.bot.get_chat_member = AsyncMock()
@@ -35,7 +37,6 @@ async def test_verification_latency():
     Target: p95 < 100ms
     """
     from bot.services.verification import check_membership, reset_cache_stats
-    from bot.core.cache import get_redis_client, cache_set
 
     reset_cache_stats()
     context = MockContext()
@@ -118,7 +119,7 @@ async def test_concurrent_verification_load():
     print(f"  Successes: {successes}")
     print(f"  Errors: {errors}")
     print(f"  Duration: {elapsed:.2f}s")
-    print(f"  Throughput: {len(results)/elapsed:.2f} req/s")
+    print(f"  Throughput: {len(results) / elapsed:.2f} req/s")
 
     status = "✅ PASS" if errors == 0 else "❌ FAIL"
     print(f"\n{status}: {errors} errors out of {len(results)} requests")
@@ -134,7 +135,7 @@ async def test_throughput_target():
 
     Target: >= 1000 verifications per minute
     """
-    from bot.services.verification import check_membership, reset_cache_stats, get_cache_stats
+    from bot.services.verification import check_membership, get_cache_stats, reset_cache_stats
 
     reset_cache_stats()
     context = MockContext()
@@ -168,8 +169,9 @@ async def test_throughput_target():
     status = "✅ PASS" if throughput_per_min >= TARGET_THROUGHPUT_PER_MIN else "❌ FAIL"
     print(f"\n{status}: {throughput_per_min:.0f} req/min vs {TARGET_THROUGHPUT_PER_MIN} target")
 
-    assert throughput_per_min >= TARGET_THROUGHPUT_PER_MIN, \
+    assert throughput_per_min >= TARGET_THROUGHPUT_PER_MIN, (
         f"Throughput {throughput_per_min:.0f}/min below {TARGET_THROUGHPUT_PER_MIN}/min target"
+    )
 
 
 @pytest.mark.asyncio
@@ -179,8 +181,7 @@ async def test_cache_hit_rate():
 
     Target: > 70% cache hit rate
     """
-    from bot.services.verification import check_membership, reset_cache_stats, get_cache_stats
-    from bot.core.cache import cache_set, get_ttl_with_jitter
+    from bot.services.verification import check_membership, get_cache_stats, reset_cache_stats
 
     reset_cache_stats()
     context = MockContext()
@@ -201,7 +202,7 @@ async def test_cache_hit_rate():
             await check_membership(user_id, channel_id, context)
 
     stats = get_cache_stats()
-    hit_rate = stats['hit_rate_percent']
+    hit_rate = stats["hit_rate_percent"]
 
     print("\n📊 Cache Performance:")
     print(f"  Total Checks: {stats['total_checks']}")
@@ -223,8 +224,8 @@ async def test_database_query_performance():
 
     Target: < 50ms (p95)
     """
-    from bot.database.crud import get_protected_group, get_group_channels
     from bot.core.database import get_session
+    from bot.database.crud import get_group_channels, get_protected_group
 
     iterations = 50
     latencies = []
@@ -238,7 +239,7 @@ async def test_database_query_performance():
             # Simulate typical query pattern
             group = await get_protected_group(session, -1001234567890)
             if group:
-                channels = await get_group_channels(session, -1001234567890)
+                await get_group_channels(session, -1001234567890)
 
             elapsed_ms = (time.perf_counter() - start) * 1000
             latencies.append(elapsed_ms)
@@ -269,8 +270,9 @@ async def test_protection_service_retry_logic():
 
     Validates retry logic with transient errors.
     """
-    from bot.services.protection import restrict_user, get_protection_stats
     from telegram.error import RetryAfter
+
+    from bot.services.protection import get_protection_stats, restrict_user
 
     context = MockContext()
 
@@ -278,7 +280,7 @@ async def test_protection_service_retry_logic():
     context.bot.restrict_chat_member.side_effect = [
         RetryAfter(1),  # First attempt fails
         RetryAfter(1),  # Second attempt fails
-        True  # Third attempt succeeds
+        True,  # Third attempt succeeds
     ]
 
     print("\n🧪 Testing retry logic with transient failures...")
@@ -334,9 +336,9 @@ if __name__ == "__main__":
 
     async def main():
         """Main entry point for load tests."""
-        print("="*60)
+        print("=" * 60)
         print("NEZUKO LOAD TESTING SUITE")
-        print("="*60)
+        print("=" * 60)
 
         try:
             print("\n[1/6] Verification Latency Test")
@@ -357,9 +359,9 @@ if __name__ == "__main__":
             print("\n[6/6] Retry Logic Test")
             await test_protection_service_retry_logic()
 
-            print("\n" + "="*60)
+            print("\n" + "=" * 60)
             print("✅ ALL LOAD TESTS PASSED!")
-            print("="*60)
+            print("=" * 60)
 
         except AssertionError as e:
             print(f"\n❌ TEST FAILED: {e}")

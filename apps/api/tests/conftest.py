@@ -1,13 +1,12 @@
-import pytest
-from typing import AsyncGenerator
-from fastapi import FastAPI
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from collections.abc import AsyncGenerator
 
-from src.main import app
-from src.core.database import get_session
-from src.models import Base
+import pytest
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from src.core.config import get_settings
+from src.core.database import get_session
+from src.main import app
+from src.models import Base
 
 settings = get_settings()
 
@@ -40,16 +39,16 @@ async def db_engine():
         await conn.run_sync(Base.metadata.drop_all)
 
 
-@pytest.fixture(scope="function")
-async def session(db_engine) -> AsyncGenerator[AsyncSession, None]:
+@pytest.fixture
+async def session(db_engine) -> AsyncGenerator[AsyncSession]:
     async with TestingSessionLocal() as session:
         yield session
         # Rollback is important for isolation
         await session.rollback()
 
 
-@pytest.fixture(scope="function")
-async def client(session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+@pytest.fixture
+async def client(session: AsyncSession) -> AsyncGenerator[AsyncClient]:
     """Client fixture that overrides the DB dependency."""
 
     async def override_get_session():

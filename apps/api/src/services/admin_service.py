@@ -1,16 +1,17 @@
+from collections.abc import Sequence
 from uuid import UUID
-from typing import Sequence
+
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException, status
 
+from apps.api.src.core.security import get_password_hash
 from apps.api.src.models.admin_user import AdminUser
 from apps.api.src.schemas.admin import AdminCreateRequest, AdminUpdateRequest
-from apps.api.src.core.security import get_password_hash
 
 
 class AdminService:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     async def get_admins(self) -> Sequence[AdminUser]:
@@ -29,7 +30,8 @@ class AdminService:
         existing = await self.get_admin_by_email(data.email)
         if existing:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Admin with this email already exists"
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Admin with this email already exists",
             )
 
         admin = AdminUser(

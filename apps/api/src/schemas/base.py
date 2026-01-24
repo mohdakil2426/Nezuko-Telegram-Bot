@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
@@ -18,7 +18,7 @@ class PaginationMeta(BaseModel):
     total_pages: int
 
 
-class SuccessResponse(BaseModel, Generic[T]):
+class SuccessResponse[T](BaseModel):
     """Standard success response wrapper."""
 
     status: str = "success"
@@ -26,7 +26,7 @@ class SuccessResponse(BaseModel, Generic[T]):
     meta: dict | None = None
 
 
-class PaginatedResponse(BaseModel, Generic[T]):
+class PaginatedResponse[T](BaseModel):
     """Paginated response wrapper."""
 
     status: str = "success"

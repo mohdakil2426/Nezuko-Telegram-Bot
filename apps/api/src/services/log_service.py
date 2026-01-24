@@ -1,20 +1,23 @@
 import json
-from datetime import datetime
-from typing import List, Optional
+
 from redis.asyncio import Redis
+
 from ...core.config import get_settings
 
 settings = get_settings()
 
 
 class LogService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
         self.history_key = "nezuko:logs:history"
 
     async def get_logs(
-        self, limit: int = 100, level: Optional[str] = None, search: Optional[str] = None
-    ) -> List[dict]:
+        self,
+        limit: int = 100,
+        level: str | None = None,
+        search: str | None = None,
+    ) -> list[dict]:
         """
         Retrieve historical logs from Redis List.
         Note: Redis List doesn't support advanced filtering server-side efficiently.

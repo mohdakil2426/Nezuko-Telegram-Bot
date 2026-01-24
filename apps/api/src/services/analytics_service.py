@@ -1,9 +1,8 @@
-from sqlalchemy import text, select, func
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Dict, Any
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from ..schemas.analytics import (
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.schemas.analytics import (
     UserGrowthResponse,
     UserGrowthSeries,
     VerificationTrendResponse,
@@ -13,7 +12,10 @@ from ..schemas.analytics import (
 
 class AnalyticsService:
     async def get_user_growth(
-        self, session: AsyncSession, period: str = "30d", granularity: str = "day"
+        self,
+        session: AsyncSession,
+        period: str = "30d",
+        granularity: str = "day",
     ) -> UserGrowthResponse:
         """
         Calculates user growth over time.
@@ -28,7 +30,7 @@ class AnalyticsService:
         """
 
         # Calculate date range
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if period == "7d":
             start_date = now - timedelta(days=7)
         elif period == "30d":
@@ -56,7 +58,7 @@ class AnalyticsService:
             total_new += new_users
 
             series.append(
-                UserGrowthSeries(date=date_str, new_users=new_users, total_users=total_users)
+                UserGrowthSeries(date=date_str, new_users=new_users, total_users=total_users),
             )
             current += timedelta(days=1)
 
@@ -78,12 +80,15 @@ class AnalyticsService:
         )
 
     async def get_verification_trends(
-        self, session: AsyncSession, period: str = "7d", granularity: str = "hour"
+        self,
+        session: AsyncSession,
+        period: str = "7d",
+        granularity: str = "hour",
     ) -> VerificationTrendResponse:
         """
         Calculates verification success vs failure trends.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if period == "24h":
             start_date = now - timedelta(hours=24)
             delta = timedelta(hours=1)
@@ -124,7 +129,7 @@ class AnalyticsService:
                     total=vol,
                     successful=success_count,
                     failed=failed_count,
-                )
+                ),
             )
 
             current += delta

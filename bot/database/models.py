@@ -3,33 +3,38 @@
 SQLAlchemy ORM models for Nezuko database schema.
 """
 
-from datetime import datetime, timezone
-from typing import List
+from datetime import UTC, datetime
+
 from sqlalchemy import (
-    String, BigInteger, Boolean, DateTime, Text, Index,
-    ForeignKey, UniqueConstraint, JSON
+    JSON,
+    BigInteger,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
 )
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from bot.core.database import Base
 
 
 class Owner(Base):
     """Bot owner (admin who configures protected groups)."""
+
     __tablename__ = "owners"
 
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     username: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc)
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
     # Relationships
-    protected_groups: Mapped[List["ProtectedGroup"]] = relationship(
+    protected_groups: Mapped[list["ProtectedGroup"]] = relationship(
         "ProtectedGroup", back_populates="owner", cascade="all, delete-orphan"
     )
 
@@ -39,6 +44,7 @@ class Owner(Base):
 
 class ProtectedGroup(Base):
     """Group protected by channel verification."""
+
     __tablename__ = "protected_groups"
 
     group_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -48,18 +54,14 @@ class ProtectedGroup(Base):
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     params: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc)
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
     # Relationships
     owner: Mapped["Owner"] = relationship("Owner", back_populates="protected_groups")
-    channel_links: Mapped[List["GroupChannelLink"]] = relationship(
+    channel_links: Mapped[list["GroupChannelLink"]] = relationship(
         "GroupChannelLink", back_populates="group", cascade="all, delete-orphan"
     )
 
@@ -75,23 +77,20 @@ class ProtectedGroup(Base):
 
 class EnforcedChannel(Base):
     """Channel that users must join."""
+
     __tablename__ = "enforced_channels"
 
     channel_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     username: Mapped[str | None] = mapped_column(String(255), nullable=True)
     invite_link: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc)
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
 
     # Relationships
-    group_links: Mapped[List["GroupChannelLink"]] = relationship(
+    group_links: Mapped[list["GroupChannelLink"]] = relationship(
         "GroupChannelLink", back_populates="channel", cascade="all, delete-orphan"
     )
 
@@ -101,6 +100,7 @@ class EnforcedChannel(Base):
 
 class GroupChannelLink(Base):
     """Many-to-many relationship between groups and channels."""
+
     __tablename__ = "group_channel_links"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)  # Use default Integer
@@ -110,14 +110,10 @@ class GroupChannelLink(Base):
     channel_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("enforced_channels.channel_id", ondelete="CASCADE")
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
     # Relationships
-    group: Mapped["ProtectedGroup"] = relationship(
-        "ProtectedGroup", back_populates="channel_links"
-    )
+    group: Mapped["ProtectedGroup"] = relationship("ProtectedGroup", back_populates="channel_links")
     channel: Mapped["EnforcedChannel"] = relationship(
         "EnforcedChannel", back_populates="group_links"
     )

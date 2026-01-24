@@ -1,11 +1,9 @@
-from typing import Sequence
-from sqlalchemy import select, func, desc, or_
+from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from ..models.bot import EnforcedChannel, GroupChannelLink, ProtectedGroup
-from ..schemas.channel import ChannelCreateRequest
-from ..schemas.base import PaginatedResponse
+from src.models.bot import EnforcedChannel, GroupChannelLink
+from src.schemas.channel import ChannelCreateRequest
 
 
 async def get_channels(
@@ -26,7 +24,7 @@ async def get_channels(
             or_(
                 EnforcedChannel.title.ilike(search_term),
                 EnforcedChannel.username.ilike(search_term),
-            )
+            ),
         )
 
     # Count total
@@ -52,7 +50,7 @@ async def get_channels(
     for channel in channels:
         # Get count of linked groups
         link_count_stmt = select(func.count()).where(
-            GroupChannelLink.channel_id == channel.channel_id
+            GroupChannelLink.channel_id == channel.channel_id,
         )
         link_count_res = await session.execute(link_count_stmt)
         link_count = link_count_res.scalar_one()
@@ -99,7 +97,7 @@ async def get_channel(session: AsyncSession, channel_id: int) -> dict | None:
                 {
                     "group_id": link.group.group_id,
                     "title": link.group.title,
-                }
+                },
             )
 
     return {

@@ -4,20 +4,18 @@ Batch verification service for warming cache in large groups.
 Provides functions to pre-verify users in bulk to improve cache hit rates
 and reduce API calls during peak activity periods.
 """
+
 import asyncio
 import logging
-from typing import List, cast
-from datetime import datetime, timezone
-from telegram.ext import ContextTypes
-from telegram.error import TelegramError
+from datetime import UTC, datetime
+from typing import cast
 
-from bot.database.crud import (
-    get_group_channels,
-    get_protected_group,
-    get_all_protected_groups
-)
-from bot.services.verification import check_membership
+from telegram.error import TelegramError
+from telegram.ext import ContextTypes
+
 from bot.core.database import get_session
+from bot.database.crud import get_all_protected_groups, get_group_channels, get_protected_group
+from bot.services.verification import check_membership
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +27,7 @@ ACTIVE_USER_DAYS = 30  # Consider users active if messaged in last 30 days
 
 # pylint: disable=too-many-locals, too-many-branches
 async def warm_cache_for_group(
-    group_id: int,
-    context: ContextTypes.DEFAULT_TYPE,
-    user_ids: List[int] | None = None
+    group_id: int, context: ContextTypes.DEFAULT_TYPE, user_ids: list[int] | None = None
 ) -> dict:
     """
     Warm cache for a specific protected group.
@@ -47,13 +43,13 @@ async def warm_cache_for_group(
     Returns:
         Dict with verification stats
     """
-    start_time = datetime.now(timezone.utc)
+    start_time = datetime.now(UTC)
     stats = {
         "total_users": 0,
         "verified": 0,
         "not_verified": 0,
         "errors": 0,
-        "duration_seconds": 0.0
+        "duration_seconds": 0.0,
     }
 
     logger.info("Starting cache warm-up for group %s", group_id)
@@ -80,21 +76,15 @@ async def warm_cache_for_group(
             return stats
 
         stats["total_users"] = len(user_ids)
-        logger.info(
-            "Verifying %d users across %d channel(s)",
-            len(user_ids), len(channels)
-        )
+        logger.info("Verifying %d users across %d channel(s)", len(user_ids), len(channels))
 
         # Process users in batches
         for batch_start in range(0, len(user_ids), BATCH_SIZE):
-            batch = user_ids[batch_start:batch_start + BATCH_SIZE]
+            batch = user_ids[batch_start : batch_start + BATCH_SIZE]
             batch_num = (batch_start // BATCH_SIZE) + 1
             total_batches = (len(user_ids) + BATCH_SIZE - 1) // BATCH_SIZE
 
-            logger.info(
-                "Processing batch %d/%d (%d users)",
-                batch_num, total_batches, len(batch)
-            )
+            logger.info("Processing batch %d/%d (%d users)", batch_num, total_batches, len(batch))
 
             # Verify each user in the batch
             for user_id in batch:
@@ -103,9 +93,7 @@ async def warm_cache_for_group(
                     all_verified = True
                     for channel in channels:
                         is_member = await check_membership(
-                            user_id,
-                            cast(int, channel.channel_id),
-                            context
+                            user_id, cast(int, channel.channel_id), context
                         )
                         if not is_member:
                             all_verified = False
@@ -126,7 +114,10 @@ async def warm_cache_for_group(
             # Log batch progress
             logger.info(
                 "Batch %d complete: verified=%d, not_verified=%d, errors=%d",
-                batch_num, stats['verified'], stats['not_verified'], stats['errors']
+                batch_num,
+                stats["verified"],
+                stats["not_verified"],
+                stats["errors"],
             )
 
     except TelegramError as e:
@@ -134,24 +125,28 @@ async def warm_cache_for_group(
         stats["errors"] += 1
 
     finally:
-        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+        duration = (datetime.now(UTC) - start_time).total_seconds()
         stats["duration_seconds"] = round(duration, 2)
 
-        rate = stats['total_users'] / duration if duration > 0 else 0
+        rate = stats["total_users"] / duration if duration > 0 else 0
         logger.info(
             "Cache warm-up complete for group %s: "
             "total=%d, verified=%d, not_verified=%d, errors=%d, duration=%.2fs, rate=%.2f/s",
-            group_id, stats['total_users'], stats['verified'],
-            stats['not_verified'], stats['errors'], stats['duration_seconds'], rate
+            group_id,
+            stats["total_users"],
+            stats["verified"],
+            stats["not_verified"],
+            stats["errors"],
+            stats["duration_seconds"],
+            rate,
         )
 
     return stats
 
 
 async def _get_recent_active_users(
-    _group_id: int,
-    _context: ContextTypes.DEFAULT_TYPE
-) -> List[int]:
+    _group_id: int, _context: ContextTypes.DEFAULT_TYPE
+) -> list[int]:
     """
     Get list of recent active users from a group.
 
@@ -179,9 +174,7 @@ async def _get_recent_active_users(
     return []
 
 
-async def warm_cache_for_all_groups(
-    context: ContextTypes.DEFAULT_TYPE
-) -> dict:
+async def warm_cache_for_all_groups(context: ContextTypes.DEFAULT_TYPE) -> dict:
     """
     Warm cache for all protected groups.
 
@@ -203,10 +196,10 @@ async def warm_cache_for_all_groups(
         "verified": 0,
         "not_verified": 0,
         "errors": 0,
-        "duration_seconds": 0.0
+        "duration_seconds": 0.0,
     }
 
-    start_time = datetime.now(timezone.utc)
+    start_time = datetime.now(UTC)
 
     try:
         async with get_session() as session:
@@ -236,21 +229,21 @@ async def warm_cache_for_all_groups(
         logger.error("Fatal error warming cache for all groups: %s", e)
 
     finally:
-        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+        duration = (datetime.now(UTC) - start_time).total_seconds()
         aggregated_stats["duration_seconds"] = round(duration, 2)
 
         logger.info(
             "Global cache warm-up complete: "
             "groups=%d (success=%d, failed=%d), users=%d, "
             "verified=%d, not_verified=%d, errors=%d, duration=%.2fs",
-            aggregated_stats['total_groups'],
-            aggregated_stats['successful_groups'],
-            aggregated_stats['failed_groups'],
-            aggregated_stats['total_users'],
-            aggregated_stats['verified'],
-            aggregated_stats['not_verified'],
-            aggregated_stats['errors'],
-            aggregated_stats['duration_seconds']
+            aggregated_stats["total_groups"],
+            aggregated_stats["successful_groups"],
+            aggregated_stats["failed_groups"],
+            aggregated_stats["total_users"],
+            aggregated_stats["verified"],
+            aggregated_stats["not_verified"],
+            aggregated_stats["errors"],
+            aggregated_stats["duration_seconds"],
         )
 
     return aggregated_stats

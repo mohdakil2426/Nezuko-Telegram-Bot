@@ -4,15 +4,17 @@ Join handler for instant new member verification.
 Intercepts NEW_CHAT_MEMBERS events and immediately verifies
 membership in all linked channels.
 """
-import logging
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.error import TelegramError
 
-from bot.database.crud import get_group_channels
-from bot.services.verification import check_multi_membership
-from bot.services.protection import restrict_user
+import logging
+
+from telegram import Update
+from telegram.error import TelegramError
+from telegram.ext import ContextTypes
+
 from bot.core.database import get_session
+from bot.database.crud import get_group_channels
+from bot.services.protection import restrict_user
+from bot.services.verification import check_multi_membership
 from bot.utils.ui import send_verification_warning
 
 logger = logging.getLogger(__name__)
@@ -53,7 +55,9 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
         new_members = update.message.new_chat_members
         logger.info(
             "Verifying %d new member(s) in group %s against %d channel(s)",
-            len(new_members), chat_id, len(channels)
+            len(new_members),
+            chat_id,
+            len(channels),
         )
 
         # Process each new member
@@ -69,9 +73,7 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             # Check membership in all linked channels
             missing_channels = await check_multi_membership(
-                user_id=user_id,
-                channels=channels,
-                context=context
+                user_id=user_id, channels=channels, context=context
             )
 
             # If verified in all channels, welcome silently
@@ -81,8 +83,7 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             # User missing subscription - mute immediately
             logger.info(
-                "Restricting new user %s (missing %d channel(s))",
-                user_id, len(missing_channels)
+                "Restricting new user %s (missing %d channel(s))", user_id, len(missing_channels)
             )
 
             success = await restrict_user(chat_id, user_id, context)
@@ -95,7 +96,7 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 update=update,
                 context=context,
                 missing_channels=missing_channels,
-                is_new_member=True
+                is_new_member=True,
             )
 
     except TelegramError as e:

@@ -1,8 +1,9 @@
 from datetime import datetime
-from uuid import UUID
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
+
 from .auth import UserResponse
 
 

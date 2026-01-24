@@ -1,19 +1,18 @@
-from typing import List, Dict
 from fastapi import WebSocket
 
 
 class ConnectionManager:
-    def __init__(self):
+    def __init__(self) -> None:
         # active_connections: channel_name -> list of websockets
-        self.active_connections: Dict[str, List[WebSocket]] = {}
+        self.active_connections: dict[str, list[WebSocket]] = {}
 
-    async def connect(self, websocket: WebSocket, channel: str = "logs"):
+    async def connect(self, websocket: WebSocket, channel: str = "logs") -> None:
         await websocket.accept()
         if channel not in self.active_connections:
             self.active_connections[channel] = []
         self.active_connections[channel].append(websocket)
 
-    def disconnect(self, websocket: WebSocket, channel: str = "logs"):
+    def disconnect(self, websocket: WebSocket, channel: str = "logs") -> None:
         if channel in self.active_connections:
             try:
                 self.active_connections[channel].remove(websocket)
@@ -22,7 +21,7 @@ class ConnectionManager:
             except ValueError:
                 pass
 
-    async def broadcast(self, message: dict, channel: str = "logs"):
+    async def broadcast(self, message: dict, channel: str = "logs") -> None:
         if channel in self.active_connections:
             # Iterate over a copy to handle disconnection during iteration
             for connection in self.active_connections[channel][:]:

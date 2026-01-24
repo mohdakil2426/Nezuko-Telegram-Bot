@@ -6,7 +6,8 @@ without needing to type commands every time.
 """
 
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 logger = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ async def handle_start(update: Update, _context: ContextTypes.DEFAULT_TYPE):
             "👋 Hi! I'm **Nezuko** - the ultimate all-in-one bot.\n\n"
             "Use `/protect @YourChannel` to activate protection for this group.\n\n"
             "💬 _DM me for more info!_",
-            parse_mode="Markdown"
+            parse_mode="Markdown",
         )
         return
 
@@ -89,9 +90,7 @@ async def handle_start(update: Update, _context: ContextTypes.DEFAULT_TYPE):
     )
 
     await update.message.reply_text(
-        welcome_message,
-        parse_mode="Markdown",
-        reply_markup=get_main_menu_keyboard()
+        welcome_message, parse_mode="Markdown", reply_markup=get_main_menu_keyboard()
     )
 
 
@@ -110,12 +109,12 @@ async def handle_help(update: Update, _context: ContextTypes.DEFAULT_TYPE):
         "• I need **Admin** in your **Channel**\n"
         "• Channel must be public or I must be a member\n\n"
         "**❓ Common Issues:**\n\n"
-        "❌ *\"Bot not responding\"*\n"
+        '❌ *"Bot not responding"*\n'
         "   → Check if I'm admin in both group & channel\n\n"
-        "❌ *\"Can't find channel\"*\n"
+        '❌ *"Can\'t find channel"*\n'
         "   → Make sure the username is correct\n"
         "   → Ensure channel is public\n\n"
-        "❌ *\"Protection not working\"*\n"
+        '❌ *"Protection not working"*\n'
         "   → Run `/status` to check configuration\n"
         "   → Verify bot has mute permissions\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
@@ -123,14 +122,11 @@ async def handle_help(update: Update, _context: ContextTypes.DEFAULT_TYPE):
     )
 
     reply_markup = get_back_button_keyboard() if is_private else None
-    await update.message.reply_text(
-        help_message,
-        parse_mode="Markdown",
-        reply_markup=reply_markup
-    )
+    await update.message.reply_text(help_message, parse_mode="Markdown", reply_markup=reply_markup)
 
 
 # ==================== CALLBACK QUERY HANDLERS ====================
+
 
 async def handle_menu_callback(update: Update, _context: ContextTypes.DEFAULT_TYPE):
     """Handle menu navigation callback queries."""
@@ -177,9 +173,7 @@ async def show_main_menu(query):
     )
 
     await query.edit_message_text(
-        welcome_message,
-        parse_mode="Markdown",
-        reply_markup=get_main_menu_keyboard()
+        welcome_message, parse_mode="Markdown", reply_markup=get_main_menu_keyboard()
     )
 
 
@@ -203,9 +197,7 @@ async def show_setup_guide(query):
     )
 
     await query.edit_message_text(
-        setup_message,
-        parse_mode="Markdown",
-        reply_markup=get_back_button_keyboard()
+        setup_message, parse_mode="Markdown", reply_markup=get_back_button_keyboard()
     )
 
 
@@ -220,7 +212,7 @@ async def show_how_it_works(query):
         "3⃣ **If YES** → Message goes through normally\n\n"
         "4⃣ **If NO** → I delete the message, mute them, "
         "and show a button to join the channel\n\n"
-        "5⃣ After joining, user clicks **\"I have joined\"** and gets unmuted\n\n"
+        '5⃣ After joining, user clicks **"I have joined"** and gets unmuted\n\n'
         "━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "**🚀 Bonus Features:**\n\n"
         "• **Instant Join Check** - New members are verified immediately\n"
@@ -230,9 +222,7 @@ async def show_how_it_works(query):
     )
 
     await query.edit_message_text(
-        how_it_works_message,
-        parse_mode="Markdown",
-        reply_markup=get_back_button_keyboard()
+        how_it_works_message, parse_mode="Markdown", reply_markup=get_back_button_keyboard()
     )
 
 
@@ -254,9 +244,7 @@ async def show_commands(query):
     )
 
     await query.edit_message_text(
-        commands_message,
-        parse_mode="Markdown",
-        reply_markup=get_back_button_keyboard()
+        commands_message, parse_mode="Markdown", reply_markup=get_back_button_keyboard()
     )
 
 
@@ -270,12 +258,12 @@ async def show_help(query):
         "• I need **Admin** in your **Channel**\n"
         "• Channel must be public (or add me as member)\n\n"
         "**❌ Common Issues:**\n\n"
-        "*\"Bot not responding\"*\n"
+        '*"Bot not responding"*\n'
         "→ Check if I'm admin in both group & channel\n\n"
-        "*\"Can't find channel\"*\n"
+        '*"Can\'t find channel"*\n'
         "→ Ensure username is correct (@channel)\n"
         "→ Make sure channel is public\n\n"
-        "*\"Protection not working\"*\n"
+        '*"Protection not working"*\n'
         "→ Run `/status` in your group\n"
         "→ Verify I have mute permissions\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -283,9 +271,7 @@ async def show_help(query):
     )
 
     await query.edit_message_text(
-        help_message,
-        parse_mode="Markdown",
-        reply_markup=get_back_button_keyboard()
+        help_message, parse_mode="Markdown", reply_markup=get_back_button_keyboard()
     )
 
 
@@ -311,10 +297,11 @@ async def show_add_to_group(query):
 
     # Add the add to group button
     keyboard = [
-        [InlineKeyboardButton(
-            "➕ Add to Group",
-            url=f"https://t.me/{bot_username}?startgroup=true"
-        )],
+        [
+            InlineKeyboardButton(
+                "➕ Add to Group", url=f"https://t.me/{bot_username}?startgroup=true"
+            )
+        ],
         [InlineKeyboardButton("◀️ Back to Menu", callback_data=CALLBACK_MENU_BACK)],
     ]
 
@@ -322,5 +309,5 @@ async def show_add_to_group(query):
         add_to_group_message,
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup(keyboard),
-        disable_web_page_preview=True
+        disable_web_page_preview=True,
     )

@@ -1,5 +1,6 @@
-import json
+import contextlib
 from uuid import UUID
+
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
@@ -30,10 +31,8 @@ class AuditMiddleware(BaseHTTPMiddleware):
                     # request.state.user is usually a dict payload from JWT
                     user_payload = request.state.user
                     if user_payload and "sub" in user_payload:
-                        try:
+                        with contextlib.suppress(ValueError):
                             user_id = UUID(user_payload["sub"])
-                        except ValueError:
-                            pass
 
                 # Extract IP and User Agent
                 ip_address = request.client.host if request.client else None
@@ -69,9 +68,9 @@ class AuditMiddleware(BaseHTTPMiddleware):
                         # old_value is hard to determine here
                     )
 
-            except Exception as e:
+            except Exception:
                 # Do not fail the request if audit logging fails, but log the error
                 # Ideally use the apps logger
-                print(f"Failed to create audit log: {e}")
+                pass
 
         return response

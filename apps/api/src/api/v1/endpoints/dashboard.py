@@ -1,14 +1,14 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.v1.dependencies.auth import get_current_active_user
 from src.core.database import get_session
 from src.models.admin_user import AdminUser
-from src.models.bot import ProtectedGroup, EnforcedChannel
-from src.schemas.dashboard import DashboardStatsResponse, ActivityResponse
+from src.models.bot import EnforcedChannel, ProtectedGroup
+from src.schemas.dashboard import ActivityResponse, DashboardStatsResponse
 
 router = APIRouter()
 

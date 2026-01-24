@@ -12,7 +12,7 @@ class AppException(Exception):
         status_code: int = 400,
         errors: list[dict[str, Any]] | None = None,
         headers: dict[str, str] | None = None,
-    ):
+    ) -> None:
         self.code = code
         self.title = title
         self.detail = detail
@@ -26,7 +26,7 @@ class AppException(Exception):
 class AuthenticationError(AppException):
     """Invalid credentials or token"""
 
-    def __init__(self, detail: str = "Authentication failed"):
+    def __init__(self, detail: str = "Authentication failed") -> None:
         super().__init__(
             code="AUTH_001",
             title="Authentication Failed",
@@ -50,7 +50,7 @@ class TokenExpiredError(AppException):
 class InsufficientPermissionsError(AppException):
     """User lacks required permissions"""
 
-    def __init__(self, required_role: str = "admin"):
+    def __init__(self, required_role: str = "admin") -> None:
         super().__init__(
             code="AUTH_003",
             title="Insufficient Permissions",
@@ -63,7 +63,7 @@ class InsufficientPermissionsError(AppException):
 class ResourceNotFoundError(AppException):
     """Requested resource does not exist"""
 
-    def __init__(self, resource: str, identifier: str):
+    def __init__(self, resource: str, identifier: str) -> None:
         super().__init__(
             code="RES_001",
             title="Resource Not Found",
@@ -75,7 +75,7 @@ class ResourceNotFoundError(AppException):
 class ResourceConflictError(AppException):
     """Resource already exists or conflict"""
 
-    def __init__(self, detail: str):
+    def __init__(self, detail: str) -> None:
         super().__init__(
             code="RES_002",
             title="Resource Conflict",
@@ -88,7 +88,7 @@ class ResourceConflictError(AppException):
 class ValidationError(AppException):
     """Request body validation failed"""
 
-    def __init__(self, errors: list[dict[str, Any]]):
+    def __init__(self, errors: list[dict[str, Any]]) -> None:
         super().__init__(
             code="VAL_001",
             title="Validation Failed",
@@ -102,7 +102,7 @@ class ValidationError(AppException):
 class RateLimitError(AppException):
     """Rate limit exceeded"""
 
-    def __init__(self, retry_after: int = 60):
+    def __init__(self, retry_after: int = 60) -> None:
         super().__init__(
             code="RATE_001",
             title="Rate Limit Exceeded",
@@ -116,7 +116,7 @@ class RateLimitError(AppException):
 class DatabaseError(AppException):
     """Database operation failed"""
 
-    def __init__(self, detail: str = "A database error occurred"):
+    def __init__(self, detail: str = "A database error occurred") -> None:
         super().__init__(
             code="DB_001",
             title="Database Error",
@@ -129,7 +129,7 @@ class DatabaseError(AppException):
 class ExternalServiceError(AppException):
     """External service (Redis, Telegram) unavailable"""
 
-    def __init__(self, service: str):
+    def __init__(self, service: str) -> None:
         super().__init__(
             code="EXT_001",
             title="External Service Error",

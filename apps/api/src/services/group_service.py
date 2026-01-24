@@ -41,10 +41,7 @@ async def get_groups(
 
     # Sorting
     sort_col = getattr(ProtectedGroup, sort_by, ProtectedGroup.created_at)
-    if sort_order == "desc":
-        stmt = stmt.order_by(desc(sort_col))
-    else:
-        stmt = stmt.order_by(asc(sort_col))
+    stmt = stmt.order_by(desc(sort_col)) if sort_order == "desc" else stmt.order_by(asc(sort_col))
 
     # Pagination
     stmt = stmt.offset((page - 1) * per_page).limit(per_page)
@@ -69,7 +66,9 @@ async def get_group(session: AsyncSession, group_id: int) -> ProtectedGroup | No
 
 
 async def update_group(
-    session: AsyncSession, group: ProtectedGroup, data: GroupUpdateRequest,
+    session: AsyncSession,
+    group: ProtectedGroup,
+    data: GroupUpdateRequest,
 ) -> ProtectedGroup:
     """Update group settings."""
     if data.enabled is not None:
@@ -90,7 +89,8 @@ async def link_channel(session: AsyncSession, group_id: int, channel_id: int) ->
     """Link a channel to a group."""
     # Check if link already exists
     stmt = select(GroupChannelLink).where(
-        GroupChannelLink.group_id == group_id, GroupChannelLink.channel_id == channel_id,
+        GroupChannelLink.group_id == group_id,
+        GroupChannelLink.channel_id == channel_id,
     )
     result = await session.execute(stmt)
     existing = result.scalars().first()
@@ -111,7 +111,8 @@ async def link_channel(session: AsyncSession, group_id: int, channel_id: int) ->
 async def unlink_channel(session: AsyncSession, group_id: int, channel_id: int) -> bool:
     """Unlink a channel from a group."""
     stmt = delete(GroupChannelLink).where(
-        GroupChannelLink.group_id == group_id, GroupChannelLink.channel_id == channel_id,
+        GroupChannelLink.group_id == group_id,
+        GroupChannelLink.channel_id == channel_id,
     )
     result = await session.execute(stmt)
     await session.commit()

@@ -5,19 +5,23 @@ Redis cache layer with graceful degradation.
 Provides async Redis client factory and cache operations with TTL jitter
 to prevent thundering herd problem.
 """
-import random
+
 import logging
-from typing import Optional, Awaitable, cast
-from redis.asyncio import Redis, ConnectionError as RedisConnectionError
+import random
+from collections.abc import Awaitable
+from typing import cast
+
+from redis.asyncio import ConnectionError as RedisConnectionError
+from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
 
 # Global Redis client (initialized on first use)
-_redis_client: Optional[Redis] = None  # pylint: disable=invalid-name
+_redis_client: Redis | None = None  # pylint: disable=invalid-name
 _redis_available = True  # pylint: disable=invalid-name
 
 
-async def get_redis_client(redis_url: Optional[str] = None) -> Optional[Redis]:
+async def get_redis_client(redis_url: str | None = None) -> Redis | None:
     """
     Get or create async Redis client with auto-reconnect.
 
@@ -43,7 +47,7 @@ async def get_redis_client(redis_url: Optional[str] = None) -> Optional[Redis]:
                 socket_connect_timeout=5,
                 socket_timeout=5,
                 retry_on_timeout=True,
-                health_check_interval=30
+                health_check_interval=30,
             )
             # Test connection
             await cast(Awaitable[bool], _redis_client.ping())
@@ -57,7 +61,7 @@ async def get_redis_client(redis_url: Optional[str] = None) -> Optional[Redis]:
     return _redis_client
 
 
-async def cache_get(key: str) -> Optional[str]:
+async def cache_get(key: str) -> str | None:
     """
     Get value from Redis cache.
 

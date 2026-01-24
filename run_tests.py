@@ -5,9 +5,10 @@ Test Runner for Nezuko - The Ultimate All-In-One Bot
 Runs all test suites with proper path setup.
 Usage: python run_tests.py [--verbose] [--edge] [--handlers] [--services] [--all]
 """
-import sys
-import asyncio
+
 import argparse
+import asyncio
+import sys
 from pathlib import Path
 
 # Add project root to path
@@ -23,33 +24,33 @@ def run_edge_case_tests():
     print()
 
     from tests.test_edge_cases import (
-        # Verification tests
-        test_verify_user_not_in_channel,
-        test_verify_user_banned_from_channel,
-        test_verify_user_is_admin,
-        test_verify_cache_hit_positive,
-        test_verify_cache_hit_negative,
-        # Protection tests
-        test_mute_already_muted_user,
-        test_unmute_not_muted_user,
-        # Input validation
-        test_channel_username_normalization,
-        test_empty_channel_username,
-        test_invalid_group_id,
-        test_user_id_validation,
-        # Concurrent operations
-        test_concurrent_verification_calls,
-        test_concurrent_mute_operations,
         # Cache tests
         test_cache_expired_entry,
         test_cache_special_characters_in_key,
-        test_ttl_jitter_edge_cases,
+        # Input validation
+        test_channel_username_normalization,
+        test_concurrent_mute_operations,
+        # Concurrent operations
+        test_concurrent_verification_calls,
+        test_empty_channel_username,
+        test_empty_message,
+        test_invalid_group_id,
+        test_media_message,
+        test_message_from_anonymous_admin,
         # Message handler tests
         test_message_from_bot,
-        test_message_from_anonymous_admin,
         test_message_from_channel,
-        test_empty_message,
-        test_media_message,
+        # Protection tests
+        test_mute_already_muted_user,
+        test_ttl_jitter_edge_cases,
+        test_unmute_not_muted_user,
+        test_user_id_validation,
+        test_verify_cache_hit_negative,
+        test_verify_cache_hit_positive,
+        test_verify_user_banned_from_channel,
+        test_verify_user_is_admin,
+        # Verification tests
+        test_verify_user_not_in_channel,
     )
 
     print("== Verification Edge Cases ==")
@@ -102,14 +103,14 @@ def run_handler_tests():
     print()
 
     from tests.test_handlers import (
-        test_start_command_private_chat,
-        test_start_command_group_chat,
         test_help_command,
-        test_protect_command_no_args,
-        test_protect_command_in_private_chat,
-        test_message_handler_from_bot,
-        test_message_handler_anonymous_admin,
         test_join_handler_bot_joining,
+        test_message_handler_anonymous_admin,
+        test_message_handler_from_bot,
+        test_protect_command_in_private_chat,
+        test_protect_command_no_args,
+        test_start_command_group_chat,
+        test_start_command_private_chat,
     )
 
     print("== /start Command ==")
@@ -146,11 +147,11 @@ def run_service_tests():
     print()
 
     from tests.test_services import (
-        test_cache_ttl_jitter,
-        test_verification_service_cache_logic,
-        test_protection_service_retry_logic,
         test_cache_graceful_degradation,
+        test_cache_ttl_jitter,
+        test_protection_service_retry_logic,
         test_protection_stats_tracking,
+        test_verification_service_cache_logic,
         test_verification_stats_tracking,
     )
 
@@ -236,6 +237,7 @@ def main():
         print(f"[TEST FAILED] Error: {e}")
         print("=" * 60)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

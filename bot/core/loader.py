@@ -6,30 +6,36 @@ Features:
 - Sets up bot commands for command menu (when users type /)
 - Different command menus for private chats vs groups
 """
+
 import logging
-from telegram import BotCommand, BotCommandScopeAllPrivateChats, BotCommandScopeAllGroupChats
-from telegram.ext import (
-    Application, CommandHandler, MessageHandler,
-    CallbackQueryHandler, ChatMemberHandler, filters
-)
+
+from telegram import BotCommand, BotCommandScopeAllGroupChats, BotCommandScopeAllPrivateChats
 from telegram.error import TelegramError
+from telegram.ext import (
+    Application,
+    CallbackQueryHandler,
+    ChatMemberHandler,
+    CommandHandler,
+    MessageHandler,
+    filters,
+)
 
 from bot.handlers.admin.help import (
-    handle_start,
+    CALLBACK_MENU_ADD_TO_GROUP,
+    CALLBACK_MENU_BACK,
+    CALLBACK_MENU_COMMANDS,
+    CALLBACK_MENU_HELP,
+    CALLBACK_MENU_HOW_IT_WORKS,
+    CALLBACK_MENU_SETUP,
     handle_help,
     handle_menu_callback,
-    CALLBACK_MENU_HELP,
-    CALLBACK_MENU_SETUP,
-    CALLBACK_MENU_COMMANDS,
-    CALLBACK_MENU_HOW_IT_WORKS,
-    CALLBACK_MENU_BACK,
-    CALLBACK_MENU_ADD_TO_GROUP,
+    handle_start,
 )
+from bot.handlers.admin.settings import handle_settings, handle_status, handle_unprotect
 from bot.handlers.admin.setup import handle_protect
-from bot.handlers.admin.settings import handle_status, handle_unprotect, handle_settings
-from bot.handlers.events.message import handle_message
 from bot.handlers.events.join import handle_new_member
 from bot.handlers.events.leave import handle_channel_leave
+from bot.handlers.events.message import handle_message
 from bot.handlers.verify import handle_callback_verify
 
 logger = logging.getLogger(__name__)
@@ -64,17 +70,11 @@ async def setup_bot_commands(application: Application) -> None:
         bot = application.bot
 
         # Set commands for private chats
-        await bot.set_my_commands(
-            commands=PRIVATE_COMMANDS,
-            scope=BotCommandScopeAllPrivateChats()
-        )
+        await bot.set_my_commands(commands=PRIVATE_COMMANDS, scope=BotCommandScopeAllPrivateChats())
         logger.info("[OK] Set private chat commands")
 
         # Set commands for groups
-        await bot.set_my_commands(
-            commands=GROUP_COMMANDS,
-            scope=BotCommandScopeAllGroupChats()
-        )
+        await bot.set_my_commands(commands=GROUP_COMMANDS, scope=BotCommandScopeAllGroupChats())
         logger.info("[OK] Set group chat commands")
 
         logger.info("[SUCCESS] Bot command menus configured")
@@ -124,10 +124,7 @@ def register_handlers(application: Application) -> None:
 
     # Verification callback
     application.add_handler(
-        CallbackQueryHandler(
-            handle_callback_verify,
-            pattern=f"^{CALLBACK_VERIFY}$"
-        )
+        CallbackQueryHandler(handle_callback_verify, pattern=f"^{CALLBACK_VERIFY}$")
     )
     logger.debug("[OK] Registered verify callback handler")
 
@@ -141,10 +138,7 @@ def register_handlers(application: Application) -> None:
         CALLBACK_MENU_ADD_TO_GROUP,
     ]
     application.add_handler(
-        CallbackQueryHandler(
-            handle_menu_callback,
-            pattern=f"^({'|'.join(menu_callbacks)})$"
-        )
+        CallbackQueryHandler(handle_menu_callback, pattern=f"^({'|'.join(menu_callbacks)})$")
     )
     logger.debug("[OK] Registered menu callback handlers")
 
@@ -153,21 +147,13 @@ def register_handlers(application: Application) -> None:
 
     # NEW_CHAT_MEMBERS handler (instant join verification)
     application.add_handler(
-        MessageHandler(
-            filters.StatusUpdate.NEW_CHAT_MEMBERS,
-            handle_new_member
-        )
+        MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_new_member)
     )
     logger.debug("[OK] Registered new member handler")
 
     # ChatMemberHandler (channel leave detection)
     # NOTE: Bot must be admin in channels to receive these updates
-    application.add_handler(
-        ChatMemberHandler(
-            handle_channel_leave,
-            ChatMemberHandler.CHAT_MEMBER
-        )
-    )
+    application.add_handler(ChatMemberHandler(handle_channel_leave, ChatMemberHandler.CHAT_MEMBER))
     logger.debug("[OK] Registered channel leave handler")
 
     # ==================== MESSAGE HANDLERS ====================
@@ -176,14 +162,8 @@ def register_handlers(application: Application) -> None:
     # Group message handler (verification logic)
     group_filter = filters.ChatType.GROUPS | filters.ChatType.SUPERGROUP
     application.add_handler(
-        MessageHandler(
-            group_filter & ~filters.StatusUpdate.ALL,
-            handle_message
-        )
+        MessageHandler(group_filter & ~filters.StatusUpdate.ALL, handle_message)
     )
     logger.debug("[OK] Registered message verification handler")
 
-    logger.info(
-        "[SUCCESS] All handlers registered "
-        "(6 commands, 7 callbacks, 2 events, 1 message)"
-    )
+    logger.info("[SUCCESS] All handlers registered (6 commands, 7 callbacks, 2 events, 1 message)")

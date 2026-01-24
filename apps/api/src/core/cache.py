@@ -1,6 +1,8 @@
-from typing import Any, Optional
 import json
+from typing import Any
+
 from redis.asyncio import Redis, from_url
+
 from apps.api.src.core.config import get_settings
 
 
@@ -28,10 +30,7 @@ class Cache:
     @classmethod
     async def set(cls, key: str, value: Any, expire: int = 300) -> None:
         redis = cls.get_redis()
-        if isinstance(value, (dict, list)):
-            val_str = json.dumps(value)
-        else:
-            val_str = str(value)
+        val_str = json.dumps(value) if isinstance(value, (dict, list)) else str(value)
         await redis.set(key, val_str, ex=expire)
 
     @classmethod

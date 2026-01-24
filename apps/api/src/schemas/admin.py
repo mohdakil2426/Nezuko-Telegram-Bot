@@ -1,8 +1,8 @@
 from datetime import datetime
 from uuid import UUID
-from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
 from apps.api.src.core.permissions import Role
 
 

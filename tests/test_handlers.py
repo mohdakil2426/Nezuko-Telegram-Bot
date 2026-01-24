@@ -10,7 +10,7 @@ Tests for:
 """
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -35,10 +35,7 @@ async def test_start_command_private_chat():
     update.message.reply_text.assert_called_once()
     call_args = update.message.reply_text.call_args
     # Get text from positional or keyword args
-    if call_args[0]:
-        text = call_args[0][0]
-    else:
-        text = call_args[1].get("text", "")
+    text = call_args[0][0] if call_args[0] else call_args[1].get("text", "")
     assert "Welcome" in text or "welcome" in text.lower()
     print("[PASS] /start in private chat")
 
@@ -76,10 +73,7 @@ async def test_help_command():
     update.message.reply_text.assert_called_once()
     call_args = update.message.reply_text.call_args
     # Get text from positional or keyword args
-    if call_args[0]:
-        text = call_args[0][0]
-    else:
-        text = call_args[1].get("text", "")
+    text = call_args[0][0] if call_args[0] else call_args[1].get("text", "")
 
     # Should mention key commands
     assert "/protect" in text.lower() or "protect" in text.lower()
@@ -139,8 +133,9 @@ async def test_protect_command_in_private_chat():
 @pytest.mark.asyncio
 async def test_protect_command_non_admin():
     """Test /protect by non-admin user."""
-    from bot.handlers.admin.setup import handle_protect
     from telegram.constants import ChatMemberStatus
+
+    from bot.handlers.admin.setup import handle_protect
 
     update = create_mock_update(chat_type="supergroup", text="/protect @channel")
     context = create_mock_context()
@@ -199,8 +194,9 @@ async def test_status_command():
 @pytest.mark.asyncio
 async def test_unprotect_command_non_admin():
     """Test /unprotect by non-admin user."""
-    from bot.handlers.admin.settings import handle_unprotect
     from telegram.constants import ChatMemberStatus
+
+    from bot.handlers.admin.settings import handle_unprotect
 
     update = create_mock_update(chat_type="supergroup", text="/unprotect")
     context = create_mock_context()
@@ -352,8 +348,9 @@ async def test_join_handler_bot_joining():
 @pytest.mark.asyncio
 async def test_verify_callback():
     """Test verification callback button."""
-    from bot.handlers.verify import handle_callback_verify
     from telegram.constants import ChatMemberStatus
+
+    from bot.handlers.verify import handle_callback_verify
 
     # Create callback query mock
     update = MagicMock()

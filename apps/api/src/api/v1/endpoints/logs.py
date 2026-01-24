@@ -1,18 +1,17 @@
 from fastapi import APIRouter, Depends, Query
-from typing import List, Optional
 
-from ...schemas.base import SuccessResponse
-from ...services.log_service import log_service
-from ..dependencies.auth import get_current_admin_user
+from src.api.schemas.base import SuccessResponse
+from src.api.services.log_service import log_service
+from src.api.v1.dependencies.auth import get_current_admin_user
 
 router = APIRouter()
 
 
-@router.get("", response_model=SuccessResponse[List[dict]])
+@router.get("", response_model=SuccessResponse[list[dict]])
 async def get_logs(
     limit: int = Query(100, le=1000),
-    level: Optional[str] = None,
-    search: Optional[str] = None,
+    level: str | None = None,
+    search: str | None = None,
     current_user=Depends(get_current_admin_user),
 ):
     """
