@@ -73,6 +73,9 @@ async def list_groups(  # noqa: PLR0913
     )
 
 
+from apps.api.src.core.cache import Cache
+
+
 @router.get("/{group_id}", response_model=GroupDetailResponse)
 async def get_group_details(
     group_id: int,
@@ -82,6 +85,11 @@ async def get_group_details(
     """
     Get detailed information about a specific group.
     """
+    cache_key = f"group_details:{group_id}"
+    cached = await Cache.get(cache_key)
+    if cached:
+        return GroupDetailResponse(**cached)
+
     group = await group_service.get_group(session, group_id)
     if not group:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
@@ -98,7 +106,7 @@ async def get_group_details(
                 },
             )
 
-    return GroupDetailResponse(
+    response = GroupDetailResponse(
         group_id=group.group_id,
         title=group.title,
         enabled=group.enabled,
@@ -109,6 +117,9 @@ async def get_group_details(
         linked_channels_count=len(linked_channels),
         linked_channels=linked_channels,
     )
+
+    await Cache.set(cache_key, response.model_dump(), expire=300)
+    return response
 
 
 @router.put("/{group_id}", response_model=GroupDetailResponse)
@@ -139,7 +150,7 @@ async def update_group(
                 },
             )
 
-    return GroupDetailResponse(
+    response = GroupDetailResponse(
         group_id=updated_group.group_id,
         title=updated_group.title,
         enabled=updated_group.enabled,
@@ -150,6 +161,11 @@ async def update_group(
         linked_channels_count=len(linked_channels),
         linked_channels=linked_channels,
     )
+
+    # Invalidate cache
+    await Cache.delete(f"group_details:{group_id}")
+
+    return response
 
 
 @router.post("/{group_id}/channels", response_model=SuccessResponse[dict])

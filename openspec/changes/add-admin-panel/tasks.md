@@ -781,25 +781,25 @@
 ### 10.1 Audit Database & Service
 > 📖 **Read First**: `docs/admin-panel/02-ARCHITECTURE.md` Section 3.1
 
-- [ ] 10.1.1 Create `apps/api/src/models/admin_audit_log.py`
-- [ ] 10.1.2 Define columns per architecture spec
-- [ ] 10.1.3 Create Alembic migration
-- [ ] 10.1.4 Apply migration
-- [ ] 10.1.5 Create `apps/api/src/middleware/audit.py`
-- [ ] 10.1.6 Intercept all state-changing requests
-- [ ] 10.1.7 Log action, resource, old/new values
-- [ ] 10.1.8 Log IP address and user agent
-- [ ] 10.1.9 Create `apps/api/src/services/audit_service.py`
-- [ ] 10.1.10 Implement `get_audit_logs(filters)` method
+- [x] 10.1.1 Create `apps/api/src/models/admin_audit_log.py`
+- [x] 10.1.2 Define columns per architecture spec
+- [x] 10.1.3 Create Alembic migration
+- [x] 10.1.4 Apply migration
+- [x] 10.1.5 Create `apps/api/src/middleware/audit.py`
+- [x] 10.1.6 Intercept all state-changing requests
+- [x] 10.1.7 Log action, resource, old/new values
+- [x] 10.1.8 Log IP address and user agent
+- [x] 10.1.9 Create `apps/api/src/services/audit_service.py`
+- [x] 10.1.10 Implement `get_audit_logs(filters)` method
 
 ### 10.2 Audit API & UI
-- [ ] 10.2.1 Create `apps/api/src/api/v1/endpoints/audit.py`
-- [ ] 10.2.2 Implement `GET /audit` endpoint
-- [ ] 10.2.3 Add filters: user, action, resource, date range
-- [ ] 10.2.4 Register audit router
-- [ ] 10.2.5 Create `apps/web/src/app/(dashboard)/settings/audit/page.tsx`
-- [ ] 10.2.6 Display audit log table
-- [ ] 10.2.7 Add filter controls
+- [x] 10.2.1 Create `apps/api/src/api/v1/endpoints/audit.py`
+- [x] 10.2.2 Implement `GET /audit` endpoint
+- [x] 10.2.3 Add filters: user, action, resource, date range
+- [x] 10.2.4 Register audit router
+- [x] 10.2.5 Create `apps/web/src/app/(dashboard)/settings/audit/page.tsx`
+- [x] 10.2.6 Display audit log table
+- [x] 10.2.7 Add filter controls
 
 ---
 
@@ -813,36 +813,36 @@
 ### 11.1 RBAC Implementation
 > 📖 **Read First**: `docs/admin-panel/07-SECURITY.md` Section 3
 
-- [ ] 11.1.1 Create `apps/api/src/core/permissions.py`
-- [ ] 11.1.2 Define Role enum (OWNER, ADMIN, VIEWER)
-- [ ] 11.1.3 Define Permission enum
-- [ ] 11.1.4 Create ROLE_PERMISSIONS mapping
-- [ ] 11.1.5 Create `apps/api/src/api/v1/dependencies/permissions.py`
-- [ ] 11.1.6 Create `require_permission(permission)` dependency
-- [ ] 11.1.7 Check user role has permission
-- [ ] 11.1.8 Raise 403 if denied
-- [ ] 11.1.9 Apply to all endpoints per permission matrix
+- [x] 11.1.1 Create `apps/api/src/core/permissions.py`
+- [x] 11.1.2 Define Role enum (OWNER, ADMIN, VIEWER)
+- [x] 11.1.3 Define Permission enum
+- [x] 11.1.4 Create ROLE_PERMISSIONS mapping
+- [x] 11.1.5 Create `apps/api/src/api/v1/dependencies/permissions.py`
+- [x] 11.1.6 Create `require_permission(permission)` dependency
+- [x] 11.1.7 Check user role has permission
+- [x] 11.1.8 Raise 403 if denied
+- [x] 11.1.9 Apply to all endpoints per permission matrix
 
 ### 11.2 Admin Management API
-- [ ] 11.2.1 Create `apps/api/src/schemas/admin.py`
-- [ ] 11.2.2 Define `AdminCreateRequest` schema
-- [ ] 11.2.3 Define `AdminUpdateRequest` schema
-- [ ] 11.2.4 Create `apps/api/src/services/admin_service.py`
-- [ ] 11.2.5 Implement `create_admin(data)` method
-- [ ] 11.2.6 Implement `get_admins()` method
-- [ ] 11.2.7 Implement `update_admin(id, data)` method
-- [ ] 11.2.8 Implement `delete_admin(id)` method
-- [ ] 11.2.9 Create `apps/api/src/api/v1/endpoints/admins.py`
-- [ ] 11.2.10 Implement CRUD endpoints
-- [ ] 11.2.11 Restrict to OWNER role only
+- [x] 11.2.1 Create `apps/api/src/schemas/admin.py`
+- [x] 11.2.2 Define `AdminCreateRequest` schema
+- [x] 11.2.3 Define `AdminUpdateRequest` schema
+- [x] 11.2.4 Create `apps/api/src/services/admin_service.py`
+- [x] 11.2.5 Implement `create_admin(data)` method
+- [x] 11.2.6 Implement `get_admins()` method
+- [x] 11.2.7 Implement `update_admin(id, data)` method
+- [x] 11.2.8 Implement `delete_admin(id)` method
+- [x] 11.2.9 Create `apps/api/src/api/v1/endpoints/admins.py`
+- [x] 11.2.10 Implement CRUD endpoints
+- [x] 11.2.11 Restrict to OWNER role only
 
 ### 11.3 Admin Management UI
-- [ ] 11.3.1 Create `apps/web/src/app/(dashboard)/settings/admins/page.tsx`
-- [ ] 11.3.2 Display admin users table
-- [ ] 11.3.3 Add "Invite Admin" button
-- [ ] 11.3.4 Add role assignment dropdown
-- [ ] 11.3.5 Add deactivate/delete actions
-- [ ] 11.3.6 Hide page from non-OWNER users
+- [x] 11.3.1 Create `apps/web/src/app/(dashboard)/settings/admins/page.tsx`
+- [x] 11.3.2 Display admin users table
+- [x] 11.3.3 Add "Invite Admin" button
+- [x] 11.3.4 Add role assignment dropdown
+- [x] 11.3.5 Add deactivate/delete actions
+- [x] 11.3.6 Hide page from non-OWNER users
 
 ---
 
@@ -857,28 +857,28 @@
 ### 12.1 Error Handling
 > 📖 **Read First**: `docs/admin-panel/04a-ERROR-HANDLING.md`
 
-- [ ] 12.1.1 Create global exception handler for FastAPI
-- [ ] 12.1.2 Format all errors as RFC 9457 Problem Details
-- [ ] 12.1.3 Add trace_id to all error responses
-- [ ] 12.1.4 Hide stack traces in production
-- [ ] 12.1.5 Create React error boundary components
-- [ ] 12.1.6 Add error page with retry button
+- [x] 12.1.1 Create global exception handler for FastAPI
+- [x] 12.1.2 Format all errors as RFC 9457 Problem Details
+- [x] 12.1.3 Add trace_id to all error responses
+- [x] 12.1.4 Hide stack traces in production
+- [x] 12.1.5 Create React error boundary components
+- [x] 12.1.6 Add error page with retry button
 
 ### 12.2 Security Hardening
 > 📖 **Read First**: `docs/admin-panel/07a-SECURITY-ADVANCED.md`
 
-- [ ] 12.2.1 Add CORS middleware with strict origins
-- [ ] 12.2.2 Add security headers middleware
-- [ ] 12.2.3 Configure CSP headers
-- [ ] 12.2.4 Configure HSTS headers
-- [ ] 12.2.5 Add request ID middleware
-- [ ] 12.2.6 Add request logging middleware
+- [x] 12.2.1 Add CORS middleware with strict origins
+- [x] 12.2.2 Add security headers middleware
+- [x] 12.2.3 Configure CSP headers
+- [x] 12.2.4 Configure HSTS headers
+- [x] 12.2.5 Add request ID middleware
+- [x] 12.2.6 Add request logging middleware
 - [ ] 12.2.7 Run security audit
 
 ### 12.3 Performance Optimization
-- [ ] 12.3.1 Add database query caching
-- [ ] 12.3.2 Add response caching headers
-- [ ] 12.3.3 Optimize bundle size
+- [x] 12.3.1 Add database query caching
+- [x] 12.3.2 Add response caching headers
+- [x] 12.3.3 Optimize bundle size
 - [ ] 12.3.4 Run Lighthouse audit
 - [ ] 12.3.5 Fix LCP issues (target < 2.5s)
 

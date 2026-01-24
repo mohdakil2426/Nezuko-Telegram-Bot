@@ -12,6 +12,7 @@ export * from "./models/channel";
 export * from "./models/user";
 export * from "./models/config";
 export * from "./models/database";
+export * from "./models/audit";
 
 export interface UserGrowthSeries {
     date: string;

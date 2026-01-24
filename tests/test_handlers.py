@@ -8,6 +8,7 @@ Tests for:
 - Callback handlers (verification button)
 - Error handling in handlers
 """
+
 import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
@@ -17,6 +18,7 @@ from tests.utils import create_mock_update, create_mock_context
 # ============================================================================
 # /START COMMAND TESTS
 # ============================================================================
+
 
 @pytest.mark.asyncio
 async def test_start_command_private_chat():
@@ -58,6 +60,7 @@ async def test_start_command_group_chat():
 # /HELP COMMAND TESTS
 # ============================================================================
 
+
 @pytest.mark.asyncio
 async def test_help_command():
     """Test /help command shows command list."""
@@ -85,6 +88,7 @@ async def test_help_command():
 # ============================================================================
 # /PROTECT COMMAND TESTS
 # ============================================================================
+
 
 @pytest.mark.asyncio
 async def test_protect_command_no_args():
@@ -153,6 +157,7 @@ async def test_protect_command_non_admin():
 # /STATUS COMMAND TESTS
 # ============================================================================
 
+
 @pytest.mark.asyncio
 async def test_status_command():
     """Test /status command shows protection status."""
@@ -161,13 +166,14 @@ async def test_status_command():
     update = create_mock_update(chat_type="supergroup", text="/status")
     context = create_mock_context()
 
-    with patch('bot.handlers.admin.settings.get_session') as mock_get_session:
+    with patch("bot.handlers.admin.settings.get_session") as mock_get_session:
         mock_session = MagicMock()
         mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock()
 
-        with patch('bot.handlers.admin.settings.get_protected_group',
-                    new_callable=AsyncMock) as mock_get_grp:
+        with patch(
+            "bot.handlers.admin.settings.get_protected_group", new_callable=AsyncMock
+        ) as mock_get_grp:
             mock_get_grp.return_value = None  # Not protected
 
             await handle_status(update, context)
@@ -180,6 +186,7 @@ async def test_status_command():
 # ============================================================================
 # /UNPROTECT COMMAND TESTS
 # ============================================================================
+
 
 @pytest.mark.asyncio
 async def test_unprotect_command_non_admin():
@@ -206,6 +213,7 @@ async def test_unprotect_command_non_admin():
 # MESSAGE HANDLER TESTS
 # ============================================================================
 
+
 @pytest.mark.asyncio
 async def test_message_handler_no_protection():
     """Test message handler when group has no protection."""
@@ -214,13 +222,14 @@ async def test_message_handler_no_protection():
     update = create_mock_update(chat_type="supergroup", text="Hello everyone!")
     context = create_mock_context()
 
-    with patch('bot.handlers.events.message.get_session') as mock_get_session:
+    with patch("bot.handlers.events.message.get_session") as mock_get_session:
         mock_session = MagicMock()
         mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock()
 
-        with patch('bot.handlers.events.message.get_group_channels',
-                    new_callable=AsyncMock) as mk_channels:
+        with patch(
+            "bot.handlers.events.message.get_group_channels", new_callable=AsyncMock
+        ) as mk_channels:
             mk_channels.return_value = []  # No channels linked
 
             await handle_message(update, context)
@@ -235,11 +244,7 @@ async def test_message_handler_from_bot():
     """Test message handler skips messages from bots."""
     from bot.handlers.events.message import handle_message
 
-    update = create_mock_update(
-        chat_type="supergroup",
-        text="Bot message",
-        is_bot=True
-    )
+    update = create_mock_update(chat_type="supergroup", text="Bot message", is_bot=True)
     context = create_mock_context()
 
     # The handler should return early for bots
@@ -258,7 +263,7 @@ async def test_message_handler_anonymous_admin():
         chat_type="supergroup",
         text="Admin message",
         user_id=1087968824,  # GroupAnonymousBot
-        is_bot=True
+        is_bot=True,
     )
     context = create_mock_context()
 
@@ -272,6 +277,7 @@ async def test_message_handler_anonymous_admin():
 # ============================================================================
 # JOIN HANDLER TESTS
 # ============================================================================
+
 
 @pytest.mark.asyncio
 async def test_join_handler_new_member():
@@ -291,13 +297,14 @@ async def test_join_handler_new_member():
 
     context = create_mock_context()
 
-    with patch('bot.handlers.events.join.get_session') as mock_get_session:
+    with patch("bot.handlers.events.join.get_session") as mock_get_session:
         mock_session = MagicMock()
         mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock()
 
-        with patch('bot.handlers.events.join.get_group_channels',
-                    new_callable=AsyncMock) as mk_channels:
+        with patch(
+            "bot.handlers.events.join.get_group_channels", new_callable=AsyncMock
+        ) as mk_channels:
             mk_channels.return_value = []  # No protection
 
             await handle_new_member(update, context)
@@ -333,6 +340,7 @@ async def test_join_handler_bot_joining():
 # CALLBACK HANDLER TESTS
 # ============================================================================
 
+
 @pytest.mark.asyncio
 async def test_verify_callback():
     """Test verification callback button."""
@@ -352,17 +360,18 @@ async def test_verify_callback():
     update.callback_query.message.reply_to_message.from_user.id = 111222333
     update.callback_query.message.message_id = 100
     update.callback_query.answer = AsyncMock()
+    update.callback_query.delete_message = AsyncMock()
     update.callback_query.message.delete = AsyncMock()
     update.effective_chat = update.callback_query.message.chat
 
     context = create_mock_context()
 
-    with patch('bot.handlers.verify.get_session') as mock_get_session:
+    with patch("bot.handlers.verify.get_session") as mock_get_session:
         mock_session = MagicMock()
         mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock()
 
-        with patch('bot.handlers.verify.get_group_channels', new_callable=AsyncMock) as mk_channels:
+        with patch("bot.handlers.verify.get_group_channels", new_callable=AsyncMock) as mk_channels:
             # Mock channel with membership check
             mock_channel = MagicMock()
             mock_channel.channel_id = -100555666777
@@ -371,7 +380,7 @@ async def test_verify_callback():
             # Mock membership check - user is member
             mock_member = MagicMock()
             mock_member.status = ChatMemberStatus.MEMBER
-            context.bot.get_chat_member.assert_not_called() # reset
+            context.bot.get_chat_member.assert_not_called()  # reset
             context.bot.get_chat_member = AsyncMock(return_value=mock_member)
 
             await handle_callback_verify(update, context)

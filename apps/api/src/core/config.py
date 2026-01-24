@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 
     # Environment
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"
+    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
     # Database (shared with bot)
     DATABASE_URL: str = "postgresql+asyncpg://nezuko:nezuko_secret@localhost:5432/nezuko"

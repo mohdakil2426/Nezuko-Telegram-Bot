@@ -8,11 +8,12 @@ interface RequestOptions {
     method?: RequestMethod;
     headers?: Record<string, string>;
     body?: any;
+    params?: Record<string, any>;
     credentials?: RequestCredentials;
 }
 
 async function fetchClient<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const { headers = {}, body, ...rest } = options;
+    const { headers = {}, body, params, ...rest } = options;
     const token = useAuthStore.getState().accessToken;
 
     const config: RequestInit = {
@@ -25,7 +26,21 @@ async function fetchClient<T>(endpoint: string, options: RequestOptions = {}): P
         body: body ? JSON.stringify(body) : undefined,
     };
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    let queryString = "";
+    if (params) {
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+                searchParams.append(key, String(value));
+            }
+        });
+        const qs = searchParams.toString();
+        if (qs) {
+            queryString = `?${qs}`;
+        }
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}${queryString}`, config);
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
