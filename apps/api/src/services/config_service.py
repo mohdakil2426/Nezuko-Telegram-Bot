@@ -129,7 +129,7 @@ class ConfigService:
                 aiohttp.ClientSession() as session,
                 session.head(
                     webhook_url,
-                    timeout=5,
+                    timeout=aiohttp.ClientTimeout(total=5),
                     ssl=False,
                 ) as response,
             ):  # ssl=False to not fail immediately

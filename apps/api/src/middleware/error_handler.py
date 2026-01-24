@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Any
 
 import structlog
 from fastapi import FastAPI, Request, status
@@ -6,8 +7,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from apps.api.src.core.context import get_trace_id
-from apps.api.src.core.exceptions import AppException
+from src.core.context import get_trace_id
+from src.core.exceptions import AppException
 
 logger = structlog.get_logger()
 
@@ -50,7 +51,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             trace_id=trace_id,
         )
 
-        response_body = {
+        response_body: dict[str, Any] = {
             "type": f"https://api.nezuko.bot/errors/{exc.code.lower().replace('_', '-')}",
             "title": exc.title,
             "status": exc.status_code,

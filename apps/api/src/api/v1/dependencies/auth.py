@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
@@ -8,7 +10,6 @@ from src.core.config import get_settings
 from src.core.database import get_session
 from src.core.security import decode_token
 from src.models.admin_user import AdminUser
-from src.schemas.auth import UserResponse
 
 settings = get_settings()
 
@@ -18,7 +19,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_BASE_URL}/api/v1/a
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     session: AsyncSession = Depends(get_session),
-) -> UserResponse:
+) -> AdminUser:
     """
     Validate JWT access token and return current user.
     """
@@ -30,9 +31,12 @@ async def get_current_user(
 
     try:
         payload = decode_token(token)
-        user_id: str = payload.get("sub")
-        payload.get("session_id")
-        if user_id is None:
+        sub = payload.get("sub")
+        if sub is None:
+            raise credentials_exception
+        try:
+            user_id = uuid.UUID(str(sub))
+        except (ValueError, TypeError):
             raise credentials_exception
     except JWTError:
         raise credentials_exception
@@ -67,3 +71,7 @@ async def get_current_active_user(
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+# Alias for backward compatibility or more specific usage
+get_current_admin_user = get_current_active_user

@@ -90,7 +90,11 @@ class AuthService:
         stmt = delete(AdminSession).where(AdminSession.refresh_token == refresh_token)
         result = await self.session.execute(stmt)
         await self.session.commit()
-        return result.rowcount > 0
+        return (
+            bool(result.rowcount)
+            if hasattr(result, "rowcount") and result.rowcount is not None
+            else True
+        )
 
     async def revoke_all_user_sessions(self, user_id: uuid.UUID) -> None:
         """

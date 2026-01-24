@@ -3,16 +3,16 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.api.v1.dependencies.auth import get_current_active_user
-from src.api.core.database import get_session
-from src.api.models.admin_user import AdminUser
-from src.api.schemas.channel import (
+from src.api.v1.dependencies.auth import get_current_active_user
+from src.core.database import get_session
+from src.models.admin_user import AdminUser
+from src.schemas.channel import (
     ChannelCreateRequest,
     ChannelDetailResponse,
     ChannelListResponse,
     ChannelResponse,
 )
-from src.api.services import channel_service
+from src.services import channel_service
 
 router = APIRouter()
 

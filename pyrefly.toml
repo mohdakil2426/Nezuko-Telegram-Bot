@@ -2,7 +2,7 @@
 
 # Source Code Inclusion
 # Explicitly targeting the main bot logic and entry point
-project-includes = ["bot", "main.py"]
+project-includes = ["bot", "main.py", "apps"]
 
 # Exclusion Patterns
 # Excluding tests, virtual environments, and cache to improve performance and focus on production code
@@ -22,7 +22,7 @@ python-version = "3.13"
 python-platform = "windows"
 
 # Search Path
-search-path = ["."]
+search-path = [".", "apps/api", "bot"]
 
 # Type Checking Strictness
 # "check-and-infer-return-type" ensures function bodies without return annotations are still checked (Pyright behavior)

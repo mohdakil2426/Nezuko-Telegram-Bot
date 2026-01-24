@@ -41,6 +41,8 @@ async def get_groups(
 
     # Sorting
     sort_col = getattr(ProtectedGroup, sort_by, ProtectedGroup.created_at)
+    if sort_col is None:
+        sort_col = ProtectedGroup.created_at
     stmt = stmt.order_by(desc(sort_col)) if sort_order == "desc" else stmt.order_by(asc(sort_col))
 
     # Pagination
@@ -116,4 +118,8 @@ async def unlink_channel(session: AsyncSession, group_id: int, channel_id: int) 
     )
     result = await session.execute(stmt)
     await session.commit()
-    return result.rowcount > 0
+    return (
+        bool(result.rowcount)
+        if hasattr(result, "rowcount") and result.rowcount is not None
+        else True
+    )

@@ -5,9 +5,9 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from apps.api.src.core.security import get_password_hash
-from apps.api.src.models.admin_user import AdminUser
-from apps.api.src.schemas.admin import AdminCreateRequest, AdminUpdateRequest
+from src.core.security import hash_password
+from src.models.admin_user import AdminUser
+from src.schemas.admin import AdminCreateRequest, AdminUpdateRequest
 
 
 class AdminService:
@@ -38,7 +38,7 @@ class AdminService:
             email=data.email,
             full_name=data.full_name,
             role=data.role,
-            password_hash=get_password_hash(data.password),
+            password_hash=hash_password(data.password),
             telegram_id=data.telegram_id,
             is_active=data.is_active,
         )
@@ -54,7 +54,7 @@ class AdminService:
 
         updated_data = data.model_dump(exclude_unset=True)
         if "password" in updated_data:
-            updated_data["password_hash"] = get_password_hash(updated_data.pop("password"))
+            updated_data["password_hash"] = hash_password(updated_data.pop("password"))
 
         for field, value in updated_data.items():
             setattr(admin, field, value)

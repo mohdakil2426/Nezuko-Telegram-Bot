@@ -2,6 +2,8 @@
 
 import asyncio
 import contextlib
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI
@@ -30,11 +32,35 @@ configure_logging(
 
 logger = structlog.get_logger(__name__)
 
+
+# Lifespan context manager
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Application lifespan context manager."""
+    logger.info(
+        "nezuko_admin_api_starting",
+        version="0.1.0",
+        environment=settings.ENVIRONMENT,
+    )
+    # Start Redis Log Listener in background
+    app.state.redis_listener_task = asyncio.create_task(redis_log_listener())
+
+    yield
+
+    logger.info("nezuko_admin_api_shutting_down")
+    # Cancel Redis Log Listener
+    if hasattr(app.state, "redis_listener_task"):
+        app.state.redis_listener_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await app.state.redis_listener_task
+
+
 # Create FastAPI app
 app = FastAPI(
     title="Nezuko Admin API",
     description="REST API for Nezuko Telegram Bot Admin Panel",
     version="0.1.0",
+    lifespan=lifespan,
     docs_url="/docs" if settings.API_DEBUG else None,
     redoc_url="/redoc" if settings.API_DEBUG else None,
     openapi_url="/openapi.json" if settings.API_DEBUG else None,
@@ -82,26 +108,3 @@ async def health_check() -> dict[str, str]:
 
 # Include WebSocket Router
 app.include_router(logs.router)
-
-
-@app.on_event("startup")
-async def startup_event() -> None:
-    """Application startup event handler."""
-    logger.info(
-        "nezuko_admin_api_starting",
-        version="0.1.0",
-        environment=settings.ENVIRONMENT,
-    )
-    # Start Redis Log Listener in background
-    app.state.redis_listener_task = asyncio.create_task(redis_log_listener())
-
-
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    """Application shutdown event handler."""
-    logger.info("nezuko_admin_api_shutting_down")
-    # Cancel Redis Log Listener
-    if hasattr(app.state, "redis_listener_task"):
-        app.state.redis_listener_task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await app.state.redis_listener_task

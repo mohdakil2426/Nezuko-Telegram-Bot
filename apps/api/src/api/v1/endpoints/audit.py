@@ -6,11 +6,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from apps.api.src.api.v1.dependencies.permissions import require_permission
-from apps.api.src.core.database import get_session
-from apps.api.src.core.permissions import Permission, Role
-from apps.api.src.schemas.audit import AuditLogListResponse
-from apps.api.src.services.audit_service import AuditService
+from src.api.v1.dependencies.permissions import require_permission
+from src.core.database import get_session
+from src.core.permissions import Permission, Role
+from src.models.admin_user import AdminUser
+from src.schemas.audit import AuditLogListResponse
+from src.services.audit_service import AuditService
 
 router = APIRouter()
 
@@ -39,18 +40,18 @@ async def get_audit_logs(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     session: AsyncSession = Depends(get_session),  # noqa: B008
-    current_user: dict = Depends(require_permission(Permission.VIEW_AUDIT_LOG)),  # noqa: B008
+    current_user: AdminUser = Depends(require_permission(Permission.VIEW_AUDIT_LOG)),  # noqa: B008
 ) -> AuditLogListResponse:
     """
     Get audit logs with filtering.
     """
     # Security: If not OWNER, force filter by own user_id (Admin can see own actions)
-    user_role = Role(current_user["role"])
+    user_role = Role(current_user.role)
     request_user_id = filters.user_id
 
     if user_role != Role.OWNER:
         # Override user_id filter to current user's ID
-        request_user_id = UUID(current_user["sub"])
+        request_user_id = current_user.id
 
     service = AuditService(session)
     logs, total = await service.get_logs(

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 
-from src.api.schemas.base import SuccessResponse
-from src.api.services.log_service import log_service
-from src.api.v1.dependencies.auth import get_current_admin_user
+from src.api.v1.dependencies.auth import get_current_active_user
+from src.schemas.base import SuccessResponse
+from src.services.log_service import log_service
 
 router = APIRouter()
 
@@ -12,7 +12,7 @@ async def get_logs(
     limit: int = Query(100, le=1000),
     level: str | None = None,
     search: str | None = None,
-    current_user=Depends(get_current_admin_user),
+    current_user=Depends(get_current_active_user),
 ):
     """
     Get historical logs.

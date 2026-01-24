@@ -63,7 +63,7 @@ async def login(
 async def refresh(
     request: Request,
     response: Response,
-    refresh_data: RefreshRequest = None,  # Optional if in body, but prioritize cookie
+    refresh_data: RefreshRequest | None = None,  # Optional if in body, but prioritize cookie
     session: AsyncSession = Depends(get_session),
 ):
     """
