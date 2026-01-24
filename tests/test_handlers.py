@@ -9,11 +9,12 @@ Tests for:
 - Error handling in handlers
 """
 
-import pytest
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
-from tests.utils import create_mock_update, create_mock_context
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
+import pytest
+
+from tests.utils import create_mock_context, create_mock_update
 
 # ============================================================================
 # /START COMMAND TESTS
@@ -98,6 +99,13 @@ async def test_protect_command_no_args():
     update = create_mock_update(chat_type="supergroup", text="/protect")
     context = create_mock_context()
     context.args = []  # No arguments
+
+    # Mock user as admin
+    from telegram.constants import ChatMemberStatus
+
+    mock_member = MagicMock()
+    mock_member.status = ChatMemberStatus.ADMINISTRATOR
+    context.bot.get_chat_member = AsyncMock(return_value=mock_member)
 
     await handle_protect(update, context)
 
@@ -407,14 +415,23 @@ async def test_verify_callback_wrong_user():
     update.callback_query.message.reply_to_message.from_user = MagicMock()
     update.callback_query.message.reply_to_message.from_user.id = 111222333  # Original user
     update.callback_query.answer = AsyncMock()
+    update.callback_query.delete_message = AsyncMock()
     update.effective_chat = update.callback_query.message.chat
 
     context = create_mock_context()
 
-    await handle_callback_verify(update, context)
+    with patch("bot.handlers.verify.get_session") as mock_get_session:
+        mock_session = MagicMock()
+        mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_get_session.return_value.__aexit__ = AsyncMock()
 
-    # Should answer with error or ignore
-    # (implementation may vary)
+        with patch("bot.handlers.verify.get_group_channels", new_callable=AsyncMock) as mk_channels:
+            mk_channels.return_value = []  # No channels, just testing flow doesn't crash
+
+            await handle_callback_verify(update, context)
+
+    # Should answer
+    update.callback_query.answer.assert_called()
     print("[PASS] Verify callback from wrong user handled")
 
 

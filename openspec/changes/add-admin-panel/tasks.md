@@ -885,12 +885,13 @@
 ### 12.4 Production Docker
 > 📖 **Read First**: `docs/admin-panel/08-DEPLOYMENT.md`
 
-- [ ] 12.4.1 Create `docker/production/Dockerfile.web` (multi-stage)
-- [ ] 12.4.2 Create `docker/production/Dockerfile.api` (multi-stage)
-- [ ] 12.4.3 Create `docker/compose/docker-compose.prod.yml`
-- [ ] 12.4.4 Configure Caddy reverse proxy with auto-SSL
-- [ ] 12.4.5 Configure health checks
-- [ ] 12.4.6 Test full production stack locally
+- [x] 12.4.1 Create multi-stage Dockerfile for API
+- [x] 12.4.2 Create production docker-compose.yml
+- [x] 12.4.3 Configure resource limits
+- [x] 12.4.4 Set up health checks
+- [x] 12.4.5 Create multi-stage Dockerfile for Web
+- [x] 12.4.6 Configure Caddy reverse proxy
+- [ ] 12.4.7 Test full production stack locally
 
 ### 12.5 Documentation & Testing
 - [ ] 12.5.1 Update README with setup instructions

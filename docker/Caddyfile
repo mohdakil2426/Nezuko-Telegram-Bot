@@ -1,0 +1,18 @@
+{
+    # Global options
+    email admin@nezuko.bot
+}
+
+# Web App
+admin.nezuko.bot {
+    reverse_proxy nezuko-web:3000
+    encode gzip zstd
+}
+
+# API
+api.nezuko.bot {
+    reverse_proxy nezuko-api:8080
+    encode gzip zstd
+    
+    # CORS handling if needed here, but handled in app usually
+}

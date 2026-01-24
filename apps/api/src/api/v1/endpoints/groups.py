@@ -1,6 +1,7 @@
 import math
-from typing import Any
+from typing import Annotated
 
+from apps.api.src.core.cache import Cache
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,9 +29,9 @@ async def list_groups(  # noqa: PLR0913
     status_filter: str = Query("all", alias="status", pattern="^(active|inactive|all)$"),
     sort_by: str = "created_at",
     sort_order: str = Query("desc", pattern="^(asc|desc)$"),
-    current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
-    session: AsyncSession = Depends(get_session),
-) -> Any:
+    current_user: Annotated[AdminUser, Depends(get_current_active_user)] = None,  # type: ignore # noqa: ARG001
+    session: Annotated[AsyncSession, Depends(get_session)] = None,  # type: ignore
+) -> GroupListResponse:
     """
     List protected groups with pagination and filtering.
     """
@@ -73,15 +74,12 @@ async def list_groups(  # noqa: PLR0913
     )
 
 
-from apps.api.src.core.cache import Cache
-
-
 @router.get("/{group_id}", response_model=GroupDetailResponse)
 async def get_group_details(
     group_id: int,
-    current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
-    session: AsyncSession = Depends(get_session),
-) -> Any:
+    current_user: Annotated[AdminUser, Depends(get_current_active_user)] = None,  # type: ignore # noqa: ARG001
+    session: Annotated[AsyncSession, Depends(get_session)] = None,  # type: ignore
+) -> GroupDetailResponse:
     """
     Get detailed information about a specific group.
     """
@@ -126,9 +124,9 @@ async def get_group_details(
 async def update_group(
     group_id: int,
     data: GroupUpdateRequest,
-    current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
-    session: AsyncSession = Depends(get_session),
-) -> Any:
+    current_user: Annotated[AdminUser, Depends(get_current_active_user)] = None,  # type: ignore # noqa: ARG001
+    session: Annotated[AsyncSession, Depends(get_session)] = None,  # type: ignore
+) -> GroupDetailResponse:
     """
     Update group settings.
     """
@@ -172,9 +170,9 @@ async def update_group(
 async def link_channel(
     group_id: int,
     data: ChannelLinkRequest,
-    current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
-    session: AsyncSession = Depends(get_session),
-) -> Any:
+    current_user: Annotated[AdminUser, Depends(get_current_active_user)] = None,  # type: ignore # noqa: ARG001
+    session: Annotated[AsyncSession, Depends(get_session)] = None,  # type: ignore
+) -> SuccessResponse[dict]:
     """
     Link a channel to a group.
     """
@@ -191,9 +189,9 @@ async def link_channel(
 async def unlink_channel(
     group_id: int,
     channel_id: int,
-    current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
-    session: AsyncSession = Depends(get_session),
-) -> Any:
+    current_user: Annotated[AdminUser, Depends(get_current_active_user)] = None,  # type: ignore # noqa: ARG001
+    session: Annotated[AsyncSession, Depends(get_session)] = None,  # type: ignore
+) -> SuccessResponse[dict]:
     """
     Unlink a channel from a group.
     """
