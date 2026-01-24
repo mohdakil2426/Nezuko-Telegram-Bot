@@ -1,3 +1,5 @@
+"""Database model for administrative audit logs."""
+
 import uuid
 from datetime import datetime
 from typing import Any

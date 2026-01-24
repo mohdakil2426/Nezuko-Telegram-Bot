@@ -1,3 +1,5 @@
+"""Request context and trace ID management."""
+
 import contextvars
 from uuid import uuid4
 

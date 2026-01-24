@@ -1,3 +1,5 @@
+"""SQLAlchemy models package."""
+
 from .admin_audit_log import AdminAuditLog
 from .admin_session import AdminSession
 from .admin_user import AdminUser

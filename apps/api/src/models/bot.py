@@ -1,3 +1,5 @@
+"""Database models for the Telegram bot core objects."""
+
 from datetime import UTC, datetime
 
 from sqlalchemy import JSON, BigInteger, Boolean, DateTime, ForeignKey, String, Text

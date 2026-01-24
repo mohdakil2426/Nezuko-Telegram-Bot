@@ -1,3 +1,5 @@
+"""Database model for administrator users."""
+
 import uuid
 from datetime import datetime
 

@@ -1,3 +1,5 @@
+"""Redis-based logging handler for real-time monitoring."""
+
 import json
 import logging
 from datetime import datetime
@@ -22,7 +24,7 @@ class RedisLogHandler(logging.Handler):
         try:
             if config.redis_url:
                 self.redis = Redis.from_url(config.redis_url, decode_responses=True)
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             self.redis = None
 
     def emit(self, record):
@@ -57,7 +59,7 @@ class RedisLogHandler(logging.Handler):
             pipeline.lpush(history_key, json_entry)
             pipeline.ltrim(history_key, 0, 9999)
             pipeline.execute()
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             # If we fail to log to Redis, ensure we don't crash the app
             self.handleError(record)
 

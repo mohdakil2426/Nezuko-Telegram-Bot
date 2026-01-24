@@ -1,3 +1,5 @@
+"""Base Pydantic schemas and shared types."""
+
 from typing import TypeVar
 
 from pydantic import BaseModel, ConfigDict

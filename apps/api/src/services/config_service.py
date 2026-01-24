@@ -1,3 +1,5 @@
+"""Business logic for system configuration."""
+
 import socket
 import ssl
 from datetime import UTC, datetime
@@ -161,10 +163,12 @@ class ConfigService:
                 ssl_expires_at=str(ssl_expires_at) if ssl_expires_at else None,
             )
 
-        except Exception as e:
+        except (OSError, aiohttp.ClientError, ssl.SSLError) as exc:
+            # Catch specific network/SSL errors.
+            # The goal is to report the failure in WebhookTestResult, not raise an HTTP error.
             return WebhookTestResult(
                 webhook_url=webhook_url,
-                status=f"unreachable: {e!s}",
+                status=f"unreachable: {exc!s}",
                 latency_ms=None,
                 ssl_valid=False,
                 ssl_expires_at=None,
@@ -192,7 +196,7 @@ class ConfigService:
             parsed = urlparse(url)
             if parsed.password:
                 return url.replace(parsed.password, "***")
-        except Exception:  # noqa: S110
+        except Exception:  # pylint: disable=broad-exception-caught
             pass
         return "***"
 

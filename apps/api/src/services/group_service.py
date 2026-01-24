@@ -1,3 +1,5 @@
+"""Business logic for protected groups."""
+
 from collections.abc import Sequence
 
 from sqlalchemy import asc, delete, desc, func, select

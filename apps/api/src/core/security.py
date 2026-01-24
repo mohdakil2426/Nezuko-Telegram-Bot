@@ -1,3 +1,5 @@
+"""JWT security and password hashing utilities."""
+
 from datetime import UTC, datetime, timedelta
 from typing import Any
 

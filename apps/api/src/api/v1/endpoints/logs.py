@@ -1,3 +1,5 @@
+"""System logs retrieval endpoints."""
+
 from fastapi import APIRouter, Depends, Query
 
 from src.api.v1.dependencies.auth import get_current_active_user

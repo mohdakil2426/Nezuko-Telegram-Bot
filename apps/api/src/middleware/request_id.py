@@ -1,3 +1,5 @@
+"""Trace ID and Request ID middleware."""
+
 from uuid import uuid4
 
 from fastapi import Request, Response

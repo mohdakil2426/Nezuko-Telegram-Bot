@@ -1,3 +1,5 @@
+"""Security headers and CORS middleware."""
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 

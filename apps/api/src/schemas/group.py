@@ -1,3 +1,5 @@
+"""Pydantic schemas for protected groups."""
+
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict

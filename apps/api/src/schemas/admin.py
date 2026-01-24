@@ -1,3 +1,5 @@
+"""Pydantic schemas for admin management."""
+
 from datetime import datetime
 from uuid import UUID
 

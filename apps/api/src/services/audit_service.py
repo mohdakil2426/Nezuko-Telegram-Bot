@@ -1,3 +1,5 @@
+"""Business logic for audit log management."""
+
 import uuid
 from collections.abc import Sequence
 from datetime import datetime

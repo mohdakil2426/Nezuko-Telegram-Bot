@@ -1,3 +1,5 @@
+"""Database browser and inspection endpoints."""
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,9 +35,9 @@ async def get_table_data(
         data = await db_service.get_table_data(session, table_name, page, per_page)
         return SuccessResponse(data=data)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/migrations", response_model=SuccessResponse[MigrationStatusResponse])

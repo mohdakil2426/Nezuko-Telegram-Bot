@@ -1,3 +1,5 @@
+"""Business logic for admin user management."""
+
 from collections.abc import Sequence
 from uuid import UUID
 

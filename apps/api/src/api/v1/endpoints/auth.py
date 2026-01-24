@@ -1,3 +1,5 @@
+"""Authentication endpoints (login, refresh, me)."""
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 

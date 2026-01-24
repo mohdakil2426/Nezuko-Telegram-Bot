@@ -1,3 +1,5 @@
+"""Pydantic schemas for database inspection."""
+
 from typing import Any
 
 from pydantic import BaseModel

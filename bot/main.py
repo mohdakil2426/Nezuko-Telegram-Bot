@@ -53,7 +53,7 @@ try:
     redis_handler = RedisLogHandler()
     redis_handler.setLevel(logging.INFO)  # Always send INFO+ to dashboard
     logging.getLogger().addHandler(redis_handler)
-except Exception as e:
+except Exception as e:  # pylint: disable=broad-exception-caught
     print(f"Failed to initialize Redis logger: {e}")
 
 logger = logging.getLogger(__name__)

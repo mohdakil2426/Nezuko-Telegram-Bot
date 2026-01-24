@@ -1,3 +1,5 @@
+"""Pydantic schemas for dashboard statistics."""
+
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict

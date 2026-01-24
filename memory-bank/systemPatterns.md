@@ -105,7 +105,9 @@ TO maintain high code quality (**Pylint score 10.00/10** & **Pyrefly 0 Errors**)
 
 ### 1. Static Analysis & Typing (Strict)
 *   **Zero Errors**: All code must pass `python -m pyrefly check` with 0 errors.
+*   **Absolute Imports**: For the API project, always use the `src.` root. Avoid monorepo prefixes like `apps.api.src` or double roots like `src.api.api`.
 *   **None Safety**: Use rigorous assertions (`assert var is not None`) before accessing attributes of optional objects (e.g., `update.message`).
+*   **Optional Explicitly**: Always use `Type | None` for optional fields or parameters. Defaulting a parameter to `None` without the `| None` type hint is forbidden.
 *   **Type Casting**: Prefer `cast(Type, val)` over constructor calls when dealing with stubs or ORM attributes to satisfy static analysis without runtime overhead.
 *   **Awaitables**: Explicitly await all awaitable calls (e.g., Redis commands) and cast return types if the library stubs are missing generic support.
 
@@ -120,9 +122,29 @@ TO maintain high code quality (**Pylint score 10.00/10** & **Pyrefly 0 Errors**)
 *   **Logging**: Use lazy `%` formatting in `logger` calls (`logger.info("Msg %s", arg)`). Use f-strings everywhere else.
 *   **Imports**: No unused imports. Remove them immediately. Group imports: stdlib, third-party, local.
 
-### 4. Exception Handling
-*   **Specific Exceptions**: Never use broad `except Exception:`. Catch specific errors (`SQLAlchemyError`, `TelegramError`).
-*   **Graceful Degradation**: Implement resilience patterns (Circuit Breakers) for external dependencies like Redis and Database.
+### 4. Exception Handling & Traceability
+*   **Specific Exceptions**: Never use broad `except Exception:` for standard business logic. Catch specific errors (`SQLAlchemyError`, `TelegramError`).
+*   **Preserve Context**: Always use `raise ... from exc` when re-raising or wrapping exceptions. Failing to provide the `from exc` clause is forbidden as it breaks traceback continuity.
+*   **Intentional Broad Catches**: If a broad `Exception` must be caught (e.g., in a top-level middleware, a background task, or a logging handler where crashing is unacceptable):
+    1.  Capture the exception: `except Exception as exc:`.
+    2.  Add a Pylint directive: `# pylint: disable=broad-exception-caught`.
+    3.  Log the error with full context if possible.
+*   **Resilience**: Implement localized error handling (e.g., `with contextlib.suppress(ValueError):`) for non-critical operations like parsing optional metadata or log masking.
+
+### 5. Technical Documentation
+*   **Module Docstrings**: Every `.py` file **MUST** start with a module-level docstring summarizing its purpose.
+*   **Class/Function Documentation**: Add docstrings for all non-trivial logic. While `kebab-case implementation` docstrings are allowed as placeholders to satisfy linters initially, production code should prioritize meaningful descriptors.
+*   **Lint Synchronization**:
+    *   **Ruff**: Primary authority for formatting, line length, and standard linting.
+    *   **Pylint**: Primary authority for deep logical analysis and code smell detection (Target: 10.00/10).
+    *   **Pyrefly**: Primary authority for static type safety (Target: 0 Errors).
+
+### 6. FastAPI & API Architecture
+*   **Lifespan Management**: Use the `@asynccontextmanager` lifespan decorator. Deprecated `app.on_event("startup/shutdown")` is forbidden.
+*   **Dependency Matching**: Dependency type hints must match the actual object returned (e.g., use the `AdminUser` model instead of `dict` or a Schema if the dependency returns a model).
+*   **DB Rowcount Safety**: When checking `rowcount` on async SQLAlchemy results, use `bool(result.rowcount) if hasattr(result, "rowcount") else True` to ensure cross-driver compatibility.
+*   **Aiohttp Standard**: Always use `aiohttp.ClientTimeout(total=X)` instead of passing a raw integer to timeout parameters.
+*   **Attribute Access**: Prefer object dot notation (`user.id`) over dictionary lookups (`user["sub"]`) once a model-based dependency is resolved.
 
 ---
 

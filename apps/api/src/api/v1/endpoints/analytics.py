@@ -1,3 +1,5 @@
+"""Analytics and reports endpoints."""
+
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query

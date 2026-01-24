@@ -1,3 +1,5 @@
+"""Structured logging configuration for the API."""
+
 import logging
 import sys
 from typing import Any

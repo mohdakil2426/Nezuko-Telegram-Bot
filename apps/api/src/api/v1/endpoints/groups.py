@@ -1,3 +1,5 @@
+"""Protected groups management endpoints."""
+
 import math
 from typing import Annotated
 

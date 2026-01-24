@@ -1,3 +1,5 @@
+"""Pydantic schemas for system configuration."""
+
 from pydantic import BaseModel
 
 

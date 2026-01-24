@@ -1,3 +1,5 @@
+"""RBAC permission and role definitions."""
+
 from enum import Enum
 
 

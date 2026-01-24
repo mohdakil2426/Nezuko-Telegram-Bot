@@ -1,3 +1,5 @@
+"""Authentication dependencies for API endpoints."""
+
 import uuid
 
 from fastapi import Depends, HTTPException, status
@@ -36,10 +38,10 @@ async def get_current_user(
             raise credentials_exception
         try:
             user_id = uuid.UUID(str(sub))
-        except (ValueError, TypeError):
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
+        except (ValueError, TypeError) as exc:
+            raise credentials_exception from exc
+    except JWTError as exc:
+        raise credentials_exception from exc
 
     # Optional: Check if session is revoked in Redis?
     # For now relying on short TTL.

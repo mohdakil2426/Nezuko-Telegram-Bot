@@ -1,3 +1,5 @@
+"""Request/Response logging middleware."""
+
 import time
 
 import structlog

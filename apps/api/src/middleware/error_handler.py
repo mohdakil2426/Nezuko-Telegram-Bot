@@ -1,3 +1,5 @@
+"""Global error handling and RFC 9457 formatting."""
+
 from datetime import UTC, datetime
 from typing import Any
 

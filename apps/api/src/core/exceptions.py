@@ -1,3 +1,5 @@
+"""Global application exception definitions."""
+
 from typing import Any
 
 

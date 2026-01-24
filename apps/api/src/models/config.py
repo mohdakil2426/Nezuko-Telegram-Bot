@@ -1,3 +1,5 @@
+"""Database model for dynamic system configuration."""
+
 from datetime import datetime
 from uuid import UUID
 

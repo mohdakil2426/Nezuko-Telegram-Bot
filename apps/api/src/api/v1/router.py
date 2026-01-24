@@ -1,3 +1,5 @@
+"""API router configuration for V1 endpoints."""
+
 from fastapi import APIRouter
 
 from src.api.v1.endpoints import (

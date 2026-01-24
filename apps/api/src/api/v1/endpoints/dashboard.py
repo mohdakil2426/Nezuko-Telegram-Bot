@@ -1,3 +1,5 @@
+"""Dashboard statistics and activity endpoints."""
+
 from typing import Any
 
 from fastapi import APIRouter, Depends

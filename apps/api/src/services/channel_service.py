@@ -1,3 +1,5 @@
+"""Business logic for enforced channels."""
+
 from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload

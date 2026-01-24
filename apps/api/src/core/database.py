@@ -1,3 +1,5 @@
+"""SQLAlchemy database connection and session management."""
+
 from collections.abc import AsyncIterator
 
 from sqlalchemy.ext.asyncio import (

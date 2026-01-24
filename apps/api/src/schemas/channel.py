@@ -1,3 +1,5 @@
+"""Pydantic schemas for enforced channels."""
+
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict

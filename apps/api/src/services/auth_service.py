@@ -1,3 +1,5 @@
+"""Business logic for authentication and sessions."""
+
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -117,14 +119,14 @@ class AuthService:
         # 1. Decode token (validates signature and expiry)
         try:
             payload = decode_token(refresh_token)
-        except Exception:
+        except Exception as exc:
             # If token is invalid/expired JWT-wise, check if it was in DB?
             # Actually if it expired, we might still want to check if it WAS valid to detect reuse if we kept history.
             # But here we just fail.
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token",
-            )
+            ) from exc
 
         user_id = uuid.UUID(payload["sub"])
 

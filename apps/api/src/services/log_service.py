@@ -1,3 +1,5 @@
+"""Business logic for log retrieval and monitoring."""
+
 import json
 
 from redis.asyncio import Redis

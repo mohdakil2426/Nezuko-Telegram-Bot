@@ -1,3 +1,5 @@
+"""Business logic for database inspection and maintenance."""
+
 import logging
 
 from sqlalchemy import text
@@ -121,7 +123,8 @@ class DatabaseService:
         try:
             query = text("SELECT version_num FROM alembic_version")
             current = (await session.execute(query)).scalar()
-        except Exception:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            logger.error("Failed to fetch migration status: %s", exc)
             current = None
 
         return MigrationStatusResponse(

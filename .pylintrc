@@ -1,0 +1,34 @@
+[MASTER]
+# Ignore some generated files or specific directories if needed
+ignore=venv,node_modules,__pycache__
+
+[MESSAGES CONTROL]
+# Disable some checks that are too strict for our current workflow
+disable=
+    C0115, # missing-class-docstring
+    C0116, # missing-function-docstring
+    R0903, # too-few-public-methods (Common for models and simple middlewares)
+    E1102, # not-callable (False positives for SQLAlchemy func.now(), etc.)
+    R0801, # duplicate-code (Some boilerplate is unavoidable)
+    W0613, # unused-argument (FastAPI dependencies often trigger this)
+    R0913, # too-many-arguments
+    R0917, # too-many-positional-arguments
+    W0621, # redefined-outer-name (FastAPI fixtures/dependencies often trigger this)
+    E1205, # logging-too-many-args (Conflicts with structlog context arguments)
+    C0411, # wrong-import-order (Handled by Ruff)
+    C0301, # line-too-long (Handled by Ruff)
+    C0415, # import-outside-toplevel (Sometimes needed to avoid circular imports)
+    W0511, # fixme (TODOs are fine)
+
+
+
+[FORMAT]
+max-line-length=100
+
+[DESIGN]
+max-args=8
+max-locals=25
+
+[LOGGING]
+# Use lazy logging
+logging-format-style=new

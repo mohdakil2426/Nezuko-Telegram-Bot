@@ -1,3 +1,5 @@
+"""Pydantic schemas for audit logs."""
+
 from datetime import datetime
 from typing import Any
 from uuid import UUID

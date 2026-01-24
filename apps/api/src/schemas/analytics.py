@@ -1,3 +1,5 @@
+"""Pydantic schemas for analytics data."""
+
 from typing import Any
 
 from pydantic import BaseModel

@@ -1,3 +1,5 @@
+"""Admin management API endpoints."""
+
 from collections.abc import Sequence
 from uuid import UUID
 
