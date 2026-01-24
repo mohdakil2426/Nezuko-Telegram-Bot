@@ -10,6 +10,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# pylint: disable=wrong-import-position, import-outside-toplevel, unused-import
 from bot.config import config
 from bot.core.database import get_session, init_db
 from bot.database.crud import create_owner, get_owner, create_protected_group, link_group_channel
@@ -20,31 +21,31 @@ async def test_configuration():
     print("="*60)
     print("Configuration & Database Test")
     print("="*60)
-    
+
     # Test 1: Configuration
     print("\n[OK] Configuration loaded successfully")
-    print(f"  Environment: {config.ENVIRONMENT}")
-    print(f"  Database: {config.DATABASE_URL.split('://')[0]}")
+    print(f"  Environment: {config.environment}")
+    print(f"  Database: {config.database_url.split('://')[0]}")
     print(f"  Mode: {'webhooks' if config.use_webhooks else 'polling'}")
-    
+
     # Test 2: Database initialization
     print("\n[OK] Initializing database...")
     await init_db()
     print("  Database tables created")
-    
+
     # Test 3: CRUD operations
     print("\n[OK] Testing CRUD operations...")
     async with get_session() as session:
         # Create owner
         owner = await create_owner(session, user_id=12345, username="test_user")
         print(f"  Created owner: {owner}")
-        
+
         # Get owner
         fetched_owner = await get_owner(session, user_id=12345)
         assert fetched_owner is not None
         assert fetched_owner.user_id == 12345
         print(f"  Retrieved owner: {fetched_owner}")
-        
+
         # Create protected group
         group = await create_protected_group(
             session,
@@ -53,7 +54,7 @@ async def test_configuration():
             title="Test Group"
         )
         print(f"  Created group: {group}")
-        
+
         # Link channel
         await link_group_channel(
             session,
@@ -62,16 +63,16 @@ async def test_configuration():
             invite_link="https://t.me/testchannel",
             title="Test Channel"
         )
-        print(f"  Linked channel to group")
-    
+        print("  Linked channel to group")
+
     print("\n[OK] All CRUD operations successful")
-    
+
     # Test 4: Handler imports
     print("\n[OK] Testing handler imports...")
-    from bot.handlers.admin.help import start_command, help_command
-    from bot.handlers.admin.setup import protect_command
+    from bot.handlers.admin.help import handle_start, handle_help
+    from bot.handlers.admin.setup import handle_protect
     print("  All handlers imported successfully")
-    
+
     print("\n" + "="*60)
     print("[SUCCESS] CONFIGURATION & DATABASE TEST COMPLETE")
     print("="*60)

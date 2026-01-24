@@ -1,3 +1,10 @@
+# pylint: disable=line-too-long, trailing-whitespace, broad-exception-caught, duplicate-code
+"""
+GMBot v1.x (Legacy) - Simple Channel Verification Bot.
+
+This is the original single-file implementation of GMBot.
+For the modern multi-tenant version, see bot/main.py.
+"""
 import os
 import logging
 import time
@@ -44,8 +51,8 @@ async def check_membership(user_id: int, context: ContextTypes.DEFAULT_TYPE) -> 
         # Cache the result
         membership_cache[user_id] = (is_member, current_time)
         return is_member
-    except Exception as e:
-        logger.error(f"Error checking membership: {e}", exc_info=True)
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.error("Error checking membership: %s", e, exc_info=True)
         return False
 
 async def restrict_user(chat_id: int, user_id: int, context: ContextTypes.DEFAULT_TYPE):
@@ -69,9 +76,7 @@ async def unmute_user(chat_id: int, user_id: int, context: ContextTypes.DEFAULT_
     await context.bot.restrict_chat_member(chat_id=chat_id, user_id=user_id, permissions=permissions)
 
 async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """
-    Immediately checks membership when a new user joins the group.
-    """
+    """Immediately checks membership when a new user joins the group."""
     if not update.effective_chat or not update.message or not update.message.new_chat_members:
         return
 
@@ -107,8 +112,6 @@ async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYP
     """
     Detects if a user LEAVES the Channel.
     If they do, and we have a GROUP_ID configured, we verify/restrict them in the group.
-    
-    IMPORTANT: Bot must be ADMIN in the Channel to receive these updates.
     """
     # Verify this update is from our monitored channel
     if not update.chat_member or not update.chat_member.chat:
@@ -140,7 +143,7 @@ async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYP
 
     if was_member and is_left:
         # User left the channel!
-        logger.info(f"User {user.id} ({user.first_name}) left the channel. Restricting in Group...")
+        logger.info("User %s (%s) left the channel. Restricting in Group...", user.id, user.first_name)
 
         # We need GROUP_ID to know where to restrict them
         if not GROUP_ID:
@@ -169,8 +172,8 @@ async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYP
                 parse_mode="HTML"
             )
             
-        except Exception as e:
-            logger.error(f"Failed to restrict user {user.id} after channel leave: {e}")
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error("Failed to restrict user %s after channel leave: %s", user.id, e)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Intercepts messages, checks membership, and restricts if necessary."""
@@ -190,8 +193,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_member = await context.bot.get_chat_member(chat_id=chat_id, user_id=user_id)
             if chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
                 return # Ignore admins
-        except Exception as e:
-            logger.error(f"Error checking group admin status: {e}", exc_info=True)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error("Error checking group admin status: %s", e, exc_info=True)
 
         # 2. Check if user is member of the Channel
         is_member = await check_membership(user_id, context)
@@ -203,8 +206,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             # Delete the unauthorized message
             await update.message.delete()
-        except Exception as e:
-            logger.warning(f"Could not delete message: {e}")
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.warning("Could not delete message: %s", e)
 
         # Mute the user
         await restrict_user(chat_id, user_id, context)
@@ -223,8 +226,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML"
         )
             
-    except Exception as e:
-        logger.error(f"Error handling restriction flow: {e}", exc_info=True)
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.error("Error handling restriction flow: %s", e, exc_info=True)
 
 async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handles the 'I have joined' button click."""
@@ -247,32 +250,34 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
             # Answer query
             try:
                 await query.answer("Verification successful! You can now chat.", show_alert=True)
-            except Exception:
+            except Exception:  # pylint: disable=broad-exception-caught
                 pass # Ignore if query is old
             
             # Delete the warning message
             try:
                 await query.delete_message()
-            except Exception:
+            except Exception:  # pylint: disable=broad-exception-caught
                 pass
             
-        except Exception as e:
-            logger.error(f"Error unmuting user: {e}", exc_info=True)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error("Error unmuting user: %s", e, exc_info=True)
             try:
                 await query.answer(f"Error: {str(e)[:180]}", show_alert=True)
-            except Exception:
+            except Exception:  # pylint: disable=broad-exception-caught
                 pass
     else:
         # Still not a member
         try:
             await query.answer("You still have not joined the channel! Please join first.", show_alert=True)
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             pass
 
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start_command(update: Update, _context: ContextTypes.DEFAULT_TYPE):
+    """Handle /start command."""
     await update.message.reply_text("Bot is running. Add me to a group as Admin!")
 
 def main():
+    """Main function entry point for legacy bot."""
     if not BOT_TOKEN:
         print("Error: BOT_TOKEN not found in .env")
         return

@@ -1,3 +1,4 @@
+# pylint: disable=wrong-import-order, wrong-import-position, import-outside-toplevel, unused-import, trailing-whitespace, pointless-string-statement, broad-exception-caught
 """
 Database Integration Tests for GMBot v2.0
 

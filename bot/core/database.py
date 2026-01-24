@@ -19,23 +19,24 @@ from bot.config import config
 Base = declarative_base()
 
 # Global engine instance
-_engine: AsyncEngine | None = None
-_session_factory: async_sessionmaker[AsyncSession] | None = None
+_engine: AsyncEngine | None = None  # pylint: disable=invalid-name
+_session_factory: async_sessionmaker[AsyncSession] | None = None  # pylint: disable=invalid-name
 
 
 def get_engine() -> AsyncEngine:
     """Get or create the async database engine."""
+    # pylint: disable=global-statement
     global _engine
-    
+
     if _engine is None:
         # Determine if this is SQLite or PostgreSQL
-        is_sqlite = config.DATABASE_URL.startswith("sqlite")
-        
+        is_sqlite = config.database_url.startswith("sqlite")
+
         # Configure pooling based on database type
         if is_sqlite:
             # SQLite doesn't support connection pooling well
             _engine = create_async_engine(
-                config.DATABASE_URL,
+                config.database_url,
                 echo=config.is_development,  # Log SQL in development
                 poolclass=NullPool,
                 connect_args={"check_same_thread": False}
@@ -43,7 +44,7 @@ def get_engine() -> AsyncEngine:
         else:
             # PostgreSQL with connection pooling
             _engine = create_async_engine(
-                config.DATABASE_URL,
+                config.database_url,
                 echo=config.is_development,
                 poolclass=QueuePool,
                 pool_size=20,  # Max connections in pool
@@ -51,14 +52,15 @@ def get_engine() -> AsyncEngine:
                 pool_pre_ping=True,  # Verify connections before use
                 pool_recycle=3600,  # Recycle connections after 1 hour
             )
-    
+
     return _engine
 
 
 def get_session_factory() -> async_sessionmaker[AsyncSession]:
     """Get or create the async session factory."""
+    # pylint: disable=global-statement
     global _session_factory
-    
+
     if _session_factory is None:
         engine = get_engine()
         _session_factory = async_sessionmaker(
@@ -68,7 +70,7 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
             autocommit=False,
             autoflush=False,
         )
-    
+
     return _session_factory
 
 
@@ -76,7 +78,7 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """
     Dependency for FastAPI/handlers to get database session.
-    
+
     Usage:
         async with get_session() as session:
             # Use session here
@@ -94,8 +96,9 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db():
     """Initialize database (create tables if needed)."""
-    from bot.database import models  # Import models to register them
-    
+    # Import models to register them
+    import bot.database.models  # pylint: disable=unused-import, import-outside-toplevel, cyclic-import
+
     engine = get_engine()
     async with engine.begin() as conn:
         # Create all tables (only if they don't exist)
@@ -104,8 +107,9 @@ async def init_db():
 
 async def close_db():
     """Close database connections gracefully."""
+    # pylint: disable=global-statement
     global _engine, _session_factory
-    
+
     if _engine:
         await _engine.dispose()
         _engine = None

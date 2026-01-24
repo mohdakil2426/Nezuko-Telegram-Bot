@@ -12,7 +12,7 @@ Exposes key operational metrics for monitoring and alerting:
 
 import time
 from functools import wraps
-from typing import Optional, Callable
+from typing import Callable
 from prometheus_client import (
     Counter,
     Histogram,
@@ -94,7 +94,7 @@ DB_QUERY_DURATION = Histogram(
     registry=REGISTRY
 )
 
-# Cache operation duration  
+# Cache operation duration
 CACHE_OPERATION_DURATION = Histogram(
     "bot_cache_operation_seconds",
     "Cache operation duration in seconds",
@@ -148,7 +148,7 @@ def record_verification_start() -> float:
 def record_verification_end(start_time: float, status: str = "verified"):
     """
     Record verification completion with latency.
-    
+
     Args:
         start_time: Time from record_verification_start()
         status: One of 'verified', 'restricted', 'error'
@@ -171,7 +171,7 @@ def record_cache_miss():
 def record_api_call(method: str):
     """
     Record a Telegram API call.
-    
+
     Args:
         method: API method name (e.g., 'getChatMember', 'restrictChatMember')
     """
@@ -186,7 +186,7 @@ def record_rate_limit_delay():
 def record_error(error_type: str = "unknown"):
     """
     Record an error occurrence.
-    
+
     Args:
         error_type: One of 'telegram_error', 'database_error', 'cache_error', 'unknown'
     """
@@ -196,7 +196,7 @@ def record_error(error_type: str = "unknown"):
 def record_db_query(query_type: str, duration: float):
     """
     Record a database query duration.
-    
+
     Args:
         query_type: Query function name (e.g., 'get_protected_group')
         duration: Query duration in seconds
@@ -207,7 +207,7 @@ def record_db_query(query_type: str, duration: float):
 def record_cache_operation(operation: str, duration: float):
     """
     Record a cache operation duration.
-    
+
     Args:
         operation: One of 'get', 'set', 'delete'
         duration: Operation duration in seconds
@@ -242,7 +242,7 @@ def set_db_connected(connected: bool):
 def timed_db_query(query_type: str):
     """
     Decorator to time async database queries.
-    
+
     Usage:
         @timed_db_query("get_protected_group")
         async def get_protected_group(session, group_id):
@@ -265,7 +265,7 @@ def timed_db_query(query_type: str):
 def timed_cache_operation(operation: str):
     """
     Decorator to time async cache operations.
-    
+
     Usage:
         @timed_cache_operation("get")
         async def cache_get(key):
@@ -292,7 +292,7 @@ def timed_cache_operation(operation: str):
 def get_metrics() -> bytes:
     """
     Generate Prometheus-format metrics output.
-    
+
     Returns:
         Bytes containing Prometheus text format metrics
     """
@@ -305,18 +305,19 @@ def get_metrics_content_type() -> str:
 
 
 # ====================
-# Utility Functions  
+# Utility Functions
 # ====================
 
 def get_stats_summary() -> dict:
     """
     Get a summary of current metrics for debugging/display.
-    
+
     Returns:
         Dict with key metric values
     """
     # Note: This reads current metric values directly
     # In production, use Prometheus queries instead
+    # pylint: disable=protected-access
     return {
         "verifications": {
             "verified": VERIFICATIONS_TOTAL.labels(status="verified")._value.get(),
@@ -335,6 +336,7 @@ def get_stats_summary() -> dict:
 
 def calculate_cache_hit_rate() -> float:
     """Calculate cache hit rate as percentage."""
+    # pylint: disable=protected-access
     hits = CACHE_HITS_TOTAL._value.get()
     misses = CACHE_MISSES_TOTAL._value.get()
     total = hits + misses

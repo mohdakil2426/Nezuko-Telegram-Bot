@@ -6,15 +6,6 @@ The system follows a standard Telegram Bot architecture:
 2.  **Bot Logic (Backend)**: Python (`python-telegram-bot` v20+) application.
 3.  **Polling**: `Application.run_polling` with **Concurrent Updates** enabled for performance.
 
-## Planned Architecture (v2.0)
-**Status**: All 4 Development Phases Complete ✅
-
-### Implementation Status
-- ✅ **Phase 1**: Modular architecture, database layer, admin commands
-- ✅ **Phase 2**: Multi-tenant verification, Redis caching, event handlers
-- ✅ **Phase 3**: Performance optimization, load testing, horizontal scaling
-- ✅ **Phase 4**: Monitoring, observability, health checks, Sentry, structured logging
-
 ### Core Stack
 *   **Runtime**: Python 3.13+ (AsyncIO)
 *   **Framework**: `python-telegram-bot` v20+ with `concurrent_updates=True`
@@ -110,6 +101,27 @@ graph TD
     StrictMute --> Restrict
 ```
 
+## Python Quality Standards
+
+To maintain high code quality (Pylint score > 9.5), the following standards apply:
+
+### 1. Naming Conventions
+*   **Attributes/Variables**: Always use `snake_case` for instance attributes (e.g., `config.bot_token`).
+*   **Constants**: Use `UPPER_CASE` for module-level constants (e.g., `BATCH_SIZE`).
+*   **Global State**: Module-level variables used for state management should be `_snake_case` with `# pylint: disable=invalid-name` if they are modified.
+
+### 2. String Formatting & Logging
+*   **Lazy Logging**: ALWAYS use `%` formatting in `logger` calls (e.g., `logger.info("User %s joined", user_id)`). This prevents string construction if the log level is disabled.
+*   **Everything Else**: Use `f-strings` for `print()`, `ValueError`, and user-facing message templates for better readability.
+
+### 3. Imports & Global Scope
+*   **Toplevel Imports**: All imports should be at the top level to avoid `import-outside-toplevel` and facilitate testing.
+*   **Global Statements**: Minimize usage of the `global` keyword. If required for singletons/state flags, use `# pylint: disable=global-statement` at the module level.
+
+### 4. Exception Handling
+*   **Specific Exceptions**: Never use broad `except Exception:`. Always catch specific errors (e.g., `SQLAlchemyError`, `TelegramError`, `RedisConnectionError`).
+*   **Graceful Degradation**: Implement fallbacks for external service failures (e.g., Redis down -> Direct API).
+
 ## Performance Targets (v2.0)
 | Metric | v1.1 (Current) | v2.0 (Target) |
 |--------|----------------|---------------|
@@ -117,5 +129,6 @@ graph TD
 | Cache Hit Rate | N/A (in-memory) | >70% (Redis) |
 | Database Query | N/A | <50ms (p95) |
 | Throughput | ~50/min | 1000/min |
+| Pylint Score | 6.55/10 | >9.5/10 |
 | Multi-Tenancy | 1 group | 100+ groups |
 

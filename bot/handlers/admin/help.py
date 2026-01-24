@@ -46,10 +46,10 @@ def get_back_button_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_start(update: Update, _context: ContextTypes.DEFAULT_TYPE):
     """
     Handle /start command (beautiful welcome message with navigation buttons).
-    
+
     Features:
     - Attractive welcome message with emoji
     - Inline keyboard buttons for easy navigation
@@ -57,7 +57,7 @@ async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     if not update.effective_chat or not update.message:
         return
-    
+
     # Only show full menu in private chat
     if update.effective_chat.type != "private":
         # Brief response in groups
@@ -68,10 +68,10 @@ async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown"
         )
         return
-    
+
     # Get user's first name
     user_name = update.effective_user.first_name if update.effective_user else "there"
-    
+
     welcome_message = (
         f"👋 **Hey {user_name}!**\n\n"
         "Welcome to **GMBot v2.0** - your powerful channel membership enforcer!\n\n"
@@ -87,7 +87,7 @@ async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "👇 **Use the buttons below to get started:**"
     )
-    
+
     await update.message.reply_text(
         welcome_message,
         parse_mode="Markdown",
@@ -95,13 +95,13 @@ async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def handle_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_help(update: Update, _context: ContextTypes.DEFAULT_TYPE):
     """Handle /help command - shows detailed help with back button."""
     if not update.effective_chat or not update.message:
         return
-    
+
     is_private = update.effective_chat.type == "private"
-    
+
     help_message = (
         "📚 **GMBot Help Center**\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
@@ -121,7 +121,7 @@ async def handle_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "━━━━━━━━━━━━━━━━━━━━━━\n"
         "📬 Need more help? Contact the bot owner."
     )
-    
+
     reply_markup = get_back_button_keyboard() if is_private else None
     await update.message.reply_text(
         help_message,
@@ -132,16 +132,16 @@ async def handle_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ==================== CALLBACK QUERY HANDLERS ====================
 
-async def handle_menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_menu_callback(update: Update, _context: ContextTypes.DEFAULT_TYPE):
     """Handle menu navigation callback queries."""
     query = update.callback_query
     if not query:
         return
-    
+
     await query.answer()
-    
+
     callback_data = query.data
-    
+
     if callback_data == CALLBACK_MENU_BACK:
         await show_main_menu(query)
     elif callback_data == CALLBACK_MENU_SETUP:
@@ -159,7 +159,7 @@ async def handle_menu_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 async def show_main_menu(query):
     """Show the main menu."""
     user_name = query.from_user.first_name if query.from_user else "there"
-    
+
     welcome_message = (
         f"👋 **Hey {user_name}!**\n\n"
         "Welcome to **GMBot v2.0** - your powerful channel membership enforcer!\n\n"
@@ -175,7 +175,7 @@ async def show_main_menu(query):
         "━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "👇 **Use the buttons below to get started:**"
     )
-    
+
     await query.edit_message_text(
         welcome_message,
         parse_mode="Markdown",
@@ -201,7 +201,7 @@ async def show_setup_guide(query):
         "━━━━━━━━━━━━━━━━━━━━━━\n"
         "✅ **That's it!** I'll now verify all members automatically."
     )
-    
+
     await query.edit_message_text(
         setup_message,
         parse_mode="Markdown",
@@ -228,7 +228,7 @@ async def show_how_it_works(query):
         "• **Admin Immunity** - Group admins are never restricted\n"
         "• **Multi-Channel** - Link multiple channels to one group"
     )
-    
+
     await query.edit_message_text(
         how_it_works_message,
         parse_mode="Markdown",
@@ -252,7 +252,7 @@ async def show_commands(query):
         "━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "💡 _Tip: Type `/` in a chat to see available commands!_"
     )
-    
+
     await query.edit_message_text(
         commands_message,
         parse_mode="Markdown",
@@ -281,7 +281,7 @@ async def show_help(query):
         "━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "📬 _Still need help? Contact the bot owner._"
     )
-    
+
     await query.edit_message_text(
         help_message,
         parse_mode="Markdown",
@@ -292,7 +292,7 @@ async def show_help(query):
 async def show_add_to_group(query):
     """Show instructions for adding bot to group."""
     bot_username = query.bot.username
-    
+
     # Create deep link for adding to group
     add_to_group_message = (
         "➕ **Add Me to Your Group**\n\n"
@@ -308,7 +308,7 @@ async def show_add_to_group(query):
         "• Delete messages permission\n"
         "• Restrict members permission"
     )
-    
+
     # Add the add to group button
     keyboard = [
         [InlineKeyboardButton(
@@ -317,7 +317,7 @@ async def show_add_to_group(query):
         )],
         [InlineKeyboardButton("◀️ Back to Menu", callback_data=CALLBACK_MENU_BACK)],
     ]
-    
+
     await query.edit_message_text(
         add_to_group_message,
         parse_mode="Markdown",

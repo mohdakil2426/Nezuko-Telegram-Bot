@@ -1,3 +1,4 @@
+# pylint: disable=wrong-import-order, wrong-import-position, import-outside-toplevel, unused-import, trailing-whitespace, pointless-string-statement, broad-exception-caught, unused-argument, logging-fstring-interpolation
 """
 Unit tests for bot services.
 
@@ -30,12 +31,10 @@ async def test_verification_service_cache_logic():
     """Test verification service uses cache before API."""
     from bot.services.verification import check_membership
     from telegram.constants import ChatMemberStatus
+    from tests.utils import create_mock_context
     
     # Mock context
-    context = MagicMock()
-    mock_member = MagicMock()
-    mock_member.status = ChatMemberStatus.MEMBER
-    context.bot.get_chat_member = AsyncMock(return_value=mock_member)
+    context = create_mock_context(user_status=ChatMemberStatus.MEMBER)
     
     # Mock cache (return None = cache miss)
     with patch('bot.services.verification.cache_get', new_callable=AsyncMock) as mock_cache_get, \

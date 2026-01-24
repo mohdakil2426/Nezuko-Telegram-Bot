@@ -1,3 +1,4 @@
+# pylint: disable=global-statement
 """
 Resilience patterns for GMBot v2.0.
 
@@ -11,6 +12,7 @@ Provides:
 import asyncio
 import logging
 import time
+import random
 from typing import Callable, Optional, Any
 from functools import wraps
 from enum import Enum
@@ -26,19 +28,20 @@ class CircuitState(Enum):
     HALF_OPEN = "half_open"  # Testing recovery
 
 
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class CircuitBreaker:
     """
     Circuit breaker for protecting against cascading failures.
-    
+
     States:
     - CLOSED: Normal operation, requests pass through
     - OPEN: Too many failures, requests rejected immediately
     - HALF_OPEN: Testing if service recovered after cooldown
-    
+
     Usage:
         db_circuit = CircuitBreaker(name="database", failure_threshold=3)
-        
+
         async def query_database():
             if db_circuit.can_execute():
                 try:
@@ -55,32 +58,32 @@ class CircuitBreaker:
     failure_threshold: int = 3        # Failures before opening circuit
     recovery_timeout: float = 30.0    # Seconds before trying half-open
     success_threshold: int = 2        # Successes needed to close from half-open
-    
+
     # Internal state
     state: CircuitState = field(default=CircuitState.CLOSED, init=False)
     failure_count: int = field(default=0, init=False)
     success_count: int = field(default=0, init=False)
     last_failure_time: float = field(default=0, init=False)
-    
+
     def can_execute(self) -> bool:
         """Check if request should be allowed through."""
         if self.state == CircuitState.CLOSED:
             return True
-        
+
         if self.state == CircuitState.OPEN:
             # Check if recovery timeout has passed
             if time.time() - self.last_failure_time >= self.recovery_timeout:
                 self._transition_to(CircuitState.HALF_OPEN)
                 return True
             return False
-        
+
         # HALF_OPEN: Allow limited requests to test
         return True
-    
+
     def record_success(self):
         """Record a successful operation."""
         self.failure_count = 0
-        
+
         if self.state == CircuitState.HALF_OPEN:
             self.success_count += 1
             if self.success_count >= self.success_threshold:
@@ -88,36 +91,35 @@ class CircuitBreaker:
         elif self.state == CircuitState.OPEN:
             # Shouldn't happen, but reset if it does
             self._transition_to(CircuitState.CLOSED)
-    
+
     def record_failure(self):
         """Record a failed operation."""
         self.failure_count += 1
         self.last_failure_time = time.time()
         self.success_count = 0
-        
+
         if self.state == CircuitState.HALF_OPEN:
             # Single failure in half-open reopens circuit
             self._transition_to(CircuitState.OPEN)
         elif self.failure_count >= self.failure_threshold:
             self._transition_to(CircuitState.OPEN)
-    
+
     def _transition_to(self, new_state: CircuitState):
         """Transition to a new circuit state."""
         if self.state != new_state:
-            old_state = self.state
             self.state = new_state
             self.success_count = 0
-            
+
             if new_state == CircuitState.OPEN:
                 logger.warning(
-                    f"🔴 Circuit breaker '{self.name}' OPENED "
-                    f"(failures: {self.failure_count}, threshold: {self.failure_threshold})"
+                    "Circuit breaker '%s' OPENED (failures: %d, threshold: %d)",
+                    self.name, self.failure_count, self.failure_threshold
                 )
             elif new_state == CircuitState.HALF_OPEN:
-                logger.info(f"🟡 Circuit breaker '{self.name}' HALF-OPEN (testing recovery)")
+                logger.info("Circuit breaker '%s' HALF-OPEN (testing recovery)", self.name)
             elif new_state == CircuitState.CLOSED:
-                logger.info(f"🟢 Circuit breaker '{self.name}' CLOSED (recovered)")
-    
+                logger.info("Circuit breaker '%s' CLOSED (recovered)", self.name)
+
     def get_status(self) -> dict:
         """Get circuit breaker status for monitoring."""
         return {
@@ -131,7 +133,6 @@ class CircuitBreaker:
 
 class CircuitBreakerOpenError(Exception):
     """Raised when circuit breaker is open and request rejected."""
-    pass
 
 
 # Global circuit breakers
@@ -161,25 +162,23 @@ def exponential_backoff(
 ) -> float:
     """
     Calculate exponential backoff delay with optional jitter.
-    
+
     Args:
         attempt: Attempt number (1-indexed)
         base_delay: Base delay in seconds
         max_delay: Maximum delay cap
         jitter: Add random jitter to prevent thundering herd
-    
+
     Returns:
         Delay in seconds
     """
-    import random
-    
     delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
-    
+
     if jitter:
         # Add ±25% jitter
         jitter_amount = delay * 0.25
         delay += random.uniform(-jitter_amount, jitter_amount)
-    
+
     return max(0, delay)
 
 
@@ -192,14 +191,14 @@ def async_retry(
 ):
     """
     Decorator for async functions with retry logic.
-    
+
     Args:
         max_attempts: Maximum retry attempts
         exceptions: Exception types to catch and retry
         base_delay: Base delay for exponential backoff
         max_delay: Maximum delay between retries
         on_retry: Optional callback called on each retry
-    
+
     Usage:
         @async_retry(max_attempts=3, exceptions=(DatabaseError,))
         async def query_database():
@@ -209,32 +208,33 @@ def async_retry(
         @wraps(func)
         async def wrapper(*args, **kwargs):
             last_exception = None
-            
+
             for attempt in range(1, max_attempts + 1):
                 try:
                     return await func(*args, **kwargs)
                 except exceptions as e:
                     last_exception = e
-                    
+
                     if attempt < max_attempts:
                         delay = exponential_backoff(attempt, base_delay, max_delay)
-                        
+
                         logger.warning(
-                            f"Retry {attempt}/{max_attempts} for {func.__name__}: {e}. "
-                            f"Waiting {delay:.2f}s"
+                            "Retry %d/%d for %s: %s. Waiting %.2fs",
+                            attempt, max_attempts, func.__name__, e, delay
                         )
-                        
+
                         if on_retry:
                             on_retry(attempt, e)
-                        
+
                         await asyncio.sleep(delay)
                     else:
                         logger.error(
-                            f"All {max_attempts} attempts failed for {func.__name__}: {e}"
+                            "All %d attempts failed for %s: %s",
+                            max_attempts, func.__name__, e
                         )
-            
+
             raise last_exception
-        
+
         return wrapper
     return decorator
 
@@ -242,7 +242,7 @@ def async_retry(
 def circuit_protected(circuit: CircuitBreaker):
     """
     Decorator to protect async function with circuit breaker.
-    
+
     Usage:
         @circuit_protected(get_database_circuit())
         async def query_database():
@@ -256,15 +256,15 @@ def circuit_protected(circuit: CircuitBreaker):
                     f"Circuit '{circuit.name}' is OPEN. "
                     f"Request rejected to prevent cascade failure."
                 )
-            
+
             try:
                 result = await func(*args, **kwargs)
                 circuit.record_success()
                 return result
-            except Exception as e:
+            except Exception:
                 circuit.record_failure()
                 raise
-        
+
         return wrapper
     return decorator
 
@@ -281,12 +281,12 @@ async def with_fallback(
 ) -> Any:
     """
     Execute primary function, fall back to secondary on failure.
-    
+
     Args:
         primary: Primary async function to try
         fallback: Fallback async function if primary fails
         *args, **kwargs: Arguments passed to both functions
-    
+
     Usage:
         result = await with_fallback(
             lambda: fetch_from_redis(key),
@@ -296,8 +296,8 @@ async def with_fallback(
     """
     try:
         return await primary(*args, **kwargs)
-    except Exception as e:
-        logger.warning(f"Primary operation failed ({e}), using fallback")
+    except (ConnectionError, TimeoutError, OSError) as exc:
+        logger.warning("Primary operation failed (%s), using fallback", exc)
         return await fallback(*args, **kwargs)
 
 
@@ -316,8 +316,8 @@ def get_all_circuit_status() -> dict:
 def reset_all_circuits():
     """Reset all circuit breakers to closed state (for testing)."""
     global _database_circuit, _telegram_circuit
-    
+
     _database_circuit = CircuitBreaker(name="database", failure_threshold=3, recovery_timeout=30.0)
     _telegram_circuit = CircuitBreaker(name="telegram", failure_threshold=5, recovery_timeout=60.0)
-    
+
     logger.info("All circuit breakers reset")

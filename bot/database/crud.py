@@ -26,7 +26,7 @@ async def create_owner(session: AsyncSession, user_id: int, username: str | None
     existing = await get_owner(session, user_id)
     if existing:
         return existing
-    
+
     owner = Owner(user_id=user_id, username=username)
     session.add(owner)
     await session.commit()
@@ -47,9 +47,9 @@ async def get_protected_group(session: AsyncSession, group_id: int) -> Optional[
 
 
 async def create_protected_group(
-    session: AsyncSession, 
-    group_id: int, 
-    owner_id: int, 
+    session: AsyncSession,
+    group_id: int,
+    owner_id: int,
     title: str | None = None
 ) -> ProtectedGroup:
     """Create new protected group."""
@@ -116,7 +116,7 @@ async def create_enforced_channel(
         await session.commit()
         await session.refresh(existing)
         return existing
-    
+
     channel = EnforcedChannel(
         channel_id=channel_id,
         title=title,
@@ -141,6 +141,7 @@ async def get_group_channels(session: AsyncSession, group_id: int) -> List[Enfor
     return list(result.scalars().all())
 
 
+# pylint: disable=too-many-arguments, too-many-positional-arguments
 async def link_group_channel(
     session: AsyncSession,
     group_id: int,
@@ -155,7 +156,7 @@ async def link_group_channel(
     """
     # Ensure channel exists
     await create_enforced_channel(session, channel_id, title, username, invite_link)
-    
+
     # Check if link already exists
     result = await session.execute(
         select(GroupChannelLink).where(
@@ -164,7 +165,7 @@ async def link_group_channel(
         )
     )
     existing_link = result.scalar_one_or_none()
-    
+
     if not existing_link:
         link = GroupChannelLink(group_id=group_id, channel_id=channel_id)
         session.add(link)
@@ -186,7 +187,7 @@ async def get_groups_for_channel(session: AsyncSession, channel_id: int) -> List
         .join(GroupChannelLink, GroupChannelLink.group_id == ProtectedGroup.group_id)
         .where(
             GroupChannelLink.channel_id == channel_id,
-            ProtectedGroup.enabled == True  # Only active groups
+            ProtectedGroup.enabled.is_(True)  # Only active groups
         )
     )
     return list(result.scalars().all())
@@ -197,6 +198,6 @@ async def get_groups_for_channel(session: AsyncSession, channel_id: int) -> List
 async def get_all_protected_groups(session: AsyncSession) -> List[ProtectedGroup]:
     """Get all protected groups (for metrics/admin purposes)."""
     result = await session.execute(
-        select(ProtectedGroup).where(ProtectedGroup.enabled == True)
+        select(ProtectedGroup).where(ProtectedGroup.enabled.is_(True))
     )
     return list(result.scalars().all())

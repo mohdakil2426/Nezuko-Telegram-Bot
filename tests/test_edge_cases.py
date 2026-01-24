@@ -1,3 +1,4 @@
+# pylint: disable=wrong-import-order, wrong-import-position, import-outside-toplevel, unused-import, trailing-whitespace, pointless-string-statement, broad-exception-caught, logging-fstring-interpolation
 """
 Comprehensive Edge Case Tests for GMBot v2.0
 
@@ -24,12 +25,9 @@ async def test_verify_user_not_in_channel():
     """Test verification when user is NOT a channel member."""
     from bot.services.verification import check_membership
     from telegram.constants import ChatMemberStatus
-    from telegram.error import BadRequest
+    from tests.utils import create_mock_context
     
-    context = MagicMock()
-    mock_member = MagicMock()
-    mock_member.status = ChatMemberStatus.LEFT
-    context.bot.get_chat_member = AsyncMock(return_value=mock_member)
+    context = create_mock_context(user_status=ChatMemberStatus.LEFT)
     
     with patch('bot.services.verification.cache_get', new_callable=AsyncMock) as mock_cache:
         mock_cache.return_value = None  # Cache miss
@@ -45,11 +43,9 @@ async def test_verify_user_banned_from_channel():
     """Test verification when user is BANNED from channel."""
     from bot.services.verification import check_membership
     from telegram.constants import ChatMemberStatus
+    from tests.utils import create_mock_context
     
-    context = MagicMock()
-    mock_member = MagicMock()
-    mock_member.status = ChatMemberStatus.BANNED
-    context.bot.get_chat_member = AsyncMock(return_value=mock_member)
+    context = create_mock_context(user_status=ChatMemberStatus.BANNED)
     
     with patch('bot.services.verification.cache_get', new_callable=AsyncMock) as mock_cache:
         mock_cache.return_value = None
@@ -66,11 +62,9 @@ async def test_verify_user_is_admin():
     """Test verification when user is channel ADMIN."""
     from bot.services.verification import check_membership
     from telegram.constants import ChatMemberStatus
+    from tests.utils import create_mock_context
     
-    context = MagicMock()
-    mock_member = MagicMock()
-    mock_member.status = ChatMemberStatus.ADMINISTRATOR
-    context.bot.get_chat_member = AsyncMock(return_value=mock_member)
+    context = create_mock_context(user_status=ChatMemberStatus.ADMINISTRATOR)
     
     with patch('bot.services.verification.cache_get', new_callable=AsyncMock) as mock_cache:
         mock_cache.return_value = None
@@ -282,11 +276,9 @@ async def test_concurrent_verification_calls():
     """Test multiple concurrent verification calls."""
     from bot.services.verification import check_membership
     from telegram.constants import ChatMemberStatus
+    from tests.utils import create_mock_context
     
-    context = MagicMock()
-    mock_member = MagicMock()
-    mock_member.status = ChatMemberStatus.MEMBER
-    context.bot.get_chat_member = AsyncMock(return_value=mock_member)
+    context = create_mock_context(user_status=ChatMemberStatus.MEMBER)
     
     with patch('bot.services.verification.cache_get', new_callable=AsyncMock) as mock_cache_get, \
          patch('bot.services.verification.cache_set', new_callable=AsyncMock):
@@ -442,13 +434,13 @@ def test_message_from_bot():
 def test_message_from_anonymous_admin():
     """Test message from anonymous group admin."""
     # Anonymous admins have a specific user ID
-    ANONYMOUS_ADMIN_ID = 1087968824  # GroupAnonymousBot
-    
+    anonymous_admin_id = 1087968824  # GroupAnonymousBot
+
     from_user = MagicMock()
-    from_user.id = ANONYMOUS_ADMIN_ID
+    from_user.id = anonymous_admin_id
     from_user.is_bot = True
-    
-    assert from_user.id == ANONYMOUS_ADMIN_ID
+
+    assert from_user.id == anonymous_admin_id
     print("[PASS] Anonymous admin detection works")
 
 
