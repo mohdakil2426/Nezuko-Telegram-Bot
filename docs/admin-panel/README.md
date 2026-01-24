@@ -21,6 +21,7 @@
 | [**02a-FOLDER-STRUCTURE.md**](./02a-FOLDER-STRUCTURE.md)   | Folder structure & naming conventions    |
 | [**03-TECH-STACK.md**](./03-TECH-STACK.md)                 | Technology choices & justifications      |
 | [**04-API-DESIGN.md**](./04-API-DESIGN.md)                 | REST API specification                   |
+| [**04a-ERROR-HANDLING.md**](./04a-ERROR-HANDLING.md)       | Error handling & logging framework       |
 | [**05-UI-WIREFRAMES.md**](./05-UI-WIREFRAMES.md)           | Design system, colors, animations        |
 | [**05a-PAGE-WIREFRAMES.md**](./05a-PAGE-WIREFRAMES.md)     | Detailed page layouts & components       |
 | [**06-IMPLEMENTATION.md**](./06-IMPLEMENTATION.md)         | Implementation roadmap & phases          |
