@@ -16,8 +16,12 @@ from bot.database.crud import (
     create_protected_group,
     link_group_channel,
 )
+from bot.utils.auto_delete import schedule_delete
 
 logger = logging.getLogger(__name__)
+
+# Auto-delete delay for admin messages (seconds)
+AUTO_DELETE_DELAY = 60
 
 
 async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -165,11 +169,12 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 group_id,
                 channel_id,
                 invite_link=invite_link,
-                title=channel_title
+                title=channel_title,
+                username=channel_username
             )
         
         # Success message
-        await update.message.reply_text(
+        response = await update.message.reply_text(
             f"🛡️ **Protection Activated!**\n\n"
             f"Group: {update.effective_chat.title}\n"
             f"Channel: `@{channel_username}`\n\n"
@@ -180,6 +185,9 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown"
         )
         
+        # Schedule auto-delete
+        await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
+        
         logger.info(
             f"Protection activated: group={group_id}, channel={channel_id}, "
             f"admin={user_id}"
@@ -187,7 +195,8 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     except Exception as e:
         logger.error(f"Error setting up protection: {e}", exc_info=True)
-        await update.message.reply_text(
+        response = await update.message.reply_text(
             "❌ Database error while setting up protection.\n"
             "Please try again or contact support."
         )
+        await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)

@@ -1,10 +1,37 @@
 # Active Context
 
 ## Current Status
-**PHASE 5 COMPLETE ✅ - GMBot v2.0 Production Ready!** All 5 development phases complete + comprehensive test suite + Docker deployment files. Ready for deployment (skipping actual VPS deployment as requested).
+**PHASE 5 COMPLETE ✅ - GMBot v2.0 Production Ready!** All 5 development phases complete + comprehensive test suite + Docker deployment files + UX/UI enhancements. Ready for deployment.
 
 ## Recent Changes (2026-01-24)
-### Phase 5: Deployment Preparation (Latest)
+
+### UX/UI Enhancements (Latest - 07:20 IST)
+*   **Beautiful Welcome Screen**: Complete redesign of `/start` with personalized greeting, feature highlights
+*   **Inline Keyboard Navigation**: 6-button menu for navigating bot features without typing commands
+    - 📖 How to Setup - Step-by-step guide
+    - 💡 How It Works - Verification flow explanation
+    - 📋 All Commands - Complete command reference
+    - ❓ Help - Troubleshooting and support
+    - ➕ Add Me to Group - Deep link for easy bot addition
+*   **Command Menu Setup**: `set_my_commands` with `BotCommandScope` for:
+    - Private chats: `/start`, `/help`
+    - Group chats: `/protect`, `/unprotect`, `/status`, `/settings`, `/help`
+*   **Menu Callback Handlers**: Navigation between welcome screen and info sections
+*   **Channel Username Display**: Status message now shows `Channel Title (@username)`
+*   **Message Formatting**: Fixed excessive newlines, proper single-line spacing
+*   **Database Schema Update**: Added `username` field to `EnforcedChannel` model
+*   **Windows Console Fix**: UTF-8 encoding wrapper to prevent `UnicodeEncodeError` with emojis
+
+### Files Modified (UX/UI Enhancement)
+- `bot/handlers/admin/help.py` - Complete rewrite with inline keyboards, callbacks
+- `bot/core/loader.py` - Added command menu setup, menu callback registration
+- `bot/main.py` - Call `setup_bot_commands()` in `post_init`, UTF-8 console fix
+- `bot/handlers/admin/settings.py` - Fixed message formatting, added username display
+- `bot/database/models.py` - Added `username` field to `EnforcedChannel`
+- `bot/database/crud.py` - Updated CRUD functions to support channel username
+- `bot/handlers/admin/setup.py` - Pass username when linking channel
+
+### Phase 5: Deployment Preparation
 *   **Dockerfile**: Multi-stage build with Python 3.13, non-root user, health checks
 *   **docker-compose.yml**: Full stack with PostgreSQL, Redis, and bot service
 *   **docker-compose.prod.yml**: Production overlay with resource limits and logging
@@ -128,22 +155,24 @@ protected_groups (group_id PK, owner_id FK, title, enabled, params JSONB)
   ↓ M:N
 group_channel_links (id PK, group_id FK, channel_id FK, UNIQUE)
   ↓
-enforced_channels (channel_id PK, title, invite_link)
+enforced_channels (channel_id PK, title, username, invite_link)
 ```
 
 ### Handler Registration (Complete)
-- ✅ `/start` - CommandHandler (private chat only)
+- ✅ `/start` - CommandHandler (private: full menu, group: brief response)
 - ✅ `/help` - CommandHandler
 - ✅ `/protect` - CommandHandler (group chat only, with admin check)
-- ✅ `/status` - CommandHandler (shows protection status, linked channels)
+- ✅ `/status` - CommandHandler (shows protection status, linked channels with @username)
 - ✅ `/unprotect` - CommandHandler (soft-disable protection)
 - ✅ `/settings` - CommandHandler (view configuration, read-only)
 - ✅ `verify_membership` - CallbackQueryHandler ("I have joined" button)
+- ✅ `menu_*` - CallbackQueryHandler (6 menu navigation callbacks)
 - ✅ Message handler - Multi-tenant verification with database queries
 - ✅ Join handler - Instant verification for NEW_CHAT_MEMBERS
 - ✅ Leave handler - Channel leave detection across all linked groups
+- ✅ `set_my_commands` - Command menu for private/group chats
 
-**Total Handlers**: 10 (6 commands, 1 callback, 3 event handlers)
+**Total Handlers**: 16 (6 commands, 7 callbacks, 3 event handlers)
 
 ### Observability Stack (Phase 4)
 - ✅ **Prometheus**: `/metrics` endpoint with counters, histograms, gauges

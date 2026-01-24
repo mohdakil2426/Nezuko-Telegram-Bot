@@ -100,14 +100,17 @@ async def create_enforced_channel(
     session: AsyncSession,
     channel_id: int,
     title: str | None = None,
+    username: str | None = None,
     invite_link: str | None = None
 ) -> EnforcedChannel:
     """Create new enforced channel or return existing."""
     existing = await get_enforced_channel(session, channel_id)
     if existing:
-        # Update title and invite_link if changed
+        # Update title, username, and invite_link if changed
         if title:
             existing.title = title
+        if username:
+            existing.username = username
         if invite_link:
             existing.invite_link = invite_link
         await session.commit()
@@ -117,6 +120,7 @@ async def create_enforced_channel(
     channel = EnforcedChannel(
         channel_id=channel_id,
         title=title,
+        username=username,
         invite_link=invite_link
     )
     session.add(channel)
@@ -142,14 +146,15 @@ async def link_group_channel(
     group_id: int,
     channel_id: int,
     invite_link: str | None = None,
-    title: str | None = None
+    title: str | None = None,
+    username: str | None = None
 ) -> None:
     """
     Link a group to a channel (create relationship).
     Also ensures the channel exists in enforced_channels table.
     """
     # Ensure channel exists
-    await create_enforced_channel(session, channel_id, title, invite_link)
+    await create_enforced_channel(session, channel_id, title, username, invite_link)
     
     # Check if link already exists
     result = await session.execute(

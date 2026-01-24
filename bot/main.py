@@ -18,7 +18,7 @@ from bot.config import config
 from bot.core.database import init_db, close_db, get_session
 from bot.core.rate_limiter import create_rate_limiter
 from bot.core.cache import get_redis_client, close_redis_connection
-from bot.core.loader import register_handlers
+from bot.core.loader import register_handlers, setup_bot_commands
 from bot.database.crud import get_all_protected_groups
 
 # Phase 4: Monitoring imports
@@ -31,13 +31,20 @@ from bot.utils.metrics import (
 from bot.utils.sentry import init_sentry, flush as sentry_flush
 from bot.utils.health import start_health_server, stop_health_server
 
-# Setup standard logging
+# Setup standard logging with UTF-8 support for Windows console
+# Windows cp1252 can't handle Unicode emojis - use 'replace' mode to avoid crashes
+if sys.platform == 'win32':
+    # Force stdout to UTF-8 mode on Windows to prevent UnicodeEncodeError with emojis
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO if config.is_production else logging.DEBUG,
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler("bot.log")
+        logging.FileHandler("bot.log", encoding='utf-8')
     ]
 )
 logger = logging.getLogger(__name__)
@@ -66,13 +73,18 @@ async def post_init(application: Application) -> None:
     redis_client = await get_redis_client(config.REDIS_URL)
     if redis_client:
         set_redis_connected(True)
-        logger.info("✅ Redis cache initialized successfully")
+        logger.info("[OK] Redis cache initialized successfully")
     else:
         set_redis_connected(False)
-        logger.warning("⚠️ Redis unavailable - running in degraded mode (direct API calls)")
+        logger.warning("[WARN] Redis unavailable - running in degraded mode (direct API calls)")
     
     # Update metrics
     await update_active_groups_gauge()
+    
+    # Setup bot command menus (shows commands when user types /)
+    logger.info("Setting up command menus...")
+    await setup_bot_commands(application)
+    logger.info("[OK] Command menus configured")
 
 
 async def post_shutdown(application: Application) -> None:

@@ -54,6 +54,7 @@ bot/
 3.  **Priority Rate Limiter**: P0 (user interactions) > P1 (enforcement) > P2 (bulk operations)
 4.  **Admin Command Handlers**: `/protect`, `/status`, `/unprotect`, `/settings`
 5.  **Observability Stack**: Prometheus metrics, structured logs, health checks, Sentry
+6.  **UX/UI Layer**: Inline keyboard navigation, command menus, personalized welcome
 
 ## Design Patterns (v1.1)
 *   **Event-Driven**: Actions are triggered by Telegram events (New Message, Callback Query, **Chat Member Update**).

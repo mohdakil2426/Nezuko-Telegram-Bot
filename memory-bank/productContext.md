@@ -35,10 +35,14 @@ A **multi-tenant SaaS platform** where administrators can:
     *   Run `/protect @YourChannel` in the group
     *   Bot confirms: "🛡️ Protection Activated!"
 2.  **Management**:
-    *   `/status` - Check protection status, linked channels
+    *   `/status` - Check protection status, linked channels with @username
     *   `/unprotect` - Disable protection (soft delete, can re-enable)
     *   `/settings` - View/customize warning messages (future)
 3.  **Multi-Group**: Same admin can protect 10, 50, 100+ groups with different channels each
+4.  **UX Features**:
+    *   Command menu (type `/` to see available commands)
+    *   Inline keyboard navigation in private chat
+    *   Beautiful welcome screen with personalized greeting
 
 ### For End Users
 *   **Same UX as v1.1**: No user-facing changes, verification flow identical

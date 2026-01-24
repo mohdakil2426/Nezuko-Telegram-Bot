@@ -1,17 +1,26 @@
 """
-Dynamic handler registration system.
+Dynamic handler registration system with command menu setup.
 
-Registers all handlers in correct priority order:
-1. Commands (highest priority)
-2. Callback queries
-3. Event handlers (join, leave)
-4. Message handlers (lowest priority)
+Features:
+- Registers all handlers in correct priority order
+- Sets up bot commands for command menu (when users type /)
+- Different command menus for private chats vs groups
 """
 import logging
-from telegram import Update
+from telegram import Update, BotCommand, BotCommandScopeAllPrivateChats, BotCommandScopeAllGroupChats
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ChatMemberHandler, filters
 
-from bot.handlers.admin.help import handle_start, handle_help
+from bot.handlers.admin.help import (
+    handle_start, 
+    handle_help, 
+    handle_menu_callback,
+    CALLBACK_MENU_HELP,
+    CALLBACK_MENU_SETUP,
+    CALLBACK_MENU_COMMANDS,
+    CALLBACK_MENU_HOW_IT_WORKS,
+    CALLBACK_MENU_BACK,
+    CALLBACK_MENU_ADD_TO_GROUP,
+)
 from bot.handlers.admin.setup import handle_protect
 from bot.handlers.admin.settings import handle_status, handle_unprotect, handle_settings
 from bot.handlers.events.message import handle_message
@@ -23,6 +32,51 @@ logger = logging.getLogger(__name__)
 
 # Callback data constants
 CALLBACK_VERIFY = "verify_membership"
+
+# Bot commands for private chats
+PRIVATE_COMMANDS = [
+    BotCommand("start", "🚀 Start the bot"),
+    BotCommand("help", "❓ Get help and support"),
+]
+
+# Bot commands for groups (admin commands)
+GROUP_COMMANDS = [
+    BotCommand("protect", "🛡️ Activate channel protection"),
+    BotCommand("unprotect", "🔓 Disable protection"),
+    BotCommand("status", "📊 Check protection status"),
+    BotCommand("settings", "⚙️ View configuration"),
+    BotCommand("help", "❓ Get help"),
+]
+
+
+async def setup_bot_commands(application: Application) -> None:
+    """
+    Set up bot commands for the command menu.
+    
+    This makes commands appear when users type / in the chat.
+    Different commands are shown in private chats vs groups.
+    """
+    try:
+        bot = application.bot
+        
+        # Set commands for private chats
+        await bot.set_my_commands(
+            commands=PRIVATE_COMMANDS,
+            scope=BotCommandScopeAllPrivateChats()
+        )
+        logger.info("[OK] Set private chat commands")
+        
+        # Set commands for groups
+        await bot.set_my_commands(
+            commands=GROUP_COMMANDS,
+            scope=BotCommandScopeAllGroupChats()
+        )
+        logger.info("[OK] Set group chat commands")
+        
+        logger.info("[SUCCESS] Bot command menus configured")
+        
+    except Exception as e:
+        logger.error(f"Failed to set bot commands: {e}")
 
 
 def register_handlers(application: Application) -> None:
@@ -64,6 +118,7 @@ def register_handlers(application: Application) -> None:
     # ==================== CALLBACK QUERIES ====================
     # Priority: High (before event handlers)
     
+    # Verification callback
     application.add_handler(
         CallbackQueryHandler(
             handle_callback_verify,
@@ -71,6 +126,23 @@ def register_handlers(application: Application) -> None:
         )
     )
     logger.debug("[OK] Registered verify callback handler")
+    
+    # Menu navigation callbacks
+    menu_callbacks = [
+        CALLBACK_MENU_HELP,
+        CALLBACK_MENU_SETUP,
+        CALLBACK_MENU_COMMANDS,
+        CALLBACK_MENU_HOW_IT_WORKS,
+        CALLBACK_MENU_BACK,
+        CALLBACK_MENU_ADD_TO_GROUP,
+    ]
+    application.add_handler(
+        CallbackQueryHandler(
+            handle_menu_callback,
+            pattern=f"^({'|'.join(menu_callbacks)})$"
+        )
+    )
+    logger.debug("[OK] Registered menu callback handlers")
     
     # ==================== EVENT HANDLERS ====================
     # Priority: Medium (specific events before general messages)
@@ -109,5 +181,5 @@ def register_handlers(application: Application) -> None:
     
     logger.info(
         "[SUCCESS] All handlers registered "
-        "(6 commands, 1 callback, 2 events, 1 message)"
+        "(6 commands, 7 callbacks, 2 events, 1 message)"
     )
