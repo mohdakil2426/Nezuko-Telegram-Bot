@@ -142,7 +142,7 @@ The system SHALL optimize database queries to meet performance targets via prope
 The system SHALL support SQLite as a development-time database to simplify local setup.
 
 #### Scenario: SQLite initialization
-- **WHEN** `DATABASE_URL=sqlite:///./gmbot.db` is set
+- **WHEN** `DATABASE_URL=sqlite:///./nezuko.db` is set
 - **THEN** the bot creates a local SQLite file
 - **AND** all features work identically to PostgreSQL (schema compatible)
 

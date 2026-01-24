@@ -1,10 +1,10 @@
 # ============================================================
-# GMBot v2.0 - Production Dockerfile
+# Nezuko v1.0.0 - Production Dockerfile
 # ============================================================
 # Multi-stage build for smaller image size
 # Usage:
-#   docker build -t gmbot:latest .
-#   docker run --env-file .env gmbot:latest
+#   docker build -t nezuko:latest .
+#   docker run --env-file .env nezuko:latest
 # ============================================================
 
 # Stage 1: Builder
@@ -33,9 +33,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 FROM python:3.13-slim as production
 
 # Labels
-LABEL maintainer="GMBot Team"
-LABEL version="2.0"
-LABEL description="Multi-tenant Telegram Group Manager Bot"
+LABEL maintainer="Nezuko Team"
+LABEL version="1.0.0"
+LABEL description="Nezuko - The Ultimate All-In-One Telegram Bot"
 
 # Environment
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -50,8 +50,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     curl \
     && rm -rf /var/lib/apt/lists/* \
-    && addgroup --system --gid 1001 gmbot \
-    && adduser --system --uid 1001 --gid 1001 gmbot
+    && addgroup --system --gid 1001 nezuko \
+    && adduser --system --uid 1001 --gid 1001 nezuko
 
 WORKDIR /app
 
@@ -59,16 +59,16 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code
-COPY --chown=gmbot:gmbot bot/ ./bot/
-COPY --chown=gmbot:gmbot alembic.ini ./
-COPY --chown=gmbot:gmbot requirements.txt ./
+COPY --chown=nezuko:nezuko bot/ ./bot/
+COPY --chown=nezuko:nezuko alembic.ini ./
+COPY --chown=nezuko:nezuko requirements.txt ./
 
 # Create directories for data
 RUN mkdir -p /app/data /app/logs && \
-    chown -R gmbot:gmbot /app
+    chown -R nezuko:nezuko /app
 
 # Switch to non-root user
-USER gmbot
+USER nezuko
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

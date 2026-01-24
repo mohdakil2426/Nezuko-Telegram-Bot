@@ -1,5 +1,5 @@
 # ============================================================
-# GMBot v2.0 - Production Dependencies
+# Nezuko v1.0.0 - Production Dependencies
 # ============================================================
 # Python 3.13+ required
 # Install: pip install -r requirements.txt

@@ -99,7 +99,7 @@ This document breaks down the transformation into small, verifiable tasks across
 - [x] 1.8.1 Create `bot/handlers/admin/help.py`
 - [x] 1.8.2 Implement `/start` handler (private chat only)
 - [x] 1.8.3 Add welcome message with setup instructions
-- [x] 1.8.4 Format: "👋 Welcome to GMBot! To protect a group: 1) Add me as admin in Group, 2) Add me as admin in Channel, 3) Run /protect @YourChannel"
+- [x] 1.8.4 Format: "Welcome to Nezuko! To protect a group: 1) Add me as admin in Group, 2) Add me as admin in Channel, 3) Run /protect @YourChannel"
 - [x] 1.8.5 Register handler in `bot/main.py`
 
 **Validation**: `/start` in DM shows welcome message

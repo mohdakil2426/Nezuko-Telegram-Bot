@@ -1,5 +1,5 @@
 # ============================================================
-# GMBot v2.0 - Docker Compose Configuration
+# Nezuko v1.0.0 - Docker Compose Configuration
 # ============================================================
 # Development & Production multi-container setup
 # Usage:
@@ -11,20 +11,20 @@ version: '3.8'
 
 services:
   # ==========================================================
-  # GMBot Application
+  # Nezuko Application
   # ==========================================================
   bot:
     build:
       context: .
       dockerfile: Dockerfile
       target: production
-    container_name: gmbot
+    container_name: nezuko
     restart: unless-stopped
     env_file:
       - .env
     environment:
       - ENVIRONMENT=${ENVIRONMENT:-development}
-      - DATABASE_URL=postgresql+asyncpg://gmbot:${POSTGRES_PASSWORD:-gmbot_secret}@postgres:5432/gmbot
+      - DATABASE_URL=postgresql+asyncpg://nezuko:${POSTGRES_PASSWORD:-nezuko_secret}@postgres:5432/nezuko
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       postgres:
@@ -32,7 +32,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - gmbot-network
+      - nezuko-network
     volumes:
       - bot-logs:/app/logs
     healthcheck:
@@ -47,20 +47,20 @@ services:
   # ==========================================================
   postgres:
     image: postgres:16-alpine
-    container_name: gmbot-postgres
+    container_name: nezuko-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: gmbot
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gmbot_secret}
-      POSTGRES_DB: gmbot
+      POSTGRES_USER: nezuko
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nezuko_secret}
+      POSTGRES_DB: nezuko
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
-      - gmbot-network
+      - nezuko-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gmbot -d gmbot"]
+      test: ["CMD-SHELL", "pg_isready -U nezuko -d nezuko"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -74,13 +74,13 @@ services:
   # ==========================================================
   redis:
     image: redis:7-alpine
-    container_name: gmbot-redis
+    container_name: nezuko-redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
     volumes:
       - redis-data:/data
     networks:
-      - gmbot-network
+      - nezuko-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -95,17 +95,17 @@ services:
 # Networks
 # ==========================================================
 networks:
-  gmbot-network:
+  nezuko-network:
     driver: bridge
-    name: gmbot-network
+    name: nezuko-network
 
 # ==========================================================
 # Volumes
 # ==========================================================
 volumes:
   postgres-data:
-    name: gmbot-postgres-data
+    name: nezuko-postgres-data
   redis-data:
-    name: gmbot-redis-data
+    name: nezuko-redis-data
   bot-logs:
-    name: gmbot-logs
+    name: nezuko-logs

@@ -1,4 +1,4 @@
-# Change: Transform GMBot to Production-Ready Multi-Tenant SaaS
+# Change: Transform Nezuko to Production-Ready Multi-Tenant SaaS
 
 ## Why
 
@@ -10,7 +10,7 @@ The current v1.1 bot is a single-instance script configured via `.env` files wit
 - Provide production-grade reliability (no observability, monitoring)
 - Enable self-service setup (no admin commands like `/protect`, `/settings`)
 
-**Business Value**: Transform GMBot into a **production-ready SaaS** that can serve hundreds of groups simultaneously with <100ms verification latency, enabling broader adoption and reducing operational overhead.
+**Business Value**: Transform Nezuko into a **production-ready SaaS** that can serve hundreds of groups simultaneously with <100ms verification latency, enabling broader adoption and reducing operational overhead.
 
 ## What Changes
 

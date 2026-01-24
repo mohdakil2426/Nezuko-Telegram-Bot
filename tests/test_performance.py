@@ -335,7 +335,7 @@ if __name__ == "__main__":
     async def main():
         """Main entry point for load tests."""
         print("="*60)
-        print("GMBOT LOAD TESTING SUITE")
+        print("NEZUKO LOAD TESTING SUITE")
         print("="*60)
 
         try:

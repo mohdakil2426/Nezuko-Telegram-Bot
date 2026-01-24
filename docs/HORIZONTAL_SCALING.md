@@ -16,7 +16,7 @@ Nezuko is designed for horizontal scaling - running multiple bot instances simul
 3. **Telegram API**: Bot receives updates via webhooks (load balanced)
 
 **No Local State**:
-- ❌ In-memory dictionaries (removed in v2.0)
+- ❌ In-memory dictionaries (removed in v1.0)
 - ❌ Local file storage (SQLite for dev only)
 - ❌ Global variables holding user/group data
 
@@ -30,7 +30,7 @@ async with get_session() as session:
 # ✅ Good: Uses shared Redis cache
 cached = await cache_get(f"verify:{user_id}:{channel_id}")
 
-# ❌ Bad: Local state (not used in v2.0)
+# ❌ Bad: Local state (not used in v1.0)
 membership_cache = {}  # This would NOT sync between instances
 ```
 

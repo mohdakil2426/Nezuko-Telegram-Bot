@@ -1,5 +1,5 @@
 # ============================================================
-# GMBot v2.0 - Production Override Configuration
+# Nezuko v1.0.0 - Production Override Configuration
 # ============================================================
 # Use with: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 # ============================================================

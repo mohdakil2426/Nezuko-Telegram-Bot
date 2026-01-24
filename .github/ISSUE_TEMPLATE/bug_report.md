@@ -32,7 +32,7 @@ Paste logs here
 ## Environment
 - **OS**: [e.g., Ubuntu 22.04, Windows 11]
 - **Python Version**: [e.g., 3.13.0]
-- **Bot Version**: [e.g., v2.0.0]
+- **Bot Version**: [e.g., v1.0.0]
 - **Deployment**: [e.g., Docker, Local, VPS]
 
 ## Additional Context

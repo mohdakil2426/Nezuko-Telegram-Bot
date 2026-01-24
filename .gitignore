@@ -62,7 +62,7 @@ error.log
 *.db
 *.sqlite
 *.sqlite3
-gmbot.db
+nezuko.db
 
 # Testing
 .pytest_cache/

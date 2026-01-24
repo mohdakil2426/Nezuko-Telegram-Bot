@@ -84,7 +84,7 @@
 - ❌ MySQL: Viable, but PostgreSQL preferred for JSONB and community support
 
 **Implementation Details**:
-- SQLite fallback for local development (`DATABASE_URL=sqlite:///./gmbot.db`)
+- SQLite fallback for local development (`DATABASE_URL=sqlite:///./nezuko.db`)
 - Connection pooling: 20 connections max (conservative for async workload)
 - Alembic for schema migrations (versioned, rollback-safe)
 

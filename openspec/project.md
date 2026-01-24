@@ -4,7 +4,7 @@
 
 **Nezuko - The Ultimate All-In-One Bot** is a Telegram bot designed to enforce channel membership as a prerequisite for participating in linked discussion groups. The bot automatically restricts non-subscribers from sending messages until they join the required channel(s).
 
-**Current State (v2.0)**: Production-ready multi-tenant platform with database-driven configuration, distributed caching, and production-grade observability.
+**Current State (v1.0.0)**: Production-ready multi-tenant platform with database-driven configuration, distributed caching, and production-grade observability.
 
 **Core Goals**:
 1. Automate channel membership enforcement at scale
@@ -21,7 +21,7 @@
 - **Caching**: In-memory dictionary
 - **Update Mode**: Polling
 
-### Planned (v2.0)
+### Planned (v1.0.0)
 - **Language**: Python 3.13+
 - **Framework**: `python-telegram-bot` v20.8+ (async with concurrent updates)
 - **Database**: PostgreSQL 16+ (production), SQLite (development)
@@ -278,7 +278,7 @@ docs(openspec): add transform-to-production-saas proposal
 - **Failure Mode**: Bot cannot operate without Telegram API
 - **Documentation**: https://core.telegram.org/bots/api
 
-**PostgreSQL** (Critical for v2.0):
+**PostgreSQL** (Critical for v1.0.0):
 - **Purpose**: Persistent storage for multi-tenant configuration
 - **Schema**: 4 tables (owners, protected_groups, enforced_channels, group_channel_links)
 - **Version**: 16+ (requires JSONB support)
