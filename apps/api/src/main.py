@@ -46,6 +46,14 @@ async def health_check() -> dict[str, str]:
     return {"status": "healthy", "version": "0.1.0"}
 
 
+import asyncio
+from .api.websocket.handlers import logs
+from .api.websocket.redis_listener import redis_log_listener
+
+# Include WebSocket Router
+app.include_router(logs.router)
+
+
 @app.on_event("startup")
 async def startup_event() -> None:
     """Application startup event handler."""
@@ -54,9 +62,18 @@ async def startup_event() -> None:
         version="0.1.0",
         environment=settings.ENVIRONMENT,
     )
+    # Start Redis Log Listener in background
+    app.state.redis_listener_task = asyncio.create_task(redis_log_listener())
 
 
 @app.on_event("shutdown")
 async def shutdown_event() -> None:
     """Application shutdown event handler."""
     logger.info("nezuko_admin_api_shutting_down")
+    # Cancel Redis Log Listener
+    if hasattr(app.state, "redis_listener_task"):
+        app.state.redis_listener_task.cancel()
+        try:
+            await app.state.redis_listener_task
+        except asyncio.CancelledError:
+            pass

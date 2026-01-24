@@ -25,27 +25,35 @@ from bot.utils.metrics import (
     set_bot_start_time,
     set_active_groups_count,
     set_redis_connected,
-    set_db_connected
+    set_db_connected,
 )
 from bot.utils.sentry import init_sentry, flush as sentry_flush
 from bot.utils.health import stop_health_server
 
 # Setup standard logging with UTF-8 support for Windows console
 # Windows cp1252 can't handle Unicode emojis - use 'replace' mode to avoid crashes
-if sys.platform == 'win32':
+if sys.platform == "win32":
     # Force stdout to UTF-8 mode on Windows to prevent UnicodeEncodeError with emojis
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO if config.is_production else logging.DEBUG,
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler("bot.log", encoding='utf-8')
-    ]
+    handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler("bot.log", encoding="utf-8")],
 )
+# Add Redis Handler
+try:
+    from bot.utils.redis_logging import RedisLogHandler
+
+    redis_handler = RedisLogHandler()
+    redis_handler.setLevel(logging.INFO)  # Always send INFO+ to dashboard
+    logging.getLogger().addHandler(redis_handler)
+except Exception as e:
+    print(f"Failed to initialize Redis logger: {e}")
+
 logger = logging.getLogger(__name__)
 
 
@@ -100,9 +108,6 @@ async def post_shutdown(_application: Application) -> None:
     await close_redis_connection()
     await close_db()
     logger.info("All connections closed")
-
-
-
 
 
 def main():
@@ -162,9 +167,9 @@ def main():
                     Update.MESSAGE,
                     Update.CALLBACK_QUERY,
                     Update.CHAT_MEMBER,
-                    Update.MY_CHAT_MEMBER
+                    Update.MY_CHAT_MEMBER,
                 ],
-                drop_pending_updates=True
+                drop_pending_updates=True,
             )
         else:
             logger.info("Starting bot in POLLING mode...")
@@ -174,9 +179,9 @@ def main():
                     Update.MESSAGE,
                     Update.CALLBACK_QUERY,
                     Update.CHAT_MEMBER,
-                    Update.MY_CHAT_MEMBER
+                    Update.MY_CHAT_MEMBER,
                 ],
-                drop_pending_updates=True
+                drop_pending_updates=True,
             )
 
     except (KeyboardInterrupt, SystemExit):
