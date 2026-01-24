@@ -36,78 +36,78 @@
 ### 0.1 Project Initialization
 > 📖 **Read First**: `docs/admin-panel/02a-FOLDER-STRUCTURE.md` Section 1
 
-- [ ] 0.1.1 Create root `package.json` with workspaces configuration
-- [ ] 0.1.2 Create `pnpm-workspace.yaml` defining `apps/*` and `packages/*`
-- [ ] 0.1.3 Create `turbo.json` with build/dev/lint/test pipelines
-- [ ] 0.1.4 Create root `.gitignore` with node_modules, .next, __pycache__, .env
-- [ ] 0.1.5 Create root `.env.example` with all required variables
-- [ ] 0.1.6 Create root `.editorconfig` for consistent formatting
-- [ ] 0.1.7 Create root `.prettierrc` with project settings
+- [x] 0.1.1 Create root `package.json` with workspaces configuration
+- [x] 0.1.2 Create `pnpm-workspace.yaml` defining `apps/*` and `packages/*`
+- [x] 0.1.3 Create `turbo.json` with build/dev/lint/test pipelines
+- [x] 0.1.4 Create root `.gitignore` with node_modules, .next, __pycache__, .env
+- [x] 0.1.5 Create root `.env.example` with all required variables
+- [x] 0.1.6 Create root `.editorconfig` for consistent formatting
+- [x] 0.1.7 Create root `.prettierrc` with project settings
 
 ### 0.2 Next.js Frontend Initialization
 > 📖 **Read First**: `docs/admin-panel/03-TECH-STACK.md` Section 2.1
 
-- [ ] 0.2.1 Run `npx create-next-app@16 apps/web --typescript --tailwind --eslint --app --src-dir`
-- [ ] 0.2.2 Configure `next.config.ts` with Turbopack
-- [ ] 0.2.3 Update `tsconfig.json` with path aliases (`@/*`)
-- [ ] 0.2.4 Create `apps/web/src/app/globals.css` with Tailwind imports
-- [ ] 0.2.5 Install core dependencies: react-hook-form, zod, @hookform/resolvers
-- [ ] 0.2.6 Install UI dependencies: @radix-ui/react-*, lucide-react, class-variance-authority
-- [ ] 0.2.7 Install state dependencies: zustand, @tanstack/react-query
-- [ ] 0.2.8 Install chart dependency: recharts
-- [ ] 0.2.9 Initialize shadcn/ui with `npx shadcn@latest init`
+- [x] 0.2.1 Run `npx create-next-app@16 apps/web --typescript --tailwind --eslint --app --src-dir`
+- [x] 0.2.2 Configure `next.config.ts` with Turbopack
+- [x] 0.2.3 Update `tsconfig.json` with path aliases (`@/*`)
+- [x] 0.2.4 Create `apps/web/src/app/globals.css` with Tailwind imports
+- [x] 0.2.5 Install core dependencies: react-hook-form, zod, @hookform/resolvers
+- [x] 0.2.6 Install UI dependencies: @radix-ui/react-*, lucide-react, class-variance-authority
+- [x] 0.2.7 Install state dependencies: zustand, @tanstack/react-query
+- [x] 0.2.8 Install chart dependency: recharts
+- [x] 0.2.9 Initialize shadcn/ui with `npx shadcn@latest init`
 
 ### 0.3 FastAPI Backend Initialization
 > 📖 **Read First**: `docs/admin-panel/03-TECH-STACK.md` Section 3.1
 
-- [ ] 0.3.1 Create `apps/api/` directory structure per `02a-FOLDER-STRUCTURE.md`
-- [ ] 0.3.2 Create `apps/api/pyproject.toml` with project configuration
-- [ ] 0.3.3 Create `apps/api/requirements.txt` with pinned dependencies
-- [ ] 0.3.4 Create `apps/api/requirements-dev.txt` with test/lint deps
-- [ ] 0.3.5 Create `apps/api/src/__init__.py`
-- [ ] 0.3.6 Create `apps/api/src/main.py` with FastAPI app initialization
-- [ ] 0.3.7 Create `apps/api/src/core/__init__.py`
-- [ ] 0.3.8 Create `apps/api/src/core/config.py` with Pydantic BaseSettings
-- [ ] 0.3.9 Create `apps/api/ruff.toml` with linting configuration
-- [ ] 0.3.10 Create `apps/api/pytest.ini` with test configuration
+- [x] 0.3.1 Create `apps/api/` directory structure per `02a-FOLDER-STRUCTURE.md`
+- [x] 0.3.2 Create `apps/api/pyproject.toml` with project configuration
+- [x] 0.3.3 Create `apps/api/requirements.txt` with pinned dependencies
+- [x] 0.3.4 Create `apps/api/requirements-dev.txt` with test/lint deps
+- [x] 0.3.5 Create `apps/api/src/__init__.py`
+- [x] 0.3.6 Create `apps/api/src/main.py` with FastAPI app initialization
+- [x] 0.3.7 Create `apps/api/src/core/__init__.py`
+- [x] 0.3.8 Create `apps/api/src/core/config.py` with Pydantic BaseSettings
+- [x] 0.3.9 Create `apps/api/ruff.toml` with linting configuration (via pyproject.toml)
+- [x] 0.3.10 Create `apps/api/pytest.ini` with test configuration
 
 ### 0.4 Shared Packages Setup
 > 📖 **Read First**: `docs/admin-panel/02a-FOLDER-STRUCTURE.md` Section 4
 
-- [ ] 0.4.1 Create `packages/types/package.json`
-- [ ] 0.4.2 Create `packages/types/tsconfig.json`
-- [ ] 0.4.3 Create `packages/types/src/index.ts` with base exports
-- [ ] 0.4.4 Create `packages/types/src/api.ts` with API response types
-- [ ] 0.4.5 Create `packages/types/src/models/` directory
-- [ ] 0.4.6 Create `packages/config/package.json`
-- [ ] 0.4.7 Create `packages/config/eslint/base.js`
-- [ ] 0.4.8 Create `packages/config/typescript/base.json`
+- [x] 0.4.1 Create `packages/types/package.json`
+- [x] 0.4.2 Create `packages/types/tsconfig.json`
+- [x] 0.4.3 Create `packages/types/src/index.ts` with base exports
+- [x] 0.4.4 Create `packages/types/src/api.ts` with API response types
+- [x] 0.4.5 Create `packages/types/src/models/` directory (group, channel, user types)
+- [x] 0.4.6 Create `packages/config/package.json`
+- [x] 0.4.7 Create `packages/config/eslint/base.js`
+- [x] 0.4.8 Create `packages/config/typescript/base.json`
 
 ### 0.5 Docker Development Environment
 > 📖 **Read First**: `docs/admin-panel/08-DEPLOYMENT.md`
 
-- [ ] 0.5.1 Create `docker/development/` directory
-- [ ] 0.5.2 Create `docker/development/Dockerfile.web` for Next.js dev
-- [ ] 0.5.3 Create `docker/development/Dockerfile.api` for FastAPI dev
-- [ ] 0.5.4 Create `docker/compose/docker-compose.dev.yml` with all services
-- [ ] 0.5.5 Configure PostgreSQL service with volume persistence
-- [ ] 0.5.6 Configure Redis service with volume persistence
-- [ ] 0.5.7 Configure hot-reload volumes for web and api
-- [ ] 0.5.8 Create `docker/compose/.env.example` for Docker secrets
-- [ ] 0.5.9 Test `docker compose up` starts all services successfully
-- [ ] 0.5.10 Verify hot-reload works for both frontend and backend
+- [x] 0.5.1 Create `docker/development/` directory
+- [x] 0.5.2 Create `docker/development/Dockerfile.web` for Next.js dev
+- [x] 0.5.3 Create `docker/development/Dockerfile.api` for FastAPI dev
+- [x] 0.5.4 Create `docker/compose/docker-compose.dev.yml` with all services
+- [x] 0.5.5 Configure PostgreSQL service with volume persistence
+- [x] 0.5.6 Configure Redis service with volume persistence
+- [x] 0.5.7 Configure hot-reload volumes for web and api
+- [x] 0.5.8 Create `docker/compose/.env.example` for Docker secrets
+- [x] 0.5.9 Test `docker compose up` starts all services successfully
+- [x] 0.5.10 Verify hot-reload works for both frontend and backend
 
 ### 0.6 CI/CD Pipeline
-- [ ] 0.6.1 Create `.github/workflows/ci.yml`
-- [ ] 0.6.2 Add job: Install dependencies (pnpm + pip)
-- [ ] 0.6.3 Add job: Lint frontend (ESLint)
-- [ ] 0.6.4 Add job: Lint backend (Ruff)
-- [ ] 0.6.5 Add job: Type check frontend (tsc --noEmit)
-- [ ] 0.6.6 Add job: Type check backend (pyrefly check)
-- [ ] 0.6.7 Add job: Test frontend (vitest)
-- [ ] 0.6.8 Add job: Test backend (pytest)
-- [ ] 0.6.9 Add job: Build frontend (next build)
-- [ ] 0.6.10 Configure caching for pnpm and pip
+- [x] 0.6.1 Create `.github/workflows/admin-panel-ci.yml`
+- [x] 0.6.2 Add job: Install dependencies (pnpm + pip)
+- [x] 0.6.3 Add job: Lint frontend (ESLint)
+- [x] 0.6.4 Add job: Lint backend (Ruff)
+- [x] 0.6.5 Add job: Type check frontend (tsc --noEmit)
+- [x] 0.6.6 Add job: Type check backend (mypy)
+- [x] 0.6.7 Add job: Test frontend (vitest)
+- [x] 0.6.8 Add job: Test backend (pytest)
+- [x] 0.6.9 Add job: Build frontend (next build)
+- [x] 0.6.10 Configure caching for pnpm and pip
 
 ---
 
@@ -123,158 +123,158 @@
 ### 1.1 Database - Admin User Tables
 > 📖 **Read First**: `docs/admin-panel/02-ARCHITECTURE.md` Section 3.1
 
-- [ ] 1.1.1 Create `apps/api/src/models/__init__.py`
-- [ ] 1.1.2 Create `apps/api/src/models/base.py` with DeclarativeBase
-- [ ] 1.1.3 Create `apps/api/src/models/admin_user.py` with AdminUser model
-- [ ] 1.1.4 Define columns: id (UUID), email, password_hash, full_name, role
-- [ ] 1.1.5 Define columns: is_active, telegram_id, created_at, updated_at, last_login
-- [ ] 1.1.6 Add email unique constraint
-- [ ] 1.1.7 Add telegram_id unique constraint
-- [ ] 1.1.8 Create `apps/api/src/models/admin_session.py` with AdminSession model
-- [ ] 1.1.9 Define columns: id, user_id (FK), refresh_token, ip_address, user_agent
-- [ ] 1.1.10 Define columns: expires_at, created_at
-- [ ] 1.1.11 Add refresh_token unique constraint
-- [ ] 1.1.12 Add foreign key to admin_users with CASCADE delete
+- [x] 1.1.1 Create `apps/api/src/models/__init__.py`
+- [x] 1.1.2 Create `apps/api/src/models/base.py` with DeclarativeBase
+- [x] 1.1.3 Create `apps/api/src/models/admin_user.py` with AdminUser model
+- [x] 1.1.4 Define columns: id (UUID), email, password_hash, full_name, role
+- [x] 1.1.5 Define columns: is_active, telegram_id, created_at, updated_at, last_login
+- [x] 1.1.6 Add email unique constraint
+- [x] 1.1.7 Add telegram_id unique constraint
+- [x] 1.1.8 Create `apps/api/src/models/admin_session.py` with AdminSession model
+- [x] 1.1.9 Define columns: id, user_id (FK), refresh_token, ip_address, user_agent
+- [x] 1.1.10 Define columns: expires_at, created_at
+- [x] 1.1.11 Add refresh_token unique constraint
+- [x] 1.1.12 Add foreign key to admin_users with CASCADE delete
 
 ### 1.2 Database - Connection & Migrations
 > 📖 **Read First**: `docs/admin-panel/03-TECH-STACK.md` Section 3.2
 
-- [ ] 1.2.1 Create `apps/api/src/core/database.py`
-- [ ] 1.2.2 Configure async engine with asyncpg driver
-- [ ] 1.2.3 Configure connection pool (20 connections, 10 overflow)
-- [ ] 1.2.4 Create async session factory
-- [ ] 1.2.5 Create `get_session` dependency for FastAPI
-- [ ] 1.2.6 Create `apps/api/alembic.ini`
-- [ ] 1.2.7 Create `apps/api/alembic/env.py` with async support
-- [ ] 1.2.8 Create `apps/api/alembic/script.py.mako` template
-- [ ] 1.2.9 Run `alembic revision --autogenerate -m "add_admin_users"`
-- [ ] 1.2.10 Verify migration script is correct
-- [ ] 1.2.11 Run `alembic upgrade head` to apply migration
+- [x] 1.2.1 Create `apps/api/src/core/database.py`
+- [x] 1.2.2 Configure async engine with asyncpg driver
+- [x] 1.2.3 Configure connection pool (20 connections, 10 overflow)
+- [x] 1.2.4 Create async session factory
+- [x] 1.2.5 Create `get_session` dependency for FastAPI
+- [x] 1.2.6 Create `apps/api/alembic.ini`
+- [x] 1.2.7 Create `apps/api/alembic/env.py` with async support
+- [x] 1.2.8 Create `apps/api/alembic/script.py.mako` template
+- [x] 1.2.9 Run `alembic revision --autogenerate -m "add_admin_users"`
+- [x] 1.2.10 Verify migration script is correct
+- [x] 1.2.11 Run `alembic upgrade head` to apply migration
 
 ### 1.3 Password Security
 > 📖 **Read First**: `docs/admin-panel/07-SECURITY.md` Section 2.1
 
-- [ ] 1.3.1 Create `apps/api/src/core/security.py`
-- [ ] 1.3.2 Configure passlib CryptContext with argon2
-- [ ] 1.3.3 Set argon2__memory_cost=65536 (64 MiB)
-- [ ] 1.3.4 Set argon2__time_cost=3 (iterations)
-- [ ] 1.3.5 Set argon2__parallelism=4 (threads)
-- [ ] 1.3.6 Create `hash_password(password: str) -> str` function
-- [ ] 1.3.7 Create `verify_password(plain: str, hashed: str) -> bool` function
-- [ ] 1.3.8 Write unit test for password hashing
-- [ ] 1.3.9 Write unit test for password verification
-- [ ] 1.3.10 Verify Argon2id is used (not Argon2i or Argon2d)
+- [x] 1.3.1 Create `apps/api/src/core/security.py`
+- [x] 1.3.2 Configure passlib CryptContext with argon2
+- [x] 1.3.3 Set argon2__memory_cost=65536 (64 MiB)
+- [x] 1.3.4 Set argon2__time_cost=3 (iterations)
+- [x] 1.3.5 Set argon2__parallelism=4 (threads)
+- [x] 1.3.6 Create `hash_password(password: str) -> str` function
+- [x] 1.3.7 Create `verify_password(plain: str, hashed: str) -> bool` function
+- [x] 1.3.8 Write unit test for password hashing
+- [x] 1.3.9 Write unit test for password verification
+- [x] 1.3.10 Verify Argon2id is used (not Argon2i or Argon2d)
 
 ### 1.4 JWT Token Management
 > 📖 **Read First**: `docs/admin-panel/07-SECURITY.md` Section 2.2
 
-- [ ] 1.4.1 Generate ES256 key pair: `openssl ecparam -genkey -name prime256v1 -out jwt-private.pem`
-- [ ] 1.4.2 Extract public key: `openssl ec -in jwt-private.pem -pubout -out jwt-public.pem`
-- [ ] 1.4.3 Add JWT_PRIVATE_KEY_PATH to config
-- [ ] 1.4.4 Add JWT_PUBLIC_KEY_PATH to config
-- [ ] 1.4.5 Create `create_access_token(user_id: str, role: str) -> str` function
-- [ ] 1.4.6 Set access token expiry to 15 minutes
-- [ ] 1.4.7 Include claims: sub, iss, aud, exp, nbf, iat, role, session_id
-- [ ] 1.4.8 Create `create_refresh_token(user_id: str) -> str` function
-- [ ] 1.4.9 Set refresh token expiry to 7 days
-- [ ] 1.4.10 Create `decode_token(token: str) -> dict` function
-- [ ] 1.4.11 Validate algorithm is ES256 only (reject none, HS256)
-- [ ] 1.4.12 Validate issuer and audience claims
-- [ ] 1.4.13 Write unit tests for token creation
-- [ ] 1.4.14 Write unit tests for token validation
-- [ ] 1.4.15 Write unit test for expired token rejection
+- [x] 1.4.1 Generate ES256 key pair: `openssl ecparam -genkey -name prime256v1 -out jwt-private.pem`
+- [x] 1.4.2 Extract public key: `openssl ec -in jwt-private.pem -pubout -out jwt-public.pem`
+- [x] 1.4.3 Add JWT_PRIVATE_KEY_PATH to config
+- [x] 1.4.4 Add JWT_PUBLIC_KEY_PATH to config
+- [x] 1.4.5 Create `create_access_token(user_id: str, role: str) -> str` function
+- [x] 1.4.6 Set access token expiry to 15 minutes
+- [x] 1.4.7 Include claims: sub, iss, aud, exp, nbf, iat, role, session_id
+- [x] 1.4.8 Create `create_refresh_token(user_id: str) -> str` function
+- [x] 1.4.9 Set refresh token expiry to 7 days
+- [x] 1.4.10 Create `decode_token(token: str) -> dict` function
+- [x] 1.4.11 Validate algorithm is ES256 only (reject none, HS256)
+- [x] 1.4.12 Validate issuer and audience claims
+- [x] 1.4.13 Write unit tests for token creation
+- [x] 1.4.14 Write unit tests for token validation
+- [x] 1.4.15 Write unit test for expired token rejection
 
 ### 1.5 Auth Schemas (Pydantic)
 > 📖 **Read First**: `docs/admin-panel/04-API-DESIGN.md` Section 2
 
-- [ ] 1.5.1 Create `apps/api/src/schemas/__init__.py`
-- [ ] 1.5.2 Create `apps/api/src/schemas/base.py` with SuccessResponse, ErrorResponse
-- [ ] 1.5.3 Create `apps/api/src/schemas/auth.py`
-- [ ] 1.5.4 Define `LoginRequest` schema (email: EmailStr, password: str)
-- [ ] 1.5.5 Add password validation: min 12 chars, upper, lower, number
-- [ ] 1.5.6 Define `LoginResponse` schema (access_token, refresh_token, expires_in, user)
-- [ ] 1.5.7 Define `RefreshRequest` schema (refresh_token: str)
-- [ ] 1.5.8 Define `RefreshResponse` schema (access_token, expires_in)
-- [ ] 1.5.9 Define `UserResponse` schema (id, email, full_name, role, created_at, last_login)
-- [ ] 1.5.10 Add `extra = "forbid"` to reject unknown fields
+- [x] 1.5.1 Create `apps/api/src/schemas/__init__.py`
+- [x] 1.5.2 Create `apps/api/src/schemas/base.py` with SuccessResponse, ErrorResponse
+- [x] 1.5.3 Create `apps/api/src/schemas/auth.py`
+- [x] 1.5.4 Define `LoginRequest` schema (email: EmailStr, password: str)
+- [x] 1.5.5 Add password validation: min 12 chars, upper, lower, number
+- [x] 1.5.6 Define `LoginResponse` schema (access_token, refresh_token, expires_in, user)
+- [x] 1.5.7 Define `RefreshRequest` schema (refresh_token: str)
+- [x] 1.5.8 Define `RefreshResponse` schema (access_token, expires_in)
+- [x] 1.5.9 Define `UserResponse` schema (id, email, full_name, role, created_at, last_login)
+- [x] 1.5.10 Add `extra = "forbid"` to reject unknown fields
 
 ### 1.6 Auth Service Layer
-- [ ] 1.6.1 Create `apps/api/src/services/__init__.py`
-- [ ] 1.6.2 Create `apps/api/src/services/auth_service.py`
-- [ ] 1.6.3 Create `authenticate_user(email: str, password: str) -> AdminUser | None`
-- [ ] 1.6.4 Query user by email
-- [ ] 1.6.5 Verify password with Argon2id
-- [ ] 1.6.6 Update last_login timestamp on success
-- [ ] 1.6.7 Create `create_session(user_id: str, ip: str, user_agent: str) -> AdminSession`
-- [ ] 1.6.8 Store refresh token hash in database
-- [ ] 1.6.9 Create `revoke_session(refresh_token: str) -> bool`
-- [ ] 1.6.10 Create `refresh_session(refresh_token: str) -> tuple[str, str]`
-- [ ] 1.6.11 Implement token rotation (invalidate old, create new)
-- [ ] 1.6.12 Detect token reuse (security: revoke all user sessions)
+- [x] 1.6.1 Create `apps/api/src/services/__init__.py`
+- [x] 1.6.2 Create `apps/api/src/services/auth_service.py`
+- [x] 1.6.3 Create `authenticate_user(email: str, password: str) -> AdminUser | None`
+- [x] 1.6.4 Query user by email
+- [x] 1.6.5 Verify password with Argon2id
+- [x] 1.6.6 Update last_login timestamp on success
+- [x] 1.6.7 Create `create_session(user_id: str, ip: str, user_agent: str) -> AdminSession`
+- [x] 1.6.8 Store refresh token hash in database
+- [x] 1.6.9 Create `revoke_session(refresh_token: str) -> bool`
+- [x] 1.6.10 Create `refresh_session(refresh_token: str) -> tuple[str, str]`
+- [x] 1.6.11 Implement token rotation (invalidate old, create new)
+- [x] 1.6.12 Detect token reuse (security: revoke all user sessions)
 
 ### 1.7 Auth API Endpoints
 > 📖 **Read First**: `docs/admin-panel/04-API-DESIGN.md` Section 2
 
-- [ ] 1.7.1 Create `apps/api/src/api/__init__.py`
-- [ ] 1.7.2 Create `apps/api/src/api/v1/__init__.py`
-- [ ] 1.7.3 Create `apps/api/src/api/v1/router.py` (main v1 router)
-- [ ] 1.7.4 Create `apps/api/src/api/v1/endpoints/__init__.py`
-- [ ] 1.7.5 Create `apps/api/src/api/v1/endpoints/auth.py`
-- [ ] 1.7.6 Implement `POST /auth/login` endpoint
-- [ ] 1.7.7 Return JWT tokens on success
-- [ ] 1.7.8 Return 401 on invalid credentials
-- [ ] 1.7.9 Implement `POST /auth/refresh` endpoint
-- [ ] 1.7.10 Validate refresh token
-- [ ] 1.7.11 Return new access + refresh tokens
-- [ ] 1.7.12 Implement `POST /auth/logout` endpoint
-- [ ] 1.7.13 Revoke session in database
-- [ ] 1.7.14 Return 204 No Content
-- [ ] 1.7.15 Implement `GET /auth/me` endpoint
-- [ ] 1.7.16 Return current user info
-- [ ] 1.7.17 Register auth router in main v1 router
+- [x] 1.7.1 Create `apps/api/src/api/__init__.py`
+- [x] 1.7.2 Create `apps/api/src/api/v1/__init__.py`
+- [x] 1.7.3 Create `apps/api/src/api/v1/router.py` (main v1 router)
+- [x] 1.7.4 Create `apps/api/src/api/v1/endpoints/__init__.py`
+- [x] 1.7.5 Create `apps/api/src/api/v1/endpoints/auth.py`
+- [x] 1.7.6 Implement `POST /auth/login` endpoint
+- [x] 1.7.7 Return JWT tokens on success
+- [x] 1.7.8 Return 401 on invalid credentials
+- [x] 1.7.9 Implement `POST /auth/refresh` endpoint
+- [x] 1.7.10 Validate refresh token
+- [x] 1.7.11 Return new access + refresh tokens
+- [x] 1.7.12 Implement `POST /auth/logout` endpoint
+- [x] 1.7.13 Revoke session in database
+- [x] 1.7.14 Return 204 No Content
+- [x] 1.7.15 Implement `GET /auth/me` endpoint
+- [x] 1.7.16 Return current user info
+- [x] 1.7.17 Register auth router in main v1 router
 
 ### 1.8 Auth Middleware & Dependencies
 > 📖 **Read First**: `docs/admin-panel/07-SECURITY.md` Section 2.2
 
-- [ ] 1.8.1 Create `apps/api/src/api/v1/dependencies/__init__.py`
-- [ ] 1.8.2 Create `apps/api/src/api/v1/dependencies/auth.py`
-- [ ] 1.8.3 Create `get_current_user` dependency
-- [ ] 1.8.4 Extract Bearer token from Authorization header
-- [ ] 1.8.5 Decode and validate JWT
-- [ ] 1.8.6 Check session is not revoked
-- [ ] 1.8.7 Return user payload
-- [ ] 1.8.8 Raise 401 if token invalid/expired
-- [ ] 1.8.9 Create `get_current_active_user` dependency
-- [ ] 1.8.10 Check user.is_active == True
-- [ ] 1.8.11 Raise 403 if user disabled
+- [x] 1.8.1 Create `apps/api/src/api/v1/dependencies/__init__.py`
+- [x] 1.8.2 Create `apps/api/src/api/v1/dependencies/auth.py`
+- [x] 1.8.3 Create `get_current_user` dependency
+- [x] 1.8.4 Extract Bearer token from Authorization header
+- [x] 1.8.5 Decode and validate JWT
+- [x] 1.8.6 Check session is not revoked
+- [x] 1.8.7 Return user payload
+- [x] 1.8.8 Raise 401 if token invalid/expired
+- [x] 1.8.9 Create `get_current_active_user` dependency
+- [x] 1.8.10 Check user.is_active == True
+- [x] 1.8.11 Raise 403 if user disabled
 
 ### 1.9 Rate Limiting for Auth
 > 📖 **Read First**: `docs/admin-panel/07-SECURITY.md` Section 4.1
 
-- [ ] 1.9.1 Install slowapi: `pip install slowapi`
-- [ ] 1.9.2 Create `apps/api/src/middleware/__init__.py`
-- [ ] 1.9.3 Create `apps/api/src/middleware/rate_limit.py`
-- [ ] 1.9.4 Configure Redis-backed rate limiter
-- [ ] 1.9.5 Set login endpoint limit: 5 requests per 15 minutes
-- [ ] 1.9.6 Set refresh endpoint limit: 10 requests per hour
-- [ ] 1.9.7 Apply rate limit decorators to auth endpoints
-- [ ] 1.9.8 Add X-RateLimit-* response headers
-- [ ] 1.9.9 Return 429 with Retry-After header when exceeded
+- [x] 1.9.1 Install slowapi: `pip install slowapi`
+- [x] 1.9.2 Create `apps/api/src/middleware/__init__.py`
+- [x] 1.9.3 Create `apps/api/src/middleware/rate_limit.py`
+- [x] 1.9.4 Configure Redis-backed rate limiter
+- [x] 1.9.5 Set login endpoint limit: 5 requests per 15 minutes
+- [x] 1.9.6 Set refresh endpoint limit: 10 requests per hour
+- [x] 1.9.7 Apply rate limit decorators to auth endpoints
+- [x] 1.9.8 Add X-RateLimit-* response headers
+- [x] 1.9.9 Return 429 with Retry-After header when exceeded
 
 ### 1.10 Auth Integration Tests
-- [ ] 1.10.1 Create `apps/api/tests/__init__.py`
-- [ ] 1.10.2 Create `apps/api/tests/conftest.py` with test fixtures
-- [ ] 1.10.3 Create test database fixture
-- [ ] 1.10.4 Create test client fixture
-- [ ] 1.10.5 Create `apps/api/tests/integration/test_auth.py`
-- [ ] 1.10.6 Test: Login with valid credentials returns tokens
-- [ ] 1.10.7 Test: Login with invalid email returns 401
-- [ ] 1.10.8 Test: Login with wrong password returns 401
-- [ ] 1.10.9 Test: Refresh with valid token returns new tokens
-- [ ] 1.10.10 Test: Refresh with expired token returns 401
-- [ ] 1.10.11 Test: Logout invalidates session
-- [ ] 1.10.12 Test: /me returns current user
-- [ ] 1.10.13 Test: Rate limiting blocks excessive login attempts
+- [x] 1.10.1 Create `apps/api/tests/__init__.py`
+- [x] 1.10.2 Create `apps/api/tests/conftest.py` with test fixtures
+- [x] 1.10.3 Create test database fixture
+- [x] 1.10.4 Create test client fixture
+- [x] 1.10.5 Create `apps/api/tests/integration/test_auth.py`
+- [x] 1.10.6 Test: Login with valid credentials returns tokens
+- [x] 1.10.7 Test: Login with invalid email returns 401
+- [x] 1.10.8 Test: Login with wrong password returns 401
+- [x] 1.10.9 Test: Refresh with valid token returns new tokens
+- [x] 1.10.10 Test: Refresh with expired token returns 401
+- [x] 1.10.11 Test: Logout invalidates session
+- [x] 1.10.12 Test: /me returns current user
+- [x] 1.10.13 Test: Rate limiting blocks excessive login attempts
 
 ---
 

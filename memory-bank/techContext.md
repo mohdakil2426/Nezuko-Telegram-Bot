@@ -15,24 +15,31 @@ Nezuko is optimized for Python 3.13+ and leverages a modern, async-first stack:
     *   `Structlog` for high-performance structured JSON logging.
 *   **Verification**: Custom `AIORateLimiter` capped at 25 requests/second.
 
-### Admin Panel (Planned)
-Full-stack web application for bot management:
+### Admin Panel (Phase 0 Complete ✅)
+Full-stack web application for bot management - **Foundation Implemented**:
 
-#### Frontend Stack (Next.js 16)
+**Phase 0 Status**: All 56 tasks complete (2026-01-24)
+- Monorepo structure with Turborepo + pnpm
+- Next.js 16 frontend with Turbopack (default)
+- FastAPI backend with async SQLAlchemy 2.0
+- Docker development environment with hot-reload
+- GitHub Actions CI/CD pipeline
+- 54 files created across apps/web, apps/api, packages/, docker/
+
+#### Frontend Stack (Next.js 16) - ✅ Implemented
 | Technology     | Version | Purpose                                 |
 | -------------- | ------- | --------------------------------------- |
-| Next.js        | 16.1    | React SSR framework (Turbopack default) |
+| Next.js        | 16.1.4  | React SSR framework (Turbopack default) |
 | React          | 19.2.3  | UI components                           |
 | TypeScript     | 5.9.3   | Type safety                             |
-| Tailwind CSS   | 4.1.18  | Utility-first styling                   |
+| Tailwind CSS   | 4.1.18  | Utility-first styling (CSS 4)           |
 | shadcn/ui      | 3.7.0   | Component library (Radix primitives)    |
-| TanStack Query | 5.90    | Server state management                 |
-| Zustand        | 5.0     | Client state management                 |
-| Motion         | 12.0    | Animations (ex-Framer Motion)           |
-| Recharts       | 3.7     | Data visualization                      |
-| Zod            | 4.0     | Runtime validation                      |
+| TanStack Query | 5.90.20 | Server state management                 |
+| Zustand        | 5.0.10  | Client state management                 |
+| Recharts       | 3.7.0   | Data visualization                      |
+| Zod            | 4.3.6   | Runtime validation                      |
 
-#### Backend Stack (FastAPI)
+#### Backend Stack (FastAPI) - ✅ Implemented
 | Technology      | Version | Purpose                     |
 | --------------- | ------- | --------------------------- |
 | FastAPI         | 0.124.4 | Async REST API framework    |
@@ -45,14 +52,15 @@ Full-stack web application for bot management:
 | Structlog       | 25.1+   | Structured logging          |
 | Uvicorn         | 0.40.0  | ASGI server                 |
 
-#### Infrastructure
+#### Infrastructure - ✅ Implemented
 | Technology | Version | Purpose                  |
 | ---------- | ------- | ------------------------ |
 | PostgreSQL | 18      | Primary database         |
 | Redis      | 8       | Cache & sessions         |
 | Docker     | 27+     | Containerization         |
 | Caddy      | 2.10.2  | Reverse proxy (auto TLS) |
-| Turborepo  | 2.7     | Monorepo orchestration   |
+| Turborepo  | 2.7.0   | Monorepo orchestration   |
+| pnpm       | 9.15.0  | Package management       |
 
 ## Application Structure
 

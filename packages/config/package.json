@@ -1,0 +1,10 @@
+{
+    "name": "@nezuko/config",
+    "version": "0.1.0",
+    "private": true,
+    "main": "./eslint/base.js",
+    "files": [
+        "eslint",
+        "typescript"
+    ]
+}

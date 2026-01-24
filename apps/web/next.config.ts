@@ -1,0 +1,40 @@
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  // Enable Turbopack for faster development (default in Next.js 16)
+  turbo: {
+    // Turbopack is now default, no special config needed
+  },
+
+  // React compiler (experimental in Next.js 16)
+  experimental: {
+    reactCompiler: true,
+  },
+
+  // Output configuration
+  output: "standalone",
+
+  // Environment variables
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1",
+    NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080/ws",
+  },
+
+  // Image optimization
+  images: {
+    domains: ["localhost"],
+  },
+
+  // Redirects
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/dashboard",
+        permanent: false,
+      },
+    ];
+  },
+};
+
+export default nextConfig;

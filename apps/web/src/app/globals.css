@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/* Tailwind CSS 4 theme configuration using @theme directive */
+@theme {
+  /* Primary colors - Purple/Indigo palette (oklch for P3 wide gamut) */
+  --color-primary-50: oklch(0.97 0.02 265);
+  --color-primary-100: oklch(0.94 0.05 265);
+  --color-primary-200: oklch(0.89 0.10 265);
+  --color-primary-300: oklch(0.81 0.15 265);
+  --color-primary-400: oklch(0.68 0.20 265);
+  --color-primary-500: oklch(0.55 0.25 265);
+  --color-primary-600: oklch(0.45 0.22 265);
+  --color-primary-700: oklch(0.38 0.18 265);
+  --color-primary-800: oklch(0.32 0.14 265);
+  --color-primary-900: oklch(0.27 0.10 265);
+  --color-primary-950: oklch(0.18 0.06 265);
+
+  /* Semantic colors */
+  --color-success: oklch(0.65 0.20 145);
+  --color-warning: oklch(0.75 0.18 70);
+  --color-error: oklch(0.60 0.25 25);
+  --color-info: oklch(0.60 0.20 250);
+
+  /* Background colors for dark mode */
+  --color-background: oklch(0.10 0.01 265);
+  --color-surface: oklch(0.15 0.01 265);
+  --color-surface-hover: oklch(0.18 0.01 265);
+
+  /* Text colors */
+  --color-text-primary: oklch(0.95 0.01 265);
+  --color-text-secondary: oklch(0.70 0.01 265);
+  --color-text-tertiary: oklch(0.50 0.01 265);
+
+  /* Border colors */
+  --color-border: oklch(0.25 0.01 265);
+  --color-border-hover: oklch(0.35 0.02 265);
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* Spacing (already in Tailwind 4, but can customize) */
+  /* Shadows (can add custom shadows here) */
+}
+
+/* Base layer */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Utilities layer */
+@layer utilities {
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom glassmorphism effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
