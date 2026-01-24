@@ -15,29 +15,30 @@ Nezuko is optimized for Python 3.13+ and leverages a modern, async-first stack:
     *   `Structlog` for high-performance structured JSON logging.
 *   **Verification**: Custom `AIORateLimiter` capped at 25 requests/second.
 
-### Admin Panel (Phase 0 Complete ✅)
-Full-stack web application for bot management - **Foundation Implemented**:
+### Admin Panel (Phase 4 Complete ✅)
+Full-stack web application for bot management - **Foundation & Features Implemented**:
 
-**Phase 0 Status**: All 56 tasks complete (2026-01-24)
-- Monorepo structure with Turborepo + pnpm
-- Next.js 16 frontend with Turbopack (default)
-- FastAPI backend with async SQLAlchemy 2.0
-- Docker development environment with hot-reload
-- GitHub Actions CI/CD pipeline
-- 54 files created across apps/web, apps/api, packages/, docker/
+**Implemented Phases Status**:
+- ✅ Phase 0: Foundation (Monorepo, Docker, CI/CD)
+- ✅ Phase 1: Backend Authentication
+- ✅ Phase 2: Frontend Auth & Layout
+- ✅ Phase 3: Dashboard Stats
+- ✅ Phase 4: Groups Management
 
 #### Frontend Stack (Next.js 16) - ✅ Implemented
-| Technology     | Version | Purpose                                 |
-| -------------- | ------- | --------------------------------------- |
-| Next.js        | 16.1.4  | React SSR framework (Turbopack default) |
-| React          | 19.2.3  | UI components                           |
-| TypeScript     | 5.9.3   | Type safety                             |
-| Tailwind CSS   | 4.1.18  | Utility-first styling (CSS 4)           |
-| shadcn/ui      | 3.7.0   | Component library (Radix primitives)    |
-| TanStack Query | 5.90.20 | Server state management                 |
-| Zustand        | 5.0.10  | Client state management                 |
-| Recharts       | 3.7.0   | Data visualization                      |
-| Zod            | 4.3.6   | Runtime validation                      |
+| Technology      | Version | Purpose                                 |
+| --------------- | ------- | --------------------------------------- |
+| Next.js         | 16.1.4  | React SSR framework (Turbopack default) |
+| React           | 19.2.3  | UI components                           |
+| TypeScript      | 5.9.3   | Type safety                             |
+| Tailwind CSS    | 4.1.18  | Utility-first styling (CSS 4)           |
+| shadcn/ui       | 3.7.0   | Component library (Radix primitives)    |
+| TanStack Query  | 5.90.20 | Server state management                 |
+| TanStack Table  | 8.21.0+ | Headless data tables (sorting/paging)   |
+| Zustand         | 5.0.10  | Client state management                 |
+| Recharts        | 3.7.0   | Data visualization                      |
+| Zod             | 4.3.6   | Runtime validation                      |
+| react-hook-form | 7.x     | Form management                         |
 
 #### Backend Stack (FastAPI) - ✅ Implemented
 | Technology      | Version | Purpose                     |
@@ -74,12 +75,12 @@ bot/
 └── utils/         # Cross-cutting concerns (Metrics, Health, Logging)
 ```
 
-### Admin Panel Structure (Planned)
+### Admin Panel Structure
 ```
 apps/
 ├── web/src/       # Next.js 16 frontend
 │   ├── app/       # App Router (route groups)
-│   ├── components/# UI components (shadcn/ui)
+│   ├── components/# UI components (shadcn/ui, tables, forms)
 │   ├── lib/       # Hooks, utils, API client
 │   ├── stores/    # Zustand stores
 │   └── types/     # TypeScript definitions

@@ -1,62 +1,43 @@
 # Active Context: Nezuko - The Ultimate All-In-One Bot
 
 ## Current Status
-Nezuko **v1.0.0** is officially **Release Ready**. The core bot engine is fully stabilized, and the **Admin Panel Phase 0: Foundation** is now **COMPLETE** ✅.
+Nezuko **v1.0.0** is officially **Release Ready**. The core bot engine is fully stabilized.
+The Admin Panel implementation is progressing rapidly:
+- **Phase 0 (Foundation)**: ✅ COMPLETE
+- **Phase 1 (Backend Auth)**: ✅ COMPLETE
+- **Phase 2 (Frontend Auth & Layout)**: ✅ COMPLETE
+- **Phase 3 (Dashboard Page)**: ✅ COMPLETE
+- **Phase 4 (Groups CRUD)**: ✅ COMPLETE
 
-## Recent Session Updates (2026-01-24)
+## Recent Session Updates (2026-01-25)
 
-### 🎉 Admin Panel Phase 1: Authentication System Complete ✅
-**All tasks for Phase 1 completed** - Secure JWT Authentication foundation:
+### 🎉 Admin Panel Phase 4: Groups CRUD Complete ✅
+**All tasks for Phase 4 completed** - Full Groups Management Feature:
+
+**Backend Implementation:**
+1.  ✅ **Schemas**: `Group`, `GroupDetail`, `GroupUpdateRequest`, `ChannelLinkRequest` Pydantic models.
+2.  ✅ **Service Layer**: `get_groups` (paginated/filtered), `get_group`, `update_group`, `link/unlink_channel`.
+3.  ✅ **API Endpoints**: Full REST API for Groups CRUD (`/api/v1/groups`).
+
+**Frontend Implementation:**
+1.  ✅ **Data Table**: Reusable `DataTable` component with filtering, sorting, and pagination.
+2.  ✅ **API Integration**: `groupsApi` client and fully typed `useGroups` React Query hooks.
+3.  ✅ **Groups List**: `/groups` page with search, status filter, and customized columns.
+4.  ✅ **Group Details**: `/groups/[id]` page displaying metadata, stats, and linked channels.
+5.  ✅ **Edit Settings**: Dialog-based `GroupSettingsForm` using Zod validation and `react-hook-form`.
+6.  ✅ **Link Management**: Unlink channel functionality implemented (Link Channel pending Phase 5 picker).
+
+### 🎉 Admin Panel Phase 3: Dashboard Page Complete ✅
+**All tasks for Phase 3 completed** - Dashboard Metrics & Activity:
 
 **Completed Sections:**
-1. ✅ **Database Models (1.1, 1.2)** - `AdminUser` & `AdminSession` (SQLAlchemy 2.0 Async)
-2. ✅ **Security Core (1.3, 1.4)** - Argon2id Password Hashing + JWT ES256 (Asymmetric)
-3. ✅ **Auth API (1.5, 1.6, 1.7)** - Login/Refresh/Logout endpoints with Pydantic V2 schemas
-4. ✅ **Protection (1.8, 1.9)** - `rate_limit` middleware & `get_current_user` dependency
-5. ✅ **Testing (1.10)** - Integration tests for auth flow (sqlite in-memory)
+1.  ✅ **Backend**: Dashboard stats endpoints (`/stats`, `/activity`) with complex aggregation queries.
+2.  ✅ **Frontend API**: `dashboardApi` client and `useDashboardStats` hooks.
+3.  ✅ **UI Components**: `StatsCard` with trends, `ActivityFeed`, and responsive Grid layout.
+4.  ✅ **Integration**: Full end-to-end data flow from DB to UI.
 
-**Phase 0 Status**: All 56 tasks complete (Monorepo Foundation).
-**Phase 1 Status**: All 29 tasks complete (Authentication System).
-
-**Completed Sections:**
-1. ✅ **Project Initialization (0.1)** - Turborepo + pnpm workspaces configured
-2. ✅ **Next.js Frontend (0.2)** - Next.js 16 with Turbopack, Tailwind CSS 4, shadcn/ui 3.7
-3. ✅ **FastAPI Backend (0.3)** - FastAPI 0.124 with Pydantic V2, async SQLAlchemy 2.0
-4. ✅ **Shared Packages (0.4)** - Type-safe shared types and configurations
-5. ✅ **Docker Development (0.5)** - Hot-reload development environment
-6. ✅ **CI/CD Pipeline (0.6)** - GitHub Actions with automated testing
-
-**Infrastructure Created:**
-- 54 new files across monorepo structure
-- `apps/web/` - Next.js 16 frontend with App Router
-- `apps/api/` - FastAPI async backend
-- `packages/types/` - Shared TypeScript types
-- `packages/config/` - Shared ESLint/TS configs
-- `docker/` - Development containers with hot-reload
-- `.github/workflows/` - Automated CI/CD pipeline
-
-**Technology Stack Implemented:**
-- **Frontend**: Next.js 16.1.4, React 19.2.3, Tailwind CSS 4.1.18, shadcn/ui 3.7.0
-- **Backend**: FastAPI 0.124.4, Python 3.13+, SQLAlchemy 2.0.46, Pydantic 2.12.5
-- **Infrastructure**: Turborepo 2.7.0, pnpm 9.15.0, PostgreSQL 18, Redis 8
-- **Tooling**: Ruff, ESLint, TypeScript 5.9.3, pytest, vitest
-
-### Admin Panel Documentation Complete ✅
-Comprehensive planning documentation for the web-based Admin Panel:
-
-**Planning Documents (13 files, ~390KB):**
-- `02a-FOLDER-STRUCTURE.md` (33KB) - Production folder structure & naming conventions
-- `04a-ERROR-HANDLING.md` (50KB) - Error handling & logging framework (RFC 9457)
-- `07a-SECURITY-ADVANCED.md` (39KB) - Infrastructure security & Zero Trust
-- `07-SECURITY.md` (39KB) - Complete rewrite with 2026 security standards
-- All other docs synchronized and updated
-
-### Documentation Quality Rating
-- **Overall Score**: 9.4/10
-- **Total Planning Docs**: 13 files
-- **Total Size**: ~390KB of production-ready documentation
-- **Phase 0 Implementation**: ✅ Complete
-- **Phase 1 Implementation**: ✅ Complete
+### 🎉 Admin Panel Phase 2: Frontend Auth & Layout Complete ✅
+**All tasks for Phase 2 completed** - Full Frontend Foundation.
 
 ## Key Release Features
 *   **Multi-Tenant Setup**: `/protect @YourChannel` allows any admin to activate protection instantly.
@@ -78,10 +59,9 @@ Comprehensive planning documentation for the web-based Admin Panel:
 *   **Logging**: Structlog with JSON output in production
 *   **Folder Structure**: `apps/web/src/` and `apps/api/src/` using Clean Architecture
 *   **Monorepo**: Turborepo with pnpm workspaces
+*   **UI Components**: shadcn/ui + simple custom abstractions (e.g., `DataTable`)
 
 ## Next Steps
-1.  **Admin Panel Phase 2**: Frontend Authentication & Dashboard Layout
-2.  **Frontend Auth Flow**: Zustand store, Login page, AuthGuard (Next.js middleware)
-3.  **Dashboard UI**: Sidebar, Header, Stats Cards, Activity Feed (shadcn/ui)
-4.  **Bot Production Deployment**: Launch v1.0.0 to production (optional, can proceed in parallel)
-
+1.  **Admin Panel Phase 5**: Channels CRUD (List, Details, Add Channel, Link Picker)
+2.  **Admin Panel Phase 6**: Configuration Management (Global Config)
+3.  **Bot Production Deployment**: Launch v1.0.0 to production (optional, can proceed in parallel)

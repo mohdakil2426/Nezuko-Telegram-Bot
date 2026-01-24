@@ -289,103 +289,116 @@
 ### 2.1 Base Layout Components
 > 📖 **Read First**: `docs/admin-panel/05-UI-WIREFRAMES.md`
 
-- [ ] 2.1.1 Create `apps/web/src/components/layout/sidebar.tsx`
-- [ ] 2.1.2 Create sidebar navigation items array
-- [ ] 2.1.3 Add Dashboard, Groups, Channels, Config, Logs, Database, Analytics links
-- [ ] 2.1.4 Add active state styling
-- [ ] 2.1.5 Add collapsed/expanded toggle
-- [ ] 2.1.6 Create `apps/web/src/components/layout/header.tsx`
-- [ ] 2.1.7 Add user avatar dropdown
-- [ ] 2.1.8 Add theme toggle (dark/light)
-- [ ] 2.1.9 Add logout button
-- [ ] 2.1.10 Create `apps/web/src/components/layout/footer.tsx`
-- [ ] 2.1.11 Add version and copyright
+- [x] 2.1.1 Create `apps/web/src/components/layout/sidebar.tsx`
+- [x] 2.1.2 Create sidebar navigation items array
+- [x] 2.1.3 Add Dashboard, Groups, Channels, Config, Logs, Database, Analytics links
+- [x] 2.1.4 Add active state styling
+- [x] 2.1.5 Add collapsed/expanded toggle
+- [x] 2.1.6 Create `apps/web/src/components/layout/header.tsx`
+- [x] 2.1.7 Add user avatar dropdown
+- [x] 2.1.8 Add theme toggle (dark/light)
+- [x] 2.1.9 Add logout button
+- [x] 2.1.10 Create `apps/web/src/components/layout/footer.tsx`
+- [x] 2.1.11 Add version and copyright
 
 ### 2.2 shadcn/ui Component Installation
 > 📖 **Read First**: `docs/admin-panel/03-TECH-STACK.md` Section 2.2
 
-- [ ] 2.2.1 Install button: `npx shadcn add button`
-- [ ] 2.2.2 Install card: `npx shadcn add card`
-- [ ] 2.2.3 Install input: `npx shadcn add input`
-- [ ] 2.2.4 Install label: `npx shadcn add label`
-- [ ] 2.2.5 Install form: `npx shadcn add form`
-- [ ] 2.2.6 Install toast: `npx shadcn add toast`
-- [ ] 2.2.7 Install dropdown-menu: `npx shadcn add dropdown-menu`
-- [ ] 2.2.8 Install avatar: `npx shadcn add avatar`
-- [ ] 2.2.9 Install table: `npx shadcn add table`
-- [ ] 2.2.10 Install dialog: `npx shadcn add dialog`
-- [ ] 2.2.11 Install sheet: `npx shadcn add sheet`
-- [ ] 2.2.12 Install skeleton: `npx shadcn add skeleton`
+- [x] 2.2.1 Install button: `npx shadcn add button`
+- [x] 2.2.2 Install card: `npx shadcn add card`
+- [x] 2.2.3 Install input: `npx shadcn add input`
+- [x] 2.2.4 Install label: `npx shadcn add label`
+- [x] 2.2.5 Install form: `npx shadcn add form`
+- [x] 2.2.6 Install toast: `npx shadcn add toast`
+- [x] 2.2.7 Install dropdown-menu: `npx shadcn add dropdown-menu`
+- [x] 2.2.8 Install avatar: `npx shadcn add avatar`
+- [x] 2.2.9 Install table: `npx shadcn add table`
+- [x] 2.2.10 Install dialog: `npx shadcn add dialog`
+- [x] 2.2.11 Install sheet: `npx shadcn add sheet`
+- [x] 2.2.12 Install skeleton: `npx shadcn add skeleton`
+- [x] 2.2.1 Install button: `npx shadcn add button`
+- [x] 2.2.2 Install card: `npx shadcn add card`
+- [x] 2.2.3 Install input: `npx shadcn add input`
+- [x] 2.2.4 Install label: `npx shadcn add label`
+- [x] 2.2.5 Install form: `npx shadcn add form`
+- [x] 2.2.6 Install toast: `npx shadcn add toast`
+- [x] 2.2.7 Install dropdown-menu: `npx shadcn add dropdown-menu`
+- [x] 2.2.8 Install avatar: `npx shadcn add avatar`
+- [x] 2.2.9 Install table: `npx shadcn add table`
+- [x] 2.2.10 Install dialog: `npx shadcn add dialog`
+- [x] 2.2.11 Install sheet: `npx shadcn add sheet`
+- [x] 2.2.12 Install skeleton: `npx shadcn add skeleton`
 
 ### 2.3 Auth Store (Zustand)
 > 📖 **Read First**: `docs/admin-panel/02a-FOLDER-STRUCTURE.md` Section 2
 
-- [ ] 2.3.1 Create `apps/web/src/stores/auth-store.ts`
-- [ ] 2.3.2 Define AuthState interface: user, accessToken, isAuthenticated, isLoading
-- [ ] 2.3.3 Create `login(email, password)` action
-- [ ] 2.3.4 Create `logout()` action
-- [ ] 2.3.5 Create `refreshToken()` action
-- [ ] 2.3.6 Store tokens in httpOnly cookie (via API response)
-- [ ] 2.3.7 Create `apps/web/src/stores/ui-store.ts`
-- [ ] 2.3.8 Define UIState: sidebarCollapsed, theme
+- [x] 2.1.1 Create `apps/web/src/stores/auth-store.ts` (Zustand)
+- [x] 2.1.2 Define `AuthState`: user, token, isAuthenticated
+- [x] 2.1.3 Implement `persist` middleware for session survival
+- [x] 2.1.4 Create `login` action to set state
+- [x] 2.1.5 Create `logout` action to clear state
+- [x] 2.1.6 Create `api/client.ts` with interceptors
+- [x] 2.1.7 Inject Bearer token from store into requests
+- [x] 2.1.8 Handle 401 Unauthorized (auto-logout/refresh)
+- [x] 2.1.9 Create `AuthProvider` for session verification on mount
+- [x] 2.1.10 Create `useAuth` hook for componentsed, theme
 
 ### 2.4 API Client Setup
 > 📖 **Read First**: `docs/admin-panel/04-API-DESIGN.md` Section 1
 
-- [ ] 2.4.1 Create `apps/web/src/lib/api/client.ts`
-- [ ] 2.4.2 Configure base URL from environment variable
-- [ ] 2.4.3 Add Authorization header interceptor
-- [ ] 2.4.4 Add 401 response interceptor for token refresh
-- [ ] 2.4.5 Create `apps/web/src/lib/api/endpoints/auth.ts`
-- [ ] 2.4.6 Implement `login(email, password)` API call
-- [ ] 2.4.7 Implement `refresh(refreshToken)` API call
-- [ ] 2.4.8 Implement `logout()` API call
-- [ ] 2.4.9 Implement `getMe()` API call
+- [x] 2.4.1 Create `apps/web/src/lib/api/client.ts`
+- [x] 2.4.2 Configure base URL from environment variable
+- [x] 2.4.3 Add Authorization header interceptor
+- [x] 2.4.4 Add 401 response interceptor for token refresh
+- [x] 2.4.5 Create `apps/web/src/lib/api/endpoints/auth.ts`
+- [x] 2.4.6 Implement `login(email, password)` API call
+- [x] 2.4.7 Implement `refresh(refreshToken)` API call
+- [x] 2.4.8 Implement `logout()` API call
+- [x] 2.4.9 Implement `getMe()` API call
 
 ### 2.5 Login Page UI
 > 📖 **Read First**: `docs/admin-panel/05a-PAGE-WIREFRAMES.md`
 
-- [ ] 2.5.1 Create `apps/web/src/app/(auth)/layout.tsx` (minimal layout)
-- [ ] 2.5.2 Create `apps/web/src/app/(auth)/login/page.tsx`
-- [ ] 2.5.3 Create centered card layout
-- [ ] 2.5.4 Add Nezuko logo/branding
-- [ ] 2.5.5 Create `apps/web/src/components/forms/login-form.tsx`
-- [ ] 2.5.6 Add email input with validation
-- [ ] 2.5.7 Add password input with show/hide toggle
-- [ ] 2.5.8 Add "Remember me" checkbox
-- [ ] 2.5.9 Add submit button with loading state
-- [ ] 2.5.10 Add "Forgot password?" link (placeholder)
-- [ ] 2.5.11 Integrate with react-hook-form
-- [ ] 2.5.12 Add zod schema validation
-- [ ] 2.5.13 Connect to auth store login action
-- [ ] 2.5.14 Show error toast on failed login
-- [ ] 2.5.15 Redirect to dashboard on success
+- [x] 2.5.1 Create `apps/web/src/app/(auth)/layout.tsx` (minimal layout)
+- [x] 2.5.2 Create `apps/web/src/app/(auth)/login/page.tsx`
+- [x] 2.5.3 Create centered card layout
+- [x] 2.5.4 Add Nezuko logo/branding
+- [x] 2.5.5 Create `apps/web/src/components/forms/login-form.tsx`
+- [x] 2.5.6 Add email input with validation
+- [x] 2.5.7 Add password input with show/hide toggle
+- [x] 2.5.8 Add "Remember me" checkbox
+- [x] 2.5.9 Add submit button with loading state
+- [x] 2.5.10 Add "Forgot password?" link (placeholder)
+- [x] 2.5.11 Integrate with react-hook-form
+- [x] 2.5.12 Add zod schema validation
+- [x] 2.5.13 Connect to auth store login action
+- [x] 2.5.14 Show error toast on failed login
+- [x] 2.5.15 Redirect to dashboard on success
 
 ### 2.6 Auth Provider & Protection
-- [ ] 2.6.1 Create `apps/web/src/providers/auth-provider.tsx`
-- [ ] 2.6.2 Check auth state on mount
-- [ ] 2.6.3 Auto-refresh token if expired
-- [ ] 2.6.4 Create `apps/web/src/lib/hooks/use-auth.ts`
-- [ ] 2.6.5 Return user, isAuthenticated, login, logout functions
-- [ ] 2.6.6 Create `apps/web/src/app/(dashboard)/layout.tsx`
-- [ ] 2.6.7 Wrap with AuthProvider
-- [ ] 2.6.8 Redirect to /login if not authenticated
-- [ ] 2.6.9 Show loading spinner while checking auth
-- [ ] 2.6.10 Include Sidebar and Header components
+- [x] 2.3.1 Install shadcn/ui components: sidebar, button, card, input
+- [x] 2.3.2 Create `apps/web/src/components/layout/sidebar.tsx`
+- [x] 2.3.3 Implement collapsible navigation menu
+- [x] 2.3.4 Create `apps/web/src/components/layout/header.tsx`
+- [x] 2.3.5 Add user profile dropdown with Logout button
+- [x] 2.3.6 Create `apps/web/src/components/layout/dashboard-layout.tsx`
+- [x] 2.3.7 Setup route groups: `(dashboard)` vs `(auth)`
+- [x] 2.3.8 Add Theme Toggle (Dark/Light mode)
+- [x] 2.3.9 Ensure responsive design (mobile hamburger menu)th
 
 ### 2.7 Theme Provider
-- [ ] 2.7.1 Create `apps/web/src/providers/theme-provider.tsx`
-- [ ] 2.7.2 Use next-themes for dark/light mode
-- [ ] 2.7.3 Persist theme preference in localStorage
-- [ ] 2.7.4 Add system preference detection
-- [ ] 2.7.5 Configure Tailwind dark mode classes
+- [x] 2.7.1 Create `apps/web/src/providers/theme-provider.tsx`
+- [x] 2.7.2 Use next-themes for dark/light mode
+- [x] 2.7.3 Persist theme preference in localStorage
+- [x] 2.7.4 Add system preference detection
+- [x] 2.7.5 Configure Tailwind dark mode classes
 
 ### 2.8 Query Provider (TanStack Query)
-- [ ] 2.8.1 Create `apps/web/src/providers/query-provider.tsx`
-- [ ] 2.8.2 Configure QueryClient with defaults
-- [ ] 2.8.3 Set staleTime to 5 minutes
-- [ ] 2.8.4 Set refetchOnWindowFocus to true
-- [ ] 2.8.5 Add to root layout providers
+- [x] 2.8.1 Create `apps/web/src/providers/query-provider.tsx`
+- [x] 2.8.2 Configure QueryClient with defaults
+- [x] 2.8.3 Set staleTime to 5 minutes
+- [x] 2.8.4 Set refetchOnWindowFocus to true
+- [x] 2.8.5 Add to root layout providers
 
 ---
 
@@ -399,56 +412,56 @@
 ### 3.1 Dashboard API Endpoints
 > 📖 **Read First**: `docs/admin-panel/04-API-DESIGN.md` Section 3
 
-- [ ] 3.1.1 Create `apps/api/src/api/v1/endpoints/dashboard.py`
-- [ ] 3.1.2 Create `apps/api/src/schemas/dashboard.py`
-- [ ] 3.1.3 Define `DashboardStatsResponse` schema
-- [ ] 3.1.4 Implement `GET /dashboard/stats` endpoint
-- [ ] 3.1.5 Query total protected groups count
-- [ ] 3.1.6 Query total enforced channels count
-- [ ] 3.1.7 Calculate verification counts (today, week, month, all_time)
-- [ ] 3.1.8 Get bot uptime from metrics
-- [ ] 3.1.9 Get cache hit rate from Redis stats
-- [ ] 3.1.10 Define `ActivityResponse` schema
-- [ ] 3.1.11 Implement `GET /dashboard/activity` endpoint
-- [ ] 3.1.12 Query recent verification events
-- [ ] 3.1.13 Query recent group protection events
-- [ ] 3.1.14 Limit to 20 most recent
-- [ ] 3.1.15 Register dashboard router
+- [x] 3.1.1 Create `apps/api/src/api/v1/endpoints/dashboard.py`
+- [x] 3.1.2 Create `apps/api/src/schemas/dashboard.py`
+- [x] 3.1.3 Define `DashboardStatsResponse` schema
+- [x] 3.1.4 Implement `GET /dashboard/stats` endpoint
+- [x] 3.1.5 Query total protected groups count
+- [x] 3.1.6 Query total enforced channels count
+- [x] 3.1.7 Calculate verification counts (today, week, month, all_time)
+- [x] 3.1.8 Get bot uptime from metrics
+- [x] 3.1.9 Get cache hit rate from Redis stats
+- [x] 3.1.10 Define `ActivityResponse` schema
+- [x] 3.1.11 Implement `GET /dashboard/activity` endpoint
+- [x] 3.1.12 Query recent verification events
+- [x] 3.1.13 Query recent group protection events
+- [x] 3.1.14 Limit to 20 most recent
+- [x] 3.1.15 Register dashboard router
 
 ### 3.2 Dashboard Stats Cards
 > 📖 **Read First**: `docs/admin-panel/05a-PAGE-WIREFRAMES.md`
 
-- [ ] 3.2.1 Create `apps/web/src/components/dashboard/stats-card.tsx`
-- [ ] 3.2.2 Props: title, value, icon, trend, description
-- [ ] 3.2.3 Add trend indicator (up/down arrow with color)
-- [ ] 3.2.4 Add loading skeleton variant
-- [ ] 3.2.5 Create `apps/web/src/lib/api/endpoints/dashboard.ts`
-- [ ] 3.2.6 Implement `getStats()` API call
-- [ ] 3.2.7 Create `apps/web/src/lib/hooks/use-dashboard-stats.ts`
-- [ ] 3.2.8 Use TanStack Query with 1-minute stale time
+- [x] 3.2.1 Create `apps/web/src/components/dashboard/stats-card.tsx`
+- [x] 3.2.2 Props: title, value, icon, trend, description
+- [x] 3.2.3 Add trend indicator (up/down arrow with color)
+- [x] 3.2.4 Add loading skeleton variant
+- [x] 3.2.5 Create `apps/web/src/lib/api/endpoints/dashboard.ts`
+- [x] 3.2.6 Implement `getStats()` API call
+- [x] 3.2.7 Create `apps/web/src/lib/hooks/use-dashboard-stats.ts`
+- [x] 3.2.8 Use TanStack Query with 1-minute stale time
 
 ### 3.3 Activity Feed Component
-- [ ] 3.3.1 Create `apps/web/src/components/dashboard/activity-feed.tsx`
-- [ ] 3.3.2 Display event type icon
-- [ ] 3.3.3 Display event description
-- [ ] 3.3.4 Display relative timestamp (e.g., "5 minutes ago")
-- [ ] 3.3.5 Add click handler to view details
-- [ ] 3.3.6 Add loading skeleton
-- [ ] 3.3.7 Implement `getActivity()` API call
-- [ ] 3.3.8 Create `use-activity-feed` hook
+- [x] 3.3.1 Create `apps/web/src/components/dashboard/activity-feed.tsx`
+- [x] 3.3.2 Display event type icon
+- [x] 3.3.3 Display event description
+- [x] 3.3.4 Display relative timestamp (e.g., "5 minutes ago")
+- [x] 3.3.5 Add click handler to view details
+- [x] 3.3.6 Add loading skeleton
+- [x] 3.3.7 Implement `getActivity()` API call
+- [x] 3.3.8 Create `use-activity-feed` hook
 
 ### 3.4 Dashboard Page Assembly
-- [ ] 3.4.1 Create `apps/web/src/app/(dashboard)/page.tsx`
-- [ ] 3.4.2 Add page title and welcome message
-- [ ] 3.4.3 Create 4-column stats grid
-- [ ] 3.4.4 Add "Protected Groups" stat card
-- [ ] 3.4.5 Add "Enforced Channels" stat card
-- [ ] 3.4.6 Add "Verifications Today" stat card
-- [ ] 3.4.7 Add "Success Rate" stat card
-- [ ] 3.4.8 Add activity feed in 2-column layout
-- [ ] 3.4.9 Add quick actions panel
-- [ ] 3.4.10 Add loading states for all components
-- [ ] 3.4.11 Add error boundary
+- [x] 3.4.1 Create `apps/web/src/app/(dashboard)/page.tsx`
+- [x] 3.4.2 Add page title and welcome message
+- [x] 3.4.3 Create 4-column stats grid
+- [x] 3.4.4 Add "Protected Groups" stat card
+- [x] 3.4.5 Add "Enforced Channels" stat card
+- [x] 3.4.6 Add "Verifications Today" stat card
+- [x] 3.4.7 Add "Success Rate" stat card
+- [x] 3.4.8 Add activity feed in 2-column layout
+- [x] 3.4.9 Add quick actions panel
+- [x] 3.4.10 Add loading states for all components
+- [x] 3.4.11 Add error boundary
 
 ---
 
@@ -462,67 +475,67 @@
 ### 4.1 Groups API Endpoints
 > 📖 **Read First**: `docs/admin-panel/04-API-DESIGN.md` Section 4
 
-- [ ] 4.1.1 Create `apps/api/src/schemas/group.py`
-- [ ] 4.1.2 Define `GroupListResponse` with pagination
-- [ ] 4.1.3 Define `GroupDetailResponse` with linked channels
-- [ ] 4.1.4 Define `GroupUpdateRequest` schema
-- [ ] 4.1.5 Create `apps/api/src/services/group_service.py`
-- [ ] 4.1.6 Implement `get_groups(page, per_page, search, status)` method
-- [ ] 4.1.7 Implement `get_group(group_id)` method
-- [ ] 4.1.8 Implement `update_group(group_id, data)` method
-- [ ] 4.1.9 Create `apps/api/src/api/v1/endpoints/groups.py`
-- [ ] 4.1.10 Implement `GET /groups` with pagination
-- [ ] 4.1.11 Add search query parameter
-- [ ] 4.1.12 Add status filter (active/inactive/all)
-- [ ] 4.1.13 Add sort parameter
-- [ ] 4.1.14 Implement `GET /groups/{id}` for details
-- [ ] 4.1.15 Implement `PUT /groups/{id}` for updates
-- [ ] 4.1.16 Implement `POST /groups/{id}/channels` for linking
-- [ ] 4.1.17 Implement `DELETE /groups/{id}/channels/{channel_id}` for unlinking
-- [ ] 4.1.18 Register groups router
+- [x] 4.1.1 Create `apps/api/src/schemas/group.py`
+- [x] 4.1.2 Define `GroupListResponse` with pagination
+- [x] 4.1.3 Define `GroupDetailResponse` with linked channels
+- [x] 4.1.4 Define `GroupUpdateRequest` schema
+- [x] 4.1.5 Create `apps/api/src/services/group_service.py`
+- [x] 4.1.6 Implement `get_groups(page, per_page, search, status)` method
+- [x] 4.1.7 Implement `get_group(group_id)` method
+- [x] 4.1.8 Implement `update_group(group_id, data)` method
+- [x] 4.1.9 Create `apps/api/src/api/v1/endpoints/groups.py`
+- [x] 4.1.10 Implement `GET /groups` with pagination
+- [x] 4.1.11 Add search query parameter
+- [x] 4.1.12 Add status filter (active/inactive/all)
+- [x] 4.1.13 Add sort parameter
+- [x] 4.1.14 Implement `GET /groups/{id}` for details
+- [x] 4.1.15 Implement `PUT /groups/{id}` for updates
+- [x] 4.1.16 Implement `POST /groups/{id}/channels` for linking
+- [x] 4.1.17 Implement `DELETE /groups/{id}/channels/{channel_id}` for unlinking
+- [x] 4.1.18 Register groups router
 
 ### 4.2 Groups List Page
 > 📖 **Read First**: `docs/admin-panel/05a-PAGE-WIREFRAMES.md`
 
-- [ ] 4.2.1 Create `apps/web/src/components/tables/data-table.tsx` (generic)
-- [ ] 4.2.2 Add column headers with sort indicators
-- [ ] 4.2.3 Add pagination controls
-- [ ] 4.2.4 Add search input
-- [ ] 4.2.5 Add loading skeleton
-- [ ] 4.2.6 Create `apps/web/src/components/tables/groups-table.tsx`
-- [ ] 4.2.7 Define columns: Name, ID, Members, Channels, Status, Actions
-- [ ] 4.2.8 Add row click handler for navigation
-- [ ] 4.2.9 Add edit/delete action buttons
-- [ ] 4.2.10 Create `apps/web/src/app/(dashboard)/groups/page.tsx`
-- [ ] 4.2.11 Add page header with title
-- [ ] 4.2.12 Add search bar
-- [ ] 4.2.13 Add status filter dropdown
-- [ ] 4.2.14 Integrate GroupsTable component
+- [x] 4.2.1 Create `apps/web/src/components/tables/data-table.tsx` (generic)
+- [x] 4.2.2 Add column headers with sort indicators
+- [x] 4.2.3 Add pagination controls
+- [x] 4.2.4 Add search input
+- [x] 4.2.5 Add loading skeleton
+- [x] 4.2.6 Create `apps/web/src/components/tables/groups-table.tsx`
+- [x] 4.2.7 Define columns: Name, ID, Members, Channels, Status, Actions
+- [x] 4.2.8 Add row click handler for navigation
+- [x] 4.2.9 Add edit/delete action buttons
+- [x] 4.2.10 Create `apps/web/src/app/(dashboard)/groups/page.tsx`
+- [x] 4.2.11 Add page header with title
+- [x] 4.2.12 Add search bar
+- [x] 4.2.13 Add status filter dropdown
+- [x] 4.2.14 Integrate GroupsTable component
 
 ### 4.3 Group Details Page
-- [ ] 4.3.1 Create `apps/web/src/app/(dashboard)/groups/[id]/page.tsx`
-- [ ] 4.3.2 Fetch group details with linked channels
-- [ ] 4.3.3 Display group metadata card
-- [ ] 4.3.4 Display linked channels list
-- [ ] 4.3.5 Add "Link Channel" button
-- [ ] 4.3.6 Add "Unlink" action per channel
-- [ ] 4.3.7 Display verification statistics
-- [ ] 4.3.8 Create `apps/web/src/app/(dashboard)/groups/[id]/not-found.tsx`
-- [ ] 4.3.9 Add loading state with skeleton
-- [ ] 4.3.10 Add error state with retry button
+- [x] 4.3.1 Create `apps/web/src/app/(dashboard)/groups/[id]/page.tsx`
+- [x] 4.3.2 Fetch group details with linked channels
+- [x] 4.3.3 Display group metadata card
+- [x] 4.3.4 Display linked channels list
+- [x] 4.3.5 Add "Link Channel" button
+- [x] 4.3.6 Add "Unlink" action per channel
+- [x] 4.3.7 Display verification statistics
+- [x] 4.3.8 Create `apps/web/src/app/(dashboard)/groups/[id]/not-found.tsx`
+- [x] 4.3.9 Add loading state with skeleton
+- [x] 4.3.10 Add error state with retry button
 
 ### 4.4 Group Settings Form
-- [ ] 4.4.1 Create `apps/web/src/components/forms/group-settings-form.tsx`
-- [ ] 4.4.2 Add is_active toggle switch
-- [ ] 4.4.3 Add welcome_message textarea
-- [ ] 4.4.4 Add restriction_type select (mute/kick)
-- [ ] 4.4.5 Add auto_kick_after_hours input
-- [ ] 4.4.6 Add save button with loading state
-- [ ] 4.4.7 Add cancel button
-- [ ] 4.4.8 Integrate with react-hook-form
-- [ ] 4.4.9 Add zod validation schema
-- [ ] 4.4.10 Show success toast on save
-- [ ] 4.4.11 Show error toast on failure
+- [x] 4.4.1 Create `apps/web/src/components/forms/group-settings-form.tsx`
+- [x] 4.4.2 Add is_active toggle switch
+- [x] 4.4.3 Add welcome_message textarea
+- [x] 4.4.4 Add restriction_type select (mute/kick)
+- [x] 4.4.5 Add auto_kick_after_hours input
+- [x] 4.4.6 Add save button with loading state
+- [x] 4.4.7 Add cancel button
+- [x] 4.4.8 Integrate with react-hook-form
+- [x] 4.4.9 Add zod validation schema
+- [x] 4.4.10 Show success toast on save
+- [x] 4.4.11 Show error toast on failure
 
 ---
 
@@ -729,12 +742,15 @@
 - [ ] 9.1.10 Register analytics router
 
 ### 9.2 Charts Components
-- [ ] 9.2.1 Create `apps/web/src/components/charts/area-chart.tsx`
-- [ ] 9.2.2 Create `apps/web/src/components/charts/bar-chart.tsx`
-- [ ] 9.2.3 Create `apps/web/src/components/charts/line-chart.tsx`
-- [ ] 9.2.4 Add responsive container
-- [ ] 9.2.5 Add tooltip configuration
-- [ ] 9.2.6 Add legend configuration
+- [x] 2.2.1 Create `apps/web/src/app/(auth)/login/page.tsx`
+- [x] 2.2.2 Create `apps/web/src/components/forms/login-form.tsx`
+- [x] 2.2.3 Define `loginSchema` with Zod (email, password)
+- [x] 2.2.4 Implement `react-hook-form` + `zodResolver`
+- [x] 2.2.5 Add toast notifications for success/error
+- [x] 2.2.6 Redirect to dashboard on success
+- [x] 2.2.7 Add `AuthGuard` or `ProtectedLayout` for dashboard routes
+- [x] 2.2.8 Create `apps/web/src/middleware.ts` (optional Next.js middleware)
+- [x] 2.2.9 Test full login flow with backendr
 
 ### 9.3 Analytics Page
 - [ ] 9.3.1 Create `apps/web/src/app/(dashboard)/analytics/page.tsx`

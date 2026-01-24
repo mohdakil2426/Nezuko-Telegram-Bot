@@ -31,7 +31,7 @@
 │  INFRASTRUCTURE                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
 │  │  PostgreSQL 18    │  Redis 8         │  Docker 27+                 │   │
-│  │  Caddy 2.10.2     │  Turborepo 2.7   │  DigitalOcean               │   │
+│  │  Caddy 2.10.2     │  Turborepo 2.7   │  Bun v1.3.6 (Web Runtime)   │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -43,12 +43,12 @@
 
 ### 2.1 Next.js 16 (App Router)
 
-| Aspect | Details |
-|--------|---------|
-| **Version** | 16.1.4 (Latest Stable - Jan 2026) |
-| **Router** | App Router (not Pages Router) |
+| Aspect        | Details                               |
+| ------------- | ------------------------------------- |
+| **Version**   | 16.1.4 (Latest Stable - Jan 2026)     |
+| **Router**    | App Router (not Pages Router)         |
 | **Rendering** | Server Components + Client Components |
-| **Bundler** | Turbopack (now default in v16!) |
+| **Bundler**   | Turbopack (now default in v16!)       |
 
 #### Why Next.js 16?
 
@@ -101,17 +101,17 @@
 
 #### Next.js vs Alternatives
 
-| Feature | Next.js 16 | Vite + React | Remix | SvelteKit |
-|---------|-----------|--------------|-------|-----------|
-| **SSR/SSG** | ✅ Built-in | ❌ Manual | ✅ Built-in | ✅ Built-in |
-| **App Router** | ✅ Nested layouts | ❌ React Router | ✅ Similar | ✅ Similar |
-| **Turbopack** | ✅ Default now | ❌ Vite (fast) | ❌ Vite | ❌ Vite |
-| **React Compiler** | ✅ Stable | ⚠️ Manual | ⚠️ Manual | N/A |
-| **Ecosystem** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
-| **Learning Curve** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **TypeScript** | ✅ First-class | ✅ Good | ✅ Good | ✅ Good |
-| **Bundle Size** | Medium | Small | Medium | Small |
-| **Admin Templates** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐ |
+| Feature             | Next.js 16       | Vite + React   | Remix      | SvelteKit  |
+| ------------------- | ---------------- | -------------- | ---------- | ---------- |
+| **SSR/SSG**         | ✅ Built-in       | ❌ Manual       | ✅ Built-in | ✅ Built-in |
+| **App Router**      | ✅ Nested layouts | ❌ React Router | ✅ Similar  | ✅ Similar  |
+| **Turbopack**       | ✅ Default now    | ❌ Vite (fast)  | ❌ Vite     | ❌ Vite     |
+| **React Compiler**  | ✅ Stable         | ⚠️ Manual       | ⚠️ Manual   | N/A        |
+| **Ecosystem**       | ⭐⭐⭐⭐⭐            | ⭐⭐⭐⭐           | ⭐⭐⭐        | ⭐⭐⭐        |
+| **Learning Curve**  | ⭐⭐⭐⭐             | ⭐⭐⭐⭐⭐          | ⭐⭐⭐        | ⭐⭐⭐⭐       |
+| **TypeScript**      | ✅ First-class    | ✅ Good         | ✅ Good     | ✅ Good     |
+| **Bundle Size**     | Medium           | Small          | Medium     | Small      |
+| **Admin Templates** | ⭐⭐⭐⭐⭐            | ⭐⭐⭐⭐           | ⭐⭐         | ⭐⭐         |
 
 **Verdict**: Next.js 16 wins for admin dashboards due to nested layouts (perfect for sidebars), Turbopack speed, React Compiler support, and vast ecosystem of admin templates.
 
@@ -119,12 +119,12 @@
 
 ### 2.2 shadcn/ui (v3.7.0)
 
-| Aspect | Details |
-|--------|---------|
-| **Type** | Component collection (not library) |
-| **Version** | 3.7.0 (Latest - Jan 2026) |
-| **Styling** | Tailwind CSS 4 |
-| **Accessibility** | Radix UI primitives |
+| Aspect            | Details                            |
+| ----------------- | ---------------------------------- |
+| **Type**          | Component collection (not library) |
+| **Version**       | 3.7.0 (Latest - Jan 2026)          |
+| **Styling**       | Tailwind CSS 4                     |
+| **Accessibility** | Radix UI primitives                |
 
 #### Why shadcn/ui?
 
@@ -170,14 +170,14 @@
 
 #### shadcn/ui vs Alternatives
 
-| Feature | shadcn/ui | Material UI | Chakra UI | Ant Design |
-|---------|-----------|-------------|-----------|------------|
-| **Bundle Size** | 0 (copy) | ~300KB | ~200KB | ~500KB |
-| **Customization** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐ |
-| **Tailwind** | ✅ Native | ❌ Emotion | ❌ Emotion | ❌ Less |
-| **Accessibility** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
-| **Look & Feel** | Modern/Minimal | Material | Modern | Enterprise |
-| **Learning Curve** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐ |
+| Feature            | shadcn/ui      | Material UI | Chakra UI | Ant Design |
+| ------------------ | -------------- | ----------- | --------- | ---------- |
+| **Bundle Size**    | 0 (copy)       | ~300KB      | ~200KB    | ~500KB     |
+| **Customization**  | ⭐⭐⭐⭐⭐          | ⭐⭐⭐         | ⭐⭐⭐⭐      | ⭐⭐         |
+| **Tailwind**       | ✅ Native       | ❌ Emotion   | ❌ Emotion | ❌ Less     |
+| **Accessibility**  | ⭐⭐⭐⭐⭐          | ⭐⭐⭐⭐        | ⭐⭐⭐⭐      | ⭐⭐⭐        |
+| **Look & Feel**    | Modern/Minimal | Material    | Modern    | Enterprise |
+| **Learning Curve** | ⭐⭐⭐⭐⭐          | ⭐⭐⭐         | ⭐⭐⭐⭐      | ⭐⭐         |
 
 **Verdict**: shadcn/ui provides the perfect balance of power and simplicity for a custom admin dashboard.
 
@@ -185,11 +185,11 @@
 
 ### 2.3 Tailwind CSS 4 (MAJOR UPDATE!)
 
-| Aspect | Details |
-|--------|---------|
-| **Version** | 4.1.18 (Latest - Dec 2025) |
-| **Config** | CSS-first (@theme directive) |
-| **Performance** | 5x faster builds |
+| Aspect          | Details                      |
+| --------------- | ---------------------------- |
+| **Version**     | 4.1.18 (Latest - Dec 2025)   |
+| **Config**      | CSS-first (@theme directive) |
+| **Performance** | 5x faster builds             |
 
 #### What's New in Tailwind CSS 4?
 
@@ -257,10 +257,10 @@
 
 ### 2.4 TanStack Query (React Query) v5.90
 
-| Aspect | Details |
-|--------|---------|
+| Aspect      | Details                     |
+| ----------- | --------------------------- |
 | **Version** | 5.90.20 (Latest - Jan 2026) |
-| **Purpose** | Server state management |
+| **Purpose** | Server state management     |
 
 #### Why TanStack Query?
 
@@ -305,10 +305,10 @@ const { data: groups, isLoading, error, refetch } = useQuery({
 
 ### 2.5 Zod 4 (MAJOR UPDATE!)
 
-| Aspect | Details |
-|--------|---------|
+| Aspect      | Details                   |
+| ----------- | ------------------------- |
 | **Version** | 4.3.6 (Latest - Jan 2026) |
-| **Purpose** | Schema validation |
+| **Purpose** | Schema validation         |
 
 #### What's New in Zod 4?
 
@@ -340,15 +340,15 @@ const { data: groups, isLoading, error, refetch } = useQuery({
 
 ### 2.6 Other Frontend Dependencies
 
-| Package | Version | Purpose | Why This Choice |
-|---------|---------|---------|-----------------|
-| **React** | 19.2.3 | UI library | Latest with Actions, use() hook |
-| **TypeScript** | 5.9.3 | Type safety | Catch errors at compile time |
-| **Zustand** | 5.0.10 | Client state | Simpler than Redux, smaller than Jotai |
-| **React Hook Form** | 7.71.1 | Forms | Best performance, minimal re-renders |
-| **Recharts** | 3.7.0 | Charts | React-native, composable, customizable |
-| **date-fns** | 4.1.0 | Dates | Modular, tree-shakeable, timezone support |
-| **Lucide React** | 0.563.0 | Icons | Open source, consistent, tree-shakeable |
+| Package             | Version | Purpose      | Why This Choice                           |
+| ------------------- | ------- | ------------ | ----------------------------------------- |
+| **React**           | 19.2.3  | UI library   | Latest with Actions, use() hook           |
+| **TypeScript**      | 5.9.3   | Type safety  | Catch errors at compile time              |
+| **Zustand**         | 5.0.10  | Client state | Simpler than Redux, smaller than Jotai    |
+| **React Hook Form** | 7.71.1  | Forms        | Best performance, minimal re-renders      |
+| **Recharts**        | 3.7.0   | Charts       | React-native, composable, customizable    |
+| **date-fns**        | 4.1.0   | Dates        | Modular, tree-shakeable, timezone support |
+| **Lucide React**    | 0.563.0 | Icons        | Open source, consistent, tree-shakeable   |
 
 ---
 
@@ -356,10 +356,10 @@ const { data: groups, isLoading, error, refetch } = useQuery({
 
 ### 3.1 FastAPI (v0.124.4)
 
-| Aspect | Details |
-|--------|---------|
+| Aspect      | Details                     |
+| ----------- | --------------------------- |
 | **Version** | 0.124.4 (Latest - Dec 2025) |
-| **Python** | 3.13+ required |
+| **Python**  | 3.13+ required              |
 
 #### Why FastAPI?
 
@@ -404,14 +404,14 @@ const { data: groups, isLoading, error, refetch } = useQuery({
 
 #### FastAPI vs Alternatives
 
-| Feature | FastAPI | Django REST | Flask | Express.js |
-|---------|---------|-------------|-------|------------|
-| **Async** | ✅ Native | ⚠️ Partial | ❌ WSGI | ✅ Native |
-| **Type Safety** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐ | ⭐⭐ (TS) |
-| **Auto Docs** | ✅ OpenAPI | ⚠️ DRF docs | ❌ Manual | ❌ Manual |
-| **Performance** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **Learning Curve** | ⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **Bot Compatibility** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ❌ Different lang |
+| Feature               | FastAPI   | Django REST | Flask    | Express.js       |
+| --------------------- | --------- | ----------- | -------- | ---------------- |
+| **Async**             | ✅ Native  | ⚠️ Partial   | ❌ WSGI   | ✅ Native         |
+| **Type Safety**       | ⭐⭐⭐⭐⭐     | ⭐⭐          | ⭐        | ⭐⭐ (TS)          |
+| **Auto Docs**         | ✅ OpenAPI | ⚠️ DRF docs  | ❌ Manual | ❌ Manual         |
+| **Performance**       | ⭐⭐⭐⭐⭐     | ⭐⭐⭐         | ⭐⭐⭐      | ⭐⭐⭐⭐             |
+| **Learning Curve**    | ⭐⭐⭐⭐      | ⭐⭐          | ⭐⭐⭐⭐⭐    | ⭐⭐⭐⭐             |
+| **Bot Compatibility** | ⭐⭐⭐⭐⭐     | ⭐⭐⭐         | ⭐⭐⭐⭐     | ❌ Different lang |
 
 **Verdict**: FastAPI is the clear winner given the existing Python bot codebase and async requirements.
 
@@ -419,11 +419,11 @@ const { data: groups, isLoading, error, refetch } = useQuery({
 
 ### 3.2 SQLAlchemy 2.0 + Alembic
 
-| Aspect | Details |
-|--------|---------|
+| Aspect         | Details                    |
+| -------------- | -------------------------- |
 | **SQLAlchemy** | 2.0.46 (Latest - Jan 2026) |
-| **Alembic** | 1.18.1 (Latest - Jan 2026) |
-| **Driver** | asyncpg 0.31.0 |
+| **Alembic**    | 1.18.1 (Latest - Jan 2026) |
+| **Driver**     | asyncpg 0.31.0             |
 
 #### Why SQLAlchemy 2.0?
 
@@ -459,10 +459,10 @@ class ProtectedGroup(Base):
 
 ### 3.3 JWT Authentication (python-jose)
 
-| Aspect | Details |
-|--------|---------|
-| **Library** | python-jose[cryptography] 3.5.0 |
-| **Algorithm** | HS256 (symmetric) |
+| Aspect        | Details                         |
+| ------------- | ------------------------------- |
+| **Library**   | python-jose[cryptography] 3.5.0 |
+| **Algorithm** | HS256 (symmetric)               |
 
 #### Why JWT?
 
@@ -509,11 +509,11 @@ class ProtectedGroup(Base):
 
 ### 4.1 PostgreSQL 18
 
-| Aspect | Details |
-|--------|---------|
+| Aspect      | Details                        |
+| ----------- | ------------------------------ |
 | **Version** | 18.1 (Latest major - Nov 2025) |
-| **Driver** | asyncpg 0.31.0 |
-| **Image** | postgres:18-alpine |
+| **Driver**  | asyncpg 0.31.0                 |
+| **Image**   | postgres:18-alpine             |
 
 **Why PostgreSQL 18?**
 - ✅ Already used by bot (shared database)
@@ -527,11 +527,11 @@ class ProtectedGroup(Base):
 
 ### 4.2 Redis 8
 
-| Aspect | Details |
-|--------|---------|
+| Aspect      | Details                         |
+| ----------- | ------------------------------- |
 | **Version** | 8.0 (Latest major) or 7.4.7 LTS |
-| **Driver** | redis-py 5.2.1 (async) |
-| **Image** | redis:8-alpine |
+| **Driver**  | redis-py 5.2.1 (async)          |
+| **Image**   | redis:8-alpine                  |
 
 **Why Redis 8?**
 - ✅ Session storage (JWT refresh tokens)
@@ -544,9 +544,9 @@ class ProtectedGroup(Base):
 
 ### 4.3 Caddy 2.10 (Reverse Proxy)
 
-| Aspect | Details |
-|--------|---------|
-| **Version** | 2.10.2 (Latest stable) |
+| Aspect      | Details                 |
+| ----------- | ----------------------- |
+| **Version** | 2.10.2 (Latest stable)  |
 | **Purpose** | Reverse proxy, Auto-SSL |
 
 #### Why Caddy?
@@ -583,15 +583,15 @@ class ProtectedGroup(Base):
 
 #### Caddy vs Nginx
 
-| Feature | Caddy 2.10 | Nginx |
-|---------|-------|-------|
-| **Auto SSL** | ✅ Built-in | ❌ Certbot required |
-| **Config** | Simple Caddyfile | Complex nginx.conf |
-| **HTTP/3** | ✅ Built-in | ⚠️ Experimental |
-| **WebSocket** | ✅ Automatic | ⚠️ Manual config |
-| **Post-Quantum** | ✅ v2.10+ | ❌ No |
-| **Resource Usage** | Low | Low |
-| **Learning Curve** | ⭐⭐⭐⭐⭐ | ⭐⭐ |
+| Feature            | Caddy 2.10       | Nginx              |
+| ------------------ | ---------------- | ------------------ |
+| **Auto SSL**       | ✅ Built-in       | ❌ Certbot required |
+| **Config**         | Simple Caddyfile | Complex nginx.conf |
+| **HTTP/3**         | ✅ Built-in       | ⚠️ Experimental     |
+| **WebSocket**      | ✅ Automatic      | ⚠️ Manual config    |
+| **Post-Quantum**   | ✅ v2.10+         | ❌ No               |
+| **Resource Usage** | Low              | Low                |
+| **Learning Curve** | ⭐⭐⭐⭐⭐            | ⭐⭐                 |
 
 **Verdict**: Caddy is much simpler for small/medium deployments with automatic SSL.
 
@@ -599,10 +599,10 @@ class ProtectedGroup(Base):
 
 ### 4.4 Docker + Turborepo
 
-| Aspect | Details |
-|--------|---------|
-| **Docker** | 27.x |
-| **Compose** | v2.32+ |
+| Aspect        | Details          |
+| ------------- | ---------------- |
+| **Docker**    | 27.x             |
+| **Compose**   | v2.32+           |
 | **Turborepo** | 2.7.0 (Monorepo) |
 
 **Why Docker?**
@@ -648,22 +648,22 @@ class ProtectedGroup(Base):
 
 ### 5.2 Linting & Formatting
 
-| Tool | Version | Purpose | Configuration |
-|------|---------|---------|---------------|
-| **Ruff** (Python) | 0.9.3 | Linting + Formatting | `ruff.toml` |
-| **Pylint** (Python) | 3.3+ | Additional linting | `.pylintrc` |
-| **ESLint** (TS/JS) | 9.18+ | Linting | `eslint.config.mjs` |
-| **Prettier** (TS/JS) | 3.4+ | Formatting | `.prettierrc` |
+| Tool                 | Version | Purpose              | Configuration       |
+| -------------------- | ------- | -------------------- | ------------------- |
+| **Ruff** (Python)    | 0.9.3   | Linting + Formatting | `ruff.toml`         |
+| **Pylint** (Python)  | 3.3+    | Additional linting   | `.pylintrc`         |
+| **ESLint** (TS/JS)   | 9.18+   | Linting              | `eslint.config.mjs` |
+| **Prettier** (TS/JS) | 3.4+    | Formatting           | `.prettierrc`       |
 
 ### 5.3 Testing Stack
 
-| Layer | Tool | Version | Purpose |
-|-------|------|---------|---------|
-| **Python Unit** | pytest | 8.3+ | API testing |
-| **Python Async** | pytest-asyncio | 0.25+ | Async support |
-| **Python Coverage** | pytest-cov | 6.0+ | Code coverage |
-| **TypeScript Unit** | Vitest | 3.0+ | Component testing |
-| **E2E** | Playwright | 1.50+ | Full flow testing |
+| Layer               | Tool           | Version | Purpose           |
+| ------------------- | -------------- | ------- | ----------------- |
+| **Python Unit**     | pytest         | 8.3+    | API testing       |
+| **Python Async**    | pytest-asyncio | 0.25+   | Async support     |
+| **Python Coverage** | pytest-cov     | 6.0+    | Code coverage     |
+| **TypeScript Unit** | Vitest         | 3.0+    | Component testing |
+| **E2E**             | Playwright     | 1.50+   | Full flow testing |
 
 ---
 
@@ -799,19 +799,19 @@ services:
 
 ## 7. Decision Matrix
 
-| Decision | Options Considered | Choice | Rationale |
-|----------|-------------------|--------|-----------|
-| **Frontend Framework** | Next.js, Vite+React, Remix, SvelteKit | Next.js 16 | Turbopack default, React Compiler, ecosystem |
-| **Component Library** | shadcn/ui, MUI, Chakra, Ant | shadcn/ui 3.7 | Ownership, Tailwind 4, customization |
-| **CSS Framework** | Tailwind, CSS Modules, Styled | Tailwind 4 | 5x faster, CSS-first config |
-| **State Management** | Redux, Zustand, Jotai | Zustand 5 | Simplicity, bundle size |
-| **Validation** | Zod, Yup, Joi | Zod 4 | TypeScript-first, faster |
-| **Backend Framework** | FastAPI, Django, Flask | FastAPI 0.124 | Async, Python, OpenAPI |
-| **Database** | PostgreSQL, MySQL, SQLite | PostgreSQL 18 | Already in use, JSON support |
-| **Cache** | Redis, Memcached | Redis 8 | Already in use, Pub/Sub |
-| **Reverse Proxy** | Caddy, Nginx, Traefik | Caddy 2.10 | Auto-SSL, simplicity, HTTP/3 |
-| **Auth** | JWT, Sessions, OAuth | JWT | Stateless, cross-service |
-| **Monorepo** | Turborepo, Nx, Lerna | Turborepo 2.7 | Simple, fast, Vercel |
+| Decision               | Options Considered                    | Choice        | Rationale                                    |
+| ---------------------- | ------------------------------------- | ------------- | -------------------------------------------- |
+| **Frontend Framework** | Next.js, Vite+React, Remix, SvelteKit | Next.js 16    | Turbopack default, React Compiler, ecosystem |
+| **Component Library**  | shadcn/ui, MUI, Chakra, Ant           | shadcn/ui 3.7 | Ownership, Tailwind 4, customization         |
+| **CSS Framework**      | Tailwind, CSS Modules, Styled         | Tailwind 4    | 5x faster, CSS-first config                  |
+| **State Management**   | Redux, Zustand, Jotai                 | Zustand 5     | Simplicity, bundle size                      |
+| **Validation**         | Zod, Yup, Joi                         | Zod 4         | TypeScript-first, faster                     |
+| **Backend Framework**  | FastAPI, Django, Flask                | FastAPI 0.124 | Async, Python, OpenAPI                       |
+| **Database**           | PostgreSQL, MySQL, SQLite             | PostgreSQL 18 | Already in use, JSON support                 |
+| **Cache**              | Redis, Memcached                      | Redis 8       | Already in use, Pub/Sub                      |
+| **Reverse Proxy**      | Caddy, Nginx, Traefik                 | Caddy 2.10    | Auto-SSL, simplicity, HTTP/3                 |
+| **Auth**               | JWT, Sessions, OAuth                  | JWT           | Stateless, cross-service                     |
+| **Monorepo**           | Turborepo, Nx, Lerna                  | Turborepo 2.7 | Simple, fast, Vercel                         |
 
 ---
 
@@ -819,21 +819,21 @@ services:
 
 ### 8.1 Breaking Changes to Watch
 
-| Package | Change | Migration Required |
-|---------|--------|-------------------|
-| **Tailwind 4** | CSS-first config | Convert tailwind.config.js to @theme CSS |
-| **Zod 4** | API refinements | Minor schema updates |
-| **Next.js 16** | Turbopack default | Usually automatic |
-| **React 19** | Stricter StrictMode | Check for side effects |
+| Package        | Change              | Migration Required                       |
+| -------------- | ------------------- | ---------------------------------------- |
+| **Tailwind 4** | CSS-first config    | Convert tailwind.config.js to @theme CSS |
+| **Zod 4**      | API refinements     | Minor schema updates                     |
+| **Next.js 16** | Turbopack default   | Usually automatic                        |
+| **React 19**   | Stricter StrictMode | Check for side effects                   |
 
 ### 8.2 Coming Soon (2026 Roadmap)
 
-| Package | Version | Expected | Notes |
-|---------|---------|----------|-------|
-| **TypeScript** | 6.0 | Q1 2026 (Feb/Mar) | Final JS-based compiler |
-| **TypeScript** | 7.0 (Corsa) | Summer 2026 | Go-based rewrite, 10x faster |
-| **SQLAlchemy** | 2.1 | Q1 2026 | Beta available now |
-| **Caddy** | 2.11 | Q1 2026 | In beta now |
+| Package        | Version     | Expected          | Notes                        |
+| -------------- | ----------- | ----------------- | ---------------------------- |
+| **TypeScript** | 6.0         | Q1 2026 (Feb/Mar) | Final JS-based compiler      |
+| **TypeScript** | 7.0 (Corsa) | Summer 2026       | Go-based rewrite, 10x faster |
+| **SQLAlchemy** | 2.1         | Q1 2026           | Beta available now           |
+| **Caddy**      | 2.11        | Q1 2026           | In beta now                  |
 
 ---
 

@@ -41,7 +41,7 @@ Nezuko is built as a modular, event-driven monolith designed for high performanc
 
 ---
 
-## Admin Panel Patterns (Planned)
+## Admin Panel Patterns
 
 ### Architecture Pattern: Decoupled Full-Stack
 ```
@@ -56,6 +56,13 @@ Nezuko is built as a modular, event-driven monolith designed for high performanc
                         │  (Existing)     │
                         └─────────────────┘
 ```
+
+### Table Pattern: TanStack Table + Reusable Component
+We use a **Headless UI** approach for complex data tables:
+*   **Reusable Component**: `DataTable` handles pagination, sorting, and loading states uniformly.
+*   **Custom Hooks**: `useGroups` encapsulates React Query logic.
+*   **URL Sync**: Table state (page, sort, filters) is NOT synced to URL by default but filters page-wide are.
+*   **Optimistic Updates**: Immediate UI feedback on actions like "Unlink" before server confirmation.
 
 ### Error Handling Pattern: RFC 9457 Problem Details
 ```json
@@ -94,7 +101,7 @@ logger.info(
 
 ## Python Quality Standards
 
-To maintain high code quality (**Pylint score 10.00/10** & **Pyrefly 0 Errors**), the following standards apply:
+TO maintain high code quality (**Pylint score 10.00/10** & **Pyrefly 0 Errors**), the following standards apply:
 
 ### 1. Static Analysis & Typing (Strict)
 *   **Zero Errors**: All code must pass `python -m pyrefly check` with 0 errors.

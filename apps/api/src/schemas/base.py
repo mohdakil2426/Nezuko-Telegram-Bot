@@ -11,12 +11,27 @@ class BaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PaginationMeta(BaseModel):
+    page: int
+    per_page: int
+    total_items: int
+    total_pages: int
+
+
 class SuccessResponse(BaseModel, Generic[T]):
     """Standard success response wrapper."""
 
     status: str = "success"
     data: T
     meta: dict | None = None
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    """Paginated response wrapper."""
+
+    status: str = "success"
+    data: list[T]
+    meta: PaginationMeta
 
 
 class ErrorResponse(BaseModel):
