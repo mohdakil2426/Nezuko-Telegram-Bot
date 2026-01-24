@@ -10,3 +10,4 @@ export * from "./dashboard";
 export * from "./models/group";
 export * from "./models/channel";
 export * from "./models/user";
+export * from "./models/config";

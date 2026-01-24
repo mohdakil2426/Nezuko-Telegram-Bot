@@ -549,41 +549,41 @@
 ### 5.1 Channels API Endpoints
 > 📖 **Read First**: `docs/admin-panel/04-API-DESIGN.md` Section 5
 
-- [ ] 5.1.1 Create `apps/api/src/schemas/channel.py`
-- [ ] 5.1.2 Define `ChannelListResponse` with pagination
-- [ ] 5.1.3 Define `ChannelDetailResponse` with linked groups
-- [ ] 5.1.4 Define `ChannelCreateRequest` schema
-- [ ] 5.1.5 Create `apps/api/src/services/channel_service.py`
-- [ ] 5.1.6 Implement `get_channels(page, per_page, search)`
-- [ ] 5.1.7 Implement `get_channel(channel_id)`
-- [ ] 5.1.8 Implement `create_channel(data)`
-- [ ] 5.1.9 Create `apps/api/src/api/v1/endpoints/channels.py`
-- [ ] 5.1.10 Implement `GET /channels`
-- [ ] 5.1.11 Implement `GET /channels/{id}`
-- [ ] 5.1.12 Implement `POST /channels`
-- [ ] 5.1.13 Register channels router
+- [x] 5.1.1 Create `apps/api/src/schemas/channel.py`
+- [x] 5.1.2 Define `ChannelListResponse` with pagination
+- [x] 5.1.3 Define `ChannelDetailResponse` with linked groups
+- [x] 5.1.4 Define `ChannelCreateRequest` schema
+- [x] 5.1.5 Create `apps/api/src/services/channel_service.py`
+- [x] 5.1.6 Implement `get_channels(page, per_page, search)`
+- [x] 5.1.7 Implement `get_channel(channel_id)`
+- [x] 5.1.8 Implement `create_channel(data)`
+- [x] 5.1.9 Create `apps/api/src/api/v1/endpoints/channels.py`
+- [x] 5.1.10 Implement `GET /channels`
+- [x] 5.1.11 Implement `GET /channels/{id}`
+- [x] 5.1.12 Implement `POST /channels`
+- [x] 5.1.13 Register channels router
 
 ### 5.2 Channels List Page
-- [ ] 5.2.1 Create `apps/web/src/components/tables/channels-table.tsx`
-- [ ] 5.2.2 Define columns: Name, Username, Subscribers, Groups, Actions
-- [ ] 5.2.3 Create `apps/web/src/app/(dashboard)/channels/page.tsx`
-- [ ] 5.2.4 Add page header
-- [ ] 5.2.5 Add "Add Channel" button
-- [ ] 5.2.6 Integrate ChannelsTable component
-- [ ] 5.2.7 Add search functionality
+- [x] 5.2.1 Create `apps/web/src/components/tables/channels-table.tsx`
+- [x] 5.2.2 Define columns: Name, Username, Subscribers, Groups, Actions
+- [x] 5.2.3 Create `apps/web/src/app/(dashboard)/channels/page.tsx`
+- [x] 5.2.4 Add page header
+- [x] 5.2.5 Add "Add Channel" button
+- [x] 5.2.6 Integrate ChannelsTable component
+- [x] 5.2.7 Add search functionality
 
 ### 5.3 Channel Details Page
-- [ ] 5.3.1 Create `apps/web/src/app/(dashboard)/channels/[id]/page.tsx`
-- [ ] 5.3.2 Display channel metadata
-- [ ] 5.3.3 Display linked groups list
-- [ ] 5.3.4 Display verification statistics
+- [x] 5.3.1 Create `apps/web/src/app/(dashboard)/channels/[id]/page.tsx`
+- [x] 5.3.2 Display channel metadata
+- [x] 5.3.3 Display linked groups list
+- [x] 5.3.4 Display verification statistics
 
 ### 5.4 Add Channel Dialog
-- [ ] 5.4.1 Create `apps/web/src/components/forms/channel-form.tsx`
-- [ ] 5.4.2 Add channel_id input or @username input
-- [ ] 5.4.3 Validate bot has admin access
-- [ ] 5.4.4 Show confirmation dialog
-- [ ] 5.4.5 Handle success/error states
+- [x] 5.4.1 Create `apps/web/src/components/forms/channel-form.tsx`
+- [x] 5.4.2 Add channel_id input or @username input
+- [x] 5.4.3 Validate bot has admin access
+- [x] 5.4.4 Show confirmation dialog
+- [x] 5.4.5 Handle success/error states
 
 ---
 
@@ -597,33 +597,33 @@
 ### 6.1 Config API Endpoints
 > 📖 **Read First**: `docs/admin-panel/04-API-DESIGN.md` Section 6
 
-- [ ] 6.1.1 Create `apps/api/src/schemas/config.py`
-- [ ] 6.1.2 Define `ConfigResponse` schema
-- [ ] 6.1.3 Define `ConfigUpdateRequest` schema
-- [ ] 6.1.4 Create `apps/api/src/services/config_service.py`
-- [ ] 6.1.5 Implement `get_config()` method
-- [ ] 6.1.6 Mask sensitive values (tokens, passwords)
-- [ ] 6.1.7 Implement `update_config(data)` method
-- [ ] 6.1.8 Validate config values
-- [ ] 6.1.9 Create `apps/api/src/api/v1/endpoints/config.py`
-- [ ] 6.1.10 Implement `GET /config`
-- [ ] 6.1.11 Implement `PUT /config`
-- [ ] 6.1.12 Implement `POST /config/webhook/test`
-- [ ] 6.1.13 Register config router
+- [x] 6.1.1 Create `apps/api/src/schemas/config.py`
+- [x] 6.1.2 Define `ConfigResponse` schema
+- [x] 6.1.3 Define `ConfigUpdateRequest` schema
+- [x] 6.1.4 Create `apps/api/src/services/config_service.py`
+- [x] 6.1.5 Implement `get_config()` method
+- [x] 6.1.6 Mask sensitive values (tokens, passwords)
+- [x] 6.1.7 Implement `update_config(data)` method
+- [x] 6.1.8 Validate config values
+- [x] 6.1.9 Create `apps/api/src/api/v1/endpoints/config.py`
+- [x] 6.1.10 Implement `GET /config`
+- [x] 6.1.11 Implement `PUT /config`
+- [x] 6.1.12 Implement `POST /config/webhook/test`
+- [x] 6.1.13 Register config router
 
 ### 6.2 Config Page UI
-- [ ] 6.2.1 Create `apps/web/src/app/(dashboard)/config/page.tsx`
-- [ ] 6.2.2 Create tabbed interface (General, Messages, Webhook)
-- [ ] 6.2.3 Create `apps/web/src/app/(dashboard)/config/general/page.tsx`
-- [ ] 6.2.4 Add rate limit settings
-- [ ] 6.2.5 Create `apps/web/src/app/(dashboard)/config/messages/page.tsx`
-- [ ] 6.2.6 Add welcome message template editor
-- [ ] 6.2.7 Add verification prompt template editor
-- [ ] 6.2.8 Add template variable hints
-- [ ] 6.2.9 Create `apps/web/src/app/(dashboard)/config/webhook/page.tsx`
-- [ ] 6.2.10 Add webhook URL display
-- [ ] 6.2.11 Add "Test Webhook" button
-- [ ] 6.2.12 Show SSL certificate status
+- [x] 6.2.1 Create `apps/web/src/app/(dashboard)/config/page.tsx`
+- [x] 6.2.2 Create tabbed interface (General, Messages, Webhook)
+- [x] 6.2.3 Create `apps/web/src/app/(dashboard)/config/general/page.tsx`
+- [x] 6.2.4 Add rate limit settings
+- [x] 6.2.5 Create `apps/web/src/app/(dashboard)/config/messages/page.tsx`
+- [x] 6.2.6 Add welcome message template editor
+- [x] 6.2.7 Add verification prompt template editor
+- [x] 6.2.8 Add template variable hints
+- [x] 6.2.9 Create `apps/web/src/app/(dashboard)/config/webhook/page.tsx`
+- [x] 6.2.10 Add webhook URL display
+- [x] 6.2.11 Add "Test Webhook" button
+- [x] 6.2.12 Show SSL certificate status
 
 ---
 

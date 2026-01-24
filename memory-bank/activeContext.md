@@ -8,8 +8,40 @@ The Admin Panel implementation is progressing rapidly:
 - **Phase 2 (Frontend Auth & Layout)**: ✅ COMPLETE
 - **Phase 3 (Dashboard Page)**: ✅ COMPLETE
 - **Phase 4 (Groups CRUD)**: ✅ COMPLETE
+- **Phase 5 (Channels CRUD)**: ✅ COMPLETE
 
 ## Recent Session Updates (2026-01-25)
+
+### 🎉 Admin Panel Phase 6: Config Management Complete ✅
+**All tasks for Phase 6 completed** - Configuration System:
+
+**Backend Implementation:**
+1.  ✅ **Model**: `AdminConfig` table with JSONB storage for dynamic settings.
+2.  ✅ **Service**: `ConfigService` with unified config view (Env + DB) and masking.
+3.  ✅ **Endpoints**: `/config` (Get/Update) and `/config/webhook/test` endpoints.
+4.  ✅ **Security**: Automatic masking of sensitive values (tokens, passwords).
+
+**Frontend Implementation:**
+1.  ✅ **Page Layout**: Tabbed configuration page (General, Messages, Limits, Webhook).
+2.  ✅ **Integration**: `configApi` client and Typed hooks.
+3.  ✅ **Message Editor**: Dynamic template editor with variable hints.
+4.  ✅ **Limits Form**: Rate limit configuration with validation.
+5.  ✅ **Webhook Tester**: Interactive tool to verify connectivity and SSL status.
+
+### 🎉 Admin Panel Phase 5: Channels CRUD Complete ✅
+**All tasks for Phase 5 completed** - Full Channels Management Feature:
+
+**Backend Implementation:**
+1.  ✅ **Schemas**: `Channel`, `ChannelDetail`, `ChannelCreateRequest` Pydantic models.
+2.  ✅ **Service Layer**: `get_channels` (paginated/filtered), `get_channel`, `create_channel`.
+3.  ✅ **API Endpoints**: Full REST API for Channels CRUD (`/api/v1/channels`).
+
+**Frontend Implementation:**
+1.  ✅ **Data Table**: `ChannelsTable` with subscriber counts and linked groups.
+2.  ✅ **API Integration**: `channelsApi` client and `useChannels` hooks.
+3.  ✅ **Channels List**: `/channels` page with search and "Add Channel" action.
+4.  ✅ **Channel Details**: `/channels/[id]` page displaying metadata, stats, and linked groups.
+5.  ✅ **Add Component**: `ChannelForm` inside a Dialog for adding new channels.
 
 ### 🎉 Admin Panel Phase 4: Groups CRUD Complete ✅
 **All tasks for Phase 4 completed** - Full Groups Management Feature:
@@ -62,6 +94,8 @@ The Admin Panel implementation is progressing rapidly:
 *   **UI Components**: shadcn/ui + simple custom abstractions (e.g., `DataTable`)
 
 ## Next Steps
-1.  **Admin Panel Phase 5**: Channels CRUD (List, Details, Add Channel, Link Picker)
-2.  **Admin Panel Phase 6**: Configuration Management (Global Config)
-3.  **Bot Production Deployment**: Launch v1.0.0 to production (optional, can proceed in parallel)
+## Next Steps
+1.  **Admin Panel Phase 7**: Real-Time Logs (WebSocket Streaming)
+2.  **Admin Panel Phase 8**: Database Browser
+3.  **Bot Production Deployment**: Launch v1.0.0 to production (optional)
+
