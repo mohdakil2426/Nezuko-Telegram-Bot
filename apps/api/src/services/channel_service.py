@@ -71,12 +71,16 @@ async def get_channels(  # pylint: disable=too-many-locals
         }
         items.append(channel_dict)
 
+    total_pages = (total + per_page - 1) // per_page
     return {
-        "items": items,
-        "total": total,
-        "page": page,
-        "per_page": per_page,
-        "total_pages": (total + per_page - 1) // per_page,
+        "status": "success",
+        "data": items,
+        "meta": {
+            "page": page,
+            "per_page": per_page,
+            "total_items": total,
+            "total_pages": total_pages,
+        },
     }
 
 

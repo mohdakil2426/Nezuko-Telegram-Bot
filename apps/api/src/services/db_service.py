@@ -1,5 +1,7 @@
 """Business logic for database inspection and maintenance."""
 
+import re
+
 import structlog
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +9,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.schemas.database import ColumnInfo, MigrationStatusResponse, TableDataResponse, TableInfo
 
 logger = structlog.get_logger()
+
+# Security: Regex to validate table names (only alphanumeric and underscores)
+TABLE_NAME_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+
+def validate_table_name(table_name: str) -> str:
+    """Validate table name to prevent SQL injection.
+
+    Raises:
+        ValueError: If table name contains invalid characters.
+    """
+    if not TABLE_NAME_PATTERN.match(table_name):
+        raise ValueError(f"Invalid table name: {table_name}")
+    if len(table_name) > 128:  # Reasonable max length
+        raise ValueError(f"Table name too long: {table_name}")
+    return table_name
 
 
 class DatabaseService:
@@ -89,9 +107,11 @@ class DatabaseService:
     ) -> TableDataResponse:
         """
         Fetches raw data from a table with pagination.
-        WARNING: Vulnerable to SQL injection if table_name is not sanitized.
-        We validate table_name against schema first.
+        Table name is validated against SQL injection patterns.
         """
+        # Security: Validate table name format before use
+        table_name = validate_table_name(table_name)
+
         is_sqlite = session.bind.dialect.name == "sqlite"
 
         # 1. Validate table exists
