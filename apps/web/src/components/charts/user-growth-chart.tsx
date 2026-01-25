@@ -12,16 +12,19 @@ export function UserGrowthChart({ data }: UserGrowthChartProps) {
     const { theme } = useTheme();
 
     // Format tooltip value
-    const formatValue = (value: number | string | any) => {
+    const formatValue = (value: unknown) => {
         if (value === undefined || value === null) return "";
         return new Intl.NumberFormat("en-US").format(Number(value));
     };
 
     // Format tooltip label
-    const formatLabel = (label: any) => {
+    const formatLabel = (label: unknown) => {
         if (!label) return "";
         try {
-            return new Date(label).toLocaleDateString("en-US", {
+            const dateValue = typeof label === "string" || typeof label === "number" || label instanceof Date
+                ? label
+                : String(label);
+            return new Date(dateValue).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
                 year: "numeric"

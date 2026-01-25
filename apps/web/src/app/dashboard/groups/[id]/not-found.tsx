@@ -13,7 +13,7 @@ export default function GroupNotFound() {
                 The group you are looking for does not exist or you do not have permission to view it.
             </p>
             <Button asChild variant="outline" className="mt-4">
-                <Link href="/groups">
+                <Link href="/dashboard/groups">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Groups
                 </Link>

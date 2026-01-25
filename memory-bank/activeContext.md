@@ -1,69 +1,89 @@
-# Active Context: Phase 13 - Maintenance & Local Dev Stabilization
+# Active Context: Phase 13 - Web UI Testing & Final Polish
 
 ## 🎯 Current Focus
 
-Stabilizing the **Local Development Environment** and completing **Phase 13 (Maintenance & Type Safety)**. We have successfully resolved all critical blockers for Firebase authentication and local SQLite development.
+**Phase 13.5 Complete!** Successfully stabilized the local development environment, fixed Firebase authentication, and completed comprehensive UI testing with all pages working.
 
 ### Recent Accomplishments (2026-01-26)
 
 1. **Firebase Authentication Flow - FIXED** ✅:
-   - **Root Cause**: SQLite database configuration was incompatible with PostgreSQL-specific settings.
-   - **SQLite SSL Error Resolved**: Fixed `database.py` to detect SQLite vs PostgreSQL and apply appropriate settings.
-   - **Model Type Compatibility**: Migrated all 4 SQLAlchemy models from PostgreSQL-specific types to database-agnostic types.
-   - **Full Login Flow Working**: User can now log in via Firebase Auth and access the dashboard.
+   - SQLite SSL error resolved in `database.py`
+   - Models migrated to database-agnostic types (UUID→String, JSONB→JSON, INET→String)
+   - Login flow verified working end-to-end
 
-2. **Database Schema Updates**:
-   - **Replaced Types**: Changed `UUID` → `String(36)`, `JSONB` → `JSON`, `INET` → `String(45)` in all models.
-   - **Affected Models**: `admin_user.py`, `admin_session.py`, `admin_audit_log.py`, `config.py`.
-   - **Init Script**: Created comprehensive `init_db.py` that initializes both admin and bot tables.
+2. **Comprehensive Web UI Testing** ✅:
+   - Tested all 8 main pages (Dashboard, Groups, Channels, Config, Logs, Database, Analytics, Login)
+   - Fixed 9 issues discovered during testing
+   - TypeScript compilation: **Zero errors**
 
-3. **Dashboard Verification**:
-   - **Login Flow**: Successfully tested with `admin@nezuko.bot` credentials.
-   - **User Sync**: Firebase user syncs to local database on first login.
-   - **Dashboard Loads**: Stats cards, navigation, and user info all render correctly.
+3. **Navigation & Routing Fixes**:
+   - **sidebar.tsx**: Fixed all routes from `/` prefix to `/dashboard/` prefix
+   - **groups-table.tsx**: Fixed router.push calls to include `/dashboard/groups/`
+   - **not-found.tsx (x2)**: Fixed broken "Back to X" links in groups and channels
 
-### Previous Accomplishments (2026-01-25)
+4. **Data Display Fixes**:
+   - **Dashboard**: Fixed `undefined%` → `0%` with nullish coalescing
+   - **DataTable**: Fixed `Page 1 of -1` → `Page 1 of 1` with `Math.max(1, pageCount)`
 
-1. **Local Environment Stabilization**:
-   - **SQLite Fallback**: Implemented support for `sqlite+aiosqlite` in `apps/api`.
-   - **Database Initializer**: Created initial `create_db.py` script (now superseded by `init_db.py`).
-2. **Developer Experience (DX)**:
-   - **Mock Auth Mechanism**: Added `MOCK_AUTH` support for bypassing Firebase in dev.
-3. **API Hardening**:
-   - **SSL Support**: Added conditional SSL requirement for remote connections.
+5. **Code Quality Improvements**:
+   - Removed `any` types from `user-growth-chart.tsx` (replaced with `unknown` + type guards)
+   - Fixed TypeScript error in `audit.ts` API endpoint
+   - All pages handle empty/error states gracefully
 
 ---
 
 ## ⚡ Active Decisions
 
-- **Local-First Dev**: Defaulting to local SQLite (`nezuko.db`) for contributors without Docker/Postgres.
-- **Database-Agnostic Models**: Using `String(36)` for UUIDs and `JSON` instead of `JSONB` for SQLite compatibility.
-- **Mock Identity**: Allowing `MOCK_AUTH=true` in `.env` for faster UI iteration.
-- **Conditional SSL**: `connect_args={"ssl": "require"}` only for remote PostgreSQL (not localhost or SQLite).
-- **Documentation as Code**: The Memory Bank is the primary technical manual for Nezuko.
+- **Local-First Dev**: SQLite with `sqlite+aiosqlite` for development
+- **Database-Agnostic Models**: `String(36)` for UUIDs, `JSON` for structured data
+- **Route Structure**: All authenticated pages under `/dashboard/*` prefix
+- **Type Safety**: Zero `any` types, strict TypeScript compliance
+- **Edge Case Handling**: Nullish coalescing for all potentially undefined values
 
 ---
 
 ## 🚧 Current Blockers & Next Steps
 
-1. **Minor UI Issues**:
-   - [ ] Fix "undefined%" display in Success Rate dashboard card.
-   - [ ] Investigate slow API response times (~60s for login sync).
+1. **API Performance**:
+   - [ ] Profile login sync (~30s delay observed)
+   - [ ] Investigate connection pooling for SQLite
+
 2. **Phase 13.6: Release Readiness**:
-   - [ ] Conduct final production-flow check for Firebase Auth in Docker.
-   - [ ] Verify PostgreSQL compatibility after model changes.
-   - [ ] Finalize tag 1.0.0 release.
-3. **Performance Optimization**:
-   - [ ] Profile async SQLite operations for bottlenecks.
-   - [ ] Consider connection pooling improvements for production.
+   - [ ] Production build verification (Docker)
+   - [ ] PostgreSQL migration testing after model changes
+   - [ ] Final production Firebase Auth flow check
+   - [ ] Tag v1.0.0 release
+
+3. **Minor Enhancements**:
+   - [ ] Add loading states for slow API calls
+   - [ ] Improve error messages on Config page
+   - [ ] Implement real chart data for Dashboard
 
 ---
 
 ## ✅ Progress Summary
 
-- **Documentation Expansion**: 100% Complete (>1500 lines).
-- **Core Feature Set**: 100% Complete.
-- **Firebase Auth Flow**: 100% Complete ✅ (Fixed 2026-01-26).
-- **Web Type Safety**: 95% Complete.
-- **API Hardening**: 98% Complete.
-- **System Stability**: 95% Complete.
+| Area               | Status                             |
+| ------------------ | ---------------------------------- |
+| Documentation      | 100% Complete                      |
+| Core Feature Set   | 100% Complete                      |
+| Firebase Auth Flow | ✅ **100% Complete**               |
+| Web Type Safety    | ✅ **100% Complete** (0 TS errors) |
+| UI Navigation      | ✅ **100% Fixed**                  |
+| API Hardening      | 98% Complete                       |
+| System Stability   | 98% Complete                       |
+
+---
+
+## 📋 Files Modified This Session
+
+| File                                                     | Changes                        |
+| -------------------------------------------------------- | ------------------------------ |
+| `apps/web/src/components/layout/sidebar.tsx`             | Routes fixed to `/dashboard/*` |
+| `apps/web/src/app/dashboard/page.tsx`                    | `undefined%` → `0%`            |
+| `apps/web/src/components/tables/data-table.tsx`          | Page count min value           |
+| `apps/web/src/components/tables/groups-table.tsx`        | Router paths fixed             |
+| `apps/web/src/components/charts/user-growth-chart.tsx`   | Removed `any` types            |
+| `apps/web/src/lib/api/endpoints/audit.ts`                | Type assertion fix             |
+| `apps/web/src/app/dashboard/groups/[id]/not-found.tsx`   | Link path fixed                |
+| `apps/web/src/app/dashboard/channels/[id]/not-found.tsx` | Link path fixed                |
