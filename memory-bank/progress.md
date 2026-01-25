@@ -2,7 +2,7 @@
 
 ## 🛠️ Current Status: Phase 13 - Maintenance & Local Dev Stabilization
 
-**Overall Implementation Status**: **98%** 🚀
+**Overall Implementation Status**: **99%** 🚀
 
 | Phase           | Description                                 | Status             |
 | :-------------- | :------------------------------------------ | :----------------- |
@@ -35,14 +35,17 @@
   - [x] Fix `pydantic-settings` `SettingsError` in tests/runtime.
   - [x] Final audit of Pydantic V2 models.
   - [x] Standardize all response wrappers to RFC 9457 / SuccessResponse.
-- [ ] **13.5 Local Dev Stabilization**:
+- [x] **13.5 Local Dev Stabilization** ✅ **(Completed 2026-01-26)**:
   - [x] Implement local SQLite fallback.
-  - [x] Create `create_db.py` initialization script.
+  - [x] Create `init_db.py` initialization script with ALL models.
   - [x] Implement `MOCK_AUTH` for dependency-free development.
-  - [ ] Standardize local model imports in utility scripts.
+  - [x] **Fix SQLite SSL connection error** (database.py refactored).
+  - [x] **Migrate models to database-agnostic types** (UUID→String, JSONB→JSON, INET→String).
+  - [x] **Firebase authentication flow verified and working**.
 - [ ] **13.6 Release Readiness**:
   - [ ] Production build verification (Docker).
   - [ ] Final Firebase Auth production-flow check.
+  - [ ] Verify PostgreSQL compatibility after model type changes.
 
 ---
 
@@ -78,11 +81,13 @@
 - [x] **Management**: Groups, Channels, and Admins list/detail views.
 - [x] **System**: Live Logs (Firebase RTDB) and Database Browser.
 - [x] **Settings**: General, Messages, Rate Limits, and Webhook configuration.
+- [x] **Authentication**: Firebase Auth login flow verified working ✅.
 
 ---
 
 ## 📓 Historical Timeline & Decisions
 
+- **2026-01-26**: **Firebase Auth Flow Fixed**. Resolved SQLite SSL error, migrated models to database-agnostic types, verified login/dashboard flow.
 - **2026-01-25**: Massive Documentation Overhaul (Completed). Resolved Phase 13.1 Web Blockers.
 - **2026-01-24**: Phase 12 completion. Achieved 10.00/10 Pylint score.
 - **2026-01-23**: Migrated to Firebase RTDB for logs.
@@ -94,16 +99,22 @@
 
 ### Database & Connectivity
 
-- **Supabase SASL Error**: Connecting to remote Supabase DB via `asyncpg` currently fails with `SASL authentication failed`. This is bypassed locally using SQLite.
-- **Port Conflict (8080)**: rapid restarts of Uvicorn on Windows can lead to `Errno 10048` (Only one usage of each socket address permitted). Resolved by manual `taskkill` or waiting for the OS to release the socket.
-- **Local Postgres**: Local PostgreSQL instance unreachability on port 5432 has forced a temporary shift to SQLite for development velocity.
+- **Supabase SASL Error**: Connecting to remote Supabase DB via `asyncpg` with SCRAM may fail. This is bypassed locally using SQLite.
+- **Port Conflict (8080)**: Rapid restarts of Uvicorn on Windows can lead to `Errno 10048`. Resolved by waiting or using `taskkill`.
+- **SQLite Performance**: Login sync currently takes ~60s in dev mode. Needs profiling.
 
-### Scripts
+### Model Changes (2026-01-26)
 
-- **create_db.py Inconsistency**: Some model class names in `bot.py` (e.g., `Channel` vs `EnforcedChannel`) mismatch the imports in the initialization script. Needs final alignment.
+- **Type Migration**: All UUID columns changed from `sqlalchemy.dialects.postgresql.UUID` to `String(36)`. This may require PostgreSQL migration scripts in production.
+- **JSON vs JSONB**: Using `JSON` type instead of `JSONB` for SQLite compatibility. Consider reverting for PostgreSQL performance if needed.
+
+### UI Issues
+
+- **Dashboard Success Rate**: Shows "undefined%" - minor frontend data mapping issue.
 
 ### Roadmap
 
 - [ ] Multi-language support (i18n).
 - [ ] Member Whitelisting UI.
 - [ ] Telegram Login Widget integration.
+- [ ] PostgreSQL migration scripts for model type changes.

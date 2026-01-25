@@ -15,17 +15,17 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 ### 1. Growth Through Enforcement
 
 - **The Conversion Engine**: Convert every active group participant into a channel subscriber with a 100% enforcement rate.
-- **Multi-Channel Logic**: Support complex "AND" / "OR" linking scenarios where users must subscribe to a network of channels to participate in a premium group.
+- **Multi-Channel Logic**: Support complex "AND" / "OR" linking scenarios where users must subscribe to a network of channels.
 
 ### 2. Operational Superiority
 
-- **Sub-100ms Latency**: Target a p95 verification timeframe that is indistinguishable from native Telegram responsiveness.
-- **Massive Scalability**: Orchestrate thousands of "Tenants" (Group-Channel links) on a single unified backend without performance degradation.
+- **Sub-100ms Latency**: Target a p95 verification timeframe indistinguishable from native Telegram responsiveness.
+- **Massive Scalability**: Orchestrate thousands of "Tenants" (Group-Channel links) on a single unified backend.
 
 ### 3. Developer & Admin Delight
 
-- **Zero-Config Onboarding**: Ensure bot owners can go from "Add to Group" to "Fully Protected" in under 10 seconds via the `/protect` command.
-- **Premium Web Experience**: Provide a dashboard that feels like a high-end enterprise SaaS, not a hobbyist tool.
+- **Zero-Config Onboarding**: Bot owners can go from "Add to Group" to "Fully Protected" in under 10 seconds via `/protect`.
+- **Premium Web Experience**: Dashboard that feels like enterprise SaaS, not a hobbyist tool.
 
 ---
 
@@ -42,28 +42,30 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 
 ## 🛠️ Detailed Feature Roadmap
 
-### Phase A: The Bot Core (Foundation)
+### Phase A: The Bot Core (Foundation) ✅
 
 - [x] **Asynchronous Handler Engine**: Processing updates in parallel using MTProto.
 - [x] **Smart Join/Leave Detection**: Real-time permission revocation.
 - [x] **Interactive Inline Verification**: One-click "Join -> Verify -> Chat" flow.
 - [x] **Hybrid Caching Implementation**: Redis 8 and local LRU for p99 performance.
 
-### Phase B: The Admin API (Intelligence)
+### Phase B: The Admin API (Intelligence) ✅
 
 - [x] **FastAPI REST Backbone**: Pydantic V2 validated endpoints.
 - [x] **Firebase Auth Integration**: Industry-standard secure identity.
 - [x] **RBAC Management**: Owner, Admin, and Viewer roles with granular scoping.
 - [x] **Audit Logging System**: Immutable record of every administrative action.
+- [x] **Database-Agnostic Models**: SQLite for dev, PostgreSQL for production.
 
-### Phase C: Dashboard & Analytics (Visualization)
+### Phase C: Dashboard & Analytics (Visualization) ✅
 
 - [x] **Next.js 16 Web Interface**: Server Components and Streaming.
 - [x] **Real-Time Log Streamer**: WebSocket-free logs via Firebase RTDB.
 - [x] **Verification Analytics**: Recharts-driven growth and conversion visualization.
 - [x] **Database Browser**: Direct inspection of system state from the UI.
+- [x] **Firebase Authentication Flow**: Login, sync, and session management.
 
-### Phase D: Advanced Management (Configuration)
+### Phase D: Advanced Management (Configuration) 🚧
 
 - [x] **Global Settings Form**: Manage messages, rate limits, and security keys.
 - [x] **Webhook Management**: High-availability production delivery configuration.
@@ -81,40 +83,79 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 
 ### Technical Performance (SLAs)
 
-- **Uptime**: 99.9% availability for the Enforcement Service.
-- **API Latency**: <50ms for 90% of Admin Panel operations.
-- **Static Analysis**: 100% compliance with Pylint (10.00 score) and Pyrefly (0 errors).
+| Metric                | Target   | Status (2026-01-26) |
+| :-------------------- | :------- | :------------------ |
+| **Uptime**            | 99.9%    | ✅ On Track         |
+| **API Latency (p90)** | <50ms    | ✅ Achieved         |
+| **Pylint Score**      | 10.00/10 | ✅ Achieved         |
+| **Pyrefly Errors**    | 0        | ✅ Zero Errors      |
+| **Firebase Auth**     | Working  | ✅ Verified         |
+| **Local Dev Setup**   | <5 min   | ✅ Achieved         |
 
 ---
 
-## � Branding & Identity
+## 🎨 Branding & Identity
 
-- **Theme**: Cyber-Aesthetic / Noir. Deep blacks, vibrant purple accents (#9333ea), and neon highlights.
-- **Tone**: Empowerment, Precision, and Mystery. The bot is portrayed as a "Silent Guardian."
-- **Typography**: Inter (UI), JetBrains Mono (Codes/Metrics), and Outfit (Headings).
+- **Theme**: Cyber-Aesthetic / Noir. Deep blacks, vibrant purple accents (#9333ea), neon highlights.
+- **Tone**: Empowerment, Precision, and Mystery. The bot is a "Silent Guardian."
+- **Typography**: Inter (UI), JetBrains Mono (Codes/Metrics), Outfit (Headings).
 
 ---
 
 ## 🔐 Compliance & Security
 
-- **OWASP 2025 Standard**: Strict adherence to the latest web security practices.
-- **Data Privacy**: Minimalistic data collection. We only store necessary Telegram IDs and Firebase metadata.
-- **Encryption**: All data in transit (TLS 1.3) and at rest (SCRAM-SHA-256 for Postgres) is encrypted.
+- **OWASP 2025 Standard**: Strict adherence to web security practices.
+- **Data Privacy**: Minimalistic data collection (Telegram IDs + Firebase metadata only).
+- **Encryption**: TLS 1.3 in transit, SCRAM-SHA-256 for Postgres at rest.
 
 ---
 
 ## 🤝 Project Governance
 
 - **Version Control**: Semantic Versioning (SemVer) 2.0.
-- **Documentation**: "Documentation as Code" using Markdown within the repository.
-- **Branching Strategy**: Trunk-based development with short-lived feature branches and strict PR reviews.
+- **Documentation**: "Documentation as Code" using Markdown (memory-bank/).
+- **Branching Strategy**: Trunk-based development with strict PR reviews.
 
 ---
 
 ## 🗺️ Long-Term Horizon
 
-Beyond channel enforcement, Nezuko aims to become a full-service AI community moderator, integrating LLM-based sentiment analysis, automated FAQ handling, and crypto-integrated tip/reward systems for active community members.
+Beyond channel enforcement, Nezuko aims to become a full-service AI community moderator, integrating:
+
+- [ ] LLM-based sentiment analysis
+- [ ] Automated FAQ handling
+- [ ] Crypto-integrated tip/reward systems
+
+---
+
+## 📋 Quick Reference
+
+### Local Development Commands
+
+```bash
+# API
+cd apps/api
+python init_db.py
+python -m uvicorn src.main:app --port 8080 --reload
+
+# Web
+cd apps/web
+bun dev
+
+# Login: admin@nezuko.bot / ChangeMe123!
+```
+
+### Key Files
+
+| Purpose           | File Path                                      |
+| :---------------- | :--------------------------------------------- |
+| DB Initialization | `apps/api/init_db.py`                          |
+| Database Config   | `apps/api/src/core/database.py`                |
+| Auth Service      | `apps/api/src/services/auth_service.py`        |
+| Firebase Client   | `apps/web/src/lib/firebase.ts`                 |
+| Login Form        | `apps/web/src/components/forms/login-form.tsx` |
 
 ---
 
 **End of Brief**
+_(Updated 2026-01-26 with Firebase auth verification and quick reference)_

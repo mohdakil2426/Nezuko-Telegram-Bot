@@ -8,8 +8,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from src.core.database import engine
+
+# Import ALL models to ensure they register with Base.metadata
+from src.models import AdminAuditLog, AdminConfig, AdminSession, AdminUser  # noqa: F401
 from src.models.base import Base
-from src.models import AdminUser, AdminAuditLog, AdminSession, AdminConfig  # noqa: F401
+from src.models.bot import EnforcedChannel, GroupChannelLink, Owner, ProtectedGroup  # noqa: F401
 
 
 async def init_db() -> None:
@@ -17,8 +20,10 @@ async def init_db() -> None:
     async with engine.begin() as conn:
         # Create all tables
         await conn.run_sync(Base.metadata.create_all)
+
     print("✅ Database tables created successfully!")
-    print("📋 Tables created: admin_users, admin_audit_log, admin_sessions, admin_config")
+    print("📋 Admin Tables: admin_users, admin_audit_log, admin_sessions, admin_config")
+    print("📋 Bot Tables: owners, protected_groups, enforced_channels, group_channel_links")
 
 
 if __name__ == "__main__":
