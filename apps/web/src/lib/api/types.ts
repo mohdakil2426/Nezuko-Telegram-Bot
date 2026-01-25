@@ -1,3 +1,11 @@
+export * from "@nezuko/types";
+
+export interface AdminApiResponse<T> {
+    status: "success" | "error";
+    data: T;
+    meta?: any;
+}
+
 export interface UserResponse {
     id: string;
     email: string;

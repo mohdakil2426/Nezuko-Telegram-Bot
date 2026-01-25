@@ -147,8 +147,8 @@ export function ChannelsTable({ search }: ChannelsTableProps) {
     return (
         <DataTable
             columns={columns}
-            data={data?.items || []}
-            pageCount={data?.pages || -1}
+            data={data?.data || []}
+            pageCount={data?.meta?.total_pages || -1}
             pagination={pagination}
             onPaginationChange={setPagination}
             sorting={sorting}

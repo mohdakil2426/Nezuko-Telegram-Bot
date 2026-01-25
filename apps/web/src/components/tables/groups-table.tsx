@@ -49,7 +49,7 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
         {
             accessorKey: "title",
             header: "Group",
-            cell: ({ row }) => {
+            cell: ({ row }: { row: { original: Group } }) => {
                 const group = row.original;
                 return (
                     <div className="flex flex-col">
@@ -66,16 +66,18 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
         {
             accessorKey: "linked_channels_count",
             header: "Channels",
-            cell: ({ row }) => (
+            cell: ({ row }: { row: { getValue: (key: string) => any } }) => (
                 <div className="text-center w-16">
-                    <Badge variant="outline">{row.getValue("linked_channels_count")}</Badge>
+                    <Badge variant="outline" className="border-border">
+                        {row.getValue("linked_channels_count")}
+                    </Badge>
                 </div>
             ),
         },
         {
             accessorKey: "member_count",
             header: "Members",
-            cell: ({ row }) => (
+            cell: ({ row }: { row: { getValue: (key: string) => any } }) => (
                 <div className="font-medium">
                     {new Intl.NumberFormat("en-US").format(row.getValue("member_count"))}
                 </div>
@@ -84,7 +86,7 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
         {
             accessorKey: "enabled",
             header: "Status",
-            cell: ({ row }) => {
+            cell: ({ row }: { row: { getValue: (key: string) => any } }) => {
                 const isActive = row.getValue("enabled");
                 return (
                     <Badge
@@ -103,7 +105,7 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
         {
             accessorKey: "created_at",
             header: "Created",
-            cell: ({ row }) => {
+            cell: ({ row }: { row: { getValue: (key: string) => any } }) => {
                 return (
                     <span className="text-text-secondary text-sm">
                         {formatDistanceToNow(new Date(row.getValue("created_at")), {
@@ -115,7 +117,7 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
         },
         {
             id: "actions",
-            cell: ({ row }) => {
+            cell: ({ row }: { row: { original: Group } }) => {
                 const group = row.original;
 
                 return (
@@ -156,7 +158,7 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
     return (
         <DataTable
             columns={columns}
-            data={data?.items || []}
+            data={data?.data || []}
             pageCount={data?.meta?.total_pages || -1}
             pagination={pagination}
             onPaginationChange={setPagination}

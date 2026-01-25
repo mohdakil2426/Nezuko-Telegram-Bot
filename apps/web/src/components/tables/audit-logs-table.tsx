@@ -88,11 +88,16 @@ export function AuditLogsTable({
             columns={columns}
             data={data}
             pageCount={pageCount}
-            page={page}
-            perPage={perPage}
-            onPageChange={onPageChange}
+            pagination={{ pageIndex: page - 1, pageSize: perPage }}
+            onPaginationChange={(updater) => {
+                const nextState = typeof updater === "function" 
+                    ? updater({ pageIndex: page - 1, pageSize: perPage }) 
+                    : updater;
+                onPageChange(nextState.pageIndex + 1);
+            }}
+            sorting={[]}
+            onSortingChange={() => {}}
             isLoading={isLoading}
-        // Add other props if DataTable supports them (e.g. onSortingChange)
         />
     );
 }

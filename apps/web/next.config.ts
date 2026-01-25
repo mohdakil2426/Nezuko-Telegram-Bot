@@ -1,17 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable Turbopack for faster development (default in Next.js 16)
-  turbo: {
-    // Turbopack is now default, no special config needed
-  },
-
   // Enable gzip compression
   compress: true,
 
   // React compiler (experimental in Next.js 16)
   experimental: {
-    reactCompiler: true,
     optimizePackageImports: ["lucide-react", "recharts", "@radix-ui/react-icons"],
   },
 

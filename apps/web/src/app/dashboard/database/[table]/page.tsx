@@ -79,7 +79,7 @@ export default function TableDataPage() {
                     pageCount={totalPages}
                     pagination={{ pageIndex: page - 1, pageSize }}
                     onPaginationChange={(updater) => {
-                        if (typeof updater === 'function') {
+                        if (typeof updater === "function") {
                             const newState = updater({ pageIndex: page - 1, pageSize });
                             setPage(newState.pageIndex + 1);
                             setPageSize(newState.pageSize);
@@ -88,6 +88,8 @@ export default function TableDataPage() {
                             setPageSize(updater.pageSize);
                         }
                     }}
+                    sorting={[]}
+                    onSortingChange={() => {}}
                 />
             )}
         </div>

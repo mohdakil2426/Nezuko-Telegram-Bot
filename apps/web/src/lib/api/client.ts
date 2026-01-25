@@ -71,15 +71,21 @@ async function fetchClient<T>(endpoint: string, options: RequestOptions = {}): P
     return response.json();
 }
 
-export const api = {
-    get: <T>(endpoint: string, options?: RequestOptions) =>
-        fetchClient<T>(endpoint, { ...options, method: "GET" }),
-    post: <T>(endpoint: string, body: any, options?: RequestOptions) =>
-        fetchClient<T>(endpoint, { ...options, method: "POST", body }),
-    put: <T>(endpoint: string, body: any, options?: RequestOptions) =>
-        fetchClient<T>(endpoint, { ...options, method: "PUT", body }),
-    delete: <T>(endpoint: string, options?: RequestOptions) =>
-        fetchClient<T>(endpoint, { ...options, method: "DELETE" }),
-    patch: <T>(endpoint: string, body: any, options?: RequestOptions) =>
-        fetchClient<T>(endpoint, { ...options, method: "PATCH", body }),
-};
+export const client = Object.assign(
+    <T>(endpoint: string, options: RequestOptions = {}) =>
+        fetchClient<T>(endpoint, options),
+    {
+        get: <T>(endpoint: string, options?: RequestOptions) =>
+            fetchClient<T>(endpoint, { ...options, method: "GET" }),
+        post: <T>(endpoint: string, body: any, options?: RequestOptions) =>
+            fetchClient<T>(endpoint, { ...options, method: "POST", body }),
+        put: <T>(endpoint: string, body: any, options?: RequestOptions) =>
+            fetchClient<T>(endpoint, { ...options, method: "PUT", body }),
+        delete: <T>(endpoint: string, options?: RequestOptions) =>
+            fetchClient<T>(endpoint, { ...options, method: "DELETE" }),
+        patch: <T>(endpoint: string, body: any, options?: RequestOptions) =>
+            fetchClient<T>(endpoint, { ...options, method: "PATCH", body }),
+    }
+);
+
+export const api = client;

@@ -67,7 +67,7 @@ Full-stack web application for bot management - **Foundation & Features Implemen
 | Docker     | 27+     | Containerization         |
 | Caddy      | 2.10.2  | Reverse proxy (auto TLS) |
 | Turborepo  | 2.7.0   | Monorepo orchestration   |
-| pnpm       | 9.15.0  | Package management       |
+| Bun        | 1.3.6   | Package management       |
 
 ## Application Structure
 

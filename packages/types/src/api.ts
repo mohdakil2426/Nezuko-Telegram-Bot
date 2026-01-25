@@ -17,10 +17,21 @@ export interface ApiError {
     trace_id?: string;
 }
 
-export interface PaginatedResponse<T> {
-    items: T[];
-    total: number;
+export interface PaginationMeta {
     page: number;
     per_page: number;
-    pages: number;
+    total_items: number;
+    total_pages: number;
+}
+
+export interface PaginatedResponse<T> {
+    status: string;
+    data: T[];
+    meta: PaginationMeta;
+}
+
+export interface SuccessResponse<T = unknown> {
+    status: string;
+    data: T;
+    meta?: Record<string, any>;
 }
