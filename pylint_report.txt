@@ -1,6 +1,0 @@
-************* Module src.services.config_service
-apps\api\src\services\config_service.py:199:15: W0718: Catching too general exception Exception (broad-exception-caught)
-
---------------------------------------------------------------------
-Your code has been rated at 10.00/10 (previous run: 10.00/10, +0.00)
-
