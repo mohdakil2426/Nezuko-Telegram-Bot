@@ -331,6 +331,25 @@ except Exception as e:
     raise
 ```
 
+#### 3.1 Async Third-Party Typing (Redis/AIORedis)
+
+When working with async libraries like `redis-py` (v5+), static analysis tools (Pyright/Pyrefly) may conflict with standard type checkers (MyPy) regarding awaitables.
+
+**The Issue**: `redis.lrange()` returns a type that MyPy sees as awaitable but Pyright sees as `list[Any]`.
+
+**The Standard Pattern**: Use `cast` with `Awaitable` imported from `collections.abc`.
+
+```python
+# ✅ CORRECT - Satisfies both MyPy and Pyright/Pyrefly
+from collections.abc import Awaitable
+from typing import cast
+
+raw_logs = await cast(
+    Awaitable[list[str]],
+    self.redis.lrange(self.history_key, 0, limit)
+)
+```
+
 ---
 
 ### 📁 4. Key Files Reference

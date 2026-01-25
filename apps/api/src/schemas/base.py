@@ -1,6 +1,6 @@
 """Base Pydantic schemas and shared types."""
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
@@ -25,7 +25,7 @@ class SuccessResponse[T](BaseModel):
 
     status: str = "success"
     data: T
-    meta: dict | None = None
+    meta: dict[str, Any] | None = None
 
 
 class PaginatedResponse[T](BaseModel):
@@ -40,5 +40,5 @@ class ErrorResponse(BaseModel):
     """Standard error response defined by RFC 9457."""
 
     status: str = "error"
-    error: dict
-    meta: dict | None = None
+    error: dict[str, Any]
+    meta: dict[str, Any] | None = None

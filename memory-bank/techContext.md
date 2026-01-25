@@ -6,16 +6,33 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 
 ### 1. Bot Core (Python Runtime)
 
-- **Runtime**: `Python 3.13.1`.
-- **Library**: `python-telegram-bot v22.5.0`.
-- **Database**: `PostgreSQL 18.2` (Production) / `SQLite (aiosqlite)` (Local Dev Fallback).
-- **Caching**: `Redis 8.0`.
+- **Runtime**: `Python 3.13.1`
+- **Library**: `python-telegram-bot v22.5.0` [AsyncIO, Rate-Limiter]
+- **Database**:
+  - Production: `PostgreSQL 18.2` (via `asyncpg`)
+  - Development: `SQLite 3.x` (via `aiosqlite`)
+- **ORM**: `SQLAlchemy 2.0.46` [AsyncIO]
+- **Caching**: `Redis 7.1.0` (via `redis-py` async)
+- **Observability**: `Structlog 25.5`, `Sentry 2.50.0`, `Prometheus Client 0.24`
 
 ### 2. Admin API (FastAPI Backend)
 
-- **Framework**: `FastAPI 0.124.4`.
-- **Validation**: `Pydantic V2.12.5`.
-- **Authentication**: `Firebase Admin SDK v6.6.0` / `MOCK_AUTH` (Development).
+- **Framework**: `FastAPI 0.124.4` (ASGI)
+- **Server**: `Uvicorn 0.40.0`
+- **Validation**: `Pydantic V2.12.5`
+- **Authentication**: `Firebase Admin SDK v6.5.0`
+- **Rate Limiting**: `SlowAPI 0.1.9`
+- **Testing**: `Pytest 9.0`, `Pyrefly 0.49`, `Pylint 4.0`
+
+### 3. Admin Web (Next.js Frontend)
+
+- **Core**: `Next.js 16.1.4`, `React 19.2.3`, `TypeScript 5.9.3`
+- **Styling**: `TailwindCSS 4.1.18`, `Shadcn/UI` (Radix Primitives)
+- **State**: `Zustand 5.0.10` (Global), `TanStack Query 5.90` (Server State)
+- **Forms**: `React Hook Form 7.71`, `Zod 4.3.6`
+- **Visualization**: `Recharts 3.7.0`
+- **Client SDK**: `Firebase JS SDK 12.8.0`
+- **Testing**: `Vitest 3.0.4`
 
 ---
 

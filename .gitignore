@@ -118,4 +118,3 @@ apps/api/alembic/versions/*.pyc
 # TypeScript
 *.tsbuildinfo
 .tsbuildinfo
-

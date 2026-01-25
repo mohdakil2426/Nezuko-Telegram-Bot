@@ -1,6 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from ..manager import manager
+from ..manager import manager  # type: ignore
 
 router = APIRouter()
 

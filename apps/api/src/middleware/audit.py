@@ -1,7 +1,6 @@
 """Audit logging middleware for administrative actions."""
 
-import contextlib
-from uuid import UUID
+
 
 import structlog
 from sqlalchemy.exc import SQLAlchemyError
@@ -36,8 +35,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
                     # request.state.user is usually a dict payload from JWT
                     user_payload = request.state.user
                     if user_payload and "sub" in user_payload:
-                        with contextlib.suppress(ValueError):
-                            user_id = UUID(user_payload["sub"])
+                        user_id = user_payload["sub"]
 
                 # Extract IP and User Agent
                 ip_address = request.client.host if request.client else None

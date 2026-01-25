@@ -18,7 +18,7 @@ router = APIRouter()
 @router.get("", response_model=list[AdminResponse])
 async def get_admins(
     session: AsyncSession = Depends(get_session),
-    _=Depends(require_permission(Permission.MANAGE_ADMINS)),
+    _: AdminUser = Depends(require_permission(Permission.MANAGE_ADMINS)),
 ) -> Sequence[AdminUser]:
     """List all admin users (Requires MANAGE_ADMINS permission)."""
     service = AdminService(session)
@@ -29,7 +29,7 @@ async def get_admins(
 async def create_admin(
     data: AdminCreateRequest,
     session: AsyncSession = Depends(get_session),
-    _=Depends(require_permission(Permission.MANAGE_ADMINS)),
+    _: AdminUser = Depends(require_permission(Permission.MANAGE_ADMINS)),
 ) -> AdminUser:
     """Create a new admin user."""
     service = AdminService(session)
@@ -40,7 +40,7 @@ async def create_admin(
 async def get_admin(
     admin_id: UUID,
     session: AsyncSession = Depends(get_session),
-    _=Depends(require_permission(Permission.MANAGE_ADMINS)),
+    _: AdminUser = Depends(require_permission(Permission.MANAGE_ADMINS)),
 ) -> AdminUser:
     """Get admin details."""
     service = AdminService(session)
@@ -55,7 +55,7 @@ async def update_admin(
     admin_id: UUID,
     data: AdminUpdateRequest,
     session: AsyncSession = Depends(get_session),
-    _=Depends(require_permission(Permission.MANAGE_ADMINS)),
+    _: AdminUser = Depends(require_permission(Permission.MANAGE_ADMINS)),
 ) -> AdminUser:
     """Update an admin user."""
     service = AdminService(session)
@@ -66,11 +66,11 @@ async def update_admin(
 async def delete_admin(
     admin_id: UUID,
     session: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(require_permission(Permission.MANAGE_ADMINS)),
+    current_user: AdminUser = Depends(require_permission(Permission.MANAGE_ADMINS)),
 ) -> None:
     """Delete an admin user."""
     # Prevent self-deletion
-    if str(admin_id) == current_user.get("sub"):
+    if str(admin_id) == str(current_user.id):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot delete yourself",

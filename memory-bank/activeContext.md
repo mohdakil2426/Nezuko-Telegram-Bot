@@ -30,6 +30,12 @@
    - Fixed TypeScript error in `audit.ts` API endpoint
    - All pages handle empty/error states gracefully
 
+6. **Backend Static Analysis Hardening** ✅:
+   - **Ruff**: 0 errors (Imports sorted, line lengths fixed).
+   - **MyPy**: 0 errors (Strict return types, generic dict typing).
+   - **Pylint**: >9.5 score (Docstrings added, false positives suppressed).
+   - **Special**: Implemented `Awaitable` casting for Redis to satisfy Pyrefly.
+
 ---
 
 ## ⚡ Active Decisions

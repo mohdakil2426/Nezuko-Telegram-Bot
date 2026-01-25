@@ -1,6 +1,7 @@
 """Pydantic schemas for dashboard statistics."""
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -27,7 +28,7 @@ class ActivityItem(BaseModel):
     type: str  # "verification", "protection", "system"
     description: str
     timestamp: datetime
-    metadata: dict | None = None
+    metadata: dict[str, Any] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

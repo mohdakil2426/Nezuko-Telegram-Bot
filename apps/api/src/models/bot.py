@@ -1,6 +1,7 @@
 """Database models for the Telegram bot core objects."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import JSON, BigInteger, Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -48,7 +49,7 @@ class ProtectedGroup(Base):
     )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
-    params: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
+    params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=lambda: datetime.now(UTC),

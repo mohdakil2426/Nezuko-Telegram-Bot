@@ -1,6 +1,7 @@
 """Permission-based dependencies for RBAC."""
 
 from collections.abc import Callable
+from typing import Any
 
 from fastapi import Depends, HTTPException, status
 
@@ -8,8 +9,10 @@ from src.api.v1.dependencies.auth import get_current_active_user
 from src.core.permissions import ROLE_PERMISSIONS, Permission, Role
 from src.models.admin_user import AdminUser
 
+__all__ = ["Permission", "Role", "require_permission", "require_role"]
 
-def require_permission(permission: Permission) -> Callable:
+
+def require_permission(permission: Permission) -> Callable[..., Any]:
     """Dependency factory to check if user has required permission."""
 
     async def permission_checker(
@@ -38,7 +41,7 @@ def require_permission(permission: Permission) -> Callable:
     return permission_checker
 
 
-def require_role(role: Role) -> Callable:
+def require_role(role: Role) -> Callable[..., Any]:
     """Dependency factory to check if user has specific role."""
 
     async def role_checker(current_user: AdminUser = Depends(get_current_active_user)) -> AdminUser:

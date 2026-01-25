@@ -10,14 +10,45 @@ logger = structlog.get_logger()
 
 
 class DatabaseService:
+    """Service for handling database inspection and maintenance operations."""
+
     async def get_tables(self, session: AsyncSession) -> list[TableInfo]:
         """
         Retrieves list of tables using SQL inspection.
-        Note: Standard SQLAlchemy inspector is sync, so we run it in a run_sync block within session?
-        Actually, for asyncpg we might need raw queries for size and row counts efficiently.
+        Supports both PostgreSQL and SQLite.
         """
+        is_sqlite = session.bind.dialect.name == "sqlite"
 
-        # We'll use raw SQL for Postgres to get sizes and row estimates
+        if is_sqlite:
+            # SQLite Implementation
+            query = text(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';"
+            )
+            result = await session.execute(query)
+            tables = []
+
+            for row in result:
+                table_name = row.name
+                # Get row count
+                count_query = text(f"SELECT COUNT(*) FROM {table_name}")  # noqa: S608
+                count = (await session.execute(count_query)).scalar()
+
+                # Get columns
+                col_query = text(f"PRAGMA table_info({table_name})")  # noqa: S608
+                col_result = await session.execute(col_query)
+                columns = [r.name for r in col_result]
+
+                tables.append(
+                    TableInfo(
+                        name=table_name,
+                        row_count=int(count) if count is not None else 0,
+                        size_bytes=0,  # Not easily available in SQLite
+                        columns=columns,
+                    ),
+                )
+            return tables
+
+        # PostgreSQL Implementation
         query = text("""
             SELECT
                 relname as table_name,
@@ -30,13 +61,8 @@ class DatabaseService:
         result = await session.execute(query)
         tables = []
 
-        # To get columns, we might need a separate query or inspector
-        # Let's do a basic column fetch for each table or just return names for now
-        # For simplicity and performance, we'll fetch columns via information_schema
-
         for row in result:
             table_name = row.table_name
-            # simplified column fetch
             col_query = text(
                 "SELECT column_name FROM information_schema.columns WHERE table_name = :table_name",
             )
@@ -64,30 +90,49 @@ class DatabaseService:
         """
         Fetches raw data from a table with pagination.
         WARNING: Vulnerable to SQL injection if table_name is not sanitized.
-        We must validate table_name against information_schema first.
+        We validate table_name against schema first.
         """
+        is_sqlite = session.bind.dialect.name == "sqlite"
 
         # 1. Validate table exists
-        check_query = text(
-            "SELECT 1 FROM information_schema.tables WHERE table_name = :table_name AND table_schema = 'public'",
-        )
-        result = await session.execute(check_query, {"table_name": table_name})
+        if is_sqlite:
+            check_query = text(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name = :table_name"
+            )
+            result = await session.execute(check_query, {"table_name": table_name})
+        else:
+            check_query = text(
+                "SELECT 1 FROM information_schema.tables WHERE table_name = :table_name AND table_schema = 'public'",
+            )
+            result = await session.execute(check_query, {"table_name": table_name})
+
         if not result.scalar():
             raise ValueError(f"Table {table_name} does not exist")
 
         # 2. Get columns info
-        col_query = text("""
-            SELECT column_name, data_type, is_nullable
-            FROM information_schema.columns
-            WHERE table_name = :table_name
-            ORDER BY ordinal_position
-        """)
-        col_result = await session.execute(col_query, {"table_name": table_name})
         columns = []
-        for r in col_result:
-            columns.append(
-                ColumnInfo(name=r.column_name, type=r.data_type, nullable=r.is_nullable == "YES"),
-            )
+        if is_sqlite:
+            col_query = text(f"PRAGMA table_info({table_name})")  # noqa: S608
+            col_result = await session.execute(col_query)
+            for r in col_result:
+                # SQLite PRAGMA returns: cid, name, type, notnull, dflt_value, pk
+                columns.append(
+                    ColumnInfo(name=r.name, type=str(r.type), nullable=not r.notnull),
+                )
+        else:
+            col_query = text("""
+                SELECT column_name, data_type, is_nullable
+                FROM information_schema.columns
+                WHERE table_name = :table_name
+                ORDER BY ordinal_position
+            """)
+            col_result = await session.execute(col_query, {"table_name": table_name})
+            for r in col_result:
+                columns.append(
+                    ColumnInfo(
+                        name=r.column_name, type=r.data_type, nullable=r.is_nullable == "YES"
+                    ),
+                )
 
         # 3. Get total count
         # Use safe string formatting for table name since we validated it

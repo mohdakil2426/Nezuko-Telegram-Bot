@@ -1,6 +1,5 @@
 """Business logic for audit log management."""
 
-import uuid
 from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
@@ -13,14 +12,16 @@ from src.models.admin_audit_log import AdminAuditLog
 
 
 class AuditService:
+    """Service for handling audit logs."""
+
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def create_log(
+    async def create_log(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         action: str,
         resource_type: str,
-        user_id: uuid.UUID | None = None,
+        user_id: str | None = None,
         resource_id: str | None = None,
         old_value: dict[str, Any] | None = None,
         new_value: dict[str, Any] | None = None,
@@ -43,11 +44,11 @@ class AuditService:
         await self.session.refresh(log_entry)
         return log_entry
 
-    async def get_logs(
+    async def get_logs(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         page: int = 1,
         per_page: int = 20,
-        user_id: uuid.UUID | None = None,
+        user_id: str | None = None,
         action: str | None = None,
         resource_type: str | None = None,
         start_date: datetime | None = None,
@@ -68,7 +69,7 @@ class AuditService:
             query = query.where(AdminAuditLog.created_at <= end_date)
 
         # Count total
-        count_q = select(func.count()).select_from(AdminAuditLog)
+        count_q = select(func.count()).select_from(AdminAuditLog)  # pylint: disable=not-callable
 
         if user_id:
             count_q = count_q.where(AdminAuditLog.user_id == user_id)

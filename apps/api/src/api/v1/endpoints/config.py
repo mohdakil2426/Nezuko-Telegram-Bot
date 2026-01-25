@@ -23,7 +23,7 @@ router = APIRouter()
 async def get_config(
     current_user: Annotated[AdminUser, Depends(get_current_active_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
-):
+) -> ConfigResponse:
     """
     Get system configuration.
     """
@@ -36,7 +36,7 @@ async def update_config(
     data: ConfigUpdateRequest,
     current_user: Annotated[AdminUser, Depends(get_current_active_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
-):
+) -> ConfigUpdateResponse:
     """
     Update system configuration.
     """
@@ -48,7 +48,7 @@ async def update_config(
 async def test_webhook(
     current_user: Annotated[AdminUser, Depends(get_current_active_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
-):
+) -> WebhookTestResult:
     """
     Test webhook connectivity.
     """

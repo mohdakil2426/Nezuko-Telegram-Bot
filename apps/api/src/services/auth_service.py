@@ -9,7 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.admin_user import AdminUser
 
 
-class AuthService:
+class AuthService:  # pylint: disable=too-few-public-methods
+    """Service for authentication and user syncing."""
+
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 

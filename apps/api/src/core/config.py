@@ -22,10 +22,10 @@ class Settings(BaseSettings):
     REDIS_PASSWORD: str | None = None
 
     # Firebase Admin SDK
-    FIREBASE_PROJECT_ID: str
+    FIREBASE_PROJECT_ID: str = "nezuko-dev"
     FIREBASE_CLIENT_EMAIL: str | None = None
     FIREBASE_PRIVATE_KEY: str | None = None
-    FIREBASE_DATABASE_URL: str
+    FIREBASE_DATABASE_URL: str = "http://localhost:9000?ns=nezuko-dev"
 
     # Admin Panel - Initial Admin User
     ADMIN_INITIAL_EMAIL: str = "admin@nezuko.bot"
@@ -67,13 +67,13 @@ class Settings(BaseSettings):
                 import json
 
                 try:
-                    return json.loads(value)
+                    return list(json.loads(value))
                 except json.JSONDecodeError:
                     # If it looks like a list but isn't valid JSON, fallback to split
                     pass
             # Standard comma-separated fallback
             return [origin.strip() for origin in value.split(",") if origin.strip()]
-        return value
+        return []
 
 
 @lru_cache

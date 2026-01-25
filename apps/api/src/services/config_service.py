@@ -8,12 +8,18 @@ from urllib.parse import urlparse
 
 import aiohttp
 from sqlalchemy import func, select
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import get_settings
 from src.models.config import AdminConfig
 from src.schemas.config import (
+    ConfigBot,
+    ConfigDatabase,
+    ConfigMessages,
+    ConfigRateLimiting,
+    ConfigRedis,
     ConfigResponse,
     ConfigUpdateRequest,
     ConfigUpdateResponse,
@@ -22,11 +28,14 @@ from src.schemas.config import (
 
 
 class ConfigService:
+    """Service for managing dynamic system configuration."""
+
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
         self.settings = get_settings()
 
     async def get_config(self) -> ConfigResponse:
+        """Retrieve current configuration including defaults."""
         # Load dynamic config from DB
         stmt = select(AdminConfig)
         result = await self.session.execute(stmt)
@@ -46,32 +55,33 @@ class ConfigService:
         per_group_limit = configs.get("rate_limiting.per_group_limit", {}).get("value", 10)
 
         return ConfigResponse(
-            bot={
-                "token": self._mask_token(self.settings.BOT_TOKEN)
+            bot=ConfigBot(
+                token=self._mask_token(self.settings.BOT_TOKEN)
                 if hasattr(self.settings, "BOT_TOKEN")
                 else "***MASKED***",
-                "webhook_url": getattr(self.settings, "WEBHOOK_URL", None),
-                "webhook_enabled": bool(getattr(self.settings, "WEBHOOK_URL", None)),
-            },
-            database={
-                "url": self._mask_db_url(self.settings.DATABASE_URL),
-                "pool_size": 20,  # Static for now
-            },
-            redis={
-                "url": self._mask_url(self.settings.REDIS_URL),
-                "connected": True,  # TODO: Check actual connection
-            },
-            rate_limiting={
-                "global_limit": int(global_limit),
-                "per_group_limit": int(per_group_limit),
-            },
-            messages={
-                "welcome_template": welcome_template,
-                "verification_prompt": verification_prompt,
-            },
+                webhook_url=getattr(self.settings, "WEBHOOK_URL", None),
+                webhook_enabled=bool(getattr(self.settings, "WEBHOOK_URL", None)),
+            ),
+            database=ConfigDatabase(
+                url=self._mask_db_url(self.settings.DATABASE_URL),
+                pool_size=20,  # Static for now
+            ),
+            redis=ConfigRedis(
+                url=self._mask_url(self.settings.REDIS_URL),
+                connected=True,  # TODO: Check actual connection
+            ),
+            rate_limiting=ConfigRateLimiting(
+                global_limit=int(global_limit),
+                per_group_limit=int(per_group_limit),
+            ),
+            messages=ConfigMessages(
+                welcome_template=welcome_template,
+                verification_prompt=verification_prompt,
+            ),
         )
 
     async def update_config(self, data: ConfigUpdateRequest) -> ConfigUpdateResponse:
+        """Update part of the configuration."""
         updated_keys = []
 
         if data.messages:
@@ -113,6 +123,7 @@ class ConfigService:
         return ConfigUpdateResponse(updated_keys=updated_keys, restart_required=restart_required)
 
     async def test_webhook(self) -> WebhookTestResult:
+        """Test webhook connectivity and SSL status."""
         webhook_url = getattr(self.settings, "WEBHOOK_URL", None)
         if not webhook_url:
             return WebhookTestResult(
@@ -157,7 +168,7 @@ class ConfigService:
 
             return WebhookTestResult(
                 webhook_url=webhook_url,
-                status="reachable" if 200 <= status_code < 400 else f"error_{status_code}",  # noqa: PLR2004
+                status=("reachable" if 200 <= status_code < 400 else f"error_{status_code}"),  # noqa: PLR2004
                 latency_ms=latency,
                 ssl_valid=ssl_valid,
                 ssl_expires_at=str(ssl_expires_at) if ssl_expires_at else None,
@@ -175,14 +186,28 @@ class ConfigService:
             )
 
     async def _upsert_config(self, key: str, value: Any) -> None:
-        stmt = (
-            insert(AdminConfig)
-            .values(key=key, value={"value": value}, updated_at=func.now())
-            .on_conflict_do_update(
-                index_elements=[AdminConfig.key],
-                set_={"value": {"value": value}, "updated_at": func.now()},
+        is_sqlite = self.session.bind.dialect.name == "sqlite"
+        stmt: Any = None
+
+        if is_sqlite:
+            stmt = (
+                sqlite_insert(AdminConfig)
+                .values(key=key, value={"value": value}, updated_at=func.now())  # pylint: disable=not-callable
+                .on_conflict_do_update(
+                    index_elements=[AdminConfig.key],
+                    set_={"value": {"value": value}, "updated_at": func.now()},  # pylint: disable=not-callable
+                )
             )
-        )
+        else:
+            stmt = (
+                pg_insert(AdminConfig)
+                .values(key=key, value={"value": value}, updated_at=func.now())  # pylint: disable=not-callable
+                .on_conflict_do_update(
+                    index_elements=[AdminConfig.key],
+                    set_={"value": {"value": value}, "updated_at": func.now()},  # pylint: disable=not-callable
+                )
+            )
+
         await self.session.execute(stmt)
 
     def _mask_token(self, token: str) -> str:

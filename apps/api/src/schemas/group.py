@@ -1,6 +1,7 @@
 """Pydantic schemas for protected groups."""
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -25,13 +26,13 @@ class GroupStatistics(BaseModel):
 class GroupBase(BaseModel):
     title: str | None
     enabled: bool = True
-    params: dict | None = None
+    params: dict[str, Any] | None = None
 
 
 class GroupUpdateRequest(BaseModel):
     enabled: bool | None = None
     title: str | None = None
-    params: dict | None = None
+    params: dict[str, Any] | None = None
 
 
 class GroupResponse(GroupBase):

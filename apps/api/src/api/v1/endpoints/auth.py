@@ -18,18 +18,18 @@ router = APIRouter()
 @router.get("/me", response_model=SuccessResponse[UserResponse])
 async def get_current_user_info(
     current_user: AdminUser = Depends(get_current_active_user),
-):
+) -> SuccessResponse[UserResponse]:
     """
     Get current user.
     """
-    return SuccessResponse(data=current_user)
+    return SuccessResponse(data=UserResponse.model_validate(current_user))
 
 
 @router.post("/sync", response_model=SuccessResponse[UserResponse])
 async def sync_user(
     request: Request,
     session: AsyncSession = Depends(get_session),
-):
+) -> SuccessResponse[UserResponse]:
     """
     Sync Firebase user to local DB (Idempotent).
     """
@@ -49,4 +49,4 @@ async def sync_user(
 
     auth_service = AuthService(session)
     user = await auth_service.sync_firebase_user(firebase_user)
-    return SuccessResponse(data=user)
+    return SuccessResponse(data=UserResponse.model_validate(user))

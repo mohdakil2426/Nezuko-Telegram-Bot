@@ -1,6 +1,8 @@
 """Business logic for log retrieval and monitoring."""
 
 import json
+from collections.abc import Awaitable
+from typing import Any, cast
 
 from redis.asyncio import Redis
 
@@ -10,6 +12,8 @@ settings = get_settings()
 
 
 class LogService:
+    """Service for handling log retrieval and filtering from Redis."""
+
     def __init__(self) -> None:
         self.redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
         self.history_key = "nezuko:logs:history"
@@ -19,7 +23,7 @@ class LogService:
         limit: int = 100,
         level: str | None = None,
         search: str | None = None,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """
         Retrieve historical logs from Redis List.
         Note: Redis List doesn't support advanced filtering server-side efficiently.
@@ -31,7 +35,9 @@ class LogService:
 
         # Pyrefly/Pyright might be confused about the async nature of the redis client stub
         # But in runtime with redis-py 5.x+, lrange is awaitable.
-        raw_logs = await self.redis.lrange(self.history_key, 0, fetch_limit - 1)  # type: ignore
+        raw_logs = await cast(
+            Awaitable[list[str]], self.redis.lrange(self.history_key, 0, fetch_limit - 1)
+        )
 
         logs = []
         for raw in raw_logs:

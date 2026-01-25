@@ -2,7 +2,7 @@
 
 from functools import lru_cache
 
-import firebase_admin
+import firebase_admin  # type: ignore[import-untyped]
 from firebase_admin import App, credentials
 
 from src.core.config import get_settings

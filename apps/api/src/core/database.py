@@ -1,6 +1,7 @@
 """SQLAlchemy database connection and session management."""
 
 from collections.abc import AsyncIterator
+from typing import Any
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -16,7 +17,7 @@ settings = get_settings()
 _is_sqlite = "sqlite" in settings.DATABASE_URL.lower()
 
 # Build engine kwargs based on database type
-_engine_kwargs: dict = {
+_engine_kwargs: dict[str, Any] = {
     "echo": settings.API_DEBUG,
     "future": True,
 }

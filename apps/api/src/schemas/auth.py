@@ -1,6 +1,5 @@
 """Pydantic schemas for authentication."""
 
-import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -28,7 +27,7 @@ class RefreshRequest(BaseModel):
 class UserResponse(BaseSchema):
     """User response schema."""
 
-    id: uuid.UUID
+    id: str
     email: EmailStr
     full_name: str | None
     role: str

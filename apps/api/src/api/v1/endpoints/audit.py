@@ -1,7 +1,6 @@
 """Audit API Endpoint."""
 
 from datetime import datetime
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +9,7 @@ from src.api.v1.dependencies.permissions import require_permission
 from src.core.database import get_session
 from src.core.permissions import Permission, Role
 from src.models.admin_user import AdminUser
-from src.schemas.audit import AuditLogListResponse
+from src.schemas.audit import AuditLogListResponse, AuditLogResponse
 from src.services.audit_service import AuditService
 
 router = APIRouter()
@@ -21,7 +20,7 @@ class AuditLogFilters:
 
     def __init__(
         self,
-        user_id: UUID | None = None,
+        user_id: str | None = None,
         action: str | None = None,
         resource_type: str | None = None,
         start_date: datetime | None = None,
@@ -47,7 +46,7 @@ async def get_audit_logs(
     """
     # Security: If not OWNER, force filter by own user_id (Admin can see own actions)
     user_role = Role(current_user.role)
-    request_user_id = filters.user_id
+    request_user_id: str | None = filters.user_id
 
     if user_role != Role.OWNER:
         # Override user_id filter to current user's ID
@@ -65,7 +64,7 @@ async def get_audit_logs(
     )
 
     return AuditLogListResponse(
-        items=logs,
+        items=[AuditLogResponse.model_validate(log) for log in logs],
         total=total,
         page=page,
         per_page=per_page,

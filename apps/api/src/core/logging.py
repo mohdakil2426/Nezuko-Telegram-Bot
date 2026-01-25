@@ -60,6 +60,6 @@ def configure_logging(
 
 
 # Module-level logger
-def get_logger(name: str | None = None) -> structlog.stdlib.BoundLogger:
+def get_logger(name: str | None = None) -> Any:
     """Get a configured logger instance"""
     return structlog.get_logger(name)

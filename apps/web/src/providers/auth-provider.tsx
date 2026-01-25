@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingScreen } from "@/components/ui/loading-screen";
+
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -40,10 +42,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return () => unsubscribe();
     }, [setUser, logout]);
 
-    return <>{children}</>;
-    // if (isMounting) {
-    //     return null; // Or a loading spinner
-    // }
+    if (isMounting) {
+        return <LoadingScreen />;
+    }
 
     return <>{children}</>;
 }

@@ -1,5 +1,7 @@
 """Business logic for enforced channels."""
 
+from typing import Any
+
 from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,12 +10,12 @@ from src.models.bot import EnforcedChannel, GroupChannelLink
 from src.schemas.channel import ChannelCreateRequest
 
 
-async def get_channels(
+async def get_channels(  # pylint: disable=too-many-locals
     session: AsyncSession,
     page: int = 1,
     per_page: int = 10,
     search: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Get paginated list of channels."""
 
     # Base query
@@ -30,7 +32,7 @@ async def get_channels(
         )
 
     # Count total
-    count_stmt = select(func.count()).select_from(query.subquery())
+    count_stmt = select(func.count()).select_from(query.subquery())  # pylint: disable=not-callable
     total_result = await session.execute(count_stmt)
     total = total_result.scalar_one()
 
@@ -51,7 +53,7 @@ async def get_channels(
     items = []
     for channel in channels:
         # Get count of linked groups
-        link_count_stmt = select(func.count()).where(
+        link_count_stmt = select(func.count()).where(  # pylint: disable=not-callable
             GroupChannelLink.channel_id == channel.channel_id,
         )
         link_count_res = await session.execute(link_count_stmt)
@@ -78,7 +80,7 @@ async def get_channels(
     }
 
 
-async def get_channel(session: AsyncSession, channel_id: int) -> dict | None:
+async def get_channel(session: AsyncSession, channel_id: int) -> dict[str, Any] | None:
     """Get detailed channel info."""
     stmt = (
         select(EnforcedChannel)

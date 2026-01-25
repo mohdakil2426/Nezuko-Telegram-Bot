@@ -18,7 +18,7 @@ class Cache:
         """Initialize and return the Redis client singleton."""
         if cls._redis is None:
             settings = get_settings()
-            cls._redis = from_url(settings.REDIS_URL, decode_responses=True)
+            cls._redis = from_url(settings.REDIS_URL, decode_responses=True)  # type: ignore
         return cls._redis
 
     @classmethod

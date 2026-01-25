@@ -13,6 +13,7 @@ from src.models.admin_user import AdminUser
 from src.schemas.base import PaginationMeta, SuccessResponse
 from src.schemas.group import (
     ChannelLinkRequest,
+    GroupChannelLinkSchema,
     GroupDetailResponse,
     GroupListResponse,
     GroupResponse,
@@ -25,26 +26,30 @@ router = APIRouter()
 
 @router.get("", response_model=GroupListResponse)
 async def list_groups(  # noqa: PLR0913
+    *,
     page: int = Query(1, ge=1),
     per_page: int = Query(25, ge=1, le=100),
     search: str | None = None,
     status_filter: str = Query("all", alias="status", pattern="^(active|inactive|all)$"),
     sort_by: str = "created_at",
     sort_order: str = Query("desc", pattern="^(asc|desc)$"),
-    current_user: Annotated[AdminUser, Depends(get_current_active_user)] = None,  # type: ignore # noqa: ARG001
-    session: Annotated[AsyncSession, Depends(get_session)] = None,  # type: ignore
+    current_user: Annotated[AdminUser, Depends(get_current_active_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> GroupListResponse:
     """
     List protected groups with pagination and filtering.
     """
-    groups, total_items = await group_service.get_groups(
-        session=session,
+    filters = group_service.GroupFilterParams(
         page=page,
         per_page=per_page,
         search=search,
         status=status_filter,
         sort_by=sort_by,
         sort_order=sort_order,
+    )
+    groups, total_items = await group_service.get_groups(
+        session=session,
+        filters=filters,
     )
 
     group_responses = []
@@ -79,8 +84,8 @@ async def list_groups(  # noqa: PLR0913
 @router.get("/{group_id}", response_model=GroupDetailResponse)
 async def get_group_details(
     group_id: int,
-    current_user: Annotated[AdminUser, Depends(get_current_active_user)] = None,  # type: ignore # noqa: ARG001
-    session: Annotated[AsyncSession, Depends(get_session)] = None,  # type: ignore
+    current_user: Annotated[AdminUser, Depends(get_current_active_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> GroupDetailResponse:
     """
     Get detailed information about a specific group.
@@ -98,12 +103,12 @@ async def get_group_details(
     for link in group.channel_links:
         if link.channel:
             linked_channels.append(
-                {
-                    "channel_id": link.channel.channel_id,
-                    "title": link.channel.title,
-                    "username": link.channel.username,
-                    "is_required": True,
-                },
+                GroupChannelLinkSchema(
+                    channel_id=link.channel.channel_id,
+                    title=link.channel.title,
+                    username=link.channel.username,
+                    is_required=True,
+                ),
             )
 
     response = GroupDetailResponse(
@@ -126,8 +131,8 @@ async def get_group_details(
 async def update_group(
     group_id: int,
     data: GroupUpdateRequest,
-    current_user: Annotated[AdminUser, Depends(get_current_active_user)] = None,  # type: ignore # noqa: ARG001
-    session: Annotated[AsyncSession, Depends(get_session)] = None,  # type: ignore
+    current_user: Annotated[AdminUser, Depends(get_current_active_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> GroupDetailResponse:
     """
     Update group settings.
@@ -142,12 +147,12 @@ async def update_group(
     for link in updated_group.channel_links:
         if link.channel:
             linked_channels.append(
-                {
-                    "channel_id": link.channel.channel_id,
-                    "title": link.channel.title,
-                    "username": link.channel.username,
-                    "is_required": True,
-                },
+                GroupChannelLinkSchema(
+                    channel_id=link.channel.channel_id,
+                    title=link.channel.title,
+                    username=link.channel.username,
+                    is_required=True,
+                ),
             )
 
     response = GroupDetailResponse(
@@ -168,13 +173,13 @@ async def update_group(
     return response
 
 
-@router.post("/{group_id}/channels", response_model=SuccessResponse[dict])
+@router.post("/{group_id}/channels", response_model=SuccessResponse[dict[str, str]])
 async def link_channel(
     group_id: int,
     data: ChannelLinkRequest,
-    current_user: Annotated[AdminUser, Depends(get_current_active_user)] = None,  # type: ignore # noqa: ARG001
-    session: Annotated[AsyncSession, Depends(get_session)] = None,  # type: ignore
-) -> SuccessResponse[dict]:
+    current_user: Annotated[AdminUser, Depends(get_current_active_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> SuccessResponse[dict[str, str]]:
     """
     Link a channel to a group.
     """
@@ -187,13 +192,13 @@ async def link_channel(
     return SuccessResponse(data={"message": "Channel linked successfully"})
 
 
-@router.delete("/{group_id}/channels/{channel_id}", response_model=SuccessResponse[dict])
+@router.delete("/{group_id}/channels/{channel_id}", response_model=SuccessResponse[dict[str, str]])
 async def unlink_channel(
     group_id: int,
     channel_id: int,
-    current_user: Annotated[AdminUser, Depends(get_current_active_user)] = None,  # type: ignore # noqa: ARG001
-    session: Annotated[AsyncSession, Depends(get_session)] = None,  # type: ignore
-) -> SuccessResponse[dict]:
+    current_user: Annotated[AdminUser, Depends(get_current_active_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> SuccessResponse[dict[str, str]]:
     """
     Unlink a channel from a group.
     """

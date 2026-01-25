@@ -98,6 +98,7 @@
 
 ## 📓 Historical Timeline & Decisions
 
+- **2026-01-26 (Session 3)**: Backend Static Analysis Cleanup. Zero issues in Ruff/MyPy/Pyrefly. Added Redis type casting pattern.
 - **2026-01-26 (Session 2)**: Comprehensive UI testing. Fixed 9 navigation/display issues. Achieved zero TypeScript errors.
 - **2026-01-26 (Session 1)**: Firebase Auth Flow Fixed. Resolved SQLite SSL error, migrated models.
 - **2026-01-25**: Massive Documentation Overhaul. Resolved Phase 13.1 Web Blockers.
@@ -118,6 +119,8 @@
 | Page 1 of -1                  | `Math.max(1, pageCount)`              |
 | `any` types in charts         | Replaced with `unknown` + type guards |
 | TypeScript error in audit API | Type assertion added                  |
+| `list[Unknown]` awaitable     | `cast(Awaitable[...], ...)`           |
+| Missing docstrings            | Added to Services layer               |
 
 ### Remaining Issues
 

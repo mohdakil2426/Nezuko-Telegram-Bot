@@ -1,6 +1,7 @@
 """Business logic for protected groups."""
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 from sqlalchemy import asc, delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,14 +11,21 @@ from src.models.bot import GroupChannelLink, ProtectedGroup
 from src.schemas.group import GroupUpdateRequest
 
 
+@dataclass
+class GroupFilterParams:
+    """Parameters for filtering groups."""
+
+    page: int = 1
+    per_page: int = 25
+    search: str | None = None
+    status: str = "all"  # "active", "inactive", "all"
+    sort_by: str = "created_at"
+    sort_order: str = "desc"
+
+
 async def get_groups(
     session: AsyncSession,
-    page: int = 1,
-    per_page: int = 25,
-    search: str | None = None,
-    status: str = "all",  # "active", "inactive", "all"
-    sort_by: str = "created_at",
-    sort_order: str = "desc",
+    filters: GroupFilterParams,
 ) -> tuple[Sequence[ProtectedGroup], int]:
     """
     Get paginated list of protected groups with filters.
@@ -25,30 +33,35 @@ async def get_groups(
     stmt = select(ProtectedGroup)
 
     # Filtering
-    if search:
+    # Filtering
+    if filters.search:
         # Search by title or ID (if numeric)
-        if search.isdigit():
-            stmt = stmt.where(ProtectedGroup.group_id == int(search))
+        if filters.search.isdigit():
+            stmt = stmt.where(ProtectedGroup.group_id == int(filters.search))
         else:
-            stmt = stmt.where(ProtectedGroup.title.ilike(f"%{search}%"))
+            stmt = stmt.where(ProtectedGroup.title.ilike(f"%{filters.search}%"))
 
-    if status == "active":
+    if filters.status == "active":
         stmt = stmt.where(ProtectedGroup.enabled.is_(True))
-    elif status == "inactive":
+    elif filters.status == "inactive":
         stmt = stmt.where(ProtectedGroup.enabled.is_(False))
 
     # Counting total items
-    count_stmt = select(func.count()).select_from(stmt.subquery())
+    count_stmt = select(func.count()).select_from(stmt.subquery())  # pylint: disable=not-callable
     total_items = await session.scalar(count_stmt) or 0
 
     # Sorting
-    sort_col = getattr(ProtectedGroup, sort_by, ProtectedGroup.created_at)
+    sort_col = getattr(ProtectedGroup, filters.sort_by, ProtectedGroup.created_at)
     if sort_col is None:
         sort_col = ProtectedGroup.created_at
-    stmt = stmt.order_by(desc(sort_col)) if sort_order == "desc" else stmt.order_by(asc(sort_col))
+    stmt = (
+        stmt.order_by(desc(sort_col))
+        if filters.sort_order == "desc"
+        else stmt.order_by(asc(sort_col))
+    )
 
     # Pagination
-    stmt = stmt.offset((page - 1) * per_page).limit(per_page)
+    stmt = stmt.offset((filters.page - 1) * filters.per_page).limit(filters.per_page)
 
     # Eager loading (count of linked channels)
     stmt = stmt.options(selectinload(ProtectedGroup.channel_links))
