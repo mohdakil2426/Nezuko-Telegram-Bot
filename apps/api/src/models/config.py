@@ -1,11 +1,8 @@
 """Database model for dynamic system configuration."""
 
 from datetime import datetime
-from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, func, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -15,11 +12,11 @@ class AdminConfig(Base):
     __tablename__ = "admin_config"
 
     key: Mapped[str] = mapped_column(String(100), primary_key=True)
-    value: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    value: Mapped[dict] = mapped_column(JSON, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_sensitive: Mapped[bool] = mapped_column(Boolean, default=False)
-    updated_by: Mapped[UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True),
+    updated_by: Mapped[str | None] = mapped_column(
+        String(36),
         ForeignKey("admin_users.id"),
         nullable=True,
     )

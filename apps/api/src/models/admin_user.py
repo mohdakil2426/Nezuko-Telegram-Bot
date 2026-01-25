@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import BigInteger, Boolean, DateTime, String, func
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -17,7 +16,7 @@ class AdminUser(Base):
 
     __tablename__ = "admin_users"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     # Auth Provider ID
     firebase_uid: Mapped[str | None] = mapped_column(String(36), unique=True, nullable=True)
 
