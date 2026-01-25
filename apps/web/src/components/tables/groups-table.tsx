@@ -131,14 +131,14 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem
-                                onClick={() => router.push(`/groups/${group.group_id}`)}
+                                onClick={() => router.push(`/dashboard/groups/${group.group_id}`)}
                             >
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Details
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                                onClick={() => router.push(`/groups/${group.group_id}?action=edit`)}
+                                onClick={() => router.push(`/dashboard/groups/${group.group_id}?action=edit`)}
                             >
                                 <FileEdit className="mr-2 h-4 w-4" />
                                 Edit Settings
@@ -165,7 +165,7 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
             sorting={sorting}
             onSortingChange={setSorting}
             isLoading={isLoading}
-            onRowClick={(row) => router.push(`/groups/${row.group_id}`)}
+            onRowClick={(row) => router.push(`/dashboard/groups/${row.group_id}`)}
         />
     );
 }

@@ -9,7 +9,7 @@ export default function NotFound() {
                 The channel you are looking for does not exist or has been deleted.
             </p>
             <Button asChild variant="outline">
-                <Link href="/channels">Back to Channels</Link>
+                <Link href="/dashboard/channels">Back to Channels</Link>
             </Button>
         </div>
     );

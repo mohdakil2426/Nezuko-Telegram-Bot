@@ -25,51 +25,51 @@ export function Sidebar({ className }: SidebarProps) {
         {
             label: "Dashboard",
             icon: LayoutDashboard,
-            href: "/",
-            active: pathname === "/",
+            href: "/dashboard",
+            active: pathname === "/dashboard" || pathname === "/",
         },
         {
             label: "Groups",
             icon: Users,
-            href: "/groups",
-            active: pathname.startsWith("/groups"),
+            href: "/dashboard/groups",
+            active: pathname.startsWith("/dashboard/groups"),
         },
         {
             label: "Channels",
             icon: Tv,
-            href: "/channels",
-            active: pathname.startsWith("/channels"),
+            href: "/dashboard/channels",
+            active: pathname.startsWith("/dashboard/channels"),
         },
         {
             label: "Config",
             icon: Settings,
-            href: "/config",
-            active: pathname.startsWith("/config"),
+            href: "/dashboard/config",
+            active: pathname.startsWith("/dashboard/config"),
         },
         {
             label: "Logs",
             icon: FileText,
-            href: "/logs",
-            active: pathname.startsWith("/logs"),
+            href: "/dashboard/logs",
+            active: pathname.startsWith("/dashboard/logs"),
         },
         {
             label: "Database",
             icon: Database,
-            href: "/database",
-            active: pathname.startsWith("/database"),
+            href: "/dashboard/database",
+            active: pathname.startsWith("/dashboard/database"),
         },
         {
             label: "Analytics",
             icon: BarChart,
-            href: "/analytics",
-            active: pathname.startsWith("/analytics"),
+            href: "/dashboard/analytics",
+            active: pathname.startsWith("/dashboard/analytics"),
         },
     ];
 
     return (
         <div className={cn("flex h-full w-[280px] flex-col border-r border-border bg-surface text-text-primary", className)}>
             <div className="flex h-16 items-center border-b border-border px-6">
-                <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+                <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl">
                     <span className="text-2xl">🤖</span>
                     <span>Nezuko</span>
                 </Link>

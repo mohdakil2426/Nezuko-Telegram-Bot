@@ -58,7 +58,7 @@ export default function DashboardPage() {
                 />
                 <StatCard
                     title="Success Rate"
-                    value={`${data.success_rate}%`}
+                    value={`${data.success_rate ?? 0}%`}
                     icon={<Activity className="h-4 w-4" />}
                     loading={isLoading}
                     change={0.3} // Placeholder
