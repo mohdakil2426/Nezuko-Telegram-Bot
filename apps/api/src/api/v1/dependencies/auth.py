@@ -1,5 +1,6 @@
 """Authentication dependencies for API endpoints."""
 
+import os
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
@@ -30,11 +31,20 @@ async def get_current_user(
 
     try:
         # 1. Verify token with Firebase
-        firebase_user = verify_firebase_token(token)
+        firebase_user = await verify_firebase_token(token)
         uid = firebase_user["uid"]
         email = firebase_user.get("email")
     except (ValueError, Exception) as exc:
         raise credentials_exception from exc
+
+    # MOCK AUTH for development if database is down
+    if os.getenv("MOCK_AUTH") == "true":
+        return AdminUser(
+            email=email or "mock@admin.me",
+            full_name="Mock Admin",
+            is_active=True,
+            firebase_uid=uid or "mock_uid",
+        )
 
     # 2. Check local DB
     # First try by firebase_uid

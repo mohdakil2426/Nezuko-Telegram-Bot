@@ -86,7 +86,7 @@ alembic downgrade -1                  # Rollback last migration
 
 ## Browser Automation
 
-- Always use playwrite mcp for browser automation, testing, debugging.
+- use playwright mcp for browser automation, testing, debugging.
 
 ## Skills
 

@@ -22,6 +22,7 @@ engine = create_async_engine(
     pool_recycle=1800,
     pool_pre_ping=True,
     future=True,
+    connect_args={"ssl": "require"} if "localhost" not in settings.DATABASE_URL else {},
 )
 
 # Create Async Session Factory

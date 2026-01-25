@@ -1,6 +1,6 @@
 # Project Progress: Nezuko - Roadmap to v1.0.0
 
-## 🛠️ Current Status: Phase 13 - Maintenance & Type Safety
+## 🛠️ Current Status: Phase 13 - Maintenance & Local Dev Stabilization
 
 **Overall Implementation Status**: **98%** 🚀
 
@@ -31,11 +31,16 @@
   - [x] Massive Memory Bank expansion (>1500 lines total).
   - [x] Detailed System Patterns (600+ lines).
   - [x] Detailed Tech Context (600+ lines).
-- [x] **13.3 API Hardening**:
+- [x] **13.4 API Hardening**:
   - [x] Fix `pydantic-settings` `SettingsError` in tests/runtime.
   - [x] Final audit of Pydantic V2 models.
   - [x] Standardize all response wrappers to RFC 9457 / SuccessResponse.
-- [ ] **13.4 Release Readiness**:
+- [ ] **13.5 Local Dev Stabilization**:
+  - [x] Implement local SQLite fallback.
+  - [x] Create `create_db.py` initialization script.
+  - [x] Implement `MOCK_AUTH` for dependency-free development.
+  - [ ] Standardize local model imports in utility scripts.
+- [ ] **13.6 Release Readiness**:
   - [ ] Production build verification (Docker).
   - [ ] Final Firebase Auth production-flow check.
 
@@ -83,7 +88,21 @@
 - **2026-01-23**: Migrated to Firebase RTDB for logs.
 - **2026-01-22**: Migrated to Firebase Auth.
 
-## 🚧 Known Debt / Future Roadmap
+---
+
+## 🚧 Known Issues & Technical Debt
+
+### Database & Connectivity
+
+- **Supabase SASL Error**: Connecting to remote Supabase DB via `asyncpg` currently fails with `SASL authentication failed`. This is bypassed locally using SQLite.
+- **Port Conflict (8080)**: rapid restarts of Uvicorn on Windows can lead to `Errno 10048` (Only one usage of each socket address permitted). Resolved by manual `taskkill` or waiting for the OS to release the socket.
+- **Local Postgres**: Local PostgreSQL instance unreachability on port 5432 has forced a temporary shift to SQLite for development velocity.
+
+### Scripts
+
+- **create_db.py Inconsistency**: Some model class names in `bot.py` (e.g., `Channel` vs `EnforcedChannel`) mismatch the imports in the initialization script. Needs final alignment.
+
+### Roadmap
 
 - [ ] Multi-language support (i18n).
 - [ ] Member Whitelisting UI.

@@ -8,14 +8,14 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 
 - **Runtime**: `Python 3.13.1`.
 - **Library**: `python-telegram-bot v22.5.0`.
-- **Database**: `PostgreSQL 18.2`.
+- **Database**: `PostgreSQL 18.2` (Production) / `SQLite (aiosqlite)` (Local Dev Fallback).
 - **Caching**: `Redis 8.0`.
 
 ### 2. Admin API (FastAPI Backend)
 
 - **Framework**: `FastAPI 0.124.4`.
 - **Validation**: `Pydantic V2.12.5`.
-- **Authentication**: `Firebase Admin SDK v6.6.0`.
+- **Authentication**: `Firebase Admin SDK v6.6.0` / `MOCK_AUTH` (Development).
 
 ---
 

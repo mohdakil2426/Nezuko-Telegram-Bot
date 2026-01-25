@@ -43,7 +43,7 @@ async def sync_user(
     from src.core.security import verify_firebase_token
 
     try:
-        firebase_user = verify_firebase_token(token)
+        firebase_user = await verify_firebase_token(token)
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
 
