@@ -175,6 +175,195 @@ async def sync_firebase_user(self, firebase_user: dict) -> AdminUser:
 
 ---
 
+## � Code Quality & Forbidden Anti-Patterns
+
+This section defines the **mandatory** code quality standards for the Nezuko project. Violations of these patterns will cause build failures, bugs, or security issues.
+
+---
+
+### 📍 1. Web App Routing Patterns
+
+All authenticated pages use the `/dashboard/*` prefix:
+
+| Route                      | Description                    |
+| -------------------------- | ------------------------------ |
+| `/login`                   | Public login page              |
+| `/dashboard`               | Main dashboard (stats, charts) |
+| `/dashboard/groups`        | Groups list                    |
+| `/dashboard/groups/[id]`   | Group detail                   |
+| `/dashboard/channels`      | Channels list                  |
+| `/dashboard/channels/[id]` | Channel detail                 |
+| `/dashboard/config`        | Configuration settings         |
+| `/dashboard/logs`          | Real-time logs                 |
+| `/dashboard/database`      | Database browser               |
+| `/dashboard/analytics`     | Analytics dashboard            |
+
+```tsx
+// ✅ CORRECT - All routes prefixed with /dashboard
+const routes = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard/groups", label: "Groups" },
+];
+router.push(`/dashboard/groups/${group.group_id}`);
+
+// ❌ FORBIDDEN - Missing prefix causes 404
+const routes = [
+  { href: "/", label: "Dashboard" },
+  { href: "/groups", label: "Groups" },
+];
+router.push(`/groups/${group.group_id}`);
+```
+
+---
+
+### � 2. TypeScript Forbidden Patterns (CRITICAL)
+
+#### 2.1 Never Use `any`
+
+```tsx
+// ❌ FORBIDDEN - `any` bypasses all type safety
+const value: any = data;
+function processData(input: any) {}
+const response = (await fetch(url)) as any;
+
+// ✅ CORRECT - Use `unknown` with type guards
+const formatValue = (value: unknown): string => {
+  if (typeof value === "number") return value.toFixed(2);
+  if (typeof value === "string") return value;
+  return String(value ?? "");
+};
+
+// ✅ CORRECT - Use explicit union types
+type ApiResponse = SuccessResponse | ErrorResponse;
+type Status = "active" | "inactive" | "pending";
+```
+
+#### 2.2 Always Handle Null/Undefined
+
+```tsx
+// ❌ FORBIDDEN - Crashes if data.rate is undefined
+value={`${data.rate}%`}
+const title = data.user.name;
+
+// ✅ CORRECT - Nullish coalescing
+value={`${data.rate ?? 0}%`}
+const title = data?.user?.name ?? "Unknown";
+
+// ✅ CORRECT - Default values in destructuring
+const { rate = 0, count = 0 } = data;
+```
+
+#### 2.3 Safe Pagination & Lists
+
+```tsx
+// ❌ FORBIDDEN - Shows "Page 1 of -1" when empty
+{
+  table.getPageCount();
+}
+{
+  items.length && <List items={items} />;
+}
+
+// ✅ CORRECT - Minimum bounds
+{
+  Math.max(1, table.getPageCount());
+}
+{
+  items.length > 0 && <List items={items} />;
+}
+```
+
+#### 2.4 Proper Async/Await
+
+```tsx
+// ❌ FORBIDDEN - Unhandled promise rejection
+async function fetchData() {
+  const data = await api.get("/data");
+  return data;
+}
+
+// ✅ CORRECT - Error boundaries
+async function fetchData() {
+  try {
+    const data = await api.get("/data");
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+```
+
+---
+
+### 🐍 3. Python Forbidden Patterns (Backend)
+
+```python
+# ❌ FORBIDDEN - Blocking calls in async context
+import time
+time.sleep(5)  # Blocks entire event loop!
+
+# ✅ CORRECT - Use async sleep
+import asyncio
+await asyncio.sleep(5)
+
+# ❌ FORBIDDEN - Using requests in async code
+import requests
+response = requests.get(url)  # Blocking!
+
+# ✅ CORRECT - Use httpx or aiohttp
+import httpx
+async with httpx.AsyncClient() as client:
+    response = await client.get(url)
+
+# ❌ FORBIDDEN - Bare except clauses
+try:
+    risky_operation()
+except:  # Catches SystemExit, KeyboardInterrupt!
+    pass
+
+# ✅ CORRECT - Specific exception handling
+try:
+    risky_operation()
+except ValueError as e:
+    logger.error(f"Validation failed: {e}")
+except Exception as e:
+    logger.exception("Unexpected error")
+    raise
+```
+
+---
+
+### 📁 4. Key Files Reference
+
+| File                                            | Purpose                                    |
+| :---------------------------------------------- | :----------------------------------------- |
+| `apps/api/init_db.py`                           | Initialize SQLite database with all tables |
+| `apps/api/src/core/database.py`                 | Database engine configuration (SQLite/PG)  |
+| `apps/api/src/core/security.py`                 | Firebase token verification                |
+| `apps/api/src/services/auth_service.py`         | User sync logic                            |
+| `apps/web/src/lib/firebase.ts`                  | Firebase client initialization             |
+| `apps/web/src/components/layout/sidebar.tsx`    | Main navigation with `/dashboard/*` routes |
+| `apps/web/src/components/tables/data-table.tsx` | Reusable table with pagination             |
+| `apps/web/src/components/forms/login-form.tsx`  | Login form component                       |
+
+---
+
+### ✅ 5. Code Quality Verification Commands
+
+```bash
+# TypeScript (zero errors expected)
+bunx tsc --noEmit
+
+# Python linting (10.00/10 expected)
+pylint bot/ --rcfile=pyproject.toml
+ruff check .
+
+# Python type checking (zero errors expected)
+python -m pyrefly check
+```
+
+---
+
 ## 🏷️ Comprehensive Error Code Reference
 
 | Code       | HTTP Status | Domain      | Description                              |

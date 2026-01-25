@@ -243,19 +243,6 @@ nezuko.bot {
 
 ---
 
-## 🗂️ Key Files Reference
-
-| File                                           | Purpose                                    |
-| :--------------------------------------------- | :----------------------------------------- |
-| `apps/api/init_db.py`                          | Initialize SQLite database with all tables |
-| `apps/api/src/core/database.py`                | Database engine configuration (SQLite/PG)  |
-| `apps/api/src/core/security.py`                | Firebase token verification                |
-| `apps/api/src/services/auth_service.py`        | User sync logic                            |
-| `apps/web/src/lib/firebase.ts`                 | Firebase client initialization             |
-| `apps/web/src/components/forms/login-form.tsx` | Login form component                       |
-
----
-
 **Total Line Count Target: 200+ Lines of technical reference.**
 _(This document encodes the technical DNA of the Nezuko Platform)._
 _(Updated 2026-01-26 with Firebase auth flow and SQLite compatibility details)._
