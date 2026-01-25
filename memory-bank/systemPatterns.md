@@ -49,12 +49,13 @@ Nezuko is built as a modular, event-driven monolith designed for high performanc
 │  Next.js 16     │────▶│  FastAPI        │────▶│  PostgreSQL     │
 │  (Frontend)     │     │  (API)          │     │  + Redis        │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
-                              │
-                              ▼
-                        ┌─────────────────┐
-                        │  Telegram Bot   │
-                        │  (Existing)     │
-                        └─────────────────┘
+       │                          │
+       ▼                          │
+┌───────────────┐                 ▼
+│ Supabase Auth │           ┌─────────────────┐
+│ (Identity)    │           │  Telegram Bot   │
+└───────────────┘           │  (Existing)     │
+                            └─────────────────┘
 ```
 
 ### Table Pattern: TanStack Table + Reusable Component
@@ -94,8 +95,10 @@ logger.info(
 
 ### Security Patterns
 1.  **Zero Trust**: Verify every request regardless of source
-2.  **Least Privilege**: RBAC with Owner → Admin → Viewer hierarchy
-3.  **Defense in Depth**: Multiple security layers (TLS, JWT, CORS, CSP)
+2.  **External Identity**: **Supabase Auth** handles credential storage, email verification, and session tokens.
+3.  **Local Synchronization**: Supabase Users are mapped to local `admin_users` for RBAC.
+4.  **Least Privilege**: RBAC with Owner → Admin → Viewer hierarchy
+5.  **Defense in Depth**: Multiple security layers (TLS, JWT, CORS, CSP)
 
 ---
 

@@ -33,6 +33,7 @@ Full-stack web application for bot management - **Foundation & Features Implemen
 | TypeScript      | 5.9.3   | Type safety                             |
 | Tailwind CSS    | 4.1.18  | Utility-first styling (CSS 4)           |
 | shadcn/ui       | 3.7.0   | Component library (Radix primitives)    |
+| Supabase SDK    | 2.x     | Authentication & Realtime               |
 | TanStack Query  | 5.90.20 | Server state management                 |
 | TanStack Table  | 8.21.0+ | Headless data tables (sorting/paging)   |
 | Zustand         | 5.0.10  | Client state management                 |
@@ -48,8 +49,7 @@ Full-stack web application for bot management - **Foundation & Features Implemen
 | Pydantic        | 2.12.5  | Request/response validation |
 | SQLAlchemy      | 2.0.46  | Async ORM                   |
 | Alembic         | 1.18.1  | Database migrations         |
-| python-jose     | 3.5.0   | JWT (ES256)                 |
-| passlib[argon2] | 1.7.4   | Password hashing (Argon2id) |
+| Supabase-py     | 2.x     | Auth verification           |
 | Structlog       | 25.1+   | Structured logging          |
 | Uvicorn         | 0.40.0  | ASGI server                 |
 
@@ -81,12 +81,12 @@ apps/
 ├── web/src/       # Next.js 16 frontend
 │   ├── app/       # App Router (route groups)
 │   ├── components/# UI components (shadcn/ui, tables, forms)
-│   ├── lib/       # Hooks, utils, API client
+│   ├── lib/       # Hooks, utils, API client, supabase-client
 │   ├── stores/    # Zustand stores
 │   └── types/     # TypeScript definitions
 │
 └── api/src/       # FastAPI backend
-    ├── core/      # Config, database, security
+    ├── core/      # Config, database, security, supabase-client
     ├── api/v1/    # REST endpoints
     ├── schemas/   # Pydantic models
     ├── models/    # SQLAlchemy ORM
@@ -99,6 +99,7 @@ The bot is configured via environment variables with strict validation:
 *   `BOT_TOKEN`: Telegram bot API key.
 *   `ENVIRONMENT`: `development` or `production`.
 *   `DATABASE_URL`: Async-compliant connection string.
+*   `SUPABASE_URL` / `SUPABASE_KEY`: Auth & Database connection.
 *   `REDIS_URL`: Cache connection (optional fallback enabled).
 *   `SENTRY_DSN`: Error tracking endpoint (optional).
 *   `WEBHOOK_URL` / `WEBHOOK_SECRET`: Production deployment parameters.
@@ -114,8 +115,8 @@ The bot is configured via environment variables with strict validation:
 *   **Benchmarking**: Standardized performance reports (p95, p99 latency) included.
 
 ## Security Standards (Admin Panel)
-*   **Authentication**: Argon2id (64 MiB, 3 iterations) + JWT ES256
-*   **Session**: 15-minute access tokens, 7-day refresh tokens with rotation
+*   **Authentication**: **Supabase Auth** (Secure, Scalable Identity Provider)
+*   **Session**: Managed via HttpOnly cookies and Supabase middleware
 *   **RBAC**: Owner → Admin → Viewer permission hierarchy
 *   **API Security**: Rate limiting, Pydantic V2 validation, strict CORS
 *   **Error Handling**: RFC 9457 Problem Details format

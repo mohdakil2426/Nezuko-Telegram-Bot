@@ -1,4 +1,3 @@
-import { useAuthStore } from "@/stores/auth-store";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -12,9 +11,19 @@ interface RequestOptions {
     credentials?: RequestCredentials;
 }
 
+import { createClient } from "@/lib/supabase/client";
+
+// ... (rest of imports)
+
+// ...
+
 async function fetchClient<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     const { headers = {}, body, params, ...rest } = options;
-    const token = useAuthStore.getState().accessToken;
+    
+    // Get token from Supabase
+    const supabase = createClient();
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
 
     const config: RequestInit = {
         ...rest,

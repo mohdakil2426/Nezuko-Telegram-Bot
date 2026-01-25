@@ -17,13 +17,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
+import { createClient } from "@/lib/supabase/client";
 import { authApi, loginSchema, LoginValues } from "@/lib/api/endpoints/auth";
 import { useAuthStore } from "@/stores/auth-store";
 
 export function LoginForm() {
     const router = useRouter();
     const { toast } = useToast();
-    const login = useAuthStore((state) => state.login);
+    const setUser = useAuthStore((state) => state.setUser);
     const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
     const form = useForm<LoginValues>({
@@ -38,8 +39,20 @@ export function LoginForm() {
         setIsLoading(true);
 
         try {
-            const response = await authApi.login(data);
-            login(response.user, response.access_token);
+            const supabase = createClient();
+            const { error } = await supabase.auth.signInWithPassword({
+                email: data.email,
+                password: data.password,
+            });
+
+            if (error) {
+                throw error;
+            }
+
+            // Sync user with backend and update store
+            const user = await authApi.sync();
+            setUser(user);
+
             toast({
                 title: "Login successful",
                 description: "Welcome back!",

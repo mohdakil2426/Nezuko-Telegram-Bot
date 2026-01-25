@@ -1,19 +1,34 @@
-from src.core.security import hash_password, verify_password
+"""Unit tests for Supabase security."""
+
+from unittest.mock import Mock, patch
+
+import pytest
+from src.core.security import verify_supabase_token
 
 
-def test_password_hashing():
-    """Test that hashing produces a different string and is verifyable."""
-    password = "CorrectHorseBatteryStaple"
-    hashed = hash_password(password)
+def test_verify_supabase_token_valid():
+    """Test verify_supabase_token with valid token."""
+    mock_client = Mock()
+    mock_response = Mock()
+    mock_user = Mock()
+    mock_user.email = "test@example.com"
+    mock_response.user = mock_user
+    mock_client.auth.get_user.return_value = mock_response
 
-    assert hashed != password
-    assert verify_password(password, hashed)
-    assert not verify_password("WrongPassword", hashed)
+    with patch("src.core.security.get_supabase_client", return_value=mock_client):
+        user = verify_supabase_token("valid_token")
+        assert user.email == "test@example.com"
 
 
-def test_argon2_used():
-    """Test that the hash format implies Argon2."""
-    password = "test"
-    hashed = hash_password(password)
-    # Argon2 hashes start with $argon2
-    assert hashed.startswith("$argon2")
+def test_verify_supabase_token_invalid():
+    """Test verify_supabase_token with invalid token."""
+    mock_client = Mock()
+    # Mock exception from Supabase client
+    mock_client.auth.get_user.side_effect = Exception("Invalid token")
+
+    with patch("src.core.security.get_supabase_client", return_value=mock_client):
+        try:
+            verify_supabase_token("invalid_token")
+            pytest.fail("Should have raised exception")
+        except Exception:
+            assert True

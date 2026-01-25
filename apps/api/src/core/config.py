@@ -21,7 +21,13 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_PASSWORD: str | None = None
 
-    # Admin Panel - Authentication
+    # Supabase Auth
+    SUPABASE_URL: str
+    SUPABASE_KEY: (
+        str  # Service Role Key or Anon Key (depending on usage, likely Service Role for Admin API)
+    )
+
+    # Legacy Auth - TO BE REMOVED
     ADMIN_JWT_PRIVATE_KEY_PATH: str = "apps/api/certs/jwt-private.pem"
     ADMIN_JWT_PUBLIC_KEY_PATH: str = "apps/api/certs/jwt-public.pem"
     ADMIN_JWT_ACCESS_EXPIRE_MINUTES: int = 15
@@ -58,8 +64,17 @@ class Settings(BaseSettings):
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
-        """Parse CORS origins from comma-separated string or list."""
+        """Parse CORS origins from comma-separated string or list or JSON list string."""
+        if isinstance(value, list):
+            return value
         if isinstance(value, str):
+            if value.startswith("[") and value.endswith("]"):
+                import json
+
+                try:
+                    return json.loads(value)
+                except json.JSONDecodeError:
+                    pass
             return [origin.strip() for origin in value.split(",")]
         return value
 

@@ -9,8 +9,7 @@ uvicorn[standard]>=0.40.0
 python-multipart>=0.0.20
 
 # Authentication
-python-jose[cryptography]>=3.5.0
-passlib[argon2]>=1.7.4
+supabase>=2.5.0
 
 # Validation
 pydantic>=2.12.5

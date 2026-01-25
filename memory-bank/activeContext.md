@@ -14,6 +14,23 @@ Next steps involve final documentation verification and preparing for the first 
 
 ## Recent Session Updates (2026-01-25)
 
+### 🚀 Auth Migration (2026-01-25)
+**Supabase Authentication Migration Completed ✅**:
+1.  **Backend**:
+    *   Replaced legacy JWT/Argon2 system with Supabase Auth verification.
+    *   Added `supabase` python dependency.
+    *   Implemented user syncing (`/auth/sync`) to map Supabase users to local `admin_users` table.
+    *   Updated `AdminUser` model with `supabase_id`.
+    *   Refactored `security.py` to use Supabase GoTrue client.
+2.  **Frontend**:
+    *   Integrated `@supabase/supabase-js` and `@supabase/ssr`.
+    *   Implemented `middleware.ts` for robust session management.
+    *   Updated `LoginForm` and `useAuth` hook to use Supabase SDK.
+    *   Configured API client to automatically attach Supabase JWTs.
+3.  **Infrastructure**:
+    *   Updated Environment variables for SupabaseURL/Key.
+    *   Updated `DATABASE_URL` to point to Supabase Postgres.
+
 ### 🎉 Admin Panel Phase 12: Production Polish Completed ✅
 **Completed Tasks:**
 1.  ✅ **Error Handling (12.1)**:
@@ -83,11 +100,12 @@ Next steps involve final documentation verification and preparing for the first 
 - Admin management UI.
 
 ## Active Decisions
+- **Authentication**: Migrated to **Supabase Auth** for robust security and session management, replacing local JWT implementation.
 - **Quality Guard**: `ruff` is now enforcing code quality. `pre-commit` hooks should be considered for future.
 - **Docker Strategy**: Using multi-stage builds for smaller image sizes and security (non-root users).
 - **Proxy**: Caddy chosen for automatic HTTPS management and simple configuration.
 
 ## Next Steps
-- [ ] 12.5.1 Update README with setup instructions
-- [ ] 12.5.2 Verify all documentation is up-to-date
-- [ ] 12.5.3 Create Release Candidate 1.0.0
+- [ ] 13.1 Verify Supabase Auth flow in production environment
+- [ ] 13.2 Update CI/CD pipelines to support Supabase migrations if needed
+- [ ] 13.3 Finalize Release Candidate 1.0.0
