@@ -3,7 +3,7 @@
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
-from apps.api.src.core.config import get_settings
+from src.core.config import get_settings
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):

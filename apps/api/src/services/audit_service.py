@@ -9,7 +9,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from apps.api.src.models.admin_audit_log import AdminAuditLog
+from src.models.admin_audit_log import AdminAuditLog
 
 
 class AuditService:

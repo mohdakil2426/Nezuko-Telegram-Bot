@@ -6,7 +6,7 @@ import structlog
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
-from apps.api.src.core.context import get_trace_id
+from src.core.context import get_trace_id
 
 logger = structlog.get_logger()
 

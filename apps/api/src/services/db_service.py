@@ -1,13 +1,12 @@
 """Business logic for database inspection and maintenance."""
 
-import logging
-
+import structlog
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.schemas.database import ColumnInfo, MigrationStatusResponse, TableDataResponse, TableInfo
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class DatabaseService:
@@ -124,7 +123,7 @@ class DatabaseService:
             query = text("SELECT version_num FROM alembic_version")
             current = (await session.execute(query)).scalar()
         except Exception as exc:  # pylint: disable=broad-exception-caught
-            logger.error("Failed to fetch migration status: %s", exc)
+            logger.error("migration_status_failed", error=str(exc))
             current = None
 
         return MigrationStatusResponse(

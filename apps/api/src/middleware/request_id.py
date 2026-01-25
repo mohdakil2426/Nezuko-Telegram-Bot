@@ -5,7 +5,7 @@ from uuid import uuid4
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
-from apps.api.src.core.context import set_trace_id
+from src.core.context import set_trace_id
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):

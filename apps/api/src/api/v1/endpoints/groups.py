@@ -6,8 +6,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from apps.api.src.core.cache import Cache
 from src.api.v1.dependencies.auth import get_current_active_user
+from src.core.cache import Cache
 from src.core.database import get_session
 from src.models.admin_user import AdminUser
 from src.schemas.base import PaginationMeta, SuccessResponse

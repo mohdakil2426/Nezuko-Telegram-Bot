@@ -1,9 +1,9 @@
 """Audit logging middleware for administrative actions."""
 
 import contextlib
-import logging
 from uuid import UUID
 
+import structlog
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -12,7 +12,7 @@ from starlette.responses import Response
 from src.core.database import async_session_factory
 from src.services.audit_service import AuditService
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class AuditMiddleware(BaseHTTPMiddleware):
@@ -70,6 +70,6 @@ class AuditMiddleware(BaseHTTPMiddleware):
 
             except (ValueError, SQLAlchemyError, Exception) as exc:  # pylint: disable=broad-exception-caught
                 # Do not fail the request if audit logging fails, but log the error
-                logger.error("Failed to create audit log: %s", exc, exc_info=True)
+                logger.error("audit_log_creation_failed", error=str(exc))
 
         return response

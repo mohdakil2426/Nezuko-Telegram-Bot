@@ -1,13 +1,13 @@
 import asyncio
 import json
-import logging
 
+import structlog
 from redis.asyncio import Redis
 
 from ...core.config import get_settings
 from .manager import manager
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 async def redis_log_listener() -> None:
@@ -22,7 +22,7 @@ async def redis_log_listener() -> None:
     channel_name = "nezuko:logs"
     await pubsub.subscribe(channel_name)
 
-    logger.info(f"Subscribed to Redis channel: {channel_name}")
+    logger.info("redis_listener_subscribed", channel=channel_name)
 
     try:
         async for message in pubsub.listen():
@@ -32,11 +32,11 @@ async def redis_log_listener() -> None:
                     # enriching with timestamp if needed, but sender should handle it
                     await manager.broadcast(data, channel="logs")
                 except json.JSONDecodeError:
-                    logger.warning("Received invalid JSON from Redis log channel")
+                    logger.warning("redis_listener_invalid_json")
                 except Exception as e:
-                    logger.exception(f"Error broadcasting log message: {e}")
+                    logger.exception("redis_listener_broadcast_error", error=str(e))
     except asyncio.CancelledError:
-        logger.info("Redis log listener cancelled")
+        logger.info("redis_listener_cancelled")
     finally:
         await pubsub.unsubscribe(channel_name)
         await redis.close()

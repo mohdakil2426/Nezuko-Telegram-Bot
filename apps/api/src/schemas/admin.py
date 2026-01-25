@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from apps.api.src.core.permissions import Role
+from src.core.permissions import Role
 
 
 class AdminBase(BaseModel):
