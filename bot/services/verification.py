@@ -16,6 +16,7 @@ from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
 from bot.core.cache import cache_delete, cache_get, cache_set, get_ttl_with_jitter
+from bot.core.constants import CACHE_JITTER_PERCENT, NEGATIVE_CACHE_TTL, POSITIVE_CACHE_TTL
 from bot.utils.metrics import (
     record_api_call,
     record_cache_hit,
@@ -26,11 +27,6 @@ from bot.utils.metrics import (
 )
 
 logger = logging.getLogger(__name__)
-
-# Cache TTLs (in seconds)
-POSITIVE_CACHE_TTL = 600  # 10 minutes for members
-NEGATIVE_CACHE_TTL = 60  # 1 minute for non-members
-CACHE_JITTER_PERCENT = 15  # ±15% jitter
 
 # Metrics counters for prometheus tracking
 _cache_hits = 0  # pylint: disable=invalid-name

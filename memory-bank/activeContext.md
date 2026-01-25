@@ -66,6 +66,13 @@ Next steps involve final documentation verification and preparing for the first 
 3.  **SQL Safety**: hardened exception handling in `DatabaseService` and silences generic warnings where mitigation exists.
 4.  **Verification**: Passed `ruff check --fix` and `pyrefly` (0 errors).
 
+### 🤖 Bot Core Refactoring (2026-01-25)
+**DRY & Standardization**:
+1.  **Constants Centralization**: Created `bot/core/constants.py` to eliminate hardcoded duplicate strings (`CALLBACK_VERIFY`, `CACHE_TTL`, etc.) across handlers and utilities.
+2.  **UTC Standards**: Enforced `datetime.UTC` in `redis_logging.py`.
+3.  **Clean Code**: Refactored `loader.py`, `ui.py`, `leave.py`, `help.py`, `verification.py` to use the new constants source.
+4.  **Quality**: Maintained 10/10 Pylint score and 0 Pyrefly errors.
+
 ### 🎉 Admin Panel Phase 11: Multi-Admin RBAC Complete ✅
 **All tasks for Phase 11 completed** - Role-Based Access Control:
 - Database schema for admins and roles.

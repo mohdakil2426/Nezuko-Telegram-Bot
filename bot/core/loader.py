@@ -20,13 +20,16 @@ from telegram.ext import (
     filters,
 )
 
-from bot.handlers.admin.help import (
+from bot.core.constants import (
     CALLBACK_MENU_ADD_TO_GROUP,
     CALLBACK_MENU_BACK,
     CALLBACK_MENU_COMMANDS,
     CALLBACK_MENU_HELP,
     CALLBACK_MENU_HOW_IT_WORKS,
     CALLBACK_MENU_SETUP,
+    CALLBACK_VERIFY,
+)
+from bot.handlers.admin.help import (
     handle_help,
     handle_menu_callback,
     handle_start,
@@ -39,9 +42,6 @@ from bot.handlers.events.message import handle_message
 from bot.handlers.verify import handle_callback_verify
 
 logger = logging.getLogger(__name__)
-
-# Callback data constants
-CALLBACK_VERIFY = "verify_membership"
 
 # Bot commands for private chats
 PRIVATE_COMMANDS = [

@@ -10,15 +10,16 @@ import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-logger = logging.getLogger(__name__)
+from bot.core.constants import (
+    CALLBACK_MENU_ADD_TO_GROUP,
+    CALLBACK_MENU_BACK,
+    CALLBACK_MENU_COMMANDS,
+    CALLBACK_MENU_HELP,
+    CALLBACK_MENU_HOW_IT_WORKS,
+    CALLBACK_MENU_SETUP,
+)
 
-# Callback data constants for navigation
-CALLBACK_MENU_HELP = "menu_help"
-CALLBACK_MENU_SETUP = "menu_setup"
-CALLBACK_MENU_COMMANDS = "menu_commands"
-CALLBACK_MENU_HOW_IT_WORKS = "menu_how_it_works"
-CALLBACK_MENU_BACK = "menu_back"
-CALLBACK_MENU_ADD_TO_GROUP = "menu_add_to_group"
+logger = logging.getLogger(__name__)
 
 
 def get_main_menu_keyboard() -> InlineKeyboardMarkup:

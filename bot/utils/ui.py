@@ -8,10 +8,9 @@ from typing import Any
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-logger = logging.getLogger(__name__)
+from bot.core.constants import CALLBACK_VERIFY
 
-# Callback data constant
-CALLBACK_VERIFY = "verify_membership"
+logger = logging.getLogger(__name__)
 
 
 def get_membership_keyboard(missing_channels: list[Any]) -> InlineKeyboardMarkup:

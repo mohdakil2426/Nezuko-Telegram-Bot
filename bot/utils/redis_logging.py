@@ -2,7 +2,7 @@
 
 import json
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from redis import Redis
 
@@ -34,7 +34,7 @@ class RedisLogHandler(logging.Handler):
 
         try:
             log_entry = {
-                "timestamp": datetime.fromtimestamp(record.created).isoformat(),
+                "timestamp": datetime.fromtimestamp(record.created, UTC).isoformat(),
                 "level": record.levelname,
                 "message": record.getMessage(),
                 "logger": record.name,

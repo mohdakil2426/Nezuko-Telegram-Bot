@@ -13,15 +13,13 @@ from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
+from bot.core.constants import CALLBACK_VERIFY
 from bot.core.database import get_session
 from bot.database.crud import get_groups_for_channel
 from bot.services.protection import restrict_user
 from bot.services.verification import invalidate_cache
 
 logger = logging.getLogger(__name__)
-
-# Callback data constant
-CALLBACK_VERIFY = "verify_membership"
 
 
 # pylint: disable=too-many-locals
