@@ -1,9 +1,10 @@
 import { api } from "../client";
+import { AdminApiResponse } from "../types";
 import type { AuditLogListResponse, AuditLogFilters } from "@nezuko/types";
 
 export const auditApi = {
-    getLogs: async (params: AuditLogFilters) => {
-        return api.get<AuditLogListResponse>("/audit", {
+    getLogs: async (params: AuditLogFilters): Promise<AdminApiResponse<AuditLogListResponse>> => {
+        return api.get<AdminApiResponse<AuditLogListResponse>>("/audit", {
             params,
         });
     },

@@ -43,16 +43,16 @@ export function WebhookTester() {
                     </Button>
                 </div>
 
-                {testWebhook.data && (
+                {testWebhook.data?.data && (
                     <div className="rounded-lg border bg-surface-secondary p-4 space-y-3 animate-in fade-in-0 zoom-in-95">
                         <div className="flex items-center gap-3">
-                            {testWebhook.data.status === "reachable" ? (
+                            {testWebhook.data.data.status === "reachable" ? (
                                 <CheckCircle className="h-5 w-5 text-success" />
                             ) : (
                                 <XCircle className="h-5 w-5 text-error" />
                             )}
                             <div className="font-medium">
-                                {testWebhook.data.webhook_url || "No Webhook Set"}
+                                {testWebhook.data.data.webhook_url || "No Webhook Set"}
                             </div>
                         </div>
 
@@ -61,15 +61,15 @@ export function WebhookTester() {
                                 <Globe className="h-4 w-4 text-text-tertiary" />
                                 <span className="text-text-secondary">Latency:</span>
                                 <span className="font-mono">
-                                    {testWebhook.data.latency_ms
-                                        ? `${Math.round(testWebhook.data.latency_ms)}ms`
+                                    {testWebhook.data.data.latency_ms
+                                        ? `${Math.round(testWebhook.data.data.latency_ms)}ms`
                                         : "N/A"}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Lock className="h-4 w-4 text-text-tertiary" />
                                 <span className="text-text-secondary">SSL:</span>
-                                {testWebhook.data.ssl_valid ? (
+                                {testWebhook.data.data.ssl_valid ? (
                                     <Badge variant="outline" className="text-success border-success/30 bg-success/10">
                                         Valid
                                     </Badge>
@@ -81,9 +81,9 @@ export function WebhookTester() {
                             </div>
                         </div>
 
-                        {testWebhook.data.ssl_expires_at && (
+                        {testWebhook.data.data.ssl_expires_at && (
                             <div className="text-xs text-text-tertiary ml-7">
-                                Expires: {testWebhook.data.ssl_expires_at}
+                                Expires: {testWebhook.data.data.ssl_expires_at}
                             </div>
                         )}
                     </div>

@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import { toast } from "@/hooks/use-toast";
 
+import { AdminApiResponse } from "@/lib/api/types";
+
 export interface AdminUser {
     id: string;
     email: string;
@@ -24,15 +26,15 @@ export interface CreateAdminData {
 
 export const adminApi = {
     getAdmins: async () => {
-        return api.get<AdminUser[]>("/admins");
+        return api.get<AdminApiResponse<AdminUser[]>>("/admins");
     },
 
     createAdmin: async (data: CreateAdminData) => {
-        return api.post<AdminUser>("/admins", data);
+        return api.post<AdminApiResponse<AdminUser>>("/admins", data);
     },
 
     deleteAdmin: async (id: string) => {
-        return api.delete(`/admins/${id}`);
+        return api.delete<AdminApiResponse<any>>(`/admins/${id}`);
     }
 };
 
@@ -75,7 +77,7 @@ export function useAdmins() {
     });
 
     return {
-        admins: query.data,
+        admins: query.data?.data,
         isLoading: query.isLoading,
         isError: query.isError,
         createAdmin: createMutation.mutate,

@@ -2,7 +2,7 @@
 
 import { useAdmins } from "@/lib/hooks/use-admins";
 import { DataTable } from "@/components/tables/data-table";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, SortingState } from "@tanstack/react-table";
 import { AdminUser } from "@/lib/hooks/use-admins";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -62,60 +62,68 @@ export default function AdminsPage() {
         {
             accessorKey: "full_name",
             header: "Name",
-            cell: ({ row }) => (
-                <div className="flex flex-col">
-                    <span className="font-medium">{row.original.full_name || "N/A"}</span>
-                    <span className="text-xs text-muted-foreground">{row.original.email}</span>
-                </div>
+            cell: ({ row }: { row: { original: AdminUser } }) => (
+                <div className="font-medium">{row.original.full_name || "N/A"}</div>
             ),
+        },
+        {
+            accessorKey: "email",
+            header: "Email",
         },
         {
             accessorKey: "role",
             header: "Role",
-            cell: ({ row }) => {
-                const role = row.original.role;
-                return (
-                    <Badge variant={role === "owner" ? "default" : role === "admin" ? "secondary" : "outline"}>
-                        {role.toUpperCase()}
-                    </Badge>
-                );
-            },
+            cell: ({ row }: { row: { original: AdminUser } }) => (
+                <Badge variant="secondary" className="capitalize">
+                    {row.original.role}
+                </Badge>
+            ),
         },
         {
-            accessorKey: "status",
+            accessorKey: "is_active",
             header: "Status",
-            cell: ({ row }) => (
-                <Badge variant={row.original.is_active ? "outline" : "destructive"}>
+            cell: ({ row }: { row: { original: AdminUser } }) => (
+                <Badge
+                    variant={row.original.is_active ? "default" : "secondary"}
+                    className={row.original.is_active ? "bg-success hover:bg-success/90" : ""}
+                >
                     {row.original.is_active ? "Active" : "Inactive"}
                 </Badge>
             ),
         },
         {
+            accessorKey: "created_at",
+            header: "Joined",
+            cell: ({ row }: { row: { original: AdminUser } }) => (
+                <div className="text-muted-foreground">
+                    {format(new Date(row.original.created_at), "MMM d, yyyy")}
+                </div>
+            ),
+        },
+        {
             accessorKey: "last_login",
-            header: "Last Login",
-            cell: ({ row }) => {
-                if (!row.original.last_login) return <span className="text-muted-foreground">-</span>;
-                return <span className="whitespace-nowrap">{format(new Date(row.original.last_login), "MMM d, yyyy")}</span>;
-            },
+            header: "Last Active",
+            cell: ({ row }: { row: { original: AdminUser } }) => (
+                <div className="text-muted-foreground">
+                    {row.original.last_login
+                        ? format(new Date(row.original.last_login), "MMM d, HH:mm")
+                        : "Never"}
+                </div>
+            ),
         },
         {
             id: "actions",
-            cell: ({ row }) => {
-                const isAdmin = row.original;
-                if (isAdmin.role === "owner") return null;
-
+            cell: ({ row }: { row: { original: AdminUser } }) => {
+                const admin = row.original;
+                // Don't allow deleting yourself
                 return (
                     <Button
                         variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive/90"
-                        onClick={() => {
-                            if (confirm("Are you sure you want to remove this admin?")) {
-                                deleteAdmin(isAdmin.id);
-                            }
-                        }}
+                        size="sm"
+                        className="text-error hover:text-error hover:bg-error/10"
+                        onClick={() => deleteAdmin(admin.id)}
                     >
-                        <Trash2 className="h-4 w-4" />
+                        Delete
                     </Button>
                 );
             },
@@ -131,6 +139,9 @@ export default function AdminsPage() {
             }
         });
     };
+
+    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+    const [sorting, setSorting] = useState<SortingState>([]);
 
     return (
         <div className="container mx-auto py-6 space-y-6">
@@ -212,10 +223,13 @@ export default function AdminsPage() {
             <Card>
                 <CardContent className="p-0">
                     <DataTable
-                        columns={columns}
+                        columns={columns as ColumnDef<any, any>[]}
                         data={admins || []}
-                        page={1}
                         pageCount={1}
+                        pagination={pagination}
+                        onPaginationChange={setPagination}
+                        sorting={sorting}
+                        onSortingChange={setSorting}
                         isLoading={isLoading}
                     />
                 </CardContent>

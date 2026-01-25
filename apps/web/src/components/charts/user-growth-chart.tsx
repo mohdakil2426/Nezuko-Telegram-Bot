@@ -12,12 +12,13 @@ export function UserGrowthChart({ data }: UserGrowthChartProps) {
     const { theme } = useTheme();
 
     // Format tooltip value
-    const formatValue = (value: number) => {
-        return new Intl.NumberFormat("en-US").format(value);
+    const formatValue = (value: any) => {
+        return new Intl.NumberFormat("en-US").format(Number(value));
     };
 
     // Format tooltip label
-    const formatLabel = (label: string) => {
+    const formatLabel = (label: any) => {
+        if (!label) return "";
         return new Date(label).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",

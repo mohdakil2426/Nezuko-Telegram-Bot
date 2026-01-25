@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, ExternalLink, Link as LinkIcon, Users, MessageSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import type { ChannelGroupLink } from "@/lib/api/types";
 import {
     Table,
     TableBody,
@@ -22,7 +23,8 @@ export default function ChannelDetailsPage() {
     const router = useRouter();
     const id = Number(params.id);
 
-    const { data: channel, isLoading, isError } = useChannel(id);
+    const { data: response, isLoading, isError } = useChannel(id);
+    const channel = response?.data;
 
     if (isLoading) {
         return <ChannelDetailsSkeleton />;
@@ -40,7 +42,7 @@ export default function ChannelDetailsPage() {
                 </Button>
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-3">
-                        {channel.title || "Untitled Channel"}
+                        {channel?.title || "Untitled Channel"}
                     </h1>
                     <div className="flex items-center gap-2 text-text-secondary text-sm mt-1">
                         <span>ID: {channel.channel_id.toString()}</span>
@@ -156,7 +158,7 @@ export default function ChannelDetailsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {channel.linked_groups.map((group) => (
+                                {channel.linked_groups.map((group: ChannelGroupLink) => (
                                     <TableRow key={group.group_id}>
                                         <TableCell className="font-mono text-xs">
                                             {group.group_id}

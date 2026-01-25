@@ -12,7 +12,8 @@ import { ConfigMessagesForm } from "@/components/forms/config-messages-form";
 import { WebhookTester } from "@/components/config/webhook-tester";
 
 export default function ConfigPage() {
-    const { data: config, isLoading, isError } = useConfig();
+    const { data: response, isLoading, isError } = useConfig();
+    const config = response?.data;
 
     if (isLoading) {
         return <ConfigSkeleton />;

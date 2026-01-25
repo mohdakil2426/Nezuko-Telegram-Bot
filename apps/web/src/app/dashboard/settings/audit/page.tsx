@@ -34,12 +34,14 @@ export default function AuditPage() {
         setPage(1);
     };
 
-    const { data, isLoading, isError } = useAuditLogs({
+    const { data: response, isLoading, isError } = useAuditLogs({
         page,
         per_page: perPage,
         action: action || undefined,
         resource_type: resourceType || undefined,
     });
+
+    const auditData = response?.data;
 
     return (
         <div className="container mx-auto py-6 space-y-6">
@@ -94,10 +96,10 @@ export default function AuditPage() {
                         <div className="p-8 text-center text-red-500">Failed to load audit logs.</div>
                     ) : (
                         <AuditLogsTable
-                            data={data?.items || []}
+                            data={auditData?.items || []}
                             page={page}
                             perPage={perPage}
-                            pageCount={data ? Math.ceil(data.total / perPage) : 1}
+                            pageCount={auditData ? Math.ceil(auditData.total / perPage) : 1}
                             onPageChange={setPage}
                             isLoading={isLoading}
                         />

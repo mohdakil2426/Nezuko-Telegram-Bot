@@ -14,7 +14,7 @@ const DialogClose = DialogPrimitive.Close
 
 const DialogOverlay = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Overlay>,
-    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay> & { className?: string }
 >(({ className, ...props }, ref) => (
     <DialogPrimitive.Overlay
         ref={ref}
@@ -29,7 +29,7 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 const DialogContent = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Content>,
-    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { className?: string; children?: React.ReactNode }
 >(({ className, children, ...props }, ref) => (
     <DialogPortal>
         <DialogOverlay />
@@ -81,8 +81,8 @@ DialogFooter.displayName = "DialogFooter"
 
 const DialogTitle = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Title>,
-    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
->(({ className, ...props }, ref) => (
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title> & { children?: React.ReactNode }
+>(({ className, children, ...props }, ref) => (
     <DialogPrimitive.Title
         ref={ref}
         className={cn(
@@ -90,19 +90,23 @@ const DialogTitle = React.forwardRef<
             className
         )}
         {...props}
-    />
+    >
+        {children}
+    </DialogPrimitive.Title>
 ))
 DialogTitle.displayName = DialogPrimitive.Title.displayName
 
 const DialogDescription = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Description>,
-    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
->(({ className, ...props }, ref) => (
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description> & { children?: React.ReactNode }
+>(({ className, children, ...props }, ref) => (
     <DialogPrimitive.Description
         ref={ref}
         className={cn("text-sm text-muted-foreground", className)}
         {...props}
-    />
+    >
+        {children}
+    </DialogPrimitive.Description>
 ))
 DialogDescription.displayName = DialogPrimitive.Description.displayName
 
