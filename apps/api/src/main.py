@@ -15,7 +15,6 @@ from .middleware.error_handler import register_exception_handlers
 from .middleware.logging import RequestLoggingMiddleware
 from .middleware.rate_limit import setup_rate_limiting
 from .middleware.request_id import RequestIDMiddleware
-from .middleware.security import SecurityHeadersMiddleware
 
 # Get settings first
 settings = get_settings()
@@ -76,13 +75,13 @@ app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(RequestIDMiddleware)
 
 # 2. Security Headers (HSTS, CSP, etc.)
-app.add_middleware(SecurityHeadersMiddleware)
+# app.add_middleware(SecurityHeadersMiddleware)
 
 # 1. CORS (handled by CORSMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

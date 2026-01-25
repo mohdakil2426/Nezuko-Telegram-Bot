@@ -23,8 +23,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     // If this fails (e.g. 401/403), we might handle it by logging out
                     // But usually 403 means valid token but no access.
                     // We sync blindly? No, authApi.me() is safer.
-                    const user = await authApi.me();
-                    setUser(user);
+                    const response = await authApi.me();
+                    setUser(response.data);
                 } catch (error) {
                     console.error("Auth sync failed", error);
                     // Optionally signOut if token is invalid?
@@ -40,9 +40,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return () => unsubscribe();
     }, [setUser, logout]);
 
-    if (isMounting) {
-        return null; // Or a loading spinner
-    }
+    return <>{children}</>;
+    // if (isMounting) {
+    //     return null; // Or a loading spinner
+    // }
 
     return <>{children}</>;
 }

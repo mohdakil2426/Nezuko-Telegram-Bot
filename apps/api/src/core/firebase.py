@@ -27,6 +27,7 @@ def get_firebase_app() -> App:
             "project_id": settings.FIREBASE_PROJECT_ID,
             "private_key": settings.FIREBASE_PRIVATE_KEY.replace("\\n", "\n"),
             "client_email": settings.FIREBASE_CLIENT_EMAIL,
+            "token_uri": "https://oauth2.googleapis.com/token",
         }
         cred = credentials.Certificate(cert)
     else:

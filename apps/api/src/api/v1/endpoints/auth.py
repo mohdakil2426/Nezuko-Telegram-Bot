@@ -45,7 +45,7 @@ async def sync_user(
     try:
         firebase_user = verify_firebase_token(token)
     except ValueError as exc:
-        raise HTTPException(status_code=401, detail="Invalid token") from exc
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
 
     auth_service = AuthService(session)
     user = await auth_service.sync_firebase_user(firebase_user)

@@ -37,8 +37,8 @@ async def get_current_user(
         raise credentials_exception from exc
 
     # 2. Check local DB
-    # First try by supabase_id (repurposed for Firebase UID)
-    stmt = select(AdminUser).where(AdminUser.supabase_id == uid)
+    # First try by firebase_uid
+    stmt = select(AdminUser).where(AdminUser.firebase_uid == uid)
     result = await session.execute(stmt)
     user = result.scalar_one_or_none()
 
@@ -51,7 +51,7 @@ async def get_current_user(
 
         if user:
             # Link existing user to Firebase UID
-            user.supabase_id = uid
+            user.firebase_uid = uid
             session.add(user)
             await session.commit()
             await session.refresh(user)

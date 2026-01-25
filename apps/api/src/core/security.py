@@ -13,9 +13,17 @@ def verify_firebase_token(token: str) -> dict[str, Any]:
     Delegates validation to Firebase Admin SDK.
     Returns the decoded token dict (contains 'uid', 'email', etc).
     """
+    import time
+
     try:
         get_firebase_app()  # Ensure app is initialized
-        decoded_token = auth.verify_id_token(token)
-        return decoded_token
+        try:
+            return auth.verify_id_token(token)
+        except Exception as e:
+            if "Token used too early" in str(e):
+                # Handle clock skew
+                time.sleep(60)  # Wait a bit and try again
+                return auth.verify_id_token(token)
+            raise
     except Exception as e:
         raise ValueError(f"Invalid token: {str(e)}") from e
