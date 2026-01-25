@@ -7,7 +7,7 @@ const config: Config = {
         "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
         "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     ],
-    darkMode: ["class"],
+    darkMode: "class",
     theme: {
         // Tailwind CSS 4 theme is primarily in globals.css with @theme
         // This extends or overrides those values

@@ -41,11 +41,13 @@ def run_migrations_offline() -> None:
 
     """
     url = config.get_main_option("sqlalchemy.url")
+    version_table = config.get_main_option("version_table", "alembic_version_bot")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        version_table=version_table,
     )
 
     with context.begin_transaction():
@@ -54,7 +56,8 @@ def run_migrations_offline() -> None:
 
 def do_run_migrations(connection: Connection) -> None:
     """Run migrations with a connection."""
-    context.configure(connection=connection, target_metadata=target_metadata)
+    version_table = config.get_main_option("version_table", "alembic_version_bot")
+    context.configure(connection=connection, target_metadata=target_metadata, version_table=version_table)
 
     with context.begin_transaction():
         context.run_migrations()

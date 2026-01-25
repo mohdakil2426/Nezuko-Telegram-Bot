@@ -19,35 +19,6 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 <!-- OPENSPEC:END -->
 
-## Mandatory Reading for Code Generation
-
-**BEFORE writing or modifying any Python code**, read the comprehensive coding rules document:
-
-@docs/official-rules-docs/python-telegram-bot-rules.md
-
-This 1400+ line document contains critical patterns and anti-patterns for:
-- Async-first programming fundamentals
-- python-telegram-bot v20+ handler rules
-- SQLAlchemy 2.0 async patterns
-- Redis async patterns
-- Rate limiting & Telegram API safety
-- Structured logging with structlog
-- Error handling & Sentry integration
-- Testing strategy with pytest-asyncio
-- Webhook deployment patterns
-- Graceful shutdown procedures
-- Memory management & leak prevention
-- Security best practices
-- Forbidden patterns with correct alternatives
-
-**Read this file for any task involving:**
-- Creating new handlers, services, or utilities
-- Database queries or migrations
-- Cache operations
-- Error handling
-- Testing code
-- Performance optimization
-
 ## Project Overview
 
 **Nezuko - The Ultimate All-In-One Bot** is a production-ready, multi-tenant Telegram bot for automated channel membership enforcement. Python 3.13+, async-first architecture using python-telegram-bot v22.5+.
@@ -243,17 +214,6 @@ user = result.scalars().first()
 
 # WRONG - Legacy API
 user = session.query(User).filter_by(id=user_id).first()
-```
-
-## Architecture
-
-```
-bot/
-├── core/          # Singletons: Database, Cache, Rate Limiter
-├── database/      # Models, CRUD, Alembic migrations
-├── handlers/      # Telegram update handlers (commands, events, callbacks)
-├── services/      # Business logic (verification, protection, batch)
-└── utils/         # Cross-cutting: metrics, health, logging, resilience
 ```
 
 ## Key Patterns

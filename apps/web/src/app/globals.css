@@ -26,6 +26,36 @@
   --color-surface: oklch(0.15 0.01 265);
   --color-surface-hover: oklch(0.18 0.01 265);
 
+  /* Shadcn/UI Compatibility Mappings */
+  --color-foreground: oklch(0.98 0 0);
+  
+  --color-primary: oklch(0.55 0.25 265);
+  --color-primary-foreground: oklch(0.98 0 0);
+  
+  --color-secondary: oklch(0.18 0.01 265);
+  --color-secondary-foreground: oklch(0.98 0 0);
+  
+  --color-muted: oklch(0.18 0.01 265);
+  --color-muted-foreground: oklch(0.70 0.01 265);
+  
+  --color-accent: oklch(0.18 0.01 265);
+  --color-accent-foreground: oklch(0.98 0 0);
+  
+  --color-destructive: oklch(0.60 0.25 25);
+  --color-destructive-foreground: oklch(0.98 0 0);
+
+  --color-card: oklch(0.12 0.01 265);
+  --color-card-foreground: oklch(0.98 0 0);
+
+  --color-popover: oklch(0.12 0.01 265);
+  --color-popover-foreground: oklch(0.98 0 0);
+
+  --color-input: oklch(0.25 0.01 265);
+  --color-ring: oklch(0.55 0.25 265);
+  
+  --radius: 0.5rem;
+
+
   /* Text colors */
   --color-text-primary: oklch(0.95 0.01 265);
   --color-text-secondary: oklch(0.70 0.01 265);

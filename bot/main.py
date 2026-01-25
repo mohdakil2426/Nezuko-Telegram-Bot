@@ -35,11 +35,10 @@ from bot.utils.sentry import init_sentry
 # Setup standard logging with UTF-8 support for Windows console
 # Windows cp1252 can't handle Unicode emojis - use 'replace' mode to avoid crashes
 if sys.platform == "win32":
-    # Force stdout to UTF-8 mode on Windows to prevent UnicodeEncodeError with emojis
-    import io
-
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+    # Proper Windows console encoding is better handled by setting PYTHONUTF8=1 environment variable
+    # or relying on modern Python 3.10+ defaults.
+    # Manual wrapping caused ValueError: I/O operation on closed file during runpy execution.
+    pass
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",

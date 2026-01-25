@@ -1,12 +1,12 @@
-import { client } from "@/lib/api/client";
+import { api } from "@/lib/api/client";
 import { type DashboardStatsResponse, type ActivityResponse } from "@nezuko/types";
 
 export const dashboardApi = {
     getStats: async (): Promise<DashboardStatsResponse> => {
-        return client<DashboardStatsResponse>("/dashboard/stats");
+        return api.get<DashboardStatsResponse>("/dashboard/stats");
     },
 
     getActivity: async (limit: number = 20): Promise<ActivityResponse> => {
-        return client<ActivityResponse>(`/dashboard/activity?limit=${limit}`);
+        return api.get<ActivityResponse>(`/dashboard/activity`, { params: { limit } });
     },
 };

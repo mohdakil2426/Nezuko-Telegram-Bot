@@ -1,3 +1,4 @@
+"use client";
 // Adapted from shadcn/ui
 import * as React from "react"
 

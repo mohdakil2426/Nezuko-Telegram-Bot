@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.pool import NullPool, QueuePool
+from sqlalchemy.pool import NullPool
 
 from bot.config import config
 
@@ -47,7 +47,6 @@ def get_engine() -> AsyncEngine:
             _engine = create_async_engine(
                 config.database_url,
                 echo=config.is_development,
-                poolclass=QueuePool,
                 pool_size=20,  # Max connections in pool
                 max_overflow=10,  # Max connections beyond pool_size
                 pool_pre_ping=True,  # Verify connections before use

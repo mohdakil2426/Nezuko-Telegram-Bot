@@ -11,14 +11,14 @@ export type LoginValues = z.infer<typeof loginSchema>;
 
 export const authApi = {
     login: (data: LoginValues) =>
-        api.post<AuthResponse>("/api/v1/auth/login", data),
+        api.post<AuthResponse>("/auth/login", data),
 
     refresh: () =>
-        api.post<AuthResponse>("/api/v1/auth/refresh", {}),
+        api.post<AuthResponse>("/auth/refresh", {}),
 
     logout: () =>
-        api.post<void>("/api/v1/auth/logout", {}),
+        api.post<void>("/auth/logout", {}),
 
     me: () =>
-        api.get<Pick<AuthResponse, "user">>("/api/v1/auth/me"),
+        api.get<Pick<AuthResponse, "user">>("/auth/me"),
 };
