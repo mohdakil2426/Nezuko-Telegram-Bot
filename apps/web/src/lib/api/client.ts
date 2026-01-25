@@ -11,7 +11,7 @@ interface RequestOptions {
     credentials?: RequestCredentials;
 }
 
-import { createClient } from "@/lib/supabase/client";
+import { auth } from "@/lib/firebase";
 
 // ... (rest of imports)
 
@@ -20,10 +20,8 @@ import { createClient } from "@/lib/supabase/client";
 async function fetchClient<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     const { headers = {}, body, params, ...rest } = options;
     
-    // Get token from Supabase
-    const supabase = createClient();
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
+    // Get token from Firebase
+    const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
 
     const config: RequestInit = {
         ...rest,

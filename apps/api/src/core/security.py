@@ -1,21 +1,21 @@
-"""Security utilities for Supabase Auth."""
+"""Security utilities for Firebase Auth."""
 
 from typing import Any
 
-from supabase import Client
+from firebase_admin import auth
 
-from src.core.supabase import get_supabase_client
+from src.core.firebase import get_firebase_app
 
 
-def verify_supabase_token(token: str) -> Any:
+def verify_firebase_token(token: str) -> dict[str, Any]:
     """
-    Verify a Supabase JWT token.
-    Delegates validation to Supabase GoTrue client.
+    Verify a Firebase ID token.
+    Delegates validation to Firebase Admin SDK.
+    Returns the decoded token dict (contains 'uid', 'email', etc).
     """
-    client: Client = get_supabase_client()
-    # auth.get_user(token) verifies the token signature and expiration
-    response = client.auth.get_user(token)
-    if not response or not response.user:
-        raise ValueError("Invalid token")
-
-    return response.user
+    try:
+        get_firebase_app()  # Ensure app is initialized
+        decoded_token = auth.verify_id_token(token)
+        return decoded_token
+    except Exception as e:
+        raise ValueError(f"Invalid token: {str(e)}") from e

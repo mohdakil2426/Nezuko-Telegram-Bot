@@ -7,7 +7,6 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.security import hash_password
 from src.models.admin_user import AdminUser
 from src.schemas.admin import AdminCreateRequest, AdminUpdateRequest
 
@@ -36,11 +35,14 @@ class AdminService:
                 detail="Admin with this email already exists",
             )
 
+        # Creates user in local DB.
+        # Ideally, user should also be created in Firebase Auth by frontend or separate process.
+        # This service now only manages the SQL record.
         admin = AdminUser(
             email=data.email,
             full_name=data.full_name,
             role=data.role,
-            password_hash=hash_password(data.password),
+            # Password not stored locally anymore (Firebase handles auth)
             telegram_id=data.telegram_id,
             is_active=data.is_active,
         )
@@ -55,8 +57,9 @@ class AdminService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
 
         updated_data = data.model_dump(exclude_unset=True)
+        # Password updates are handled by Firebase, ignore local password updates if any
         if "password" in updated_data:
-            updated_data["password_hash"] = hash_password(updated_data.pop("password"))
+            del updated_data["password"]
 
         for field, value in updated_data.items():
             setattr(admin, field, value)

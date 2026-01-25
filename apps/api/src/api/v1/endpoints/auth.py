@@ -54,13 +54,13 @@ async def sync_user(
 
     token = auth_header.split(" ")[1]
 
-    from src.core.security import verify_supabase_token
+    from src.core.security import verify_firebase_token
 
     try:
-        supabase_user = verify_supabase_token(token)
+        firebase_user = verify_firebase_token(token)
     except ValueError as exc:
         raise HTTPException(status_code=401, detail="Invalid token") from exc
 
     auth_service = AuthService(session)
-    user = await auth_service.sync_supabase_user(supabase_user)
+    user = await auth_service.sync_firebase_user(firebase_user)
     return user

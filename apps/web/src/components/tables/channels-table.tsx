@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-    ColumnDef,
-    PaginationState,
-    SortingState,
+    type ColumnDef,
+    type PaginationState,
+    type SortingState,
 } from "@tanstack/react-table";
 import { ChannelResponse } from "@nezuko/types";
 import { DataTable } from "./data-table";
@@ -45,7 +45,7 @@ export function ChannelsTable({ search }: ChannelsTableProps) {
         {
             accessorKey: "title",
             header: "Channel",
-            cell: ({ row }) => {
+            cell: ({ row }: { row: { original: ChannelResponse } }) => {
                 const channel = row.original;
                 return (
                     <div className="flex flex-col">
@@ -62,7 +62,7 @@ export function ChannelsTable({ search }: ChannelsTableProps) {
         {
             accessorKey: "username",
             header: "Username",
-            cell: ({ row }) => {
+            cell: ({ row }: { row: { getValue: (key: string) => any } }) => {
                 const username = row.getValue("username") as string | null;
                 return username ? (
                     <span className="text-primary hover:underline cursor-pointer">
@@ -76,7 +76,7 @@ export function ChannelsTable({ search }: ChannelsTableProps) {
         {
             accessorKey: "subscriber_count",
             header: "Subscribers",
-            cell: ({ row }) => (
+            cell: ({ row }: { row: { getValue: (key: string) => any } }) => (
                 <div className="font-medium">
                     {new Intl.NumberFormat("en-US").format(row.getValue("subscriber_count"))}
                 </div>
@@ -85,7 +85,7 @@ export function ChannelsTable({ search }: ChannelsTableProps) {
         {
             accessorKey: "linked_groups_count",
             header: "Groups",
-            cell: ({ row }) => (
+            cell: ({ row }: { row: { getValue: (key: string) => any } }) => (
                 <div className="text-center w-16">
                     <Badge variant="outline">{row.getValue("linked_groups_count")}</Badge>
                 </div>
@@ -94,7 +94,7 @@ export function ChannelsTable({ search }: ChannelsTableProps) {
         {
             accessorKey: "created_at",
             header: "Added",
-            cell: ({ row }) => {
+            cell: ({ row }: { row: { getValue: (key: string) => any } }) => {
                 return (
                     <span className="text-text-secondary text-sm">
                         {formatDistanceToNow(new Date(row.getValue("created_at")), {
@@ -106,7 +106,7 @@ export function ChannelsTable({ search }: ChannelsTableProps) {
         },
         {
             id: "actions",
-            cell: ({ row }) => {
+            cell: ({ row }: { row: { original: ChannelResponse } }) => {
                 const channel = row.original;
 
                 return (
@@ -120,22 +120,22 @@ export function ChannelsTable({ search }: ChannelsTableProps) {
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem
-                                onClick={() => router.push(`/channels/${channel.channel_id}`)}
+                                onClick={() => router.push(`/dashboard/channels/${channel.channel_id}`)}
                             >
                                 <Eye className="mr-2 h-4 w-4" />
-                                View Details
+                                <span>View Details</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                                onClick={() => router.push(`/channels/${channel.channel_id}?action=edit`)}
+                                onClick={() => router.push(`/dashboard/channels/${channel.channel_id}?action=edit`)}
                             >
                                 <FileEdit className="mr-2 h-4 w-4" />
-                                Edit Info
+                                <span>Edit Info</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-error focus:text-error">
+                            <DropdownMenuItem className="text-destructive focus:text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Remove
+                                <span>Remove</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -154,7 +154,7 @@ export function ChannelsTable({ search }: ChannelsTableProps) {
             sorting={sorting}
             onSortingChange={setSorting}
             isLoading={isLoading}
-            onRowClick={(row) => router.push(`/channels/${row.channel_id}`)}
+            onRowClick={(row: ChannelResponse) => router.push(`/dashboard/channels/${row.channel_id}`)}
         />
     );
 }

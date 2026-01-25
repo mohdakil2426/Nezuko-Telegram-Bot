@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { useAuthStore } from "@/stores/auth-store";
 import { authApi } from "@/lib/api/endpoints/auth";
 
@@ -9,34 +11,38 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-    const { accessToken, login, logout } = useAuthStore();
+    const { setUser, logout } = useAuthStore();
+
+    const [isMounting, setIsMounting] = useState(true);
 
     useEffect(() => {
-        // Check if token is valid on mount by calling /me
-        const verifyToken = async () => {
-            if (!accessToken) return;
-
-            try {
-                // We only persist token in store (client-side), 
-                // but cookies (httpOnly) are used for refresh.
-                // If we have an access token, verify it.
-                const response = await authApi.me();
-                // Silent update user data
-                useAuthStore.setState({ user: response.user });
-            } catch (error) {
-                // Token invalid or network error
-                // If 401, try to refresh
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
                 try {
-                    const refreshRes = await authApi.refresh();
-                    login(refreshRes.user, refreshRes.access_token);
-                } catch (refreshError) {
-                    logout();
+                    // Try to get current user details from backend
+                    // If this fails (e.g. 401/403), we might handle it by logging out
+                    // But usually 403 means valid token but no access.
+                    // We sync blindly? No, authApi.me() is safer.
+                    const user = await authApi.me();
+                    setUser(user);
+                } catch (error) {
+                    console.error("Auth sync failed", error);
+                    // Optionally signOut if token is invalid?
+                    // auth.signOut();
+                    // logout();
                 }
+            } else {
+                logout();
             }
-        };
+            setIsMounting(false);
+        });
 
-        verifyToken();
-    }, [accessToken, login, logout]);
+        return () => unsubscribe();
+    }, [setUser, logout]);
+
+    if (isMounting) {
+        return null; // Or a loading spinner
+    }
 
     return <>{children}</>;
 }

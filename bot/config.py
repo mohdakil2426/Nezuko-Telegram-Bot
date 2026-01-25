@@ -31,6 +31,12 @@ class Config:
     # Optional - Monitoring
     sentry_dsn: str | None = None
 
+    # Optional - Firebase
+    firebase_project_id: str | None = None
+    firebase_client_email: str | None = None
+    firebase_private_key: str | None = None
+    firebase_database_url: str | None = None
+
     def __init__(self):
         """Initialize and validate configuration from environment variables."""
         # Required variables
@@ -51,6 +57,12 @@ class Config:
 
         # Optional - Monitoring
         self.sentry_dsn = self._get_optional("SENTRY_DSN")
+
+        # Optional - Firebase
+        self.firebase_project_id = self._get_optional("FIREBASE_PROJECT_ID")
+        self.firebase_client_email = self._get_optional("FIREBASE_CLIENT_EMAIL")
+        self.firebase_private_key = self._get_optional("FIREBASE_PRIVATE_KEY")
+        self.firebase_database_url = self._get_optional("FIREBASE_DATABASE_URL")
 
     def _get_required(self, key: str) -> str:
         """Get required environment variable or raise error."""

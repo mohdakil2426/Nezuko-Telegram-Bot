@@ -1,8 +1,9 @@
 "use client";
 
+import * as React from "react";
 import { useTables } from "@/lib/hooks/use-database";
 import { DataTable } from "@/components/tables/data-table";
-import { ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef, type SortingState } from "@tanstack/react-table";
 import { TableInfo } from "@nezuko/types";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,7 +16,7 @@ const columns: ColumnDef<TableInfo>[] = [
     {
         accessorKey: "name",
         header: "Table Name",
-        cell: ({ row }) => (
+        cell: ({ row }: { row: { getValue: (key: string) => any } }) => (
             <div className="flex items-center gap-2">
                 <Database className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium font-mono text-primary">
@@ -27,7 +28,7 @@ const columns: ColumnDef<TableInfo>[] = [
     {
         accessorKey: "row_count",
         header: "Rows",
-        cell: ({ row }) => {
+        cell: ({ row }: { row: { getValue: (key: string) => any } }) => {
             const count: number = row.getValue("row_count");
             return <Badge variant={count > 0 ? "secondary" : "outline"}>{count.toLocaleString()}</Badge>;
         },
@@ -35,7 +36,7 @@ const columns: ColumnDef<TableInfo>[] = [
     {
         accessorKey: "size_bytes",
         header: "Size",
-        cell: ({ row }) => (
+        cell: ({ row }: { row: { getValue: (key: string) => any } }) => (
             <span className="text-muted-foreground">
                 {formatBytes(row.getValue("size_bytes"))}
             </span>
@@ -44,7 +45,7 @@ const columns: ColumnDef<TableInfo>[] = [
     {
         accessorKey: "columns",
         header: "Columns",
-        cell: ({ row }) => {
+        cell: ({ row }: { row: { getValue: (key: string) => any } }) => {
             const cols: string[] = row.getValue("columns");
             return (
                 <div className="flex flex-wrap gap-1 max-w-sm">
@@ -62,9 +63,9 @@ const columns: ColumnDef<TableInfo>[] = [
     },
     {
         id: "actions",
-        cell: ({ row }) => (
+        cell: ({ row }: { row: { original: TableInfo } }) => (
             <div className="flex justify-end">
-                <Link href={`/database/${row.original.name}`}>
+                <Link href={`/dashboard/database/${row.original.name}`}>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         <Eye className="h-4 w-4" />
                     </Button>
@@ -76,12 +77,11 @@ const columns: ColumnDef<TableInfo>[] = [
 
 export default function DatabasePage() {
     const { data: tables, isLoading, isError } = useTables();
-
-    // Default pagination state
-    const pagination = {
+    const [sorting, setSorting] = React.useState<SortingState>([]);
+    const [pagination, setPagination] = React.useState({
         pageIndex: 0,
         pageSize: 50,
-    };
+    });
 
     if (isError) {
         return (
@@ -108,7 +108,9 @@ export default function DatabasePage() {
                     data={tables?.tables || []}
                     pageCount={1}
                     pagination={pagination}
-                    onPaginationChange={() => { }}
+                    onPaginationChange={setPagination}
+                    sorting={sorting}
+                    onSortingChange={setSorting}
                 />
             )}
         </div>

@@ -44,7 +44,7 @@ A web-based dashboard for bot owners to manage everything from a browser:
 - **Backend**: FastAPI, Python 3.13+, Pydantic V2
 - **Database**: Shared PostgreSQL with bot
 - **Cache**: Shared Redis with bot
-- **Auth**: Supabase Auth (Identity & User Management)
+- **Auth**: Firebase Auth (Identity & User Management)
 
 ## Success Metrics
 *   **Performance**: p95 verification latency <100ms.

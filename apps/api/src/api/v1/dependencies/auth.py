@@ -1,7 +1,5 @@
 """Authentication dependencies for API endpoints."""
 
-import uuid
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
@@ -9,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import get_settings
 from src.core.database import get_session
-from src.core.security import verify_supabase_token
+from src.core.security import verify_firebase_token
 from src.models.admin_user import AdminUser
 
 settings = get_settings()
@@ -31,17 +29,16 @@ async def get_current_user(
     )
 
     try:
-        # 1. Verify token with Supabase
-        supabase_user = verify_supabase_token(token)
-        user_uuid = uuid.UUID(supabase_user.id)
-        email = supabase_user.email
+        # 1. Verify token with Firebase
+        firebase_user = verify_firebase_token(token)
+        uid = firebase_user["uid"]
+        email = firebase_user.get("email")
     except (ValueError, Exception) as exc:
-        # verify_supabase_token raises ValueError on invalid token
         raise credentials_exception from exc
 
     # 2. Check local DB
-    # First try by supabase_id
-    stmt = select(AdminUser).where(AdminUser.supabase_id == str(user_uuid))
+    # First try by supabase_id (repurposed for Firebase UID)
+    stmt = select(AdminUser).where(AdminUser.supabase_id == uid)
     result = await session.execute(stmt)
     user = result.scalar_one_or_none()
 
@@ -53,8 +50,8 @@ async def get_current_user(
         user = result.scalar_one_or_none()
 
         if user:
-            # Link existing user to Supabase ID
-            user.supabase_id = str(user_uuid)
+            # Link existing user to Firebase UID
+            user.supabase_id = uid
             session.add(user)
             await session.commit()
             await session.refresh(user)

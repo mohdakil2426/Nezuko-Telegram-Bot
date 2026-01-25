@@ -9,7 +9,7 @@ uvicorn[standard]>=0.40.0
 python-multipart>=0.0.20
 
 # Authentication
-supabase>=2.5.0
+firebase-admin>=6.5.0
 
 # Validation
 pydantic>=2.12.5
@@ -24,9 +24,8 @@ alembic>=1.18.1
 # Cache
 redis>=5.2.1
 
-# HTTP & WebSocket
+# HTTP 
 httpx>=0.28.1
-websockets>=14.1
 
 # Logging
 structlog>=25.1.0

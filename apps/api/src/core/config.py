@@ -21,19 +21,11 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_PASSWORD: str | None = None
 
-    # Supabase Auth
-    SUPABASE_URL: str
-    SUPABASE_KEY: (
-        str  # Service Role Key or Anon Key (depending on usage, likely Service Role for Admin API)
-    )
-
-    # Legacy Auth - TO BE REMOVED
-    ADMIN_JWT_PRIVATE_KEY_PATH: str = "apps/api/certs/jwt-private.pem"
-    ADMIN_JWT_PUBLIC_KEY_PATH: str = "apps/api/certs/jwt-public.pem"
-    ADMIN_JWT_ACCESS_EXPIRE_MINUTES: int = 15
-    ADMIN_JWT_REFRESH_EXPIRE_DAYS: int = 7
-    ADMIN_JWT_ISSUER: str = "https://api.nezuko.bot"
-    ADMIN_JWT_AUDIENCE: str = "https://admin.nezuko.bot"
+    # Firebase Admin SDK
+    FIREBASE_PROJECT_ID: str
+    FIREBASE_CLIENT_EMAIL: str | None = None
+    FIREBASE_PRIVATE_KEY: str | None = None
+    FIREBASE_DATABASE_URL: str
 
     # Admin Panel - Initial Admin User
     ADMIN_INITIAL_EMAIL: str = "admin@nezuko.bot"

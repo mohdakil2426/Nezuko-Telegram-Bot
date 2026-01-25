@@ -1,7 +1,5 @@
 """Main FastAPI application entry point."""
 
-import asyncio
-import contextlib
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -10,8 +8,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.v1.router import api_router
-from .api.websocket.handlers import logs
-from .api.websocket.redis_listener import redis_log_listener
 from .core.config import get_settings
 from .core.logging import configure_logging
 from .middleware.audit import AuditMiddleware
@@ -42,17 +38,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         version="0.1.0",
         environment=settings.ENVIRONMENT,
     )
-    # Start Redis Log Listener in background
-    app.state.redis_listener_task = asyncio.create_task(redis_log_listener())
-
     yield
 
     logger.info("nezuko_admin_api_shutting_down")
-    # Cancel Redis Log Listener
-    if hasattr(app.state, "redis_listener_task"):
-        app.state.redis_listener_task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await app.state.redis_listener_task
 
 
 # Create FastAPI app
@@ -107,4 +95,3 @@ async def health_check() -> dict[str, str]:
 
 
 # Include WebSocket Router
-app.include_router(logs.router)

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { toast } from "sonner";
-import { client } from "../api/client";
+import { useEffect, useRef, useState } from "react";
+import { db } from "@/lib/firebase";
+import { ref, query, limitToLast, onChildAdded, onValue } from "firebase/database";
 
 interface LogEntry {
     timestamp: string;
@@ -16,64 +16,43 @@ export function useLogStream() {
     const [logs, setLogs] = useState<LogEntry[]>([]);
     const [isConnected, setIsConnected] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
-    const wsRef = useRef<WebSocket | null>(null);
-    const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+    
+    const isPausedRef = useRef(isPaused);
 
-    const connect = useCallback(() => {
-        // Get base URL from API client or env, replace http with ws
-        const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-        const wsURL = baseURL.replace(/^http/, "ws") + "/ws/logs";
-
-        try {
-            const ws = new WebSocket(wsURL);
-
-            ws.onopen = () => {
-                setIsConnected(true);
-                console.log("WebSocket connected");
-            };
-
-            ws.onmessage = (event) => {
-                if (isPaused) return;
-                try {
-                    const data = JSON.parse(event.data);
-                    setLogs((prev) => {
-                        // Keep last 1000 logs
-                        const newLogs = [...prev, data];
-                        if (newLogs.length > 1000) {
-                            return newLogs.slice(newLogs.length - 1000);
-                        }
-                        return newLogs;
-                    });
-                } catch (e) {
-                    console.error("Failed to parse log message", e);
-                }
-            };
-
-            ws.onclose = () => {
-                setIsConnected(false);
-                console.log("WebSocket disconnected, reconnecting in 3s...");
-                reconnectTimeoutRef.current = setTimeout(connect, 3000);
-            };
-
-            ws.onerror = (error) => {
-                console.error("WebSocket error", error);
-                ws.close();
-            };
-
-            wsRef.current = ws;
-        } catch (error) {
-            console.error("WebSocket connection failure", error);
-            reconnectTimeoutRef.current = setTimeout(connect, 3000);
-        }
+    useEffect(() => {
+        isPausedRef.current = isPaused;
     }, [isPaused]);
 
     useEffect(() => {
-        connect();
+        // Listen for connection status
+        const connectedRef = ref(db, ".info/connected");
+        const unsubConnected = onValue(connectedRef, (snap) => {
+            setIsConnected(!!snap.val());
+        });
+
+        // Listen for logs
+        const logsRef = query(ref(db, "logs"), limitToLast(100));
+        
+        const unsubscribe = onChildAdded(logsRef, (snapshot) => {
+            if (isPausedRef.current) return;
+
+            const data = snapshot.val();
+            if (data) {
+                setLogs((prev) => {
+                    const newLogs = [...prev, data];
+                    if (newLogs.length > 1000) {
+                        return newLogs.slice(newLogs.length - 1000);
+                    }
+                    return newLogs;
+                });
+            }
+        });
+
         return () => {
-            wsRef.current?.close();
-            clearTimeout(reconnectTimeoutRef.current);
+            unsubscribe();
+            unsubConnected();
         };
-    }, [connect]);
+    }, []);
 
     const clearLogs = () => setLogs([]);
 

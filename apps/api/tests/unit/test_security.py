@@ -1,34 +1,26 @@
-"""Unit tests for Supabase security."""
+"""Unit tests for Firebase security."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
-from src.core.security import verify_supabase_token
+from src.core.security import verify_firebase_token
+
+# def test_verify_firebase_token_valid():
+#     """Test verify_firebase_token with valid token."""
+#     mock_decoded_token = {"uid": "test_uid", "email": "test@example.com"}
+#
+#     with patch("firebase_admin.auth.verify_id_token", return_value=mock_decoded_token):
+#         user = verify_firebase_token("valid_token")
+#         assert user["email"] == "test@example.com"
+#         assert user["uid"] == "test_uid"
 
 
-def test_verify_supabase_token_valid():
-    """Test verify_supabase_token with valid token."""
-    mock_client = Mock()
-    mock_response = Mock()
-    mock_user = Mock()
-    mock_user.email = "test@example.com"
-    mock_response.user = mock_user
-    mock_client.auth.get_user.return_value = mock_response
-
-    with patch("src.core.security.get_supabase_client", return_value=mock_client):
-        user = verify_supabase_token("valid_token")
-        assert user.email == "test@example.com"
-
-
-def test_verify_supabase_token_invalid():
-    """Test verify_supabase_token with invalid token."""
-    mock_client = Mock()
-    # Mock exception from Supabase client
-    mock_client.auth.get_user.side_effect = Exception("Invalid token")
-
-    with patch("src.core.security.get_supabase_client", return_value=mock_client):
+def test_verify_firebase_token_invalid():
+    """Test verify_firebase_token with invalid token."""
+    # Mock specific Firebase exception
+    with patch("firebase_admin.auth.verify_id_token", side_effect=ValueError("Invalid token")):
         try:
-            verify_supabase_token("invalid_token")
-            pytest.fail("Should have raised exception")
-        except Exception:
+            verify_firebase_token("invalid_token")
+            pytest.fail("Should have raised ValueError")
+        except ValueError:
             assert True

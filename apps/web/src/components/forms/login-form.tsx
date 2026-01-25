@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { createClient } from "@/lib/supabase/client";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { authApi, loginSchema, LoginValues } from "@/lib/api/endpoints/auth";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -39,15 +40,7 @@ export function LoginForm() {
         setIsLoading(true);
 
         try {
-            const supabase = createClient();
-            const { error } = await supabase.auth.signInWithPassword({
-                email: data.email,
-                password: data.password,
-            });
-
-            if (error) {
-                throw error;
-            }
+            await signInWithEmailAndPassword(auth, data.email, data.password);
 
             // Sync user with backend and update store
             const user = await authApi.sync();

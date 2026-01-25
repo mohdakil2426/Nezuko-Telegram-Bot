@@ -45,15 +45,15 @@ logging.basicConfig(
     level=logging.INFO if config.is_production else logging.DEBUG,
     handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler("bot.log", encoding="utf-8")],
 )
-# Add Redis Handler
+# Add Firebase Handler (Real-time logs)
 try:
-    from bot.utils.redis_logging import RedisLogHandler
+    from bot.utils.firebase_logging import FirebaseLogHandler
 
-    redis_handler = RedisLogHandler()
-    redis_handler.setLevel(logging.INFO)  # Always send INFO+ to dashboard
-    logging.getLogger().addHandler(redis_handler)
+    firebase_handler = FirebaseLogHandler()
+    firebase_handler.setLevel(logging.INFO)  # Always send INFO+ to dashboard
+    logging.getLogger().addHandler(firebase_handler)
 except Exception as e:  # pylint: disable=broad-exception-caught
-    print(f"Failed to initialize Redis logger: {e}")
+    print(f"Failed to initialize Firebase logger: {e}")
 
 logger = logging.getLogger(__name__)
 

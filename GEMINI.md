@@ -1,16 +1,19 @@
 # GEMINI.md - AI Coding Assistant Instructions
 
 <!-- OPENSPEC:START -->
+
 # OpenSpec Instructions
 
 These instructions are for AI assistants working in this project.
 
 Always open `@/openspec/AGENTS.md` when the request:
+
 - Mentions planning or proposals (words like proposal, spec, change, plan)
 - Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
 - Sounds ambiguous and you need the authoritative spec before coding
 
 Use `@/openspec/AGENTS.md` to learn:
+
 - How to create and apply change proposals
 - Spec format and conventions
 - Project structure and guidelines
@@ -26,11 +29,17 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 ## Build, Lint & Test Commands
 
 ```bash
-# Install dependencies
+# Install dependencies (Python)
 pip install -r requirements.txt
+
+# Install dependencies (Node.js/Bun)
+bun install
 
 # Run the bot
 python -m bot.main
+
+# Run Admin Panel
+cd apps/web && bun dev
 
 # Linting & Formatting
 ruff check .                          # Check for lint errors
@@ -70,11 +79,13 @@ alembic downgrade -1                  # Rollback last migration
 ## Code Style Guidelines
 
 ### Line Length & Formatting
+
 - **Line length**: 100 characters (not PEP 8's 79)
 - **Indentation**: 4 spaces
 - **Formatter**: Ruff (`ruff format .`)
 
 ### Import Order (enforced by ruff)
+
 ```python
 # 1. Standard library
 import asyncio
@@ -91,15 +102,17 @@ from bot.services.verification import check_membership
 ```
 
 ### Naming Conventions
-| Type | Convention | Example |
-|------|------------|---------|
-| Files | snake_case | `rate_limiter.py` |
-| Classes | PascalCase | `ProtectedGroup` |
-| Functions/Variables | snake_case | `check_membership` |
-| Constants | UPPER_SNAKE_CASE | `CACHE_TTL` |
-| Private | underscore prefix | `_internal_helper` |
+
+| Type                | Convention        | Example            |
+| ------------------- | ----------------- | ------------------ |
+| Files               | snake_case        | `rate_limiter.py`  |
+| Classes             | PascalCase        | `ProtectedGroup`   |
+| Functions/Variables | snake_case        | `check_membership` |
+| Constants           | UPPER_SNAKE_CASE  | `CACHE_TTL`        |
+| Private             | underscore prefix | `_internal_helper` |
 
 ### Type Hints (Required)
+
 ```python
 async def check_membership(
     user_id: int,
@@ -110,13 +123,14 @@ async def check_membership(
 ```
 
 ### Docstrings (Google style)
+
 ```python
 def get_group_channels(group_id: int) -> list[EnforcedChannel]:
     """Retrieves all channels linked to a protected group.
-    
+
     Args:
         group_id: Telegram group ID (negative integer for supergroups)
-        
+
     Returns:
         List of EnforcedChannel objects, empty if group not protected
     """
@@ -125,6 +139,7 @@ def get_group_channels(group_id: int) -> list[EnforcedChannel]:
 ## Critical Async Rules
 
 ### ALWAYS Use Async
+
 ```python
 # CORRECT - Async database query
 result = await session.execute(select(User).where(User.id == user_id))
@@ -134,11 +149,13 @@ user = session.query(User).filter(User.id == user_id).first()
 ```
 
 ### NEVER Block the Event Loop
+
 - Use `await asyncio.sleep()` not `time.sleep()`
 - Use async database drivers (`asyncpg`, `aiosqlite`)
 - Use `aiohttp` not `requests`
 
 ### Date/Time Handling
+
 ```python
 # CORRECT - Timezone-aware
 from datetime import datetime, timezone
@@ -151,6 +168,7 @@ now = datetime.utcnow()  # NEVER use this
 ## Logging Standards
 
 ### Use Lazy % Formatting in Logger Calls
+
 ```python
 # CORRECT - Lazy formatting (better performance)
 logger.info("User %s verified in group %s", user_id, group_id)
@@ -160,6 +178,7 @@ logger.info(f"User {user_id} verified in group {group_id}")
 ```
 
 ### Use f-strings Everywhere Else
+
 ```python
 message = f"Welcome {username} to {group_title}!"
 ```
@@ -167,6 +186,7 @@ message = f"Welcome {username} to {group_title}!"
 ## Error Handling
 
 ### Catch Specific Exceptions
+
 ```python
 # CORRECT
 from telegram.error import TelegramError
@@ -185,6 +205,7 @@ except Exception:
 ```
 
 ### None Safety with Assertions
+
 ```python
 # CORRECT - Assert before accessing
 assert update.message is not None
@@ -198,6 +219,7 @@ channel_id = cast(int, link.channel_id)
 ## Database Patterns (SQLAlchemy 2.0 Async)
 
 ### Always Use Context Managers
+
 ```python
 async with get_session() as session:
     async with session.begin():
@@ -206,6 +228,7 @@ async with get_session() as session:
 ```
 
 ### Use select() API (Not Legacy query())
+
 ```python
 # CORRECT - SQLAlchemy 2.0
 stmt = select(User).where(User.id == user_id)
@@ -226,10 +249,21 @@ user = session.query(User).filter_by(id=user_id).first()
 
 ## Performance Targets
 
-| Metric | Target |
-|--------|--------|
-| Verification latency (p95) | <100ms |
-| Cache hit rate | >70% |
-| Database query (p95) | <50ms |
-| Pylint score | 10.00/10 |
-| Pyrefly errors | 0 |
+| Metric                     | Target   |
+| -------------------------- | -------- |
+| Verification latency (p95) | <100ms   |
+| Cache hit rate             | >70%     |
+| Database query (p95)       | <50ms    |
+| Pylint score               | 10.00/10 |
+| Pyrefly errors             | 0        |
+
+## Browser Automation
+
+Use `agent-browser` for web automation. Run `agent-browser --help` for all commands.
+
+Core workflow:
+
+1. `agent-browser open <url>` - Navigate to page
+2. `agent-browser snapshot -i` - Get interactive elements with refs (@e1, @e2)
+3. `agent-browser click @e1` / `fill @e2 "text"` - Interact using refs
+4. Re-snapshot after page changes
