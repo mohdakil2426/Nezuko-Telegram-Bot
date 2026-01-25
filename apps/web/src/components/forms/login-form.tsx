@@ -43,19 +43,20 @@ export function LoginForm() {
             await signInWithEmailAndPassword(auth, data.email, data.password);
 
             // Sync user with backend and update store
-            const user = await authApi.sync();
-            setUser(user);
+            const response = await authApi.sync();
+            setUser(response.data);
 
             toast({
                 title: "Login successful",
                 description: "Welcome back!",
             });
             router.push("/");
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Invalid credentials";
             toast({
                 variant: "destructive",
                 title: "Login failed",
-                description: error.message || "Invalid credentials",
+                description: errorMessage,
             });
         } finally {
             setIsLoading(false);

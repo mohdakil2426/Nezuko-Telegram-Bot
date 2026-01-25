@@ -3,7 +3,7 @@ export * from "@nezuko/types";
 export interface AdminApiResponse<T> {
     status: "success" | "error";
     data: T;
-    meta?: any;
+    meta?: Record<string, unknown>;
 }
 
 export interface UserResponse {

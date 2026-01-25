@@ -1,5 +1,5 @@
 import { api } from "@/lib/api/client";
-import { UserResponse } from "@/lib/api/types";
+import { AdminApiResponse, UserResponse } from "@/lib/api/types";
 import { z } from "zod";
 
 export const loginSchema = z.object({
@@ -10,6 +10,6 @@ export const loginSchema = z.object({
 export type LoginValues = z.infer<typeof loginSchema>;
 
 export const authApi = {
-    me: () => api.get<UserResponse>("/auth/me"),
-    sync: () => api.post<UserResponse>("/auth/sync", {}),
+    me: () => api.get<AdminApiResponse<UserResponse>>("/auth/me"),
+    sync: () => api.post<AdminApiResponse<UserResponse>>("/auth/sync", {}),
 };

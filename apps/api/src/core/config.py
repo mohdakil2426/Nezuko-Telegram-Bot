@@ -60,14 +60,19 @@ class Settings(BaseSettings):
         if isinstance(value, list):
             return value
         if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                return []
             if value.startswith("[") and value.endswith("]"):
                 import json
 
                 try:
                     return json.loads(value)
                 except json.JSONDecodeError:
+                    # If it looks like a list but isn't valid JSON, fallback to split
                     pass
-            return [origin.strip() for origin in value.split(",")]
+            # Standard comma-separated fallback
+            return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
 
 

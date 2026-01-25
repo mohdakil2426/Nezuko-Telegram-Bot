@@ -13,6 +13,9 @@ import { useActivityFeed } from "@/lib/hooks/use-activity-feed";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
+import { ActivityItem } from "@nezuko/types";
+
+
 export function ActivityFeed() {
     const { data, isLoading } = useActivityFeed();
 
@@ -36,15 +39,15 @@ export function ActivityFeed() {
                 Recent Activity
             </h3>
             <div className="space-y-2">
-                {data.items.map((item, index) => (
-                    <ActivityItem key={item.id} item={item} index={index} />
+                {data.items.map((item: ActivityItem, index: number) => (
+                    <ActivityItemComponent key={item.id} item={item} index={index} />
                 ))}
             </div>
         </div>
     );
 }
 
-function ActivityItem({ item, index }: { item: any; index: number }) {
+function ActivityItemComponent({ item, index }: { item: ActivityItem; index: number }) {
     const icon = getActivityIcon(item.type);
     const colorClass = getActivityColor(item.type);
 
@@ -72,11 +75,11 @@ function ActivityItem({ item, index }: { item: any; index: number }) {
                     <span className="text-xs text-text-tertiary">
                         {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
                     </span>
-                    {item.metadata?.group_name && (
+                    {!!item.metadata?.group_name && (
                         <>
                             <span className="text-border">•</span>
                             <span className="text-xs text-primary-400 font-medium truncate">
-                                {item.metadata.group_name}
+                                {String(item.metadata.group_name)}
                             </span>
                         </>
                     )}

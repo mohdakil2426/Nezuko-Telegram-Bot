@@ -6,8 +6,8 @@ type RequestMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 interface RequestOptions {
     method?: RequestMethod;
     headers?: Record<string, string>;
-    body?: any;
-    params?: Record<string, any>;
+    body?: unknown;
+    params?: Record<string, string | number | boolean | undefined | null>;
     credentials?: RequestCredentials;
 }
 
@@ -77,13 +77,13 @@ export const client = Object.assign(
     {
         get: <T>(endpoint: string, options?: RequestOptions) =>
             fetchClient<T>(endpoint, { ...options, method: "GET" }),
-        post: <T>(endpoint: string, body: any, options?: RequestOptions) =>
+        post: <T>(endpoint: string, body: unknown, options?: RequestOptions) =>
             fetchClient<T>(endpoint, { ...options, method: "POST", body }),
-        put: <T>(endpoint: string, body: any, options?: RequestOptions) =>
+        put: <T>(endpoint: string, body: unknown, options?: RequestOptions) =>
             fetchClient<T>(endpoint, { ...options, method: "PUT", body }),
         delete: <T>(endpoint: string, options?: RequestOptions) =>
             fetchClient<T>(endpoint, { ...options, method: "DELETE" }),
-        patch: <T>(endpoint: string, body: any, options?: RequestOptions) =>
+        patch: <T>(endpoint: string, body: unknown, options?: RequestOptions) =>
             fetchClient<T>(endpoint, { ...options, method: "PATCH", body }),
     }
 );

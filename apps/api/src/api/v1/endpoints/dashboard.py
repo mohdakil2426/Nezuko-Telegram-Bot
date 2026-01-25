@@ -10,12 +10,13 @@ from src.api.v1.dependencies.auth import get_current_active_user
 from src.core.database import get_session
 from src.models.admin_user import AdminUser
 from src.models.bot import EnforcedChannel, ProtectedGroup
+from src.schemas.base import SuccessResponse
 from src.schemas.dashboard import ActivityResponse, DashboardStatsResponse
 
 router = APIRouter()
 
 
-@router.get("/stats", response_model=DashboardStatsResponse)
+@router.get("/stats", response_model=SuccessResponse[DashboardStatsResponse])
 async def get_dashboard_stats(
     current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
     session: AsyncSession = Depends(get_session),
@@ -41,18 +42,20 @@ async def get_dashboard_stats(
     bot_uptime_seconds = 0  # Placeholder
     cache_hit_rate = 0.0  # Placeholder
 
-    return DashboardStatsResponse(
-        total_groups=total_groups,
-        total_channels=total_channels,
-        verifications_today=verifications_today,
-        verifications_week=verifications_week,
-        success_rate=success_rate,
-        bot_uptime_seconds=bot_uptime_seconds,
-        cache_hit_rate=cache_hit_rate,
+    return SuccessResponse(
+        data=DashboardStatsResponse(
+            total_groups=total_groups,
+            total_channels=total_channels,
+            verifications_today=verifications_today,
+            verifications_week=verifications_week,
+            success_rate=success_rate,
+            bot_uptime_seconds=bot_uptime_seconds,
+            cache_hit_rate=cache_hit_rate,
+        )
     )
 
 
-@router.get("/activity", response_model=ActivityResponse)
+@router.get("/activity", response_model=SuccessResponse[ActivityResponse])
 async def get_dashboard_activity(
     current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
     session: AsyncSession = Depends(get_session),  # pylint: disable=unused-argument
@@ -62,4 +65,4 @@ async def get_dashboard_activity(
     """
     # TODO: Implement real activity log query
     # For now, return empty list
-    return ActivityResponse(items=[])
+    return SuccessResponse(data=ActivityResponse(items=[]))

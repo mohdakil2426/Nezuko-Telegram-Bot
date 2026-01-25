@@ -12,18 +12,23 @@ export function UserGrowthChart({ data }: UserGrowthChartProps) {
     const { theme } = useTheme();
 
     // Format tooltip value
-    const formatValue = (value: any) => {
+    const formatValue = (value: number | string | any) => {
+        if (value === undefined || value === null) return "";
         return new Intl.NumberFormat("en-US").format(Number(value));
     };
 
     // Format tooltip label
     const formatLabel = (label: any) => {
         if (!label) return "";
-        return new Date(label).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric"
-        });
+        try {
+            return new Date(label).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric"
+            });
+        } catch {
+            return String(label);
+        }
     };
 
     return (
