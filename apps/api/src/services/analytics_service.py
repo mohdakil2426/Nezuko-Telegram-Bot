@@ -1,9 +1,15 @@
-"""Business logic for system analytics."""
+"""Business logic for system analytics.
+
+Queries real verification data from the database for analytics dashboards.
+Falls back to empty data (not mock data) when no verification logs exist.
+"""
 
 from datetime import UTC, datetime, timedelta
 
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.models.verification_log import VerificationLog
 from src.schemas.analytics import (
     UserGrowthResponse,
     UserGrowthSeries,
@@ -20,17 +26,10 @@ class AnalyticsService:
         granularity: str = "day",
     ) -> UserGrowthResponse:
         """
-        Calculates user growth over time.
-        Note: Since we don't have a dedicated 'users' table with joined_at yet (users are in protected_groups/members or similar in real schema),
-        we will simulate this using the 'admin_audit_log' or stub it for now if tables are missing.
-        However, let's assume we use the 'admin_users' table specific to the panel, or 'bot_users' if we had one.
+        Calculates unique user growth over time based on verification logs.
 
-        For this simplified implementation, we will generate realistic mock data based on 'admin_audit_log' activity
-        or just return a mock pattern since we focused on admin panel mostly.
-
-        Let's perform a real query on 'admin_audit_log' to show activity trends as a proxy for "growth" or engagement.
+        Counts unique users who have been verified per day/period.
         """
-
         # Calculate date range
         now = datetime.now(UTC)
         if period == "7d":
@@ -42,33 +41,54 @@ class AnalyticsService:
         else:
             start_date = now - timedelta(days=30)
 
-        # Mock Data Generation (Realistic Pattern)
-        # In a real app, this would be: SELECT date_trunc('day', created_at) as date, count(*) FROM users ...
+        # Query unique users per day from verification_log
+        # Using date truncation to group by day
+        stmt = (
+            select(
+                func.date(VerificationLog.timestamp).label("date"),
+                func.count(func.distinct(VerificationLog.user_id)).label("new_users"),
+            )
+            .where(
+                VerificationLog.timestamp >= start_date,
+                VerificationLog.status == "verified",
+            )
+            .group_by(func.date(VerificationLog.timestamp))
+            .order_by(func.date(VerificationLog.timestamp))
+        )
 
+        result = await session.execute(stmt)
+        rows = result.all()
+
+        # Build series with cumulative total
         series = []
-        current = start_date
-        total_users = 1000  # Baseline
+        cumulative_total = 0
         total_new = 0
 
+        # Create a map of dates with data
+        date_data = {str(row.date): row.new_users for row in rows}
+
+        # Generate all dates in range
+        current = start_date
         while current <= now:
             date_str = current.strftime("%Y-%m-%d")
-            # Sine wave logic for realistic mock data
-            day_val = int(current.timestamp() / 86400)
-            new_users = 10 + (day_val % 20)  # Pseudo-random between 10 and 30
-
-            total_users += new_users
+            new_users = date_data.get(date_str, 0)
+            cumulative_total += new_users
             total_new += new_users
 
             series.append(
-                UserGrowthSeries(date=date_str, new_users=new_users, total_users=total_users),
+                UserGrowthSeries(
+                    date=date_str,
+                    new_users=new_users,
+                    total_users=cumulative_total,
+                )
             )
             current += timedelta(days=1)
 
-        growth_rate = (
-            ((series[-1].total_users - series[0].total_users) / series[0].total_users) * 100
-            if series
-            else 0
-        )
+        growth_rate = 0.0
+        if series and len(series) > 1 and series[0].total_users > 0:
+            growth_rate = (
+                (series[-1].total_users - series[0].total_users) / series[0].total_users
+            ) * 100
 
         return UserGrowthResponse(
             period=period,
@@ -77,7 +97,7 @@ class AnalyticsService:
             summary={
                 "total_new_users": total_new,
                 "growth_rate": round(growth_rate, 2),
-                "current_total": total_users,
+                "current_total": cumulative_total,
             },
         )
 
@@ -88,52 +108,89 @@ class AnalyticsService:
         granularity: str = "hour",
     ) -> VerificationTrendResponse:
         """
-        Calculates verification success vs failure trends.
+        Calculates verification success vs failure trends from real data.
         """
         now = datetime.now(UTC)
         if period == "24h":
             start_date = now - timedelta(hours=24)
             delta = timedelta(hours=1)
-            fmt = "%Y-%m-%dT%H:00:00Z"
+            date_format = "%Y-%m-%dT%H:00:00Z"
+            # Group by hour
+            time_grouper = func.strftime("%Y-%m-%dT%H:00:00Z", VerificationLog.timestamp)
         elif period == "7d":
             start_date = now - timedelta(days=7)
             delta = timedelta(days=1)
-            fmt = "%Y-%m-%d"
-        else:
+            date_format = "%Y-%m-%d"
+            time_grouper = func.date(VerificationLog.timestamp)
+        else:  # 30d or default
             start_date = now - timedelta(days=30)
             delta = timedelta(days=1)
-            fmt = "%Y-%m-%d"
+            date_format = "%Y-%m-%d"
+            time_grouper = func.date(VerificationLog.timestamp)
 
+        # Query verification counts grouped by time period and status
+        stmt = (
+            select(
+                time_grouper.label("time_bucket"),
+                func.count().label("total"),
+                func.sum(case((VerificationLog.status == "verified", 1), else_=0)).label(
+                    "successful"
+                ),
+                func.sum(
+                    case(
+                        (VerificationLog.status.in_(["restricted", "error"]), 1),
+                        else_=0,
+                    )
+                ).label("failed"),
+            )
+            .where(VerificationLog.timestamp >= start_date)
+            .group_by(time_grouper)
+            .order_by(time_grouper)
+        )
+
+        result = await session.execute(stmt)
+        rows = result.all()
+
+        # Create a map of time buckets with data
+        data_map = {}
+        for row in rows:
+            key = str(row.time_bucket)
+            data_map[key] = {
+                "total": row.total or 0,
+                "successful": row.successful or 0,
+                "failed": row.failed or 0,
+            }
+
+        # Generate all time buckets in range
         series = []
-        current = start_date
         total_verifications = 0
         total_success = 0
+        current = start_date
 
         while current <= now:
-            timestamp_str = current.strftime(fmt)
+            timestamp_str = current.strftime(date_format)
 
-            # Mock logic: heavy traffic during day, light at night
-            hour = current.hour
-            is_active_hour = 8 <= hour <= 22
-            base_vol = 50 if is_active_hour else 5
+            if timestamp_str in data_map:
+                data = data_map[timestamp_str]
+                total = data["total"]
+                successful = data["successful"]
+                failed = data["failed"]
+            else:
+                total = 0
+                successful = 0
+                failed = 0
 
-            # Variance
-            vol = base_vol + (int(current.timestamp()) % 15)
-            success_count = int(vol * 0.95)  # 95% success rate
-            failed_count = vol - success_count
-
-            total_verifications += vol
-            total_success += success_count
+            total_verifications += total
+            total_success += successful
 
             series.append(
                 VerificationTrendSeries(
                     timestamp=timestamp_str,
-                    total=vol,
-                    successful=success_count,
-                    failed=failed_count,
-                ),
+                    total=total,
+                    successful=successful,
+                    failed=failed,
+                )
             )
-
             current += delta
 
         success_rate = (total_success / total_verifications * 100) if total_verifications > 0 else 0
@@ -148,6 +205,46 @@ class AnalyticsService:
                 "end_date": now.isoformat(),
             },
         )
+
+    async def get_dashboard_verification_stats(
+        self,
+        session: AsyncSession,
+    ) -> dict:
+        """
+        Get verification statistics for dashboard stats cards.
+
+        Returns:
+            Dict with verifications_today, verifications_week, success_rate
+        """
+        now = datetime.now(UTC)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = today_start - timedelta(days=7)
+
+        # Today's verifications
+        stmt_today = select(func.count()).where(VerificationLog.timestamp >= today_start)
+        today_count = await session.scalar(stmt_today) or 0
+
+        # This week's verifications
+        stmt_week = select(func.count()).where(VerificationLog.timestamp >= week_start)
+        week_count = await session.scalar(stmt_week) or 0
+
+        # Success rate (last 7 days)
+        stmt_success = select(
+            func.count().label("total"),
+            func.sum(case((VerificationLog.status == "verified", 1), else_=0)).label("successful"),
+        ).where(VerificationLog.timestamp >= week_start)
+
+        result = await session.execute(stmt_success)
+        row = result.one()
+        total = row.total or 0
+        successful = row.successful or 0
+        success_rate = (successful / total * 100) if total > 0 else 0.0
+
+        return {
+            "verifications_today": today_count,
+            "verifications_week": week_count,
+            "success_rate": round(success_rate, 2),
+        }
 
 
 analytics_service = AnalyticsService()

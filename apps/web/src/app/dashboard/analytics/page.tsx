@@ -66,9 +66,13 @@ export default function AnalyticsPage() {
                     <CardContent>
                         {usersLoading ? <Skeleton className="h-8 w-20" /> : (
                             <>
-                                <div className="text-2xl font-bold">{userGrowth?.summary.current_total?.toLocaleString()}</div>
+                                <div className="text-2xl font-bold">
+                                    {userGrowth?.summary.current_total ? userGrowth.summary.current_total.toLocaleString() : "0"}
+                                </div>
                                 <p className="text-xs text-muted-foreground">
-                                    +{userGrowth?.summary.total_new_users} new in period
+                                    {userGrowth?.summary.total_new_users 
+                                        ? `+${userGrowth.summary.total_new_users} new in period`
+                                        : "No new users in period"}
                                 </p>
                             </>
                         )}
@@ -82,7 +86,9 @@ export default function AnalyticsPage() {
                     <CardContent>
                         {usersLoading ? <Skeleton className="h-8 w-20" /> : (
                             <>
-                                <div className="text-2xl font-bold">{userGrowth?.summary.growth_rate}%</div>
+                                <div className="text-2xl font-bold">
+                                    {userGrowth?.summary.growth_rate ?? 0}%
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                     Overall trend
                                 </p>
@@ -98,7 +104,9 @@ export default function AnalyticsPage() {
                     <CardContent>
                         {verifyLoading ? <Skeleton className="h-8 w-20" /> : (
                             <>
-                                <div className="text-2xl font-bold">{verifyTrends?.summary.total_verifications?.toLocaleString()}</div>
+                                <div className="text-2xl font-bold">
+                                    {verifyTrends?.summary.total_verifications?.toLocaleString() || "0"}
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                     Processed requests
                                 </p>
@@ -114,9 +122,13 @@ export default function AnalyticsPage() {
                     <CardContent>
                         {verifyLoading ? <Skeleton className="h-8 w-20" /> : (
                             <>
-                                <div className="text-2xl font-bold text-success">{verifyTrends?.summary.success_rate}%</div>
+                                <div className="text-2xl font-bold text-success">
+                                    {verifyTrends?.summary.success_rate ?? 0}%
+                                </div>
                                 <p className="text-xs text-muted-foreground">
-                                    Verification pass rate
+                                    {verifyTrends?.summary.total_verifications 
+                                        ? "Verification pass rate"
+                                        : "No data yet"}
                                 </p>
                             </>
                         )}

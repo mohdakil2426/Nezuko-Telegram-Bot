@@ -54,7 +54,6 @@ Thumbs.db
 
 # Logs
 *.log
-logs/
 error.log
 
 # Database
@@ -73,10 +72,6 @@ htmlcov/
 bot/database/migrations/__pycache__/
 
 # Development Artifacts (AI/Agent Files)
-
-# Internal Development Docs (not for public repo)
-docs/development-notes/
-docs/prd-planning/
 
 # Coverage reports
 coverage.xml

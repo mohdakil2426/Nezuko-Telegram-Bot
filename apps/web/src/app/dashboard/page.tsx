@@ -23,6 +23,40 @@ export default function DashboardPage() {
         cache_hit_rate: 0,
     };
 
+    // Calculate real trend data from chart data (last 10 points for sparklines)
+    const getVerificationTrend = (): number[] => {
+        if (!chartData || chartData.length === 0) return [];
+        const recentData = chartData.slice(-10);
+        return recentData.map((d) => d.verified + d.restricted);
+    };
+
+    const getSuccessRateTrend = (): number[] => {
+        if (!chartData || chartData.length === 0) return [];
+        const recentData = chartData.slice(-10);
+        return recentData.map((d) => {
+            const total = d.verified + d.restricted;
+            return total > 0 ? Math.round((d.verified / total) * 100) : 0;
+        });
+    };
+
+    // Calculate change from previous period (simple day-over-day for now)
+    const calculateVerificationChange = (): number | undefined => {
+        if (!chartData || chartData.length < 2) return undefined;
+        const today = chartData[chartData.length - 1];
+        const yesterday = chartData[chartData.length - 2];
+        const todayTotal = today.verified + today.restricted;
+        const yesterdayTotal = yesterday.verified + yesterday.restricted;
+        if (yesterdayTotal === 0) return undefined;
+        return Math.round(((todayTotal - yesterdayTotal) / yesterdayTotal) * 100 * 10) / 10;
+    };
+
+    const verificationTrend = getVerificationTrend();
+    const successRateTrend = getSuccessRateTrend();
+    const verificationChange = calculateVerificationChange();
+
+    // Hide change if no data
+    const hasData = data.verifications_week > 0;
+
     return (
         <div className="space-y-8">
             {/* Header */}
@@ -40,32 +74,27 @@ export default function DashboardPage() {
                     value={data.total_groups}
                     icon={<Users className="h-4 w-4" />}
                     loading={isLoading}
-                    change={5.2} // Placeholder
-                    trend={[10, 15, 12, 18, 20, 25, 22, 30, 28, 35]} // Placeholder
                 />
                 <StatCard
                     title="Enforced Channels"
                     value={data.total_channels}
                     icon={<Radio className="h-4 w-4" />}
                     loading={isLoading}
-                    change={2.1} // Placeholder
-                    trend={[5, 8, 7, 10, 9, 12, 11, 15, 14, 16]} // Placeholder
                 />
                 <StatCard
                     title="Verifications Today"
                     value={data.verifications_today}
                     icon={<Shield className="h-4 w-4" />}
                     loading={isLoading}
-                    change={12.5} // Placeholder
-                    trend={[100, 120, 110, 150, 140, 180, 160, 200, 190, 250]} // Placeholder
+                    change={hasData ? verificationChange : undefined}
+                    trend={verificationTrend}
                 />
                 <StatCard
                     title="Success Rate"
                     value={`${data.success_rate ?? 0}%`}
                     icon={<Activity className="h-4 w-4" />}
                     loading={isLoading}
-                    change={0.3} // Placeholder
-                    trend={[95, 96, 95, 97, 98, 97, 98, 99, 98, 99]} // Placeholder
+                    trend={successRateTrend}
                 />
             </div>
 
@@ -109,4 +138,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-

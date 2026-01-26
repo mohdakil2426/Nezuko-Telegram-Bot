@@ -13,6 +13,7 @@ from src.api.v1.endpoints import (
     database,
     groups,
     logs,
+    websocket,
 )
 
 api_router = APIRouter()
@@ -27,3 +28,4 @@ api_router.include_router(logs.router, prefix="/logs", tags=["logs"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 api_router.include_router(audit.router, prefix="/audit", tags=["audit"])
 api_router.include_router(admins.router, prefix="/admins", tags=["admins"])
+api_router.include_router(websocket.router, prefix="/ws", tags=["websocket"])

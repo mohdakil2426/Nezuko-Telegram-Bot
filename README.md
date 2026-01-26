@@ -356,8 +356,8 @@ Nezuko is built to evolve. The modular architecture supports:
 - [ ] **Custom Welcome Messages** - Personalized greetings with templates
 - [ ] **Member Whitelisting** - Exempt specific users from verification
 - [ ] **Multi-Language Support (i18n)** - Localized messages
-- [ ] **Admin Dashboard** - Web-based management interface
-- [ ] **Analytics & Insights** - Group growth and engagement metrics
+- [x] **Admin Dashboard** - Web-based management interface
+- [x] **Analytics & Insights** - Group growth and engagement metrics
 - [ ] **Auto-Moderation** - Spam detection and content filtering
 - [ ] **Scheduled Messages** - Timed announcements and reminders
 - [ ] **Integration Plugins** - Connect to external services

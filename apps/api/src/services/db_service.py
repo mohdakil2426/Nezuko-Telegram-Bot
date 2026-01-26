@@ -1,6 +1,7 @@
 """Business logic for database inspection and maintenance."""
 
 import re
+from typing import Any
 
 import structlog
 from sqlalchemy import text
@@ -195,6 +196,128 @@ class DatabaseService:
             current_revision=current,
             history=[],  # TODO: parse alembic history if possible, or leave empty
         )
+
+    async def get_row_by_id(
+        self, session: AsyncSession, table_name: str, row_id: str
+    ) -> dict[str, Any] | None:
+        """Get a single row by ID."""
+        table_name = validate_table_name(table_name)
+        is_sqlite = session.bind.dialect.name == "sqlite"
+
+        # Determine the primary key column (assume 'id' for simplicity)
+        pk_column = "id"
+
+        # Get the row
+        query = text(f"SELECT * FROM {table_name} WHERE {pk_column} = :row_id")  # noqa: S608
+        result = await session.execute(query, {"row_id": row_id})
+        row = result.fetchone()
+
+        if not row:
+            return None
+
+        # Get column names
+        if is_sqlite:
+            col_query = text(f"PRAGMA table_info({table_name})")  # noqa: S608
+            col_result = await session.execute(col_query)
+            columns = [r.name for r in col_result]
+        else:
+            col_query = text(
+                """SELECT column_name FROM information_schema.columns
+                   WHERE table_name = :table_name ORDER BY ordinal_position"""
+            )
+            col_result = await session.execute(col_query, {"table_name": table_name})
+            columns = [r.column_name for r in col_result]
+
+        return dict(zip(columns, row, strict=True))
+
+    async def update_row(
+        self,
+        session: AsyncSession,
+        table_name: str,
+        row_id: str,
+        data: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Update a row by ID and return the updated row."""
+        table_name = validate_table_name(table_name)
+
+        # Build SET clause
+        set_parts = []
+        params = {"row_id": row_id}
+        for key, value in data.items():
+            # Validate column name
+            if not TABLE_NAME_PATTERN.match(key):
+                raise ValueError(f"Invalid column name: {key}")
+            set_parts.append(f"{key} = :val_{key}")
+            params[f"val_{key}"] = value
+
+        if not set_parts:
+            raise ValueError("No data provided for update")
+
+        set_clause = ", ".join(set_parts)
+        query = text(f"UPDATE {table_name} SET {set_clause} WHERE id = :row_id")  # noqa: S608
+        await session.execute(query, params)
+        await session.commit()
+
+        # Return updated row
+        updated = await self.get_row_by_id(session, table_name, row_id)
+        if not updated:
+            raise ValueError(f"Row {row_id} not found after update")
+        return updated
+
+    async def delete_row(
+        self,
+        session: AsyncSession,
+        table_name: str,
+        row_id: str,
+        hard_delete: bool = False,
+    ) -> None:
+        """Delete a row by ID (soft or hard delete)."""
+        table_name = validate_table_name(table_name)
+
+        if hard_delete:
+            query = text(f"DELETE FROM {table_name} WHERE id = :row_id")  # noqa: S608
+        else:
+            # Soft delete - set deleted_at if column exists
+            query = text(
+                f"UPDATE {table_name} SET deleted_at = CURRENT_TIMESTAMP WHERE id = :row_id"  # noqa: S608
+            )
+
+        await session.execute(query, {"row_id": row_id})
+        await session.commit()
+
+    async def check_dependencies(
+        self, session: AsyncSession, table_name: str, row_id: str
+    ) -> list[dict[str, Any]]:
+        """Check if row has foreign key dependencies in other tables."""
+        table_name = validate_table_name(table_name)
+        dependencies = []
+
+        # Define known foreign key relationships
+        fk_map = {
+            "protected_groups": [
+                {"table": "group_channel_links", "column": "group_id"},
+            ],
+            "enforced_channels": [
+                {"table": "group_channel_links", "column": "channel_id"},
+            ],
+        }
+
+        if table_name not in fk_map:
+            return []
+
+        for fk in fk_map[table_name]:
+            dep_table = validate_table_name(fk["table"])
+            fk_column = validate_table_name(fk["column"])
+
+            count_query = text(
+                f"SELECT COUNT(*) FROM {dep_table} WHERE {fk_column} = :row_id"  # noqa: S608
+            )
+            count = (await session.execute(count_query, {"row_id": row_id})).scalar() or 0
+
+            if count > 0:
+                dependencies.append({"table": dep_table, "count": count})
+
+        return dependencies
 
 
 # Singleton

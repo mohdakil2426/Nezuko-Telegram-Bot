@@ -1,79 +1,96 @@
-# Active Context: Phase 15 - Comprehensive Testing Complete
+# Active Context: Phase 16 - Admin Panel Enhancement v2 (In Progress)
 
 ## 🎯 Current Status
 
-**ALL MAJOR TESTS PASSED.** The admin panel is fully functional with authentication working correctly.
+**Implementing OpenSpec change `enhance-admin-panel-v2`** - Real-time analytics and logging infrastructure.
 
 ---
 
-## ✅ Comprehensive Test Results (2026-01-26)
+## ✅ Completed Tasks (2026-01-27)
 
-### Authentication Tests (6/6 Passed)
+### Phase 1: Verification Logging Infrastructure ✅
+- Created `verification_log` table in database
+- Created SQLAlchemy model `VerificationLog` in `apps/api/src/models/`
+- Created `bot/database/verification_logger.py` with async logging
+- Integrated logging into `bot/services/verification.py`
+- Added batch logging buffer for high-volume scenarios
 
-| Test Case | Status | Notes |
-|-----------|--------|-------|
-| Login with valid credentials | ✅ Pass | `admin@nezuko.bot` / `Admin@123` |
-| Redirect to dashboard after login | ✅ Pass | Uses `window.location.href` |
-| Session persistence | ✅ Pass | Cookie-based, survives refresh |
-| Protected route access (unauthenticated) | ✅ Pass | Redirects to /login |
-| Logout functionality | ✅ Pass | Clears session, redirects to /login |
-| Login redirect when authenticated | ✅ Pass | Redirects to /dashboard |
+### Phase 2: Real Analytics Queries ✅
+- Rewrote `analytics_service.py` with real database queries
+- Analytics now query `verification_log` instead of mock data
+- Added hourly granularity for 24h period
+- Updated Dashboard stats endpoint with real verification counts
 
-### UI Navigation Tests (7/7 Passed)
+### Phase 3: Dashboard Verification Chart ✅
+- Dashboard chart endpoint returns real data from `verification_log`
+- Dashboard chart component already exists with Recharts
+- Frontend hook fetches real data from API
 
-| Page | Status | Features Tested |
-|------|--------|-----------------|
-| Dashboard | ✅ Pass | Stats cards with sparklines, charts, activity feed |
-| Groups | ✅ Pass | Search, filter dropdown, table, pagination |
-| Channels | ✅ Pass | Search, "Add Channel" modal, table, pagination |
-| Config | ✅ Pass | Loading state (needs API data) |
-| Logs | ✅ Pass | Live indicator, search, level filter, controls |
-| Database | ✅ Pass | Loading state (needs API data) |
-| Analytics | ✅ Pass | Stats cards, charts, tabs, export button |
+### Phase 4: WebSocket Real-time Logs ✅
+- Created WebSocket manager `apps/api/src/core/websocket.py`
+- Created WebSocket endpoint `/api/v1/ws/logs`
+- Added log level filtering support
+- Created frontend hook `use-websocket-logs.ts`
 
-### API Security Tests (3/3 Passed)
-
-| Test | Status | Result |
-|------|--------|--------|
-| Unauthenticated /groups | ✅ Pass | 401 Unauthorized |
-| Unauthenticated /channels | ✅ Pass | 401 Unauthorized |
-| Invalid token (MOCK_AUTH=true) | ⚠️ Expected | Returns empty data (dev mode) |
-
-### Edge Case Tests (3/3 Passed)
-
-| Test | Status | Notes |
-|------|--------|-------|
-| 404 Page | ✅ Pass | Custom page with ghost icon and "Return Home" |
-| Health endpoint | ✅ Pass | Returns `{"status":"healthy","version":"0.1.0"}` |
-| Error handling | ✅ Pass | No unhandled errors in console |
-
-### Known Issues (Non-Critical)
-
-| Issue | Severity | Notes |
-|-------|----------|-------|
-| Mobile responsiveness | ⚠️ Low | Sidebar takes full width on mobile |
-| MOCK_AUTH enabled | ⚠️ Dev Only | Expected for development, disable in production |
-| Config/Database loading | ⚠️ Low | Shows skeleton, needs real API data |
+### Phase 5: Audit Log Improvements ✅
+- Added CSV export to `GET /api/v1/audit?format=csv`
+- CSV download with proper Content-Disposition header
 
 ---
 
-## 🔧 Auth Fix Summary
+## 📋 Files Created/Modified This Session
 
-**ROOT CAUSE**: Outdated `@supabase/ssr` package (v0.1.0)
+| File | Type | Description |
+|------|------|-------------|
+| `apps/api/src/models/verification_log.py` | NEW | SQLAlchemy model for verification logs |
+| `bot/database/verification_logger.py` | NEW | Async verification logger with batch buffer |
+| `bot/services/verification.py` | MODIFIED | Integrated verification logging |
+| `apps/api/src/services/analytics_service.py` | MODIFIED | Real database queries |
+| `apps/api/src/api/v1/endpoints/dashboard.py` | MODIFIED | Real verification stats |
+| `apps/api/src/core/websocket.py` | NEW | WebSocket connection manager |
+| `apps/api/src/api/v1/endpoints/websocket.py` | NEW | WebSocket logs endpoint |
+| `apps/api/src/api/v1/router.py` | MODIFIED | Added WebSocket router |
+| `apps/api/src/api/v1/endpoints/audit.py` | MODIFIED | Added CSV export |
+| `apps/web/src/lib/hooks/use-websocket-logs.ts` | NEW | WebSocket hook for logs |
+| `openspec/changes/enhance-admin-panel-v2/tasks.md` | MODIFIED | Updated progress |
 
-### Fixes Applied:
-1. `@supabase/ssr` → `0.8.0`, `@supabase/supabase-js` → `2.93.1`
-2. `middleware.ts` → `proxy.ts` (Next.js 16 convention)
-3. Login redirect: `router.push` → `window.location.href`
-4. Logout: Implemented with `supabase.auth.signOut()`
+---
 
-### Environment & Type Fixes (2026-01-27)
+## 🔧 Remaining Tasks
 
-| Issue | Status | Notes |
-|-------|--------|-------|
-| FastAPI Import Error | ✅ Fixed | Installed missing dependencies in `.venv` |
-| Pyrefly Type Errors | ✅ Fixed | Cast chart data values to `int` in `dashboard.py` |
-| Code Quality | ✅ Verified | Ruff passed, Pylint score 10.00/10 |
+### Phase 2: Frontend Integration
+- [ ] Update Analytics page to handle empty data states
+- [ ] Update Dashboard stats cards with real change values
+
+### Phase 3: Chart Interactivity
+- [ ] Add zoom/pan for date range selection
+
+### Phase 4: WebSocket Integration
+- [ ] Update Logs page to use WebSocket instead of polling
+- [ ] Add export functionality
+
+### Phase 6: Testing & Documentation
+- [ ] Unit tests for verification logger
+- [ ] Integration tests for analytics endpoints
+- [ ] Update README with new features
+
+---
+
+## 🏗️ Architecture Changes
+
+### New Data Flow: Verification Analytics
+```
+Telegram User → Bot Verification → log_verification() → verification_log table
+                                                            ↓
+Dashboard/Analytics ← API Endpoints ← Real SQL Queries ←──────┘
+```
+
+### New Data Flow: Real-time Logs
+```
+Bot/API Logs → emit_log() → ConnectionManager → WebSocket Broadcast
+                                                      ↓
+                              Logs Page ← useWebSocketLogs hook
+```
 
 ---
 
@@ -84,21 +101,6 @@
 | Web (Next.js) | 3000 | ✅ Running |
 | API (FastAPI) | 8080 | ✅ Running |
 | Bot | - | ⏳ Not running |
-
----
-
-## 📋 Files Modified This Session
-
-| File | Change |
-|------|--------|
-| `apps/web/package.json` | Updated Supabase packages |
-| `apps/web/src/proxy.ts` | NEW - Next.js 16 proxy |
-| `apps/web/src/middleware.ts` | DELETED |
-| `apps/web/src/lib/supabase/middleware.ts` | Fixed cookie handling |
-| `apps/web/src/components/forms/login-form.tsx` | Fixed redirect |
-| `apps/web/src/components/layout/sidebar.tsx` | Added logout |
-| `memory-bank/activeContext.md` | Updated |
-| `memory-bank/progress.md` | Updated |
 
 ---
 

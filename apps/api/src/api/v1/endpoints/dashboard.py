@@ -1,15 +1,17 @@
 """Dashboard statistics and activity endpoints."""
 
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.v1.dependencies.auth import get_current_active_user
 from src.core.database import get_session
 from src.models.admin_user import AdminUser
 from src.models.bot import EnforcedChannel, ProtectedGroup
+from src.models.verification_log import VerificationLog
 from src.schemas.base import SuccessResponse
 from src.schemas.dashboard import ActivityResponse, DashboardStatsResponse
 
@@ -22,7 +24,7 @@ async def get_dashboard_stats(
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     """
-    Get dashboard statistics.
+    Get dashboard statistics with real data.
     """
     # Query database for counts
     # Protected Groups
@@ -33,24 +35,55 @@ async def get_dashboard_stats(
     stmt_channels = select(func.count()).select_from(EnforcedChannel)
     total_channels = await session.scalar(stmt_channels) or 0
 
-    # TODO: Fetch from actual metrics source
-    # Since verification logs are not yet implemented in DB, we use placeholders.
-    # In a real scenario, we might scrape the bot's Prometheus endpoint or Redis.
-    verifications_today = 0
-    verifications_week = 0
-    success_rate = 98.5  # Placeholder
-    bot_uptime_seconds = 0  # Placeholder
-    cache_hit_rate = 0.0  # Placeholder
+    # Real verification stats from verification_log
+    now = datetime.now(UTC)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = today_start - timedelta(days=7)
+
+    # Today's verifications
+    stmt_today = select(func.count()).where(VerificationLog.timestamp >= today_start)
+    verifications_today = await session.scalar(stmt_today) or 0
+
+    # This week's verifications
+    stmt_week = select(func.count()).where(VerificationLog.timestamp >= week_start)
+    verifications_week = await session.scalar(stmt_week) or 0
+
+    # Success rate (last 7 days)
+    stmt_success = select(
+        func.count().label("total"),
+        func.sum(case((VerificationLog.status == "verified", 1), else_=0)).label("successful"),
+    ).where(VerificationLog.timestamp >= week_start)
+
+    result = await session.execute(stmt_success)
+    row = result.one()
+    total = row.total or 0
+    successful = row.successful or 0
+    success_rate = (successful / total * 100) if total > 0 else 0.0
+
+    # Cache hit rate from last 24 hours
+    stmt_cache = select(
+        func.count().label("total"),
+        func.sum(case((VerificationLog.cached.is_(True), 1), else_=0)).label("cached"),
+    ).where(VerificationLog.timestamp >= today_start - timedelta(days=1))
+
+    cache_result = await session.execute(stmt_cache)
+    cache_row = cache_result.one()
+    cache_total = cache_row.total or 0
+    cache_hits = cache_row.cached or 0
+    cache_hit_rate = (cache_hits / cache_total * 100) if cache_total > 0 else 0.0
+
+    # Bot uptime - placeholder for now (would need Prometheus/Redis)
+    bot_uptime_seconds = 0
 
     return SuccessResponse(
         data=DashboardStatsResponse(
-            total_groups=total_groups,
-            total_channels=total_channels,
-            verifications_today=verifications_today,
-            verifications_week=verifications_week,
-            success_rate=success_rate,
-            bot_uptime_seconds=bot_uptime_seconds,
-            cache_hit_rate=cache_hit_rate,
+            total_groups=int(total_groups),
+            total_channels=int(total_channels),
+            verifications_today=int(verifications_today),
+            verifications_week=int(verifications_week),
+            success_rate=round(success_rate, 2),
+            bot_uptime_seconds=int(bot_uptime_seconds),
+            cache_hit_rate=round(cache_hit_rate, 2),
         )
     )
 
@@ -63,7 +96,7 @@ async def get_dashboard_activity(
     """
     Get recent activity feed.
     """
-    # TODO: Implement real activity log query
+    # TODO: Implement real activity log query from admin_audit_log
     # For now, return empty list
     return SuccessResponse(data=ActivityResponse(items=[]))
 
@@ -71,42 +104,85 @@ async def get_dashboard_activity(
 @router.get("/chart-data")
 async def get_chart_data(
     current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
-    session: AsyncSession = Depends(get_session),  # pylint: disable=unused-argument
+    session: AsyncSession = Depends(get_session),
 ) -> Any:
     """
     Get verification trend data for dashboard chart.
-    Returns last 30 days of verification data.
+    Returns last 30 days of verification data from real database.
     """
-    import random
-    from datetime import datetime, timedelta
+    now = datetime.now(UTC)
+    start_date = now - timedelta(days=30)
 
-    # Generate 30 days of sample data
-    # TODO: Replace with real query from verification_log table when implemented
+    # Query verification counts grouped by day and status
+    stmt = (
+        select(
+            func.date(VerificationLog.timestamp).label("date"),
+            func.sum(case((VerificationLog.status == "verified", 1), else_=0)).label("verified"),
+            func.sum(case((VerificationLog.status.in_(["restricted", "error"]), 1), else_=0)).label(
+                "restricted"
+            ),
+            func.count().label("total"),
+        )
+        .where(VerificationLog.timestamp >= start_date)
+        .group_by(func.date(VerificationLog.timestamp))
+        .order_by(func.date(VerificationLog.timestamp))
+    )
+
+    result = await session.execute(stmt)
+    rows = result.all()
+
+    # Create a map of dates with data
+    data_map = {
+        str(row.date): {
+            "verified": int(row.verified or 0),
+            "restricted": int(row.restricted or 0),
+            "total": int(row.total or 0),
+        }
+        for row in rows
+    }
+
+    # Generate all 30 days of data
     data = []
-    base_date = datetime.now()
+    current = start_date
+    total_verified = 0
+    total_restricted = 0
 
-    for i in range(30, 0, -1):
-        date = base_date - timedelta(days=i)
-        # Generate realistic-looking data with some variance
-        base_verified = random.randint(20, 80)
-        base_restricted = random.randint(2, 15)
+    while current <= now:
+        date_str = current.strftime("%Y-%m-%d")
+        if date_str in data_map:
+            entry = data_map[date_str]
+            verified = entry["verified"]
+            restricted = entry["restricted"]
+            total = entry["total"]
+        else:
+            verified = 0
+            restricted = 0
+            total = 0
+
+        total_verified += verified
+        total_restricted += restricted
 
         data.append(
             {
-                "date": date.strftime("%Y-%m-%d"),
-                "verified": base_verified,
-                "restricted": base_restricted,
-                "total": base_verified + base_restricted,
+                "date": date_str,
+                "verified": verified,
+                "restricted": restricted,
+                "total": total,
             }
         )
+        current += timedelta(days=1)
+
+    avg_daily = total_verified + total_restricted
+    if len(data) > 0:
+        avg_daily = avg_daily // len(data)
 
     return SuccessResponse(
         data={
             "series": data,
             "summary": {
-                "total_verified": sum(int(d["verified"]) for d in data),
-                "total_restricted": sum(int(d["restricted"]) for d in data),
-                "average_daily": sum(int(d["total"]) for d in data) // len(data),
+                "total_verified": total_verified,
+                "total_restricted": total_restricted,
+                "average_daily": avg_daily,
             },
         }
     )

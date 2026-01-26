@@ -2,15 +2,13 @@
 
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { UserGrowthSeries } from "@/lib/api/types";
-import { useTheme } from "next-themes";
+import { BarChart3 } from "lucide-react";
 
 interface UserGrowthChartProps {
     data: UserGrowthSeries[];
 }
 
 export function UserGrowthChart({ data }: UserGrowthChartProps) {
-    const { theme } = useTheme();
-
     // Format tooltip value
     const formatValue = (value: unknown) => {
         if (value === undefined || value === null) return "";
@@ -33,6 +31,22 @@ export function UserGrowthChart({ data }: UserGrowthChartProps) {
             return String(label);
         }
     };
+
+    // Check if there is any meaningful data
+    const hasData = data && data.length > 0 && data.some(d => d.total_users > 0 || d.new_users > 0);
+
+    if (!hasData) {
+        return (
+            <div className="h-[300px] flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg bg-background/50">
+                <BarChart3 className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+                <p className="text-lg font-medium text-text-secondary mb-2">No user data yet</p>
+                <p className="text-sm text-muted-foreground text-center max-w-md px-4">
+                    User growth data will appear here once users start being verified.
+                    Add the bot to a group and enable verification to start collecting data.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <ResponsiveContainer width="100%" height={300}>

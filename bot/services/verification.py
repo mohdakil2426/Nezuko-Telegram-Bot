@@ -6,9 +6,12 @@ Handles membership verification with Redis caching, TTL jitter,
 and graceful fallback to Telegram API on cache miss.
 
 Integrated with Prometheus metrics for operational monitoring.
+Integrated with verification logging for analytics.
 """
 
+import asyncio
 import logging
+import time
 from typing import Any
 
 from telegram.constants import ChatMemberStatus
@@ -17,6 +20,7 @@ from telegram.ext import ContextTypes
 
 from bot.core.cache import cache_delete, cache_get, cache_set, get_ttl_with_jitter
 from bot.core.constants import CACHE_JITTER_PERCENT, NEGATIVE_CACHE_TTL, POSITIVE_CACHE_TTL
+from bot.database.verification_logger import log_verification
 from bot.utils.metrics import (
     record_api_call,
     record_cache_hit,
@@ -34,7 +38,10 @@ _cache_misses = 0  # pylint: disable=invalid-name
 
 
 async def check_membership(
-    user_id: int, channel_id: str | int, context: ContextTypes.DEFAULT_TYPE
+    user_id: int,
+    channel_id: str | int,
+    context: ContextTypes.DEFAULT_TYPE,
+    group_id: int | None = None,
 ) -> bool:
     """
     Check if user is a member of the specified channel with caching.
@@ -43,12 +50,14 @@ async def check_membership(
     1. Check Redis cache first
     2. On cache miss, call Telegram API
     3. Cache result with TTL jitter
-    4. Return membership status
+    4. Log verification for analytics
+    5. Return membership status
 
     Args:
         user_id: Telegram user ID
         channel_id: Channel ID or username
         context: Telegram context for API calls
+        group_id: Optional group ID for analytics logging
 
     Returns:
         True if user is a member, administrator, or owner
@@ -56,8 +65,16 @@ async def check_membership(
     """
     global _cache_hits, _cache_misses
 
-    # Start timing for metrics
+    # Start timing for metrics and logging
     start_time = record_verification_start()
+    wall_start = time.perf_counter()
+
+    # Ensure channel_id is int for logging
+    channel_id_int = (
+        int(channel_id) if isinstance(channel_id, str) and channel_id.lstrip("-").isdigit() else 0
+    )
+    if isinstance(channel_id, int):
+        channel_id_int = channel_id
 
     # Construct cache key
     cache_key = f"verify:{user_id}:{channel_id}"
@@ -70,7 +87,21 @@ async def check_membership(
             record_cache_hit()
             logger.debug("Cache HIT: %s", cache_key)
             is_member = cached_value == "1"
-            record_verification_end(start_time, "verified" if is_member else "restricted")
+            status = "verified" if is_member else "restricted"
+            latency_ms = int((time.perf_counter() - wall_start) * 1000)
+            record_verification_end(start_time, status)
+            # Log to database (fire-and-forget)
+            if group_id is not None:
+                asyncio.create_task(
+                    log_verification(
+                        user_id=user_id,
+                        group_id=group_id,
+                        channel_id=channel_id_int,
+                        status=status,
+                        latency_ms=latency_ms,
+                        cached=True,
+                    )
+                )
             return is_member
     except (ConnectionError, TimeoutError) as e:
         logger.warning("Cache check error: %s", e)
@@ -97,7 +128,20 @@ async def check_membership(
     except TelegramError as e:
         logger.error("Error checking membership for user %s in %s: %s", user_id, channel_id, e)
         record_error("telegram_error")
+        latency_ms = int((time.perf_counter() - wall_start) * 1000)
         record_verification_end(start_time, "error")
+        # Log error to database
+        if group_id is not None:
+            asyncio.create_task(
+                log_verification(
+                    user_id=user_id,
+                    group_id=group_id,
+                    channel_id=channel_id_int,
+                    status="error",
+                    latency_ms=latency_ms,
+                    cached=False,
+                )
+            )
         # Fail-safe: Return False on error (deny access)
         return False
 
@@ -116,13 +160,31 @@ async def check_membership(
         record_error("cache_error")
 
     # Record final verification outcome
-    record_verification_end(start_time, "verified" if is_member else "restricted")
+    status = "verified" if is_member else "restricted"
+    latency_ms = int((time.perf_counter() - wall_start) * 1000)
+    record_verification_end(start_time, status)
+
+    # Log to database (fire-and-forget)
+    if group_id is not None:
+        asyncio.create_task(
+            log_verification(
+                user_id=user_id,
+                group_id=group_id,
+                channel_id=channel_id_int,
+                status=status,
+                latency_ms=latency_ms,
+                cached=False,
+            )
+        )
 
     return is_member
 
 
 async def check_multi_membership(
-    user_id: int, channels: list[Any], context: ContextTypes.DEFAULT_TYPE
+    user_id: int,
+    channels: list[Any],
+    context: ContextTypes.DEFAULT_TYPE,
+    group_id: int | None = None,
 ) -> list[Any]:
     """
     Check membership in multiple channels.
@@ -131,6 +193,7 @@ async def check_multi_membership(
         user_id: Telegram user ID
         channels: List of channel objects (must have channel_id attribute)
         context: Telegram context
+        group_id: Optional group ID for analytics logging
 
     Returns:
         List of channels user is NOT a member of
@@ -138,7 +201,10 @@ async def check_multi_membership(
     missing_channels = []
     for channel in channels:
         is_member = await check_membership(
-            user_id=user_id, channel_id=channel.channel_id, context=context
+            user_id=user_id,
+            channel_id=channel.channel_id,
+            context=context,
+            group_id=group_id,
         )
         if not is_member:
             missing_channels.append(channel)
