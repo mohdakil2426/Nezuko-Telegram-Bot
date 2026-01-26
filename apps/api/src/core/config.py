@@ -1,7 +1,7 @@
 """Application configuration using Pydantic BaseSettings."""
 
 from functools import lru_cache
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     API_DEBUG: bool = True
 
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: Any = ["http://localhost:3000"]
 
     # Security
     SECURITY_HEADERS_ENABLED: bool = False
