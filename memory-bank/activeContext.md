@@ -67,6 +67,14 @@
 3. Login redirect: `router.push` → `window.location.href`
 4. Logout: Implemented with `supabase.auth.signOut()`
 
+### Environment & Type Fixes (2026-01-27)
+
+| Issue | Status | Notes |
+|-------|--------|-------|
+| FastAPI Import Error | ✅ Fixed | Installed missing dependencies in `.venv` |
+| Pyrefly Type Errors | ✅ Fixed | Cast chart data values to `int` in `dashboard.py` |
+| Code Quality | ✅ Verified | Ruff passed, Pylint score 10.00/10 |
+
 ---
 
 ## ⚡ Running Services

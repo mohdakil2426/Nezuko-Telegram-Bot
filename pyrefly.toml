@@ -22,7 +22,8 @@ python-version = "3.13"
 python-platform = "windows"
 
 # Search Path
-search-path = [".", "apps/api", "bot"]
+search-path = [".", "apps/api", "bot", ".venv/Lib/site-packages"]
+
 
 # Type Checking Strictness
 # "check-and-infer-return-type" ensures function bodies without return annotations are still checked (Pyright behavior)

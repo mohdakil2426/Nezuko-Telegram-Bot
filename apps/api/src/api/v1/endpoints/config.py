@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.v1.dependencies.auth import get_current_active_user
 from src.core.database import get_session
 from src.models.admin_user import AdminUser
+from src.schemas.base import SuccessResponse
 from src.schemas.config import (
     ConfigResponse,
     ConfigUpdateRequest,
@@ -19,38 +20,41 @@ from src.services.config_service import ConfigService
 router = APIRouter()
 
 
-@router.get("", response_model=ConfigResponse)
+@router.get("", response_model=SuccessResponse[ConfigResponse])
 async def get_config(
     current_user: Annotated[AdminUser, Depends(get_current_active_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
-) -> ConfigResponse:
+) -> SuccessResponse[ConfigResponse]:
     """
     Get system configuration.
     """
     service = ConfigService(session)
-    return await service.get_config()
+    config = await service.get_config()
+    return SuccessResponse(data=config)
 
 
-@router.put("", response_model=ConfigUpdateResponse)
+@router.put("", response_model=SuccessResponse[ConfigUpdateResponse])
 async def update_config(
     data: ConfigUpdateRequest,
     current_user: Annotated[AdminUser, Depends(get_current_active_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
-) -> ConfigUpdateResponse:
+) -> SuccessResponse[ConfigUpdateResponse]:
     """
     Update system configuration.
     """
     service = ConfigService(session)
-    return await service.update_config(data)
+    result = await service.update_config(data)
+    return SuccessResponse(data=result)
 
 
-@router.post("/webhook/test", response_model=WebhookTestResult)
+@router.post("/webhook/test", response_model=SuccessResponse[WebhookTestResult])
 async def test_webhook(
     current_user: Annotated[AdminUser, Depends(get_current_active_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
-) -> WebhookTestResult:
+) -> SuccessResponse[WebhookTestResult]:
     """
     Test webhook connectivity.
     """
     service = ConfigService(session)
-    return await service.test_webhook()
+    result = await service.test_webhook()
+    return SuccessResponse(data=result)
