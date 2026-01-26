@@ -97,44 +97,89 @@ Nezuko is built as a highly-efficient monorepo to ensure tight integration betwe
 ---
 
 ## 🔐 Authentication Patterns: Supabase Auth
- 
- ### 1. Supabase Auth Flow
- 
- ```
- ┌─────────────┐     ┌──────────────┐     ┌─────────────┐
- │   Browser   │────▶│ Supabase Auth│────▶│ Access Token│
- └─────────────┘     └──────────────┘     └──────┬──────┘
-                                                  │
-       ┌──────────────────────────────────────────┘
-       ▼
- ┌─────────────┐     ┌──────────────┐     ┌─────────────┐
- │ API Request │────▶│  Verify JWT  │────▶│ Sync User   │
- └─────────────┘     └──────────────┘     └─────────────┘
- ```
- 
- ### 2. Token Verification Pattern
- 
- ```python
- # apps/api/src/core/security.py
- def verify_jwt(token: str) -> dict:
-     return jwt.decode(
-         token,
-         settings.SUPABASE_JWT_SECRET,
-         algorithms=["HS256"],
-         audience="authenticated"
-     )
- ```
- 
- ### 3. User Sync Pattern
- 
- ```python
- # apps/api/src/services/auth_service.py
- async def sync_supabase_user(self, user_data: dict) -> AdminUser:
-     # 1. Check by supabase_uid
-     # 2. Update metadata if changed
-     # 3. Create if new
-     return user
- ```
+
+> ⚠️ **CRITICAL**: Use `@supabase/ssr@^0.8.0` - versions below 0.8.0 have cookie parsing bugs!
+
+### 1. Next.js 16 Proxy Pattern (NEW)
+
+Next.js 16 deprecated `middleware.ts`. Use `proxy.ts` instead:
+
+```typescript
+// apps/web/src/proxy.ts (REQUIRED for Next.js 16)
+import { updateSession } from "@/lib/supabase/middleware";
+import { NextRequest } from "next/server";
+
+export async function proxy(request: NextRequest) {
+  return await updateSession(request);
+}
+```
+
+### 2. Supabase Auth Flow
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│   Browser   │────▶│ Supabase Auth│────▶│Cookie (JWT) │
+└─────────────┘     └──────────────┘     └──────┬──────┘
+                                                 │
+      ┌──────────────────────────────────────────┘
+      ▼
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│  proxy.ts   │────▶│  getSession  │────▶│ Auth Check  │
+└─────────────┘     └──────────────┘     └─────────────┘
+```
+
+### 3. Session Middleware Pattern
+
+```typescript
+// apps/web/src/lib/supabase/middleware.ts
+export async function updateSession(request: NextRequest) {
+  const supabase = createServerClient(URL, KEY, {
+    cookies: {
+      getAll() { return request.cookies.getAll(); },
+      setAll(cookiesToSet) {
+        // Update cookies on request and response
+      },
+    },
+  });
+  const { data: { session } } = await supabase.auth.getSession();
+  // Redirect logic based on session
+}
+```
+
+### 4. Login Form Redirect Pattern
+
+```typescript
+// ❌ FORBIDDEN - Causes redirect issues
+router.push("/dashboard");
+
+// ✅ CORRECT - Full page reload for session refresh
+window.location.href = "/dashboard";
+```
+
+### 5. Logout Handler Pattern
+
+```typescript
+// apps/web/src/components/layout/sidebar.tsx
+const handleLogout = async () => {
+  await supabase.auth.signOut();
+  logout(); // Clear Zustand store
+  window.location.href = "/login";
+};
+```
+
+### 6. Backend JWT Verification
+
+```python
+# apps/api/src/core/security.py
+def verify_jwt(token: str) -> dict:
+    if settings.MOCK_AUTH:  # Dev mode
+        return {"uid": "...", "email": "admin@nezuko.bot"}
+    return jwt.decode(
+        token,
+        settings.SUPABASE_JWT_SECRET,
+        algorithms=["HS256"]
+    )
+```
 
 ---
 
@@ -331,17 +376,19 @@ raw_logs = await cast(
 ---
 
 ### 📁 4. Key Files Reference
- 
- | File                                            | Purpose                                    |
- | :---------------------------------------------- | :----------------------------------------- |
- | `apps/api/init_db.py`                           | Initialize database tables (Postgres)      |
- | `apps/api/src/core/database.py`                 | Database engine configuration (Supabase)   |
- | `apps/api/src/core/security.py`                 | Supabase JWT token verification            |
- | `apps/api/src/services/auth_service.py`         | User sync logic                            |
- | `apps/web/src/lib/supabase/client.ts`           | Supabase client initialization             |
- | `apps/web/src/components/layout/sidebar.tsx`    | Main navigation with `/dashboard/*` routes |
- | `apps/web/src/components/tables/data-table.tsx` | Reusable table with pagination             |
- | `apps/web/src/components/forms/login-form.tsx`  | Login form component                       |
+
+| File                                            | Purpose                                    |
+| :---------------------------------------------- | :----------------------------------------- |
+| `apps/api/init_db.py`                           | Initialize database tables (Postgres)      |
+| `apps/api/src/core/database.py`                 | Database engine configuration (Supabase)   |
+| `apps/api/src/core/security.py`                 | Supabase JWT token verification            |
+| `apps/api/src/services/auth_service.py`         | User sync logic                            |
+| `apps/web/src/proxy.ts`                         | **Next.js 16 auth middleware**             |
+| `apps/web/src/lib/supabase/client.ts`           | Supabase browser client                    |
+| `apps/web/src/lib/supabase/middleware.ts`       | Session update logic                       |
+| `apps/web/src/components/layout/sidebar.tsx`    | Navigation + logout handler                |
+| `apps/web/src/components/tables/data-table.tsx` | Reusable table with pagination             |
+| `apps/web/src/components/forms/login-form.tsx`  | Login form component                       |
 
 ---
 
@@ -416,5 +463,15 @@ python -m pyrefly check
 
 ---
 
+## 🔑 Critical Package Versions
+
+| Package | Required Version | Why |
+|---------|------------------|-----|
+| `@supabase/ssr` | `^0.8.0` | Cookie parsing bugs in <0.8.0 |
+| `@supabase/supabase-js` | `^2.93.1` | Latest stable auth |
+| `next` | `^16.x` | Uses `proxy.ts` not `middleware.ts` |
+
+---
+
 **This document is the authoritative guide for all system implementations.**
-**Updated 2026-01-26 with Supabase Architecture.**
+**Updated 2026-01-26 - Auth fix: @supabase/ssr@0.8.0, proxy.ts migration.**

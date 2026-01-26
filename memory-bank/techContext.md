@@ -19,7 +19,7 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 - **Server**: `Uvicorn 0.40.0`
 - **Validation**: `Pydantic V2.12.5`
 - **Authentication**: `Supabase Auth` (JWT Verification)
-- **Database**: `PostgreSQL 15+` (Supabase)
+- **Database**: `PostgreSQL 15+` (Supabase) or SQLite (local dev)
 - **Rate Limiting**: `SlowAPI 0.1.9`
 - **Testing**: `Pytest 9.0`, `Pyrefly 0.49`, `Pylint 4.0`
 
@@ -30,8 +30,32 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 - **State**: `Zustand 5.0.10` (Global), `TanStack Query 5.90` (Server State)
 - **Forms**: `React Hook Form 7.71`, `Zod 4.3.6`
 - **Visualization**: `Recharts 3.7.0`
-- **Auth & Data**: `Supabase JS SDK (@supabase/supabase-js)`
+- **Auth & Data**: `@supabase/ssr@0.8.0`, `@supabase/supabase-js@2.93.1`
 - **Testing**: `Vitest 3.0.4`
+
+---
+
+## 🔑 Critical Auth Package Versions
+
+> **IMPORTANT**: The `@supabase/ssr` package version is critical for authentication.
+
+| Package | Required Version | Notes |
+|---------|------------------|-------|
+| `@supabase/ssr` | `^0.8.0` | ⚠️ v0.1.0 has cookie parsing bugs |
+| `@supabase/supabase-js` | `^2.93.1` | Latest stable |
+
+### Next.js 16 Middleware Migration
+
+Next.js 16 deprecated `middleware.ts` in favor of `proxy.ts`:
+
+```typescript
+// apps/web/src/proxy.ts (NEW in Next.js 16)
+export async function proxy(request: NextRequest) {
+  // Supabase session handling
+}
+
+// apps/web/src/middleware.ts (DEPRECATED - DELETE)
+```
 
 ---
 
@@ -39,7 +63,7 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 
 ### 1. SQLAlchemy Models (`apps/api/src/models/`)
 
-> **Important**: Models are configured for PostgreSQL (Supabase).
+> **Important**: Models are configured for PostgreSQL (Supabase) or SQLite (dev).
 
 #### Model: `AdminUser` (`admin_user.py`)
 
@@ -95,10 +119,10 @@ This table is used for real-time log streaming via Supabase Realtime (Postgres C
 ### 2. Authentication Flow
 
 1.  **Web Client** -> `supabase.auth.signInWithPassword` -> **Supabase Auth**.
-2.  **Web Client** -> Receives `access_token` (JWT).
-3.  **API Requests** -> Sends `Authorization: Bearer <jwt>`.
-4.  **API** -> Verifies JWT signature using `SUPABASE_JWT_SECRET`.
-5.  **API** -> Extracts `sub` (User ID) and verifies against `admin_users`.
+2.  **Web Client** -> Receives `access_token` (JWT) stored in HTTP-only cookie.
+3.  **Middleware (proxy.ts)** -> Verifies session using `getSession()`.
+4.  **API Requests** -> Sends `Authorization: Bearer <jwt>`.
+5.  **API** -> Verifies JWT signature using `SUPABASE_JWT_SECRET` (or MOCK_AUTH in dev).
 
 ---
 
@@ -108,8 +132,8 @@ This table is used for real-time log streaming via Supabase Realtime (Postgres C
 
 1.  **Client** -> `HTTPS` -> **Next.js Web** / **FastAPI**.
 2.  **Next.js** -> `Supabase Client` -> **Supabase (Auth/DB/Realtime)**.
-3.  **FastAPI** -> `SQLAlchemy` -> **Supabase Postgres**.
-4.  **FastAPI** -> `JWT Check` -> **Local validation** (No external call needed if checking signature).
+3.  **FastAPI** -> `SQLAlchemy` -> **Supabase Postgres** or **SQLite (dev)**.
+4.  **FastAPI** -> `JWT Check` -> **Local validation** (MOCK_AUTH=true in dev).
 
 ---
 
@@ -120,7 +144,7 @@ This table is used for real-time log streaming via Supabase Realtime (Postgres C
 ```bash
 # 1. Start API (Terminal 1)
 cd apps/api
-# Ensure .env has SUPABASE_URL and credentials
+# Ensure .env has MOCK_AUTH=true for local dev
 python -m uvicorn src.main:app --host 0.0.0.0 --port 8080 --reload
 
 # 2. Start Web (Terminal 2)
@@ -129,24 +153,34 @@ bun dev                    # Runs on localhost:3000
 
 # 3. Login
 # Navigate to http://localhost:3000/login
-# Login with credentials created in your Supabase Project
+# Email: admin@nezuko.bot
+# Password: Admin@123
 ```
 
 ### Environment Variables (Required)
 
 ```bash
-# .env (Root)
+# apps/api/.env
 SUPABASE_URL=https://<project>.supabase.co
 SUPABASE_ANON_KEY=<public-anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<private-service-key>
 SUPABASE_JWT_SECRET=<jwt-secret>
-DATABASE_URL=postgresql+asyncpg://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
+DATABASE_URL=sqlite+aiosqlite:///./nezuko.db  # Local dev
+MOCK_AUTH=true  # Enable mock auth for local dev
 
 # apps/web/.env.local
 NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<public-anon-key>
 NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 ```
+
+---
+
+## 🔐 Test Credentials (Development)
+
+| User | Email | Password | Role |
+|------|-------|----------|------|
+| Admin | admin@nezuko.bot | Admin@123 | super_admin |
 
 ---
 
@@ -160,4 +194,4 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 
 **Total Line Count Target: 200+ Lines of technical reference.**
 _(This document encodes the technical DNA of the Nezuko Platform)._
-_(Updated 2026-01-26 with Supabase integration details)._
+_(Updated 2026-01-26 with auth fix details: @supabase/ssr@0.8.0, proxy.ts)._
