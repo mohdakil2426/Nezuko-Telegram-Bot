@@ -6,20 +6,17 @@
 # ============================================================
 
 # Core - Telegram Bot
-python-telegram-bot[rate-limiter]>=22.5
+python-telegram-bot[rate-limiter]>=22.6
 
-# Environment Configuration
 # Environment Configuration
 python-dotenv>=1.2.1
-supabase>=2.3.0
-pyjwt>=2.8.0
+supabase>=2.27.2
+pyjwt>=2.10.1
 
-# Database - PostgreSQL (Production)
+# Database - PostgreSQL & SQLite
 sqlalchemy[asyncio]>=2.0.46
 asyncpg>=0.31.0
 alembic>=1.18.1
-
-# Database - SQLite (Development Only)
 aiosqlite>=0.22.1
 
 # Distributed Caching

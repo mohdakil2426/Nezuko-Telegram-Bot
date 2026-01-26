@@ -1,9 +1,9 @@
 """Unit tests for Supabase security."""
 
-from unittest.mock import patch, MagicMock
-from jwt import PyJWTError
+from unittest.mock import patch
 
 import pytest
+from jwt import PyJWTError
 from src.core.security import verify_jwt
 
 
