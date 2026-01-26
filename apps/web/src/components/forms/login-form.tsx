@@ -54,7 +54,8 @@ export function LoginForm() {
                 title: "Login successful",
                 description: "Welcome back!",
             });
-            router.push("/");
+            // Full page reload to ensure middleware picks up fresh session cookies
+            window.location.href = "/dashboard";
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : "Invalid credentials";
             toast({

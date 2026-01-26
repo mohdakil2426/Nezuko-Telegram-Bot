@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
+import { supabase } from "@/lib/supabase/client";
+import { useAuthStore } from "@/stores/auth-store";
 import {
     LayoutDashboard,
     Users,
@@ -20,6 +22,7 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
     const pathname = usePathname();
+    const logout = useAuthStore((state) => state.logout);
 
     const routes = [
         {
@@ -66,6 +69,12 @@ export function Sidebar({ className }: SidebarProps) {
         },
     ];
 
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        logout();
+        window.location.href = "/login";
+    };
+
     return (
         <div className={cn("flex h-full w-[280px] flex-col border-r border-border bg-surface text-text-primary", className)}>
             <div className="flex h-16 items-center border-b border-border px-6">
@@ -92,8 +101,8 @@ export function Sidebar({ className }: SidebarProps) {
                 </nav>
                 <div className="px-4">
                     <button
+                        onClick={handleLogout}
                         className="flex w-full items-center rounded-md px-4 py-3 text-sm font-medium text-error-500 transition-colors hover:bg-error-500/10"
-                    // onClick={logout} // To be implemented with auth
                     >
                         <LogOut className="mr-3 h-5 w-5" />
                         Logout
@@ -103,3 +112,4 @@ export function Sidebar({ className }: SidebarProps) {
         </div>
     );
 }
+
