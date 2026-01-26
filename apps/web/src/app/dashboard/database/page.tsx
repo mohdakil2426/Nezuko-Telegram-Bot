@@ -105,7 +105,7 @@ export default function DatabasePage() {
             ) : (
                 <DataTable
                     columns={columns}
-                    data={tables?.tables || []}
+                    data={(tables as { data?: { tables?: TableInfo[] } })?.data?.tables || []}
                     pageCount={1}
                     pagination={pagination}
                     onPaginationChange={setPagination}

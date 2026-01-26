@@ -19,7 +19,8 @@ export default function TableDataPage() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(50);
 
-    const { data, isLoading, isError } = useTableData(table_name, page, pageSize);
+    const { data: rawData, isLoading, isError } = useTableData(table_name, page, pageSize);
+    const data = (rawData as { data?: { columns?: { name: string }[], rows?: Record<string, unknown>[], total_rows?: number } })?.data;
 
     if (isError) {
         return (
@@ -30,7 +31,7 @@ export default function TableDataPage() {
     }
 
     // Dynamic columns based on API response
-    const columns: ColumnDef<any>[] = data?.columns.map((col) => ({
+    const columns: ColumnDef<any>[] = data?.columns?.map((col) => ({
         accessorKey: col.name,
         header: col.name,
         cell: ({ row }) => {
@@ -43,13 +44,13 @@ export default function TableDataPage() {
         },
     })) || [];
 
-    const totalPages = data ? Math.ceil(data.total_rows / pageSize) : 0;
+    const totalPages = data?.total_rows ? Math.ceil(data.total_rows / pageSize) : 1;
 
     return (
         <div className="space-y-6 pt-6 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Link href="/database">
+                    <Link href="/dashboard/database">
                         <Button variant="outline" size="icon">
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
@@ -57,7 +58,7 @@ export default function TableDataPage() {
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-text-primary font-mono">{table_name}</h1>
                         <p className="text-text-secondary">
-                            {data?.total_rows.toLocaleString()} records • {pageSize} per page
+                            {(data?.total_rows ?? 0).toLocaleString()} records • {pageSize} per page
                         </p>
                     </div>
                 </div>
