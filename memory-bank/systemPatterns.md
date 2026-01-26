@@ -56,49 +56,28 @@ Nezuko is built as a highly-efficient monorepo to ensure tight integration betwe
 
 ---
 
-## 🗄️ Database Patterns: Multi-Database Compatibility
-
-### 1. Database-Agnostic Model Design
-
-As of 2026-01-26, all SQLAlchemy models are **database-agnostic** to support both SQLite (development) and PostgreSQL (production).
-
-| PostgreSQL Type | Agnostic Alternative | Rationale                            |
-| :-------------- | :------------------- | :----------------------------------- |
-| `UUID`          | `String(36)`         | SQLite doesn't support UUID natively |
-| `JSONB`         | `JSON`               | SQLite uses TEXT-based JSON          |
-| `INET`          | `String(45)`         | SQLite doesn't have network types    |
-
-### 2. Connection Configuration Pattern
-
-```python
-# Conditional engine configuration based on database type
-_is_sqlite = "sqlite" in settings.DATABASE_URL.lower()
-
-if _is_sqlite:
-    _engine_kwargs["connect_args"] = {"check_same_thread": False}
-else:
-    _engine_kwargs.update({
-        "pool_size": 20,
-        "max_overflow": 10,
-        "pool_pre_ping": True,
-    })
-    if "localhost" not in settings.DATABASE_URL:
-        _engine_kwargs["connect_args"] = {"ssl": "require"}
-```
-
-### 3. Table Initialization Script
-
-The `init_db.py` script creates all required tables for local development:
-
-```python
-# apps/api/init_db.py
-from src.models import AdminUser, AdminAuditLog, AdminSession, AdminConfig
-from src.models.bot import Owner, ProtectedGroup, EnforcedChannel, GroupChannelLink
-
-async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-```
+## 🗄️ Database Patterns: Unified Supabase Architecture
+ 
+ ### 1. The Post-Migration Reality
+ 
+ As of Phase 14 (Jan 2026), Nezuko has standardized on **Supabase Postgres** for all environments. This unifies development and production under a single database engine, eliminating "It works on SQLite" discrepancies.
+ 
+ - **Development**: Connects to Supabase Project (remotely) or a local Supabase Docker instance.
+ - **Production**: Connects to the same Supabase Project (Production environment).
+ 
+ ### 2. Connection Configuration Pattern
+ 
+ ```python
+ # settings.DATABASE_URL points to Supabase Postgres
+ _engine_kwargs = {
+     "pool_size": 20,
+     "max_overflow": 10,
+     "pool_pre_ping": True,
+ }
+ # SSL is vital for remote Supabase connections
+ if "localhost" not in settings.DATABASE_URL:
+     _engine_kwargs["connect_args"] = {"ssl": "require"}
+ ```
 
 ---
 
@@ -117,46 +96,45 @@ async def init_db():
 
 ---
 
-## 🔐 Authentication Patterns
-
-### 1. Firebase Auth Flow
-
-```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Browser   │────▶│ Firebase Auth │────▶│  ID Token   │
-└─────────────┘     └──────────────┘     └──────┬──────┘
-                                                 │
-      ┌──────────────────────────────────────────┘
-      ▼
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│ POST /sync  │────▶│ verify_token │────▶│ Create User │
-└─────────────┘     └──────────────┘     └─────────────┘
-```
-
-### 2. Token Verification Pattern
-
-```python
-# apps/api/src/core/security.py
-async def verify_firebase_token(token: str) -> dict:
-    decoded = auth.verify_id_token(token)
-    return {
-        "uid": decoded["uid"],
-        "email": decoded.get("email"),
-        "name": decoded.get("name"),
-    }
-```
-
-### 3. User Sync Pattern
-
-```python
-# apps/api/src/services/auth_service.py
-async def sync_firebase_user(self, firebase_user: dict) -> AdminUser:
-    # 1. Check by firebase_uid
-    # 2. Check by email (migration case)
-    # 3. Create new user if not exists
-    # 4. Update last_login timestamp
-    return user
-```
+## 🔐 Authentication Patterns: Supabase Auth
+ 
+ ### 1. Supabase Auth Flow
+ 
+ ```
+ ┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+ │   Browser   │────▶│ Supabase Auth│────▶│ Access Token│
+ └─────────────┘     └──────────────┘     └──────┬──────┘
+                                                  │
+       ┌──────────────────────────────────────────┘
+       ▼
+ ┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+ │ API Request │────▶│  Verify JWT  │────▶│ Sync User   │
+ └─────────────┘     └──────────────┘     └─────────────┘
+ ```
+ 
+ ### 2. Token Verification Pattern
+ 
+ ```python
+ # apps/api/src/core/security.py
+ def verify_jwt(token: str) -> dict:
+     return jwt.decode(
+         token,
+         settings.SUPABASE_JWT_SECRET,
+         algorithms=["HS256"],
+         audience="authenticated"
+     )
+ ```
+ 
+ ### 3. User Sync Pattern
+ 
+ ```python
+ # apps/api/src/services/auth_service.py
+ async def sync_supabase_user(self, user_data: dict) -> AdminUser:
+     # 1. Check by supabase_uid
+     # 2. Update metadata if changed
+     # 3. Create if new
+     return user
+ ```
 
 ---
 
@@ -353,17 +331,17 @@ raw_logs = await cast(
 ---
 
 ### 📁 4. Key Files Reference
-
-| File                                            | Purpose                                    |
-| :---------------------------------------------- | :----------------------------------------- |
-| `apps/api/init_db.py`                           | Initialize SQLite database with all tables |
-| `apps/api/src/core/database.py`                 | Database engine configuration (SQLite/PG)  |
-| `apps/api/src/core/security.py`                 | Firebase token verification                |
-| `apps/api/src/services/auth_service.py`         | User sync logic                            |
-| `apps/web/src/lib/firebase.ts`                  | Firebase client initialization             |
-| `apps/web/src/components/layout/sidebar.tsx`    | Main navigation with `/dashboard/*` routes |
-| `apps/web/src/components/tables/data-table.tsx` | Reusable table with pagination             |
-| `apps/web/src/components/forms/login-form.tsx`  | Login form component                       |
+ 
+ | File                                            | Purpose                                    |
+ | :---------------------------------------------- | :----------------------------------------- |
+ | `apps/api/init_db.py`                           | Initialize database tables (Postgres)      |
+ | `apps/api/src/core/database.py`                 | Database engine configuration (Supabase)   |
+ | `apps/api/src/core/security.py`                 | Supabase JWT token verification            |
+ | `apps/api/src/services/auth_service.py`         | User sync logic                            |
+ | `apps/web/src/lib/supabase/client.ts`           | Supabase client initialization             |
+ | `apps/web/src/components/layout/sidebar.tsx`    | Main navigation with `/dashboard/*` routes |
+ | `apps/web/src/components/tables/data-table.tsx` | Reusable table with pagination             |
+ | `apps/web/src/components/forms/login-form.tsx`  | Login form component                       |
 
 ---
 
@@ -397,16 +375,13 @@ python -m pyrefly check
 ---
 
 ## 🛠️ Maintenance & Sustainability Patterns
-
-### 1. Log Rotation Policy
-
-- **Local Strategy**: Logs rotated daily with 7-day retention.
-- **Firebase Strategy**: Real-time logs purged every 24 hours.
-
-### 2. Database Backup SOP
-
-- **Nightly snapshots**: Automated `pg_dump` to encrypted S3.
-- **PITR**: WAL-G configured for production instances.
+ 
+ ### 1. Real-time Logging (Supabase)
+ 
+ Instead of polling or WebSocket servers, we use **Supabase Realtime** (`postgres_changes`):
+ 1. Bot inserts log into `admin_logs`.
+ 2. Supabase broadcasts `INSERT` event.
+ 3. Web Client (`useLogStream`) receives event matches.
 
 ---
 
@@ -442,4 +417,4 @@ python -m pyrefly check
 ---
 
 **This document is the authoritative guide for all system implementations.**
-**Updated 2026-01-26 with database-agnostic patterns and Firebase auth flow.**
+**Updated 2026-01-26 with Supabase Architecture.**

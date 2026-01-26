@@ -8,9 +8,7 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 
 - **Runtime**: `Python 3.13.1`
 - **Library**: `python-telegram-bot v22.5.0` [AsyncIO, Rate-Limiter]
-- **Database**:
-  - Production: `PostgreSQL 18.2` (via `asyncpg`)
-  - Development: `SQLite 3.x` (via `aiosqlite`)
+- **Database**: `PostgreSQL 15+` (Supabase) via `asyncpg`
 - **ORM**: `SQLAlchemy 2.0.46` [AsyncIO]
 - **Caching**: `Redis 7.1.0` (via `redis-py` async)
 - **Observability**: `Structlog 25.5`, `Sentry 2.50.0`, `Prometheus Client 0.24`
@@ -20,7 +18,8 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 - **Framework**: `FastAPI 0.124.4` (ASGI)
 - **Server**: `Uvicorn 0.40.0`
 - **Validation**: `Pydantic V2.12.5`
-- **Authentication**: `Firebase Admin SDK v6.5.0`
+- **Authentication**: `Supabase Auth` (JWT Verification)
+- **Database**: `PostgreSQL 15+` (Supabase)
 - **Rate Limiting**: `SlowAPI 0.1.9`
 - **Testing**: `Pytest 9.0`, `Pyrefly 0.49`, `Pylint 4.0`
 
@@ -31,7 +30,7 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 - **State**: `Zustand 5.0.10` (Global), `TanStack Query 5.90` (Server State)
 - **Forms**: `React Hook Form 7.71`, `Zod 4.3.6`
 - **Visualization**: `Recharts 3.7.0`
-- **Client SDK**: `Firebase JS SDK 12.8.0`
+- **Auth & Data**: `Supabase JS SDK (@supabase/supabase-js)`
 - **Testing**: `Vitest 3.0.4`
 
 ---
@@ -40,16 +39,15 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 
 ### 1. SQLAlchemy Models (`apps/api/src/models/`)
 
-> **Important**: As of 2026-01-26, all models use **database-agnostic types** for SQLite compatibility.
+> **Important**: Models are configured for PostgreSQL (Supabase).
 
 #### Model: `AdminUser` (`admin_user.py`)
 
 | Column          | Type           | Notes                     |
 | :-------------- | :------------- | :------------------------ |
-| `id`            | `String(36)`   | Primary Key, UUID as text |
-| `firebase_uid`  | `String(36)`   | Unique, Indexed           |
+| `id`            | `String(36)`   | Primary Key, UUID |
+| `supabase_uid`  | `String(36)`   | Unique, Indexed (Auth ID) |
 | `email`         | `String(255)`  | Unique                    |
-| `password_hash` | `String(255)`  | Nullable (unused)         |
 | `full_name`     | `String(100)`  | Nullable                  |
 | `role`          | `String(20)`   | Default: "viewer"         |
 | `is_active`     | `Boolean`      | Default: True             |
@@ -57,18 +55,6 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 | `created_at`    | `DateTime(tz)` | Server default            |
 | `updated_at`    | `DateTime(tz)` | Auto-update               |
 | `last_login`    | `DateTime(tz)` | Nullable                  |
-
-#### Model: `AdminSession` (`admin_session.py`)
-
-| Column          | Type           | Notes                |
-| :-------------- | :------------- | :------------------- |
-| `id`            | `String(36)`   | Primary Key          |
-| `user_id`       | `String(36)`   | FK → admin_users.id  |
-| `refresh_token` | `String(512)`  | Unique               |
-| `ip_address`    | `String(45)`   | IPv4/IPv6 compatible |
-| `user_agent`    | `String`       | Nullable             |
-| `expires_at`    | `DateTime(tz)` | Indexed              |
-| `created_at`    | `DateTime(tz)` | Server default       |
 
 #### Model: `AdminAuditLog` (`admin_audit_log.py`)
 
@@ -82,98 +68,48 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 | `old_value`     | `JSON`          | Nullable     |
 | `new_value`     | `JSON`          | Nullable     |
 | `ip_address`    | `String(45)`    | Nullable     |
-| `user_agent`    | `String`        | Nullable     |
 | `created_at`    | `TIMESTAMP(tz)` | Indexed      |
 
-#### Model: `AdminConfig` (`config.py`)
+#### Real-time Logging Table: `admin_logs` (Supabase Specific)
 
-| Column         | Type           | Notes          |
-| :------------- | :------------- | :------------- |
-| `key`          | `String(100)`  | Primary Key    |
-| `value`        | `JSON`         | Required       |
-| `description`  | `Text`         | Nullable       |
-| `is_sensitive` | `Boolean`      | Default: False |
-| `updated_by`   | `String(36)`   | FK, Nullable   |
-| `updated_at`   | `DateTime(tz)` | Auto-update    |
+This table is used for real-time log streaming via Supabase Realtime (Postgres Changes).
 
-#### Bot Models (`bot.py`)
-
-| Model              | Primary Key  | Notes                   |
-| :----------------- | :----------- | :---------------------- |
-| `Owner`            | `user_id`    | BigInteger              |
-| `ProtectedGroup`   | `group_id`   | BigInteger, FK → owners |
-| `EnforcedChannel`  | `channel_id` | BigInteger              |
-| `GroupChannelLink` | `id`         | Many-to-many join table |
-
-### 2. Database Connection Configuration
-
-The database connection is configured dynamically based on the `DATABASE_URL`:
-
-```python
-# apps/api/src/core/database.py
-_is_sqlite = "sqlite" in settings.DATABASE_URL.lower()
-
-if _is_sqlite:
-    # SQLite: No pooling, check_same_thread=False
-    _engine_kwargs["connect_args"] = {"check_same_thread": False}
-else:
-    # PostgreSQL: Full pooling + conditional SSL
-    _engine_kwargs.update({
-        "pool_size": 20,
-        "max_overflow": 10,
-        "pool_timeout": 30,
-        "pool_recycle": 1800,
-        "pool_pre_ping": True,
-    })
-    if "localhost" not in settings.DATABASE_URL:
-        _engine_kwargs["connect_args"] = {"ssl": "require"}
-```
+| Column      | Type        | Notes |
+| :---------- | :---------- | :---- |
+| `id`        | `UUID`      | PK    |
+| `level`     | `VARCHAR`   | INFO, ERROR, WARN |
+| `message`   | `TEXT`      | Log content |
+| `metadata`  | `JSONB`     | Context data |
+| `timestamp` | `TIMESTAMP` | Event time |
 
 ---
 
-## 🔒 Firebase Security Rules (RTDB)
+## 🔒 Supabase Security
 
-Nezuko uses the following rules for the Real-time Logging database to ensure data sovereignty.
+### 1. Row Level Security (RLS)
 
-```json
-{
-  "rules": {
-    "logs": {
-      ".read": "auth != null",
-      ".write": "auth != null && auth.token.admin === true",
-      "$log_id": {
-        ".indexOn": ["timestamp", "level"]
-      }
-    },
-    "sessions": {
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
-      }
-    }
-  }
-}
-```
+- **Public Tables**: `admin_logs` may have restricted access policies.
+- **Bot Access**: The bot uses the `SERVICE_ROLE_KEY` for unrestricted database access.
+- **Web/Anonymous Access**: Uses `ANON_KEY` combined with User JWTs for RLS enforcement.
+
+### 2. Authentication Flow
+
+1.  **Web Client** -> `supabase.auth.signInWithPassword` -> **Supabase Auth**.
+2.  **Web Client** -> Receives `access_token` (JWT).
+3.  **API Requests** -> Sends `Authorization: Bearer <jwt>`.
+4.  **API** -> Verifies JWT signature using `SUPABASE_JWT_SECRET`.
+5.  **API** -> Extracts `sub` (User ID) and verifies against `admin_users`.
 
 ---
 
 ## 🌐 Network Topology & Data Flow
 
-### 1. Request Path (External -> Internal)
+### 1. Request Path
 
-1.  **Client** -> `HTTPS (443)` -> **Caddy**.
-2.  **Caddy** -> `Forward (8000)` -> **Uvicorn (FastAPI Worker)**.
-3.  **FastAPI** -> `RS256` -> **Firebase Auth API** (Token Validation).
-4.  **FastAPI** -> `TCP` -> **PostgreSQL / SQLite / Redis**.
-
-### 2. Authentication Flow (Firebase)
-
-1.  **Web Client** -> `signInWithEmailAndPassword()` -> **Firebase Auth**.
-2.  **Firebase Auth** -> Returns `idToken` (JWT).
-3.  **Web Client** -> `POST /api/v1/auth/sync` with `Bearer {idToken}`.
-4.  **API** -> `verify_firebase_token()` -> **Firebase Public Keys**.
-5.  **API** -> Creates/updates `AdminUser` in local DB.
-6.  **API** -> Returns `UserResponse` with role info.
+1.  **Client** -> `HTTPS` -> **Next.js Web** / **FastAPI**.
+2.  **Next.js** -> `Supabase Client` -> **Supabase (Auth/DB/Realtime)**.
+3.  **FastAPI** -> `SQLAlchemy` -> **Supabase Postgres**.
+4.  **FastAPI** -> `JWT Check` -> **Local validation** (No external call needed if checking signature).
 
 ---
 
@@ -184,7 +120,7 @@ Nezuko uses the following rules for the Real-time Logging database to ensure dat
 ```bash
 # 1. Start API (Terminal 1)
 cd apps/api
-python init_db.py          # Create SQLite tables
+# Ensure .env has SUPABASE_URL and credentials
 python -m uvicorn src.main:app --host 0.0.0.0 --port 8080 --reload
 
 # 2. Start Web (Terminal 2)
@@ -193,73 +129,35 @@ bun dev                    # Runs on localhost:3000
 
 # 3. Login
 # Navigate to http://localhost:3000/login
-# Use: admin@nezuko.bot / ChangeMe123!
+# Login with credentials created in your Supabase Project
 ```
 
 ### Environment Variables (Required)
 
 ```bash
-# apps/api/.env
-DATABASE_URL=sqlite+aiosqlite:///./nezuko.db
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk@project.iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-FIREBASE_DATABASE_URL=https://project-default-rtdb.firebaseio.com
+# .env (Root)
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_ANON_KEY=<public-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<private-service-key>
+SUPABASE_JWT_SECRET=<jwt-secret>
+DATABASE_URL=postgresql+asyncpg://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
 
 # apps/web/.env.local
+NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<public-anon-key>
 NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
-NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-```
-
----
-
-## 🐳 Production Deployment Blueprint: Caddyfile
-
-```caddyfile
-# Nezuko Production Configuration
-{
-    email admin@nezuko.bot
-    admin off
-}
-
-nezuko.bot {
-    # Frontend Static Files
-    root * /var/www/nezuko/apps/web/out
-    file_server
-
-    # API Reverse Proxy
-    handle_path /api/* {
-        reverse_proxy api:8000 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-        }
-    }
-
-    # Security Headers
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-    }
-
-    # Compression
-    encode zstd gzip
-}
 ```
 
 ---
 
 ## 💰 Infrastructure Cost Optimization
 
-- **Redis LRU**: Using the `allkeys-lru` eviction policy to cap memory at 256MB.
-- **Postgres Vacuum**: Nightly automated analysis to reclaim disk space.
-- **SQLite for Dev**: Zero cost for local development and testing.
+- **Supabase Free Tier**: Generous limits for DB size and Auth users.
+- **Redis**: Optional if using Supabase for caching, but recommended for high-performance bot ops.
+- **Postgres**: Managed by Supabase (No maintenance overhead).
 
 ---
 
 **Total Line Count Target: 200+ Lines of technical reference.**
 _(This document encodes the technical DNA of the Nezuko Platform)._
-_(Updated 2026-01-26 with Firebase auth flow and SQLite compatibility details)._
+_(Updated 2026-01-26 with Supabase integration details)._

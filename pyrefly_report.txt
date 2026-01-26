@@ -1,0 +1,474 @@
+ WARN PYTHONPATH environment variable is set to `.`. Checks in other environments may not include these paths.
+ INFO Checking project configured at `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`
+ WARN PYTHONPATH environment variable is set to `.`. Checks in other environments may not include these paths.
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\dependencies\auth.py:5:1
+  |
+5 | from fastapi import Depends, HTTPException, status
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi.security` [missing-import]
+ --> apps\api\src\api\v1\dependencies\auth.py:6:1
+  |
+6 | from fastapi.security import OAuth2PasswordBearer
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\dependencies\permissions.py:6:1
+  |
+6 | from fastapi import Depends, HTTPException, status
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\endpoints\admins.py:6:1
+  |
+6 | from fastapi import APIRouter, Depends, HTTPException, status
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\endpoints\analytics.py:5:1
+  |
+5 | from fastapi import APIRouter, Depends, Query
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\endpoints\audit.py:5:1
+  |
+5 | from fastapi import APIRouter, Depends, Query
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\endpoints\auth.py:3:1
+  |
+3 | from fastapi import APIRouter, Depends, HTTPException, Request
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\endpoints\channels.py:5:1
+  |
+5 | from fastapi import APIRouter, Depends, HTTPException, status
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\endpoints\config.py:5:1
+  |
+5 | from fastapi import APIRouter, Depends
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\endpoints\dashboard.py:5:1
+  |
+5 | from fastapi import APIRouter, Depends
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\endpoints\database.py:3:1
+  |
+3 | from fastapi import APIRouter, Depends, HTTPException, Query
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\endpoints\groups.py:6:1
+  |
+6 | from fastapi import APIRouter, Depends, HTTPException, Query, status
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\endpoints\logs.py:5:1
+  |
+5 | from fastapi import APIRouter, Depends, Query
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\v1\router.py:3:1
+  |
+3 | from fastapi import APIRouter
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\api\websocket\handlers\logs.py:1:1
+  |
+1 | from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `pydantic` [missing-import]
+ --> apps\api\src\core\config.py:6:1
+  |
+6 | from pydantic import field_validator
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `pydantic_settings` [missing-import]
+ --> apps\api\src\core\config.py:7:1
+  |
+7 | from pydantic_settings import BaseSettings, SettingsConfigDict
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\main.py:7:1
+  |
+7 | from fastapi import FastAPI
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi.middleware.cors` [missing-import]
+ --> apps\api\src\main.py:8:1
+  |
+8 | from fastapi.middleware.cors import CORSMiddleware
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `starlette.middleware.base` [missing-import]
+ --> apps\api\src\middleware\audit.py:7:1
+  |
+7 | from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `starlette.requests` [missing-import]
+ --> apps\api\src\middleware\audit.py:8:1
+  |
+8 | from starlette.requests import Request
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `starlette.responses` [missing-import]
+ --> apps\api\src\middleware\audit.py:9:1
+  |
+9 | from starlette.responses import Response
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\middleware\error_handler.py:7:1
+  |
+7 | from fastapi import FastAPI, Request, status
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi.exceptions` [missing-import]
+ --> apps\api\src\middleware\error_handler.py:8:1
+  |
+8 | from fastapi.exceptions import RequestValidationError
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi.responses` [missing-import]
+ --> apps\api\src\middleware\error_handler.py:9:1
+  |
+9 | from fastapi.responses import JSONResponse
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `starlette.exceptions` [missing-import]
+  --> apps\api\src\middleware\error_handler.py:10:1
+   |
+10 | from starlette.exceptions import HTTPException as StarletteHTTPException
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\middleware\logging.py:6:1
+  |
+6 | from fastapi import Request, Response
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `starlette.middleware.base` [missing-import]
+ --> apps\api\src\middleware\logging.py:7:1
+  |
+7 | from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\middleware\rate_limit.py:3:1
+  |
+3 | from fastapi import FastAPI
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `slowapi` [missing-import]
+ --> apps\api\src\middleware\rate_limit.py:4:1
+  |
+4 | from slowapi import Limiter, _rate_limit_exceeded_handler
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `slowapi.errors` [missing-import]
+ --> apps\api\src\middleware\rate_limit.py:5:1
+  |
+5 | from slowapi.errors import RateLimitExceeded
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `slowapi.util` [missing-import]
+ --> apps\api\src\middleware\rate_limit.py:6:1
+  |
+6 | from slowapi.util import get_remote_address
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\middleware\request_id.py:5:1
+  |
+5 | from fastapi import Request, Response
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `starlette.middleware.base` [missing-import]
+ --> apps\api\src\middleware\request_id.py:6:1
+  |
+6 | from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\middleware\security.py:3:1
+  |
+3 | from fastapi import Request, Response
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `starlette.middleware.base` [missing-import]
+ --> apps\api\src\middleware\security.py:4:1
+  |
+4 | from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `pydantic` [missing-import]
+ --> apps\api\src\schemas\admin.py:6:1
+  |
+6 | from pydantic import BaseModel, ConfigDict, EmailStr, Field
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `pydantic` [missing-import]
+ --> apps\api\src\schemas\analytics.py:5:1
+  |
+5 | from pydantic import BaseModel
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `pydantic` [missing-import]
+ --> apps\api\src\schemas\audit.py:7:1
+  |
+7 | from pydantic import BaseModel, ConfigDict
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `pydantic` [missing-import]
+ --> apps\api\src\schemas\auth.py:5:1
+  |
+5 | from pydantic import BaseModel, ConfigDict, EmailStr, Field
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `pydantic` [missing-import]
+ --> apps\api\src\schemas\base.py:5:1
+  |
+5 | from pydantic import BaseModel, ConfigDict
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `pydantic` [missing-import]
+ --> apps\api\src\schemas\channel.py:5:1
+  |
+5 | from pydantic import BaseModel, ConfigDict
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `pydantic` [missing-import]
+ --> apps\api\src\schemas\config.py:3:1
+  |
+3 | from pydantic import BaseModel
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `pydantic` [missing-import]
+ --> apps\api\src\schemas\dashboard.py:6:1
+  |
+6 | from pydantic import BaseModel, ConfigDict
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `pydantic` [missing-import]
+ --> apps\api\src\schemas\database.py:5:1
+  |
+5 | from pydantic import BaseModel
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `pydantic` [missing-import]
+ --> apps\api\src\schemas\group.py:6:1
+  |
+6 | from pydantic import BaseModel, ConfigDict
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ERROR Cannot find module `fastapi` [missing-import]
+ --> apps\api\src\services\admin_service.py:6:1
+  |
+6 | from fastapi import HTTPException, status
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  Looked in these locations (from config in `C:\Users\akila\OneDrive\Desktop\OSS\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\pyrefly.toml`):
+  Search path (from config file): ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\apps\\api", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\bot"]
+  Import root (inferred from project layout): "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot"
+  Site package path queried from interpreter: ["C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot", "C:\\Program Files\\Python313\\DLLs", "C:\\Program Files\\Python313\\Lib", "C:\\Program Files\\Python313", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv", "C:\\Users\\akila\\OneDrive\\Desktop\\OSS\\Telegram\\GroupManagerBot\\Nezuko-Telegram-Bot\\.venv\\Lib\\site-packages"]
+ INFO 47 errors (1 suppressed)

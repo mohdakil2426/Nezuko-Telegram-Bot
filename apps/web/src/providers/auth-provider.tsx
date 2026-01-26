@@ -3,8 +3,7 @@
 import { LoadingScreen } from "@/components/ui/loading-screen";
 
 import { useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase/client";
 import { useAuthStore } from "@/stores/auth-store";
 import { authApi } from "@/lib/api/endpoints/auth";
 
@@ -15,23 +14,24 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
     const { setUser, logout } = useAuthStore();
 
-    const [isMounting, setIsMounting] = useState(true);
+    const [isMounting, setIsMounting] = useState(false);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            if (firebaseUser) {
+        const timeout = setTimeout(() => {
+            console.warn("Auth check timed out, forcing mount");
+            setIsMounting(false);
+        }, 3000);
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange(async (event, session) => {
+            clearTimeout(timeout);
+            if (session?.user) {
                 try {
-                    // Try to get current user details from backend
-                    // If this fails (e.g. 401/403), we might handle it by logging out
-                    // But usually 403 means valid token but no access.
-                    // We sync blindly? No, authApi.me() is safer.
                     const response = await authApi.me();
                     setUser(response.data);
                 } catch (error) {
                     console.error("Auth sync failed", error);
-                    // Optionally signOut if token is invalid?
-                    // auth.signOut();
-                    // logout();
                 }
             } else {
                 logout();
@@ -39,7 +39,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setIsMounting(false);
         });
 
-        return () => unsubscribe();
+        return () => {
+            clearTimeout(timeout);
+            subscription.unsubscribe();
+        };
     }, [setUser, logout]);
 
     if (isMounting) {

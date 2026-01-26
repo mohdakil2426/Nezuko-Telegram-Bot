@@ -21,11 +21,11 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_PASSWORD: str | None = None
 
-    # Firebase Admin SDK
-    FIREBASE_PROJECT_ID: str = "nezuko-dev"
-    FIREBASE_CLIENT_EMAIL: str | None = None
-    FIREBASE_PRIVATE_KEY: str | None = None
-    FIREBASE_DATABASE_URL: str = "http://localhost:9000?ns=nezuko-dev"
+    # Supabase Configuration
+    SUPABASE_URL: str | None = None
+    SUPABASE_ANON_KEY: str | None = None
+    SUPABASE_SERVICE_ROLE_KEY: str | None = None
+    SUPABASE_JWT_SECRET: str | None = None
 
     # Admin Panel - Initial Admin User
     ADMIN_INITIAL_EMAIL: str = "admin@nezuko.bot"
@@ -41,6 +41,7 @@ class Settings(BaseSettings):
 
     # Security
     SECURITY_HEADERS_ENABLED: bool = False
+    MOCK_AUTH: bool = False
 
     # Observability
     SENTRY_DSN: str | None = None

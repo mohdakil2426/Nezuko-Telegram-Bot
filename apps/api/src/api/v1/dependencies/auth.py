@@ -1,6 +1,6 @@
 """Authentication dependencies for API endpoints."""
 
-import os
+from datetime import UTC
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import get_settings
 from src.core.database import get_session
-from src.core.security import verify_firebase_token
+from src.core.security import verify_jwt
 from src.models.admin_user import AdminUser
 
 settings = get_settings()
@@ -30,26 +30,36 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    # MOCK AUTH for development if keys are missing
+    # MOCK AUTH for development if keys are missing
+    if settings.MOCK_AUTH:
+        import uuid
+        from datetime import datetime
+
+        now = datetime.now(UTC)
+        return AdminUser(
+            id=str(uuid.uuid4()),
+            email="admin@nezuko.bot",
+            full_name="Admin User",
+            role="super_admin",
+            is_active=True,
+            supabase_uid="f0689869-bdcc-4c67-aef5-36c6ffd528d7",
+            created_at=now,
+            updated_at=now,
+            last_login=now,
+        )
+
     try:
-        # 1. Verify token with Firebase
-        firebase_user = await verify_firebase_token(token)
-        uid = firebase_user["uid"]
-        email = firebase_user.get("email")
+        # 1. Verify token with Supabase
+        auth_user = verify_jwt(token)
+        uid = auth_user["uid"]
+        email = auth_user.get("email")
     except (ValueError, Exception) as exc:
         raise credentials_exception from exc
 
-    # MOCK AUTH for development if database is down
-    if os.getenv("MOCK_AUTH") == "true":
-        return AdminUser(
-            email=email or "mock@admin.me",
-            full_name="Mock Admin",
-            is_active=True,
-            firebase_uid=uid or "mock_uid",
-        )
-
     # 2. Check local DB
-    # First try by firebase_uid
-    stmt = select(AdminUser).where(AdminUser.firebase_uid == uid)
+    # First try by supabase_uid
+    stmt = select(AdminUser).where(AdminUser.supabase_uid == uid)
     result = await session.execute(stmt)
     user = result.scalar_one_or_none()
 
@@ -61,8 +71,8 @@ async def get_current_user(
         user = result.scalar_one_or_none()
 
         if user:
-            # Link existing user to Firebase UID
-            user.firebase_uid = uid
+            # Link existing user to Supabase UID
+            user.supabase_uid = uid
             session.add(user)
             await session.commit()
             await session.refresh(user)

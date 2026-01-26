@@ -9,8 +9,10 @@
 python-telegram-bot[rate-limiter]>=22.5
 
 # Environment Configuration
+# Environment Configuration
 python-dotenv>=1.2.1
-firebase-admin>=6.5.0
+supabase>=2.3.0
+pyjwt>=2.8.0
 
 # Database - PostgreSQL (Production)
 sqlalchemy[asyncio]>=2.0.46

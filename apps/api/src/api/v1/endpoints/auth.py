@@ -31,7 +31,7 @@ async def sync_user(
     session: AsyncSession = Depends(get_session),
 ) -> SuccessResponse[UserResponse]:
     """
-    Sync Firebase user to local DB (Idempotent).
+    Sync Supabase user to local DB (Idempotent).
     """
     # Manual token extraction
     auth_header = request.headers.get("Authorization")
@@ -40,13 +40,15 @@ async def sync_user(
 
     token = auth_header.split(" ")[1]
 
-    from src.core.security import verify_firebase_token
+    token = auth_header.split(" ")[1]
+
+    from src.core.security import verify_jwt
 
     try:
-        firebase_user = await verify_firebase_token(token)
+        auth_user = verify_jwt(token)
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
 
     auth_service = AuthService(session)
-    user = await auth_service.sync_firebase_user(firebase_user)
+    user = await auth_service.sync_supabase_user(auth_user)
     return SuccessResponse(data=UserResponse.model_validate(user))

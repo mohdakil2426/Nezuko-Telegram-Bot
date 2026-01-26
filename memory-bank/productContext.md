@@ -23,8 +23,8 @@ Nezuko bridges this gap by acting as a high-performance **Gatekeeper** and **Ana
 
 The **Nezuko Dashboard** provides a unified interface for system owners:
 
-- **Real-Time Observability**: Live log streaming and activity feeds showing system actions.
-- **RBAC System**: Granular permissions (Owner, Admin, Viewer) managed via Firebase Auth.
+- **Real-Time Observability**: Live log streaming (via Supabase Realtime) and activity feeds showing system actions.
+- **RBAC System**: Granular permissions (Owner, Admin, Viewer) managed via Supabase Auth + Local Roles.
 - **Insightful Analytics**: Visualizing verification trends and user growth through interactive charts.
 - **Config-as-UI**: Modify bot behavior (messages, rate limits, webhooks) without touching environment variables.
 
@@ -49,9 +49,9 @@ The **Nezuko Dashboard** provides a unified interface for system owners:
 | **Bot Core**      | Python 3.13, PTB v22 | Maximum async performance, modern typing    |
 | **Admin API**     | FastAPI, Pydantic V2 | High-performance REST with validation       |
 | **Dashboard**     | Next.js 16, React 19 | Server Components, streaming, premium UX    |
-| **Auth**          | Firebase Auth        | Industry-standard identity management       |
-| **Realtime Logs** | Firebase RTDB        | WebSocket-free, works across proxy layers   |
-| **Database**      | PostgreSQL / SQLite  | Production stability / Local dev simplicity |
+| **Auth**          | Supabase Auth        | JWT-based secure identity management        |
+| **Realtime Logs** | Supabase Realtime    | Postgres Change Detection (No WebSocket server needed) |
+| **Database**      | PostgreSQL (Supabase)| Production-grade SQL at any scale           |
 | **Cache**         | Redis 8              | Distributed caching, session management     |
 
 ## 📈 Success Metrics
@@ -60,7 +60,7 @@ The **Nezuko Dashboard** provides a unified interface for system owners:
 | :------------------------- | :------- | :-------------------------- |
 | **p99 Verification**       | < 150ms  | ✅ Achieved                 |
 | **Uptime**                 | 99.9%    | ✅ On Track                 |
-| **Admin Login Success**    | 100%     | ✅ Verified Working         |
+| **Admin Login Success**    | 100%     | 🚧 Test Pending (Supabase)  |
 | **Static Analysis Errors** | 0        | ✅ Zero Errors              |
 | **Pylint Score**           | 10.00/10 | ✅ Achieved                 |
 | **TypeScript Errors**      | 0        | ✅ Zero Errors              |
@@ -69,14 +69,12 @@ The **Nezuko Dashboard** provides a unified interface for system owners:
 ## 🎯 Current State Summary (2026-01-26)
 
 - **Bot Core**: Fully functional enforcement engine.
-- **Admin API**: Firebase Auth + SQLite working locally.
-- **Dashboard**: All 8 pages tested and working:
-  - ✅ Login, Dashboard, Groups, Channels
-  - ✅ Config, Logs, Database, Analytics
-- **Authentication**: Firebase email/password auth fully integrated.
-- **Code Quality**: Zero TypeScript errors, no `any` types in components.
+- **Admin API**: Supabase JWT verification integrated.
+- **Dashboard**: Migrated to Supabase Client. Log streaming via Postgres listeners implemented.
+- **Authentication**: Supabase Auth (Email/Password) fully integrated.
+- **Code Quality**: Zero TypeScript errors, clean linting status.
 
 ---
 
 **End of Product Context**
-_(Updated 2026-01-26 with comprehensive UI testing results)_
+_(Updated 2026-01-26 with Supabase Architecture)_

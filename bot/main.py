@@ -45,15 +45,15 @@ logging.basicConfig(
     level=logging.INFO if config.is_production else logging.DEBUG,
     handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler("bot.log", encoding="utf-8")],
 )
-# Add Firebase Handler (Real-time logs)
+# Add Postgres Handler (Real-time logs)
 try:
-    from bot.utils.firebase_logging import FirebaseLogHandler
+    from bot.utils.postgres_logging import PostgresLogHandler
 
-    firebase_handler = FirebaseLogHandler()
-    firebase_handler.setLevel(logging.INFO)  # Always send INFO+ to dashboard
-    logging.getLogger().addHandler(firebase_handler)
+    postgres_handler = PostgresLogHandler()
+    postgres_handler.setLevel(logging.INFO)  # Always send INFO+ to dashboard
+    logging.getLogger().addHandler(postgres_handler)
 except Exception as e:  # pylint: disable=broad-exception-caught
-    print(f"Failed to initialize Firebase logger: {e}")
+    print(f"Failed to initialize Postgres logger: {e}")
 
 logger = logging.getLogger(__name__)
 

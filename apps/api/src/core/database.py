@@ -14,7 +14,7 @@ from .config import get_settings
 settings = get_settings()
 
 # Determine if using SQLite
-_is_sqlite = "sqlite" in settings.DATABASE_URL.lower()
+_IS_SQLITE = "sqlite" in settings.DATABASE_URL.lower()
 
 # Build engine kwargs based on database type
 _engine_kwargs: dict[str, Any] = {
@@ -22,7 +22,7 @@ _engine_kwargs: dict[str, Any] = {
     "future": True,
 }
 
-if _is_sqlite:
+if _IS_SQLITE:
     # SQLite-specific settings (no pooling, no SSL)
     _engine_kwargs["connect_args"] = {"check_same_thread": False}
 else:

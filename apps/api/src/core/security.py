@@ -1,29 +1,50 @@
-"""Security utilities for Firebase Auth."""
+"""Security utilities for Supabase Auth."""
 
 from typing import Any
 
-from firebase_admin import auth  # type: ignore[import-untyped]
+import jwt
 
-from src.core.firebase import get_firebase_app
+from src.core.config import get_settings
+
+settings = get_settings()
 
 
-async def verify_firebase_token(token: str) -> dict[str, Any]:
+def verify_jwt(token: str) -> dict[str, Any]:
     """
-    Verify a Firebase ID token.
-    Delegates validation to Firebase Admin SDK.
-    Returns the decoded token dict (contains 'uid', 'email', etc).
+    Verify a Supabase JWT token.
+    Uses the SUPABASE_JWT_SECRET to validate the signature.
     """
-    import asyncio
+    if settings.MOCK_AUTH:
+        return {
+            "uid": "f0689869-bdcc-4c67-aef5-36c6ffd528d7",
+            "email": "admin@nezuko.bot",
+            "name": "Admin User",
+            "role": "authenticated",
+        }
+
+    if not settings.SUPABASE_JWT_SECRET:
+        raise ValueError("SUPABASE_JWT_SECRET not configured")
 
     try:
-        get_firebase_app()  # Ensure app is initialized
-        try:
-            return dict(auth.verify_id_token(token))
-        except Exception as e:
-            if "Token used too early" in str(e):
-                # Handle clock skew
-                await asyncio.sleep(60)  # Wait a bit and try again
-                return dict(auth.verify_id_token(token))
-            raise
-    except Exception as e:
+        # Decode and verify the JWT
+        # Supabase uses HS256 by default for its JWTs signed with the project secret
+        payload = jwt.decode(
+            token,
+            settings.SUPABASE_JWT_SECRET,
+            algorithms=["HS256"],
+            # check_audience=True, # Optional: enforce audience check if needed
+            options={
+                "verify_aud": False
+            },  # Supabase often uses 'authenticated' but it's safe to check only signature for now or match specific audience
+        )
+
+        # Normalize fields to match what our app expects
+        # Supabase returns 'sub' as the user ID, 'email' as email, etc.
+        return {
+            "uid": payload.get("sub"),
+            "email": payload.get("email"),
+            "name": payload.get("user_metadata", {}).get("full_name") or payload.get("email"),
+            "role": payload.get("role"),
+        }
+    except jwt.PyJWTError as e:
         raise ValueError(f"Invalid token: {str(e)}") from e

@@ -27,7 +27,7 @@ This document serves as the single source of truth for the complete technology s
 
 **Integration**
 
-- **Auth & Backend**: `Firebase JS SDK` (`v12.8.0`)
+- **Auth & Backend**: `Supabase JS SDK` (`v2.39`)
 - **Date Handling**: `date-fns`
 
 **Testing**
@@ -56,7 +56,7 @@ This document serves as the single source of truth for the complete technology s
 
 - **Data Validation**: `Pydantic V2` (`v2.12.5`)
 - **Configuration**: `Pydantic Settings`
-- **Authentication**: `Firebase Admin SDK` (`v6.5.0`)
+- **Authentication**: `Supabase Auth` (JWT)
 - **Rate Limiting**: `SlowAPI`
 
 **Observability**
@@ -92,7 +92,7 @@ This document serves as the single source of truth for the complete technology s
 **Containers & Services**
 
 - **Containerization**: `Docker`
-- **Primary Database**: `PostgreSQL 18.2`
+- **Primary Database**: `PostgreSQL 18.2` (Supabase)
 - **Key-Value Store**: `Redis 8.0`
 - **Reverse Proxy**: `Caddy Web Server`
 
@@ -107,6 +107,6 @@ This document serves as the single source of truth for the complete technology s
 
 ## 🔒 Security Standards
 
-- **Hashing**: `RS256` (Firebase Auth)
+- **Hashing**: `HS256` (Supabase JWT)
 - **Encryption**: TLS 1.3 (Caddy)
 - **Secret Management**: `.env` (Local) / Docker Secrets (Prod)

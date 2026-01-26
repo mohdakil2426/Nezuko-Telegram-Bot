@@ -52,18 +52,18 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 ### Phase B: The Admin API (Intelligence) ✅
 
 - [x] **FastAPI REST Backbone**: Pydantic V2 validated endpoints.
-- [x] **Firebase Auth Integration**: Industry-standard secure identity.
+- [x] **Supabase Auth Integration**: Industry-standard secure identity (JWT).
 - [x] **RBAC Management**: Owner, Admin, and Viewer roles with granular scoping.
 - [x] **Audit Logging System**: Immutable record of every administrative action.
-- [x] **Database-Agnostic Models**: SQLite for dev, PostgreSQL for production.
+- [x] **Database-Agnostic Models**: Supabase Postgres for all environments.
 
 ### Phase C: Dashboard & Analytics (Visualization) ✅
 
 - [x] **Next.js 16 Web Interface**: Server Components and Streaming.
-- [x] **Real-Time Log Streamer**: WebSocket-free logs via Firebase RTDB.
+- [x] **Supabase Realtime Streams**: Live logs via `postgres_changes`.
 - [x] **Verification Analytics**: Recharts-driven growth and conversion visualization.
 - [x] **Database Browser**: Direct inspection of system state from the UI.
-- [x] **Firebase Authentication Flow**: Login, sync, and session management.
+- [x] **Supabase Authentication Flow**: Login, sync, and session management.
 
 ### Phase D: Advanced Management (Configuration) 🚧
 
@@ -89,7 +89,7 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 | **API Latency (p90)** | <50ms    | ✅ Achieved         |
 | **Pylint Score**      | 10.00/10 | ✅ Achieved         |
 | **Pyrefly Errors**    | 0        | ✅ Zero Errors      |
-| **Firebase Auth**     | Working  | ✅ Verified         |
+| **Supabase Auth**     | Working  | ✅ Integrated       |
 | **Local Dev Setup**   | <5 min   | ✅ Achieved         |
 
 ---
@@ -105,7 +105,7 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 ## 🔐 Compliance & Security
 
 - **OWASP 2025 Standard**: Strict adherence to web security practices.
-- **Data Privacy**: Minimalistic data collection (Telegram IDs + Firebase metadata only).
+- **Data Privacy**: Minimalistic data collection (Telegram IDs + Supabase Metadata only).
 - **Encryption**: TLS 1.3 in transit, SCRAM-SHA-256 for Postgres at rest.
 
 ---
@@ -135,14 +135,13 @@ Beyond channel enforcement, Nezuko aims to become a full-service AI community mo
 ```bash
 # API
 cd apps/api
-python init_db.py
 python -m uvicorn src.main:app --port 8080 --reload
 
 # Web
 cd apps/web
 bun dev
 
-# Login: admin@nezuko.bot / ChangeMe123!
+# Login: admin@nezuko.bot (Supabase Auth)
 ```
 
 ### Key Files
@@ -152,10 +151,10 @@ bun dev
 | DB Initialization | `apps/api/init_db.py`                          |
 | Database Config   | `apps/api/src/core/database.py`                |
 | Auth Service      | `apps/api/src/services/auth_service.py`        |
-| Firebase Client   | `apps/web/src/lib/firebase.ts`                 |
+| Supabase Client   | `apps/web/src/lib/supabase/client.ts`          |
 | Login Form        | `apps/web/src/components/forms/login-form.tsx` |
 
 ---
 
 **End of Brief**
-_(Updated 2026-01-26 with Firebase auth verification and quick reference)_
+_(Updated 2026-01-26 with Supabase migration details)_

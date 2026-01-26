@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { db } from "@/lib/firebase";
-import { ref, query, limitToLast, onChildAdded, onValue } from "firebase/database";
+import { supabase } from "@/lib/supabase/client";
 
 interface LogEntry {
     timestamp: string;
@@ -24,33 +23,38 @@ export function useLogStream() {
     }, [isPaused]);
 
     useEffect(() => {
-        // Listen for connection status
-        const connectedRef = ref(db, ".info/connected");
-        const unsubConnected = onValue(connectedRef, (snap) => {
-            setIsConnected(!!snap.val());
-        });
+        // Subscribe to real-time logs from Postgres
+        const channel = supabase
+            .channel("realtime:admin_logs")
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "admin_logs",
+                },
+                (payload) => {
+                    if (isPausedRef.current) return;
 
-        // Listen for logs
-        const logsRef = query(ref(db, "logs"), limitToLast(100));
-        
-        const unsubscribe = onChildAdded(logsRef, (snapshot) => {
-            if (isPausedRef.current) return;
-
-            const data = snapshot.val();
-            if (data) {
-                setLogs((prev) => {
-                    const newLogs = [...prev, data];
-                    if (newLogs.length > 1000) {
-                        return newLogs.slice(newLogs.length - 1000);
+                    const newLog = payload.new as unknown as LogEntry;
+                    if (newLog) {
+                        setLogs((prev) => {
+                            const newLogs = [...prev, newLog];
+                            if (newLogs.length > 1000) {
+                                return newLogs.slice(newLogs.length - 1000);
+                            }
+                            return newLogs;
+                        });
                     }
-                    return newLogs;
-                });
-            }
-        });
+                }
+            )
+            .subscribe((status) => {
+                setIsConnected(status === "SUBSCRIBED");
+            });
 
         return () => {
-            unsubscribe();
-            unsubConnected();
+            supabase.removeChannel(channel);
+            setIsConnected(false);
         };
     }, []);
 

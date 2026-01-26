@@ -1,84 +1,64 @@
-# Active Context: Phase 13.6 - Full Implementation & Testing
+# Active Context: Phase 14 - Supabase Migration & Verification
 
 ## 🎯 Current Focus
 
-**All services now running locally with real data!** Bot, API, and Web are integrated and working with SQLite database.
+**Migration to Supabase is Code-Complete.** The primary focus is now verifying the end-to-end functionality, specifically authentication and real-time logs, using the new Supabase infrastructure.
 
-### Recent Accomplishments (2026-01-26 Session 4)
+### Recent Accomplishments (Supabase Migration)
 
-1. **Bot Now Runs Locally** ✅:
-   - Changed `.env` DATABASE_URL from PostgreSQL to SQLite
-   - Bot successfully starts with `python -m bot.main`
-   - Database tables: `owners`, `protected_groups`, `enforced_channels`, `group_channel_links`
+1.  **Frontend Migration (`apps/web`)** ✅:
+    -   Replaced Firebase Auth with **Supabase Auth** (`AuthProvider`, `login-form.tsx`).
+    -   Implemented **Supabase Realtime** for logs (`useLogStream`), replacing Firebase RTDB.
+    -   Updated API client to use Supabase JWTs (`supabase.auth.getSession()`).
+    -   Removed all Firebase SDK dependencies.
 
-2. **Database Browser - Real Data** ✅:
-   - Fixed response unwrapping: `tables?.data?.tables` instead of `tables?.tables`
-   - Shows all 8 real database tables
-   - Table detail view working with column info and data rows
-   - Example: `admin_audit_log` shows 13 real audit entries
+2.  **Backend Migration (`apps/api`)** ✅:
+    -   Replaced Firebase Token Verification with **Supabase JWT Verification**.
+    -   Updated `auth` endpoints to sync with Supabase User IDs.
+    -   Applied Alembic migrations to Supabase Postgres instance (`admin_logs` table created).
+    -   Switched `DATABASE_URL` to Supabase Postgres (`postgresql+asyncpg`).
 
-3. **Security Fixes** ✅:
-   - Added `validate_table_name()` to prevent SQL injection in `db_service.py`
-   - Regex validation: `^[a-zA-Z_][a-zA-Z0-9_]*$`
+3.  **Bot Migration (`bot`)** ✅:
+    -   Implemented Direct Postgres Logging for `admin_logs` (replaces Firebase RTDB push).
+    -   Updated configuration to use SupabaseDB.
 
-4. **Pagination Fixes** ✅:
-   - Channels page: Changed `|| -1` to `?? 1` to prevent infinite scrolling
-   - Table detail page: Fixed undefined access with optional chaining
-
-5. **Navigation Fixes** ✅:
-   - Table detail back link: `/database` → `/dashboard/database`
+4.  **Configuration** ✅:
+    -   Consolidated `.env` management.
+    -   Added `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_JWT_SECRET`.
+    -   Removed Firebase service accounts and private keys.
 
 ---
 
 ## ⚡ Current Running Services
 
-| Service | Command | Status | Port |
-|---------|---------|--------|------|
-| **API** | `python -m uvicorn src.main:app --port 8080` | ✅ Running | 8080 |
-| **Web** | `bun dev` | ✅ Running | 3000 |
-| **Bot** | `python -m bot.main` | ✅ Running | - |
-
-### Database Tables (Real Data)
-
-| Table | Rows | Description |
-|-------|------|-------------|
-| `admin_users` | 1 | Admin panel users |
-| `admin_audit_log` | 13+ | Audit trail entries |
-| `admin_sessions` | 0 | User sessions |
-| `admin_config` | 0 | Configuration entries |
-| `owners` | 0 | Bot owner accounts |
-| `protected_groups` | 0 | Protected Telegram groups |
-| `enforced_channels` | 0 | Enforced channels |
-| `group_channel_links` | 0 | Group-channel mappings |
+| Service | Command | Status | Port | Note |
+|---------|---------|--------|------|------|
+| **API** | `python -m uvicorn src.main:app...` | ✅ Running | 8080 | Connected to Supabase DB |
+| **Web** | `bun dev` | ✅ Running | 3000 | Auth via Supabase |
+| **Bot** | `python -m bot.main` | ✅ Running | - | Logging to Supabase |
 
 ---
 
 ## 🚧 Remaining Items
 
-### Analytics Data (Still Mock)
-The analytics service (`analytics_service.py`) still generates mock data patterns. To convert to real:
-- Create `verification_logs` table to track verify events
-- Query real counts from `protected_groups`, `enforced_channels`
+### Verification Tasks
+- [ ] **Auth Verification**: Login as `admin@nezuko.bot` (User needs to be created in Supabase Dashboard).
+- [ ] **Real-time Logs**: Verify `admin_logs` appear in the "Logs" page via Supabase Realtime subscription.
+- [ ] **End-to-End Test**: Verify full flow (Bot Action -> Postgres Insert -> Web UI Update).
 
-### Minor Issues
-- [ ] Bot callback error: `AttributeError: 'CallbackQuery' object has no attribute 'bot'` in help.py:281
-- [ ] Config page shows error when no config exists (expected behavior)
-- [ ] Logs page shows "Disconnected" - requires Firebase RTDB + running bot
+### Cleanup
+- [ ] Manual deletion of any lingering `firebase.json` or legacy config files.
 
 ---
 
-## ✅ Testing Summary
+## ✅ Testing Summary (Supabase)
 
-| Page | Status | Notes |
-|------|--------|-------|
-| Login | ✅ Working | Firebase auth |
-| Dashboard | ✅ Working | Stats from API |
-| Groups | ✅ Working | Empty - no data yet |
-| Channels | ✅ Working | Empty - no data yet |
-| Config | ⚠️ Expected | Shows error when empty |
-| Logs | ✅ Working | Shows "Disconnected" |
-| Database | ✅ Working | Real tables & data |
-| Analytics | ✅ Working | Mock data visualized |
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Login** | ⏳ Pending | Waiting for user creation in Supabase |
+| **Dashboard** | ⏳ Pending | Needs authenticated session |
+| **Database** | ✅ Configured | Pointing to Supabase Postgres |
+| **Logs** | ⏳ Pending | Verify Realtime subscription |
 
 ---
 
@@ -86,9 +66,9 @@ The analytics service (`analytics_service.py`) still generates mock data pattern
 
 | File | Changes |
 |------|---------|
-| `.env` | DATABASE_URL → SQLite |
-| `apps/api/src/services/db_service.py` | SQL injection protection |
-| `apps/api/src/services/channel_service.py` | Response format fix |
-| `apps/web/src/components/tables/channels-table.tsx` | Pagination fix |
-| `apps/web/src/app/dashboard/database/page.tsx` | Data unwrapping fix |
-| `apps/web/src/app/dashboard/database/[table]/page.tsx` | Data unwrapping + back link fix |
+| `apps/web/src/lib/hooks/use-log-stream.ts` | Firebase listener -> Supabase Realtime |
+| `apps/web/src/lib/api/client.ts` | Firebase ID Token -> Supabase JWT |
+| `apps/web/src/providers/auth-provider.tsx` | `onAuthStateChanged` -> `supabase.auth` |
+| `apps/api/src/core/security.py` | `verify_firebase_token` -> `verify_jwt` |
+| `bot/utils/postgres_logging.py` | New direct logging to Postgres |
+| `.env` / `.env.local` | Replaced Firebase vars with Supabase vars |

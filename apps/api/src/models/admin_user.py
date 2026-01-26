@@ -18,7 +18,7 @@ class AdminUser(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     # Auth Provider ID
-    firebase_uid: Mapped[str | None] = mapped_column(String(36), unique=True, nullable=True)
+    supabase_uid: Mapped[str | None] = mapped_column(String(36), unique=True, nullable=True)
 
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     # Password hash is now optional as Supabase handles auth
