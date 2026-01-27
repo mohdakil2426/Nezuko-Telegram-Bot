@@ -83,7 +83,8 @@ coverage.xml
 .mypy_cache/
 
 # Secrets (never commit!)
-.env
+/.env
+.env.backup-*
 *.pem
 *.key
 

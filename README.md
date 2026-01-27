@@ -220,19 +220,48 @@ python -m bot.main
 
 ## Configuration
 
-Copy `.env.example` to `.env` and configure:
+### Environment Setup
 
+Each app has its own environment file following Turborepo best practices:
+
+#### 1. **Web Dashboard**: `apps/web/.env.local`
 ```bash
-# Required
-BOT_TOKEN=your_bot_token_from_botfather
-
-# Optional (with defaults)
-ENVIRONMENT=development                           # development | production
-DATABASE_URL=sqlite+aiosqlite:///./nezuko.db     # PostgreSQL for production
-REDIS_URL=redis://localhost:6379/0               # Optional caching layer
-WEBHOOK_URL=https://your-domain.com              # For webhook mode
-SENTRY_DSN=your_sentry_dsn                       # Error tracking
+cd apps/web
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
 ```
+
+Required variables:
+- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon/public key
+- `NEXT_PUBLIC_API_URL` - API backend URL (default: http://localhost:8080/api/v1)
+
+#### 2. **API Backend**: `apps/api/.env`
+```bash
+cd apps/api
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+Required variables:
+- `DATABASE_URL` - PostgreSQL connection string
+- `SUPABASE_URL` - Your Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (for admin operations)
+- `REDIS_URL` - Redis connection string
+
+#### 3. **Telegram Bot**: `apps/bot/.env`
+```bash
+cd apps/bot
+cp .env.example .env
+# Edit .env with your bot token
+```
+
+Required variables:
+- `BOT_TOKEN` - Get this from @BotFather on Telegram
+- `DATABASE_URL` - PostgreSQL connection string (use `postgresql+asyncpg://` driver)
+- `REDIS_URL` - Redis for caching (optional, graceful degradation if unavailable)
+
+> **Note**: Root `.env.example` documents all variables for reference, but actual values should be in per-app `.env` files.
 
 <details>
 <summary><b>All Environment Variables</b></summary>
