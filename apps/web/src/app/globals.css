@@ -1,8 +1,123 @@
 @import "tailwindcss";
+@import "tw-animate-css"; /* Required for shadcn/ui animations */
 
-/* Tailwind CSS 4 theme configuration using @theme directive */
+/* ============================================
+   STEP 1: CSS Variables at Root Level
+   (NOT inside @layer base - causes cascade issues)
+   ============================================ */
+
+:root {
+  /* Light mode colors - hsl() wrapper required */
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(222.2 84% 4.9%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(222.2 84% 4.9%);
+
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(222.2 84% 4.9%);
+
+  --primary: hsl(265 83% 55%);
+  --primary-foreground: hsl(210 40% 98%);
+
+  --secondary: hsl(265 20% 96%);
+  --secondary-foreground: hsl(265 47% 11%);
+
+  --muted: hsl(265 20% 96%);
+  --muted-foreground: hsl(265 16% 46%);
+
+  --accent: hsl(265 20% 96%);
+  --accent-foreground: hsl(265 47% 11%);
+
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(210 40% 98%);
+
+  --border: hsl(265 20% 90%);
+  --input: hsl(265 20% 90%);
+  --ring: hsl(265 83% 55%);
+
+  --radius: 0.5rem;
+
+  /* Custom semantic colors (light) */
+  --success: hsl(145 70% 45%);
+  --warning: hsl(45 85% 55%);
+  --error: hsl(0 75% 55%);
+  --info: hsl(220 80% 55%);
+}
+
+.dark {
+  /* Dark mode colors - Deep purple/indigo palette */
+  --background: hsl(265 30% 6%);
+  --foreground: hsl(210 40% 98%);
+
+  --card: hsl(265 30% 8%);
+  --card-foreground: hsl(210 40% 98%);
+
+  --popover: hsl(265 30% 8%);
+  --popover-foreground: hsl(210 40% 98%);
+
+  --primary: hsl(265 83% 65%);
+  --primary-foreground: hsl(210 40% 98%);
+
+  --secondary: hsl(265 20% 12%);
+  --secondary-foreground: hsl(210 40% 98%);
+
+  --muted: hsl(265 20% 12%);
+  --muted-foreground: hsl(265 20% 65%);
+
+  --accent: hsl(265 20% 15%);
+  --accent-foreground: hsl(210 40% 98%);
+
+  --destructive: hsl(0 62% 55%);
+  --destructive-foreground: hsl(210 40% 98%);
+
+  --border: hsl(265 20% 18%);
+  --input: hsl(265 20% 18%);
+  --ring: hsl(265 83% 65%);
+
+  /* Custom semantic colors (dark) */
+  --success: hsl(145 70% 50%);
+  --warning: hsl(45 85% 60%);
+  --error: hsl(0 75% 60%);
+  --info: hsl(220 80% 60%);
+}
+
+/* ============================================
+   STEP 2: Map Variables to Tailwind Utilities
+   using @theme directive
+   ============================================ */
+
 @theme {
-  /* Primary colors - Purple/Indigo palette (oklch for P3 wide gamut) */
+  /* Core shadcn/ui color mappings */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Extended palette using OKLCH (P3 wide gamut) */
   --color-primary-50: oklch(0.97 0.02 265);
   --color-primary-100: oklch(0.94 0.05 265);
   --color-primary-200: oklch(0.89 0.1 265);
@@ -16,77 +131,58 @@
   --color-primary-950: oklch(0.18 0.06 265);
 
   /* Semantic colors */
-  --color-success: oklch(0.65 0.2 145);
-  --color-warning: oklch(0.75 0.18 70);
-  --color-error: oklch(0.6 0.25 25);
-  --color-info: oklch(0.6 0.2 250);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
 
-  /* Background colors for dark mode */
-  --color-background: oklch(0.1 0.01 265);
+  /* Surface colors for dark mode cards/panels */
   --color-surface: oklch(0.15 0.01 265);
   --color-surface-hover: oklch(0.18 0.01 265);
 
-  /* Shadcn/UI Compatibility Mappings */
-  --color-foreground: oklch(0.98 0 0);
-
-  --color-primary: oklch(0.55 0.25 265);
-  --color-primary-foreground: oklch(0.98 0 0);
-
-  --color-secondary: oklch(0.18 0.01 265);
-  --color-secondary-foreground: oklch(0.98 0 0);
-
-  --color-muted: oklch(0.18 0.01 265);
-  --color-muted-foreground: oklch(0.7 0.01 265);
-
-  --color-accent: oklch(0.18 0.01 265);
-  --color-accent-foreground: oklch(0.98 0 0);
-
-  --color-destructive: oklch(0.6 0.25 25);
-  --color-destructive-foreground: oklch(0.98 0 0);
-
-  --color-card: oklch(0.12 0.01 265);
-  --color-card-foreground: oklch(0.98 0 0);
-
-  --color-popover: oklch(0.12 0.01 265);
-  --color-popover-foreground: oklch(0.98 0 0);
-
-  --color-input: oklch(0.25 0.01 265);
-  --color-ring: oklch(0.55 0.25 265);
-
-  --radius: 0.5rem;
-
-  /* Text colors */
+  /* Text hierarchy */
   --color-text-primary: oklch(0.95 0.01 265);
   --color-text-secondary: oklch(0.7 0.01 265);
   --color-text-tertiary: oklch(0.5 0.01 265);
 
-  /* Border colors */
-  --color-border: oklch(0.25 0.01 265);
+  /* Border variants */
   --color-border-hover: oklch(0.35 0.02 265);
+
+  /* Radius */
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 
   /* Typography */
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
-
-  /* Spacing (already in Tailwind 4, but can customize) */
-  /* Shadows (can add custom shadows here) */
 }
 
-/* Base layer */
+/* ============================================
+   STEP 3: Apply Base Styles
+   Reference variables directly (NO hsl() wrapper)
+   ============================================ */
+
 @layer base {
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
   }
 }
 
-/* Utilities layer */
+/* ============================================
+   Custom Utilities Layer
+   ============================================ */
+
 @layer utilities {
   /* Hide scrollbar but keep functionality */
   .scrollbar-hide {
@@ -104,14 +200,31 @@
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
+
+  /* Dark glassmorphism */
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    background: linear-gradient(135deg, var(--primary) 0%, oklch(0.65 0.25 280) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
 
-/* View Transitions API (React 19 feature) */
+/* ============================================
+   View Transitions API (React 19)
+   ============================================ */
+
 @view-transition {
   navigation: auto;
 }
 
-/* Customize view transition animations */
 ::view-transition-old(root) {
   animation: fade-out 150ms ease-out;
 }
