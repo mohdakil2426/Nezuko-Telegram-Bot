@@ -1,6 +1,7 @@
 "use client";
 
-import { notFound, useParams, useRouter } from "next/navigation";
+import { use } from "react";
+import { notFound, useRouter } from "next/navigation";
 import { useChannel } from "@/lib/hooks/use-channels";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,10 +19,14 @@ import {
     TableRow,
 } from "@/components/ui/table";
 
-export default function ChannelDetailsPage() {
-    const params = useParams();
+export default function ChannelDetailsPage({
+    params,
+}: {
+    params: Promise<{ id: string }>;
+}) {
+    const { id: idParam } = use(params);
     const router = useRouter();
-    const id = Number(params.id);
+    const id = Number(idParam);
 
     const { data: response, isLoading, isError } = useChannel(id);
     const channel = response?.data;

@@ -1,5 +1,6 @@
 "use client";
 
+import { use, useState, useMemo } from "react";
 import { useTableData } from "@/lib/hooks/use-database";
 import { DataTable } from "@/components/tables/data-table";
 import { ColumnDef } from "@tanstack/react-table";
@@ -8,8 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Download, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useState, useMemo } from "react";
 import { EditRowModal } from "@/components/database/edit-row-modal";
 import { DeleteConfirmDialog } from "@/components/database/delete-confirm-dialog";
 
@@ -35,9 +34,12 @@ interface ColumnInfo {
     nullable: boolean;
 }
 
-export default function TableDataPage() {
-    const params = useParams();
-    const table_name = params.table as string;
+export default function TableDataPage({
+    params,
+}: {
+    params: Promise<{ table: string }>;
+}) {
+    const { table: table_name } = use(params);
 
     // Pagination state
     const [page, setPage] = useState(1);

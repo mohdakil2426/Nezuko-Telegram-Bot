@@ -4,8 +4,12 @@ const nextConfig: NextConfig = {
   // Enable gzip compression
   compress: true,
 
-  // React compiler (experimental in Next.js 16)
+  // Disable source maps in production for security (CVE-2025-55183)
+  productionBrowserSourceMaps: false,
+
+  // Experimental optimizations
   experimental: {
+
     // CRITICAL: Optimize barrel file imports for faster dev boot (15-70%) and cold starts (40%)
     // Rule: bundle-barrel-imports - Avoid loading entire libraries when only a few exports are needed
     optimizePackageImports: [

@@ -6,7 +6,11 @@ import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { Toaster } from "@/components/ui/toaster";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+    subsets: ["latin"],
+    variable: "--font-inter",
+    display: "swap",
+});
 
 export const metadata: Metadata = {
     title: "Nezuko Admin Panel",
@@ -19,7 +23,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang="en" className={inter.variable} suppressHydrationWarning>
             <body className={inter.className}>
                 <ThemeProvider
                     attribute="class"

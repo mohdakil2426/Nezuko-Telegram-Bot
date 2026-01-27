@@ -473,5 +473,137 @@ python -m pyrefly check
 
 ---
 
+## 🚫 Next.js 16 Anti-Patterns (CRITICAL)
+
+> ⚠️ **Added 2026-01-27** - Common mistakes when migrating to Next.js 16.
+
+### 1. Dynamic Route Parameters
+
+```tsx
+// ❌ FORBIDDEN - useParams() is deprecated in Next.js 16
+"use client";
+import { useParams } from "next/navigation";
+
+export default function Page() {
+    const params = useParams();  // ❌ Deprecated
+    const id = params.id;
+}
+
+// ✅ CORRECT - Use Promise params with use() hook
+"use client";
+import { use } from "react";
+
+export default function Page({
+    params,
+}: {
+    params: Promise<{ id: string }>;  // ✅ Promise type
+}) {
+    const { id } = use(params);  // ✅ Unwrap with use()
+}
+```
+
+### 2. Font Configuration
+
+```tsx
+// ❌ FORBIDDEN - Missing variable prop
+const inter = Inter({ subsets: ["latin"] });
+<html className={inter.className}>
+
+// ✅ CORRECT - Add variable for CSS access
+const inter = Inter({ 
+    subsets: ["latin"],
+    variable: "--font-inter",  // ✅ CSS variable
+    display: "swap",           // ✅ Better loading
+});
+<html className={inter.variable}>
+```
+
+### 3. Async Server APIs
+
+```tsx
+// ❌ FORBIDDEN - Sync cookies() in Next.js 16
+import { cookies } from "next/headers";
+const cookieStore = cookies();  // ❌ Now returns Promise!
+
+// ✅ CORRECT - Await the cookies
+const cookieStore = await cookies();  // ✅ Must await
+```
+
+### 4. Middleware Migration
+
+```tsx
+// ❌ FORBIDDEN - middleware.ts is deprecated in Next.js 16
+// apps/web/src/middleware.ts  ❌ DELETE THIS FILE
+
+// ✅ CORRECT - Use proxy.ts instead
+// apps/web/src/proxy.ts  ✅ New pattern
+export async function proxy(request: NextRequest) {
+    return await updateSession(request);
+}
+```
+
+### 5. Missing Loading States
+
+```tsx
+// ❌ FORBIDDEN - No loading.tsx files
+// Users see blank pages during route transitions
+
+// ✅ CORRECT - Add loading.tsx for each route group
+// apps/web/src/app/loading.tsx
+// apps/web/src/app/dashboard/loading.tsx
+export default function Loading() {
+    return <SkeletonLoader />;
+}
+```
+
+### 6. Production Source Maps
+
+```tsx
+// ❌ FORBIDDEN - Exposes source code (CVE-2025-55183)
+const nextConfig: NextConfig = {
+    // productionBrowserSourceMaps defaults to false, but explicitly set
+};
+
+// ✅ CORRECT - Explicitly disable for security
+const nextConfig: NextConfig = {
+    productionBrowserSourceMaps: false,  // ✅ Security fix
+};
+```
+
+### 7. Tailwind v4 CSS Syntax
+
+```css
+/* ❌ FORBIDDEN - Using tailwind.config.js with v4 */
+/* Tailwind v4 uses @theme directive in CSS */
+
+/* ✅ CORRECT - Use @theme in globals.css */
+@import "tailwindcss";
+
+@theme {
+    --color-primary-500: oklch(0.55 0.25 265);  /* ✅ oklch colors */
+}
+
+/* ⚠️ NOTE: VS Code CSS linter shows false positives */
+/* Add to .vscode/settings.json: */
+/* { "css.validate": false, "files.associations": { "*.css": "tailwindcss" } } */
+```
+
+### 8. React Compiler Configuration
+
+```tsx
+// ❌ FORBIDDEN - reactCompiler in next.config.ts (TypeScript types lag)
+const nextConfig: NextConfig = {
+    experimental: {
+        reactCompiler: true,  // ❌ Type error in Next.js 16.1.4
+    }
+};
+
+// ✅ CORRECT - Install babel plugin instead
+// package.json: "babel-plugin-react-compiler": "^19.1.0"
+// React Compiler works automatically without next.config option
+```
+
+---
+
 **This document is the authoritative guide for all system implementations.**
-**Updated 2026-01-26 - Auth fix: @supabase/ssr@0.8.0, proxy.ts migration.**
+**Updated 2026-01-27 - Added Next.js 16 anti-patterns from skill-based audit.**
