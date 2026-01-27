@@ -113,3 +113,6 @@ apps/api/alembic/versions/*.pyc
 # TypeScript
 *.tsbuildinfo
 .tsbuildinfo
+
+# Storage folder (runtime files - Phase 1 refactoring)
+/storage/
