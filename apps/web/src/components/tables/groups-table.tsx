@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
     ColumnDef,
@@ -45,7 +45,9 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
         sort_order: sorting[0]?.desc ? "desc" : "asc",
     });
 
-    const columns: ColumnDef<Group>[] = [
+    // Rule: rerender-memo-with-default-value - Memoize columns definition
+    // Columns only change when router changes, preventing recreation on every render
+    const columns: ColumnDef<Group>[] = useMemo(() => [
         {
             accessorKey: "title",
             header: "Group",
@@ -66,7 +68,7 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
         {
             accessorKey: "linked_channels_count",
             header: "Channels",
-            cell: ({ row }: { row: { getValue: (key: string) => any } }) => (
+            cell: ({ row }: { row: { getValue: (key: string) => number } }) => (
                 <div className="text-center w-16">
                     <Badge variant="outline" className="border-border">
                         {row.getValue("linked_channels_count")}
@@ -77,7 +79,7 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
         {
             accessorKey: "member_count",
             header: "Members",
-            cell: ({ row }: { row: { getValue: (key: string) => any } }) => (
+            cell: ({ row }: { row: { getValue: (key: string) => number } }) => (
                 <div className="font-medium">
                     {new Intl.NumberFormat("en-US").format(row.getValue("member_count"))}
                 </div>
@@ -86,7 +88,7 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
         {
             accessorKey: "enabled",
             header: "Status",
-            cell: ({ row }: { row: { getValue: (key: string) => any } }) => {
+            cell: ({ row }: { row: { getValue: (key: string) => boolean } }) => {
                 const isActive = row.getValue("enabled");
                 return (
                     <Badge
@@ -105,7 +107,7 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
         {
             accessorKey: "created_at",
             header: "Created",
-            cell: ({ row }: { row: { getValue: (key: string) => any } }) => {
+            cell: ({ row }: { row: { getValue: (key: string) => string } }) => {
                 return (
                     <span className="text-text-secondary text-sm">
                         {formatDistanceToNow(new Date(row.getValue("created_at")), {
@@ -153,7 +155,12 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
                 );
             },
         },
-    ];
+    ], [router]);
+
+    // Rule: rerender-functional-setstate - Stable callback reference
+    const handleRowClick = useCallback((row: Group) => {
+        router.push(`/dashboard/groups/${row.group_id}`);
+    }, [router]);
 
     return (
         <DataTable
@@ -165,7 +172,8 @@ export function GroupsTable({ search, status }: GroupsTableProps) {
             sorting={sorting}
             onSortingChange={setSorting}
             isLoading={isLoading}
-            onRowClick={(row) => router.push(`/dashboard/groups/${row.group_id}`)}
+            onRowClick={handleRowClick}
         />
     );
 }
+

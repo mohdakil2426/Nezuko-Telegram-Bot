@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWebSocketLogs } from "@/lib/hooks/use-websocket-logs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,47 +20,49 @@ interface LogEntry {
     extra?: Record<string, unknown>;
 }
 
-const LogLevelBadge = ({ level }: { level: string }) => {
-    const colors: Record<string, string> = {
-        DEBUG: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
-        INFO: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
-        WARNING: "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20",
-        ERROR: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
-        CRITICAL: "bg-red-900/10 text-red-900 hover:bg-red-900/20",
-    };
+// Rule: rendering-hoist-jsx - Hoist static color maps outside component
+const LOG_LEVEL_COLORS: Record<string, string> = {
+    DEBUG: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
+    INFO: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
+    WARNING: "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20",
+    ERROR: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
+    CRITICAL: "bg-red-900/10 text-red-900 hover:bg-red-900/20",
+} as const;
 
+const STATUS_CONFIG = {
+    connected: {
+        color: "border-success/30 bg-success/10 text-success",
+        icon: <Wifi className="h-3 w-3" />,
+        label: "Live"
+    },
+    connecting: {
+        color: "border-yellow-500/30 bg-yellow-500/10 text-yellow-500",
+        icon: <RefreshCw className="h-3 w-3 animate-spin" />,
+        label: "Connecting"
+    },
+    reconnecting: {
+        color: "border-yellow-500/30 bg-yellow-500/10 text-yellow-500",
+        icon: <RefreshCw className="h-3 w-3 animate-spin" />,
+        label: "Reconnecting"
+    },
+    disconnected: {
+        color: "border-error/30 bg-error/10 text-error",
+        icon: <WifiOff className="h-3 w-3" />,
+        label: "Disconnected"
+    },
+} as const;
+
+// Rule: rerender-memoed-component-with-primitives - Memoize components with primitive props
+const LogLevelBadge = memo(function LogLevelBadge({ level }: { level: string }) {
     return (
-        <Badge variant="outline" className={cn("w-16 justify-center font-mono text-xs", colors[level] || "bg-gray-500/10")}>
+        <Badge variant="outline" className={cn("w-16 justify-center font-mono text-xs", LOG_LEVEL_COLORS[level] || "bg-gray-500/10")}>
             {level}
         </Badge>
     );
-};
+});
 
-const ConnectionStatusBadge = ({ status }: { status: string }) => {
-    const statusConfig: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
-        connected: {
-            color: "border-success/30 bg-success/10 text-success",
-            icon: <Wifi className="h-3 w-3" />,
-            label: "Live"
-        },
-        connecting: {
-            color: "border-yellow-500/30 bg-yellow-500/10 text-yellow-500",
-            icon: <RefreshCw className="h-3 w-3 animate-spin" />,
-            label: "Connecting"
-        },
-        reconnecting: {
-            color: "border-yellow-500/30 bg-yellow-500/10 text-yellow-500",
-            icon: <RefreshCw className="h-3 w-3 animate-spin" />,
-            label: "Reconnecting"
-        },
-        disconnected: {
-            color: "border-error/30 bg-error/10 text-error",
-            icon: <WifiOff className="h-3 w-3" />,
-            label: "Disconnected"
-        },
-    };
-
-    const config = statusConfig[status] || statusConfig.disconnected;
+const ConnectionStatusBadge = memo(function ConnectionStatusBadge({ status }: { status: string }) {
+    const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.disconnected;
 
     return (
         <Badge variant="outline" className={cn("gap-1.5", config.color)}>
@@ -68,7 +70,36 @@ const ConnectionStatusBadge = ({ status }: { status: string }) => {
             {config.label}
         </Badge>
     );
-};
+});
+
+// Rule: rerender-memoed-component-with-primitives - Memoize log entry row
+const LogEntryRow = memo(function LogEntryRow({ log }: { log: LogEntry }) {
+    return (
+        <div 
+            className="group flex items-start gap-3 rounded-md p-1 hover:bg-muted/50 transition-colors animate-in fade-in-0 slide-in-from-bottom-1 duration-200"
+        >
+            <span className="shrink-0 text-muted-foreground w-20">
+                {new Date(log.timestamp).toLocaleTimeString()}
+            </span>
+            <LogLevelBadge level={log.level} />
+            <div className="min-w-0 flex-1 break-all">
+                <span className="font-semibold text-primary">{log.logger}:</span>{" "}
+                <span className={cn(
+                    log.level === "ERROR" || log.level === "CRITICAL" ? "text-red-500" :
+                        log.level === "WARNING" ? "text-yellow-500" :
+                            "text-foreground"
+                )}>
+                    {log.message}
+                </span>
+                {log.trace_id && (
+                    <span className="ml-2 text-muted-foreground text-xs">
+                        [trace: {log.trace_id}]
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+});
 
 export function LogViewer() {
     const { 
@@ -86,8 +117,8 @@ export function LogViewer() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [autoScroll, setAutoScroll] = useState(true);
 
-    // Transform WebSocket logs to LogEntry format
-    const logEntries: LogEntry[] = logs.map((log, index) => ({
+    // Rule: rerender-derived-state - Memoize expensive transformations
+    const logEntries = useMemo(() => logs.map((log, index) => ({
         id: log.id || `log-${index}`,
         timestamp: log.timestamp,
         level: log.level,
@@ -95,14 +126,17 @@ export function LogViewer() {
         logger: log.logger,
         trace_id: log.trace_id,
         extra: log.extra,
-    }));
+    })), [logs]);
 
-    // Filter logs
-    const filteredLogs = logEntries.filter((log) => {
-        if (levelFilter && levelFilter !== "ALL" && log.level !== levelFilter) return false;
-        if (search && !log.message.toLowerCase().includes(search.toLowerCase()) && !log.logger.toLowerCase().includes(search.toLowerCase())) return false;
-        return true;
-    });
+    // Rule: rerender-derived-state - Memoize filtered results
+    const filteredLogs = useMemo(() => {
+        const searchLower = search.toLowerCase();
+        return logEntries.filter((log) => {
+            if (levelFilter && levelFilter !== "ALL" && log.level !== levelFilter) return false;
+            if (search && !log.message.toLowerCase().includes(searchLower) && !log.logger.toLowerCase().includes(searchLower)) return false;
+            return true;
+        });
+    }, [logEntries, levelFilter, search]);
 
     // Auto-scroll logic
     useEffect(() => {
@@ -114,13 +148,15 @@ export function LogViewer() {
         }
     }, [filteredLogs, autoScroll]);
 
-    const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    // Rule: rerender-functional-setstate - Stable callback reference
+    const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
         const target = event.target as HTMLDivElement;
         const isBottom = Math.abs(target.scrollHeight - target.scrollTop - target.clientHeight) < 50;
         setAutoScroll(isBottom);
-    };
+    }, []);
 
-    const downloadLogs = () => {
+    // Rule: rerender-functional-setstate - Stable callback reference
+    const downloadLogs = useCallback(() => {
         const blob = new Blob([JSON.stringify(filteredLogs, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -130,7 +166,13 @@ export function LogViewer() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    };
+    }, [filteredLogs]);
+
+    // Rule: rerender-functional-setstate - Stable callback reference
+    const togglePause = useCallback(() => {
+        setIsPaused(!isPaused);
+    }, [isPaused, setIsPaused]);
+
 
     return (
         <div className="flex h-[calc(100vh-12rem)] flex-col rounded-xl border bg-background shadow-sm">
@@ -173,7 +215,7 @@ export function LogViewer() {
                         variant="ghost"
                         size="icon"
                         className="h-9 w-9"
-                        onClick={() => setIsPaused(!isPaused)}
+                        onClick={togglePause}
                         title={isPaused ? "Resume" : "Pause"}
                     >
                         {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
@@ -226,30 +268,7 @@ export function LogViewer() {
                         </div>
                     ) : (
                         filteredLogs.map((log) => (
-                            <div 
-                                key={log.id} 
-                                className="group flex items-start gap-3 rounded-md p-1 hover:bg-muted/50 transition-colors animate-in fade-in-0 slide-in-from-bottom-1 duration-200"
-                            >
-                                <span className="shrink-0 text-muted-foreground w-20">
-                                    {new Date(log.timestamp).toLocaleTimeString()}
-                                </span>
-                                <LogLevelBadge level={log.level} />
-                                <div className="min-w-0 flex-1 break-all">
-                                    <span className="font-semibold text-primary">{log.logger}:</span>{" "}
-                                    <span className={cn(
-                                        log.level === "ERROR" || log.level === "CRITICAL" ? "text-red-500" :
-                                            log.level === "WARNING" ? "text-yellow-500" :
-                                                "text-foreground"
-                                    )}>
-                                        {log.message}
-                                    </span>
-                                    {log.trace_id && (
-                                        <span className="ml-2 text-muted-foreground text-xs">
-                                            [trace: {log.trace_id}]
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
+                            <LogEntryRow key={log.id} log={log} />
                         ))
                     )}
                 </div>

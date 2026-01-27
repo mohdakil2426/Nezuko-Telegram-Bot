@@ -2,12 +2,17 @@
     "name": "@nezuko/web",
     "version": "0.1.0",
     "private": true,
+    "engines": {
+        "node": ">=20.0.0",
+        "bun": ">=1.0.0"
+    },
     "scripts": {
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
         "lint": "next lint",
-        "type-check": "tsc --noEmit"
+        "type-check": "tsc --noEmit",
+        "clean": "rm -rf .next node_modules"
     },
     "dependencies": {
         "@hookform/resolvers": "^4.1.0",
@@ -42,9 +47,7 @@
         "@tailwindcss/postcss": "^4.1.18",
         "@tanstack/react-query": "^5.90.20",
         "@tanstack/react-table": "^8.21.3",
-        "@types/recharts": "^2.0.1",
         "autoprefixer": "^10.4.23",
-        "babel-plugin-react-compiler": "^1.0.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "date-fns": "^4.1.0",
@@ -69,6 +72,9 @@
         "@types/node": "^22.10.0",
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
+        "@types/react-sparklines": "^1.7.4",
+        "@types/recharts": "^2.0.1",
+        "babel-plugin-react-compiler": "^1.0.0",
         "eslint": "^9.18.0",
         "eslint-config-next": "^16.1.0",
         "tailwindcss": "^4.1.18",

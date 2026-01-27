@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "motion/react";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -15,39 +16,50 @@ import { cn } from "@/lib/utils";
 
 import { ActivityItem } from "@nezuko/types";
 
-
-export function ActivityFeed() {
-    const { data, isLoading } = useActivityFeed();
-
-    if (isLoading) {
-        return <ActivitySkeleton />;
+// Rule: rendering-hoist-jsx - Hoist helper functions outside components to prevent recreation
+// These functions are pure and have no dependencies on component state
+function getActivityIcon(type: string) {
+    switch (type) {
+        case "verification":
+            return <CheckCircle2 className="h-4 w-4" />;
+        case "protection":
+            return <Shield className="h-4 w-4" />;
+        case "user_join":
+            return <Users className="h-4 w-4" />;
+        case "error":
+            return <XCircle className="h-4 w-4" />;
+        case "alert":
+            return <AlertCircle className="h-4 w-4" />;
+        default:
+            return <Info className="h-4 w-4" />;
     }
-
-    if (!data?.items || data.items.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center p-8 text-text-secondary bg-surface rounded-xl border border-border h-full min-h-[300px]">
-                <Activity className="h-12 w-12 mb-4 opacity-20" />
-                <p>No recent activity</p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-                <Activity className="h-5 w-5 text-primary-400" />
-                Recent Activity
-            </h3>
-            <div className="space-y-2">
-                {data.items.map((item: ActivityItem, index: number) => (
-                    <ActivityItemComponent key={item.id} item={item} index={index} />
-                ))}
-            </div>
-        </div>
-    );
 }
 
-function ActivityItemComponent({ item, index }: { item: ActivityItem; index: number }) {
+function getActivityColor(type: string) {
+    switch (type) {
+        case "verification":
+            return "text-success bg-success/10 border-success/20";
+        case "protection":
+            return "text-primary-400 bg-primary-400/10 border-primary-400/20";
+        case "error":
+        case "alert":
+            return "text-error bg-error/10 border-error/20";
+        default:
+            return "text-info bg-info/10 border-info/20";
+    }
+}
+
+// Rule: rendering-hoist-jsx - Hoist static JSX outside components
+const SKELETON_INDICES = [1, 2, 3, 4, 5] as const;
+
+// Rule: rerender-memoed-component-with-primitives - Memoize component with primitive props
+const ActivityItemComponent = memo(function ActivityItemComponent({ 
+    item, 
+    index 
+}: { 
+    item: ActivityItem; 
+    index: number;
+}) {
     const icon = getActivityIcon(item.type);
     const colorClass = getActivityColor(item.type);
 
@@ -87,46 +99,16 @@ function ActivityItemComponent({ item, index }: { item: ActivityItem; index: num
             </div>
         </motion.div>
     );
-}
+});
 
-function getActivityIcon(type: string) {
-    switch (type) {
-        case "verification":
-            return <CheckCircle2 className="h-4 w-4" />;
-        case "protection":
-            return <Shield className="h-4 w-4" />;
-        case "user_join":
-            return <Users className="h-4 w-4" />;
-        case "error":
-            return <XCircle className="h-4 w-4" />;
-        case "alert":
-            return <AlertCircle className="h-4 w-4" />;
-        default:
-            return <Info className="h-4 w-4" />;
-    }
-}
-
-function getActivityColor(type: string) {
-    switch (type) {
-        case "verification":
-            return "text-success bg-success/10 border-success/20";
-        case "protection":
-            return "text-primary-400 bg-primary-400/10 border-primary-400/20";
-        case "error":
-        case "alert":
-            return "text-error bg-error/10 border-error/20";
-        default:
-            return "text-info bg-info/10 border-info/20";
-    }
-}
-
-function ActivitySkeleton() {
+// Rule: rerender-memoed-component-with-primitives - Memoize static components
+const ActivitySkeleton = memo(function ActivitySkeleton() {
     return (
         <div className="space-y-4">
             <h3 className="text-lg font-semibold text-text-primary mb-4">
                 Recent Activity
             </h3>
-            {[1, 2, 3, 4, 5].map((i) => (
+            {SKELETON_INDICES.map((i) => (
                 <div
                     key={i}
                     className="flex items-center gap-4 p-4 rounded-lg bg-surface border border-border"
@@ -140,4 +122,36 @@ function ActivitySkeleton() {
             ))}
         </div>
     );
+});
+
+export function ActivityFeed() {
+    const { data, isLoading } = useActivityFeed();
+
+    if (isLoading) {
+        return <ActivitySkeleton />;
+    }
+
+    if (!data?.items || data.items.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center p-8 text-text-secondary bg-surface rounded-xl border border-border h-full min-h-[300px]">
+                <Activity className="h-12 w-12 mb-4 opacity-20" />
+                <p>No recent activity</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary-400" />
+                Recent Activity
+            </h3>
+            <div className="space-y-2">
+                {data.items.map((item: ActivityItem, index: number) => (
+                    <ActivityItemComponent key={item.id} item={item} index={index} />
+                ))}
+            </div>
+        </div>
+    );
 }
+

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useDashboardStats } from "@/lib/hooks/use-dashboard-stats";
 import { useDashboardChartData } from "@/lib/hooks/use-dashboard-chart";
 import { StatCard } from "@/components/dashboard/stats-card";
@@ -23,24 +24,25 @@ export default function DashboardPage() {
         cache_hit_rate: 0,
     };
 
-    // Calculate real trend data from chart data (last 10 points for sparklines)
-    const getVerificationTrend = (): number[] => {
+    // Rule: rerender-derived-state - Memoize derived computations
+    // These only need to recompute when chartData changes, not on every render
+    const verificationTrend = useMemo(() => {
         if (!chartData || chartData.length === 0) return [];
         const recentData = chartData.slice(-10);
         return recentData.map((d) => d.verified + d.restricted);
-    };
+    }, [chartData]);
 
-    const getSuccessRateTrend = (): number[] => {
+    const successRateTrend = useMemo(() => {
         if (!chartData || chartData.length === 0) return [];
         const recentData = chartData.slice(-10);
         return recentData.map((d) => {
             const total = d.verified + d.restricted;
             return total > 0 ? Math.round((d.verified / total) * 100) : 0;
         });
-    };
+    }, [chartData]);
 
-    // Calculate change from previous period (simple day-over-day for now)
-    const calculateVerificationChange = (): number | undefined => {
+    // Rule: rerender-derived-state - Compute change from previous period
+    const verificationChange = useMemo(() => {
         if (!chartData || chartData.length < 2) return undefined;
         const today = chartData[chartData.length - 1];
         const yesterday = chartData[chartData.length - 2];
@@ -48,11 +50,7 @@ export default function DashboardPage() {
         const yesterdayTotal = yesterday.verified + yesterday.restricted;
         if (yesterdayTotal === 0) return undefined;
         return Math.round(((todayTotal - yesterdayTotal) / yesterdayTotal) * 100 * 10) / 10;
-    };
-
-    const verificationTrend = getVerificationTrend();
-    const successRateTrend = getSuccessRateTrend();
-    const verificationChange = calculateVerificationChange();
+    }, [chartData]);
 
     // Hide change if no data
     const hasData = data.verifications_week > 0;

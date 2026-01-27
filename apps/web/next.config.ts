@@ -6,7 +6,20 @@ const nextConfig: NextConfig = {
 
   // React compiler (experimental in Next.js 16)
   experimental: {
-    optimizePackageImports: ["lucide-react", "recharts", "@radix-ui/react-icons"],
+    // CRITICAL: Optimize barrel file imports for faster dev boot (15-70%) and cold starts (40%)
+    // Rule: bundle-barrel-imports - Avoid loading entire libraries when only a few exports are needed
+    optimizePackageImports: [
+      "lucide-react",              // 1,583 modules → only used icons
+      "recharts",                   // Heavy charting library
+      "@radix-ui/react-icons",      // Icon library
+      "motion/react",               // Animation library (formerly framer-motion)
+      "date-fns",                   // Date utilities - loads many unnecessary locales
+      "@tanstack/react-query",      // Data fetching
+      "@tanstack/react-table",      // Table utilities
+      "react-hook-form",            // Form library
+      "zod",                        // Schema validation
+      "react-sparklines",           // Sparkline charts
+    ],
   },
 
   // Output configuration
@@ -18,9 +31,14 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080/ws",
   },
 
-  // Image optimization
+  // Image optimization - using remotePatterns (domains is deprecated)
   images: {
-    domains: ["localhost"],
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+      },
+    ],
   },
 
   // Redirects

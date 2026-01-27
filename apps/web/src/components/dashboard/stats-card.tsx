@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "motion/react";
 import { Sparklines, SparklinesLine } from "react-sparklines";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +13,9 @@ interface StatCardProps {
     icon?: React.ReactNode;
 }
 
-export function StatCard({ title, value, change, trend = [], loading, icon }: StatCardProps) {
+// Rule: rerender-memoed-component-with-primitives - Memoize component with primitive props
+// StatCard receives primitive values (strings, numbers) so shallow comparison works well
+export const StatCard = memo(function StatCard({ title, value, change, trend = [], loading, icon }: StatCardProps) {
     if (loading) {
         return (
             <div className="relative overflow-hidden rounded-xl bg-surface border border-border p-6 h-[160px]">
@@ -93,4 +96,4 @@ export function StatCard({ title, value, change, trend = [], loading, icon }: St
             )}
         </motion.div>
     );
-}
+});

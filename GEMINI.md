@@ -1,30 +1,16 @@
 # GEMINI.md - AI Coding Assistant Instructions
 
-<!-- OPENSPEC:START -->
-
-# OpenSpec Instructions
-
-These instructions are for AI assistants working in this project.
-
-Always open `@/openspec/AGENTS.md` when the request:
-
-- Mentions planning or proposals (words like proposal, spec, change, plan)
-- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
-- Sounds ambiguous and you need the authoritative spec before coding
-
-Use `@/openspec/AGENTS.md` to learn:
-
-- How to create and apply change proposals
-- Spec format and conventions
-- Project structure and guidelines
-
-Keep this managed block so 'openspec update' can refresh the instructions.
-
-<!-- OPENSPEC:END -->
-
 ## Project Overview
 
 **Nezuko - The Ultimate All-In-One Bot** is a production-ready, multi-tenant Telegram bot for automated channel membership enforcement. Python 3.13+, async-first architecture using python-telegram-bot v22.5+.
+
+## Memory-bank
+
+***memory-bank***: this is the SOT of project Nezuko. 
+
+## Project Structure
+
+
 
 ## Build, Lint & Test Commands
 
@@ -87,13 +73,3 @@ alembic downgrade -1                  # Rollback last migration
 ## Browser Automation
 
 - use playwright mcp for browser automation, testing, debugging.
-
-## Skills
-
-### Always use the following skills:
-
-- **tech-stack-rules** - Authoritative coding standards for Nezuko. Use for code review, refactoring, debugging, architecture decisions, best practices. Backend: Python 3.13+, AsyncIO, SQLAlchemy 2.0, PTB v22, Sentry, Structlog. Frontend: Next.js 16, React 19, TypeScript strict, TanStack Query, Zustand, Tailwind v4, Shadcn/UI. Triggers: `best practices`, `code review`, `refactor`, `async pattern`, `type safety`, `performance`.
-
-- **firebase** - Firebase/Firestore patterns for authentication, real-time data, security rules. Covers Firestore data modeling, Authentication (Email/OAuth), Cloud Functions, Storage, batch operations, transactions, offline persistence. Use for Firebase integration, security rules, Auth implementation, real-time listeners, Firestore CRUD. Triggers: `firebase`, `firestore`, `auth`, `security rules`, `real-time`.
-
-- **ui-ux-pro-max** - UI/UX design intelligence with 50+ styles, 97 color palettes, 57 font pairings across 9 stacks. Use for designing components, choosing colors/fonts, accessibility reviews, landing pages, dashboards. Includes searchable CLI tool for design system generation. Triggers: `design`, `ui`, `ux`, `color palette`, `typography`, `accessibility`, `glassmorphism`, `tailwind`, `shadcn`.

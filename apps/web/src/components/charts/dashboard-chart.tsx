@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import {
     ResponsiveContainer,
     AreaChart,
@@ -24,6 +25,51 @@ interface DashboardChartProps {
     isLoading?: boolean;
 }
 
+interface TooltipProps {
+    active?: boolean;
+    payload?: Array<{ value: number; dataKey: string }>;
+    label?: string;
+}
+
+// Rule: rendering-hoist-jsx - Hoist static components outside render function
+// This prevents the component from being recreated on every render of DashboardChart
+const CustomTooltip = memo(function CustomTooltip({ active, payload, label }: TooltipProps) {
+    if (active && payload && payload.length) {
+        const date = new Date(label || "");
+        const formattedDate = date.toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+        });
+
+        return (
+            <div className="bg-surface border border-border rounded-lg p-3 shadow-lg">
+                <p className="text-sm font-medium text-text-primary mb-2">{formattedDate}</p>
+                <div className="space-y-1">
+                    {payload.map((entry, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm">
+                            <div
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: entry.dataKey === "verified" ? "#22c55e" : "#ef4444" }}
+                            />
+                            <span className="text-text-secondary capitalize">{entry.dataKey}:</span>
+                            <span className="font-medium text-text-primary">{entry.value}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+    return null;
+});
+
+// Rule: rendering-hoist-jsx - Hoist pure utility functions outside component
+const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
+
 export function DashboardChart({ data, isLoading }: DashboardChartProps) {
     if (isLoading) {
         return (
@@ -40,44 +86,6 @@ export function DashboardChart({ data, isLoading }: DashboardChartProps) {
             </div>
         );
     }
-
-    // Format date for display
-    const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    };
-
-    // Custom tooltip
-    const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string }>; label?: string }) => {
-        if (active && payload && payload.length) {
-            const date = new Date(label || "");
-            const formattedDate = date.toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-            });
-
-            return (
-                <div className="bg-surface border border-border rounded-lg p-3 shadow-lg">
-                    <p className="text-sm font-medium text-text-primary mb-2">{formattedDate}</p>
-                    <div className="space-y-1">
-                        {payload.map((entry, index) => (
-                            <div key={index} className="flex items-center gap-2 text-sm">
-                                <div
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: entry.dataKey === "verified" ? "#22c55e" : "#ef4444" }}
-                                />
-                                <span className="text-text-secondary capitalize">{entry.dataKey}:</span>
-                                <span className="font-medium text-text-primary">{entry.value}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            );
-        }
-        return null;
-    };
 
     return (
         <ResponsiveContainer width="100%" height={300}>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 
 interface LogEntry {
@@ -38,6 +38,7 @@ export function useLogStream() {
 
                     const newLog = payload.new as unknown as LogEntry;
                     if (newLog) {
+                        // Rule: rerender-functional-setstate - Use functional updates
                         setLogs((prev) => {
                             const newLogs = [...prev, newLog];
                             if (newLogs.length > 1000) {
@@ -58,13 +59,16 @@ export function useLogStream() {
         };
     }, []);
 
-    const clearLogs = () => setLogs([]);
+    // Rule: rerender-functional-setstate - Stable callback references
+    const clearLogs = useCallback(() => setLogs([]), []);
+    const togglePause = useCallback(() => setIsPaused((prev) => !prev), []);
 
     return {
         logs,
         isConnected,
         isPaused,
         setIsPaused,
-        clearLogs
+        clearLogs,
+        togglePause,
     };
 }
