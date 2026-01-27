@@ -586,11 +586,12 @@ bun run start
 
 ---
 
-## Next Steps
+## Related Documentation
 
-- [**Routing Guide**](./routing.md)
-- [**Components Library**](./components.md)
-- [**State Management**](./state-management.md)
+- [**API Reference**](../api/README.md) - Backend API endpoints
+- [**Architecture**](../architecture/README.md) - System design overview
+- [**Deployment**](../deployment/README.md) - Production deployment guide
+- [**Contributing**](../contributing/README.md) - Development workflow
 
 ---
 

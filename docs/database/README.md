@@ -698,11 +698,12 @@ __table_args__ = (
 
 ---
 
-## Next Steps
+## Related Documentation
 
-- [**Models Reference**](./models.md)
-- [**Migrations Guide**](./migrations.md)
-- [**ER Diagrams**](./diagrams.md)
+- [**API Reference**](../api/README.md) - REST API endpoints
+- [**Bot Reference**](../bot/README.md) - Bot database usage
+- [**Architecture**](../architecture/README.md) - System design overview
+- [**Architecture Diagrams**](../architecture/diagrams.md) - Visual diagrams
 
 ---
 

@@ -587,11 +587,12 @@ async function fetchDashboard(token: string) {
 
 ---
 
-## Next Steps
+## Related Documentation
 
-- [**Authentication Details**](./authentication.md)
-- [**WebSocket Guide**](./websocket.md)
-- [**Error Codes**](./errors.md)
+- [**Bot Reference**](../bot/README.md) - Bot commands and verification flow
+- [**Web Dashboard**](../web/README.md) - Frontend integration guide
+- [**Architecture**](../architecture/README.md) - System design overview
+- [**Deployment**](../deployment/README.md) - Production deployment guide
 
 ---
 

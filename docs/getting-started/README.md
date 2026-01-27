@@ -290,8 +290,9 @@ python -m pyrefly check apps/bot apps/api
 ## Next Steps
 
 - [**Architecture Overview**](../architecture/README.md) - Understand the system design
-- [**Bot Commands**](../bot/commands.md) - Learn available bot commands
+- [**Bot Reference**](../bot/README.md) - Learn about bot commands and handlers
 - [**API Reference**](../api/README.md) - Explore API endpoints
+- [**Web Dashboard**](../web/README.md) - Admin panel guide
 - [**Deployment Guide**](../deployment/README.md) - Deploy to production
 
 ---

@@ -624,11 +624,12 @@ docker compose up -d
 
 ---
 
-## Next Steps
+## Related Documentation
 
-- [**Docker Reference**](./docker.md)
-- [**Production Checklist**](./production.md)
-- [**CI/CD Guide**](./ci-cd.md)
+- [**Architecture**](../architecture/README.md) - System design overview
+- [**Getting Started**](../getting-started/README.md) - Development setup
+- [**Contributing**](../contributing/README.md) - Development workflow
+- [**Horizontal Scaling**](../architecture/horizontal-scaling.md) - Scaling strategies
 
 ---
 

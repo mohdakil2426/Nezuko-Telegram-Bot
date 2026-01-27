@@ -6,12 +6,13 @@ Welcome to the Nezuko documentation. This guide covers everything you need to ge
 
 ---
 
-## 📖 Public Documentation (GitHub Release)
+## 📖 Documentation
 
 | Section | Description |
 |---------|-------------|
 | [**Getting Started**](./getting-started/) | Quick setup guides for all components |
 | [**Architecture**](./architecture/) | System design, data flow, and component diagrams |
+| [**Tech Stack**](./architecture/tech-stack.md) | Complete technology reference |
 | [**API Reference**](./api/) | FastAPI endpoints, schemas, and authentication |
 | [**Bot Reference**](./bot/) | Telegram bot commands, handlers, and events |
 | [**Web Dashboard**](./web/) | Admin panel components, routing, and state |
@@ -21,80 +22,39 @@ Welcome to the Nezuko documentation. This guide covers everything you need to ge
 
 ---
 
-## 🔒 Local Documentation (Not for Release)
-
-The following documentation is for internal development only and should NOT be included in public releases:
-
-| Folder | Description |
-|--------|-------------|
-| [`local/admin-panel/`](./local/admin-panel/) | Internal admin panel development docs |
-| [`local/official-rules-docs/`](./local/official-rules-docs/) | Internal rules and policies |
-| [`local/openspec-my-guide/`](./local/openspec-my-guide/) | OpenSpec workflow guide |
-
----
-
 ## 🗺️ Navigation
 
 ```
 docs/
-├── README.md                    # This file
+├── README.md                    # This file (You are here)
 │
 ├── getting-started/             # Quick start guides
-│   ├── README.md                # Overview and prerequisites
-│   ├── quick-start.md           # 5-minute setup
-│   ├── installation.md          # Detailed installation
-│   └── configuration.md         # Environment variables
+│   └── README.md               # Installation, setup, verification
 │
-├── architecture/                 # System architecture
-│   ├── README.md                # Architecture overview
-│   ├── system-overview.md       # High-level diagrams
-│   ├── data-flow.md             # Request/response flows
-│   ├── component-diagrams.md    # Mermaid diagrams
-│   └── folder-structure.md      # Project organization
+├── architecture/                # System architecture
+│   ├── README.md               # Architecture overview + diagrams
+│   ├── tech-stack.md           # Technology reference
+│   ├── diagrams.md             # All Mermaid diagrams
+│   ├── folder-structure.md     # Project organization
+│   └── horizontal-scaling.md   # Scaling strategies
 │
-├── api/                          # API documentation
-│   ├── README.md                # API overview
-│   ├── authentication.md        # JWT, Supabase auth
-│   ├── endpoints.md             # All REST endpoints
-│   ├── websocket.md             # Real-time WebSocket
-│   └── errors.md                # Error codes & handling
+├── api/                         # API documentation
+│   └── README.md               # Complete API reference
 │
-├── bot/                          # Bot documentation
-│   ├── README.md                # Bot overview
-│   ├── commands.md              # All bot commands
-│   ├── handlers.md              # Event handlers
-│   ├── verification.md          # Verification flow
-│   └── configuration.md         # Bot configuration
+├── bot/                         # Bot documentation
+│   └── README.md               # Commands, handlers, verification
 │
-├── web/                          # Web dashboard docs
-│   ├── README.md                # Dashboard overview
-│   ├── routing.md               # App Router structure
-│   ├── components.md            # UI components
-│   ├── state-management.md      # Zustand & TanStack Query
-│   └── authentication.md        # Supabase SSR auth
+├── web/                         # Web dashboard docs
+│   └── README.md               # Components, routing, state
 │
-├── database/                     # Database docs
-│   ├── README.md                # Schema overview
-│   ├── models.md                # SQLAlchemy models
-│   ├── migrations.md            # Alembic migrations
-│   └── diagrams.md              # ER diagrams
+├── database/                    # Database docs
+│   └── README.md               # Schema, models, migrations
 │
-├── deployment/                   # Deployment docs
-│   ├── README.md                # Deployment overview
-│   ├── docker.md                # Docker setup
-│   ├── production.md            # Production checklist
-│   └── ci-cd.md                 # GitHub Actions
+├── deployment/                  # Deployment docs
+│   └── README.md               # Docker, CI/CD, production
 │
-├── contributing/                 # Contributor docs
-│   ├── README.md                # Contribution guide
-│   ├── development.md           # Local development
-│   ├── code-style.md            # Coding standards
-│   └── testing.md               # Testing strategies
-│
-└── local/                        # ⚠️ LOCAL ONLY - Not for release
-    ├── admin-panel/             # Internal admin docs
-    ├── official-rules-docs/     # Internal policies
-    └── openspec-my-guide/       # OpenSpec workflow
+└── contributing/                # Contributor docs
+    └── README.md               # Development workflow
 ```
 
 ---
@@ -103,7 +63,7 @@ docs/
 
 - **[GitHub Repository](https://github.com/mohdakil2426/Nezuko-Telegram-Bot)**
 - **[Report an Issue](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/issues)**
-- **[Tech Stack](../TECH_STACK.md)**
+- **[Tech Stack](./architecture/tech-stack.md)**
 - **[Contributing Guide](../CONTRIBUTING.md)**
 
 ---
@@ -119,4 +79,4 @@ docs/
 
 ---
 
-*Last Updated: 2026-01-27*
+*Last Updated: 2026-01-28*

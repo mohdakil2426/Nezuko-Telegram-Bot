@@ -338,8 +338,7 @@ nezuko-monorepo/
 │   └── uploads/                # User uploads
 │
 ├── docs/                       # Documentation
-├── tests/                      # Test suites
-└── memory-bank/                # AI context files
+└── tests/                      # Test suites
 ```
 
 ---
@@ -464,12 +463,14 @@ graph TB
 
 ---
 
-## Next Steps
+## Related Documentation
 
-- [**Data Flow Details**](./data-flow.md) - Request/response flows
-- [**Component Diagrams**](./component-diagrams.md) - Detailed component architecture
 - [**Folder Structure**](./folder-structure.md) - Complete project organization
+- [**Diagrams**](./diagrams.md) - All architecture diagrams in one place
+- [**API Reference**](../api/README.md) - REST API documentation
+- [**Bot Reference**](../bot/README.md) - Telegram bot guide
+- [**Database**](../database/README.md) - Database schema and models
 
 ---
 
-*See also: [Tech Stack](../../TECH_STACK.md) | [System Patterns](../../memory-bank/systemPatterns.md)*
+*See also: [Tech Stack](./tech-stack.md)*

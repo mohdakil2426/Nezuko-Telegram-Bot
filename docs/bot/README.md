@@ -433,11 +433,12 @@ python main.py
 
 ---
 
-## Next Steps
+## Related Documentation
 
-- [**Commands Reference**](./commands.md)
-- [**Handlers Documentation**](./handlers.md)
-- [**Verification Details**](./verification.md)
+- [**API Reference**](../api/README.md) - REST API endpoints
+- [**Web Dashboard**](../web/README.md) - Admin panel guide
+- [**Architecture**](../architecture/README.md) - System design overview
+- [**Database**](../database/README.md) - Database schema and models
 
 ---
 

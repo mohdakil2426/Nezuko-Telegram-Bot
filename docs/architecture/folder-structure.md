@@ -30,9 +30,7 @@ nezuko-monorepo/
 ├── scripts/               # Utility scripts
 ├── storage/               # Runtime files (GITIGNORED)
 ├── docs/                  # Documentation
-├── tests/                 # Test suites
-├── memory-bank/           # AI context (GITIGNORED in release)
-└── openspec/              # Change management
+└── tests/                 # Test suites
 ```
 
 ---
@@ -50,7 +48,6 @@ nezuko-monorepo/
 | `.env.example` | Documentation of all environment variables |
 | `README.md` | Main project documentation |
 | `CONTRIBUTING.md` | Contribution guidelines |
-| `TECH_STACK.md` | Technology stack reference |
 | `LICENSE` | MIT License |
 
 ### Configuration Files
@@ -394,14 +391,8 @@ docs/
 ├── deployment/               # Deployment guides
 │   └── README.md
 │
-├── contributing/             # Contributor guides
-│   └── README.md
-│
-└── local/                    # ⚠️ LOCAL ONLY
-    ├── README.md             # Local docs warning
-    ├── admin-panel/          # Internal admin docs
-    ├── official-rules-docs/  # Internal policies
-    └── openspec-my-guide/    # OpenSpec workflow
+└── contributing/             # Contributor guides
+    └── README.md
 ```
 
 ---

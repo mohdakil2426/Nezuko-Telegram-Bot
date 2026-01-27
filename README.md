@@ -34,7 +34,7 @@
 <br/>
 
 <!-- QUICK LINKS -->
-[**Documentation**](docs/) | [**Architecture**](docs/architecture/architecture.md) | [**Contributing**](CONTRIBUTING.md) | [**Report Bug**](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/issues)
+[**Documentation**](docs/README.md) | [**Architecture**](docs/architecture/README.md) | [**Contributing**](CONTRIBUTING.md) | [**Report Bug**](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/issues)
 
 <br/>
 
@@ -349,14 +349,26 @@ nezuko-monorepo/
 │   └── data/                   # Local databases
 │
 ├── docs/                       # Documentation
-│   ├── architecture/           # System design docs
-│   ├── api/                    # API documentation
-│   └── guides/                 # User guides
+│   └── README.md               # 📖 Start here for all docs
 |
 └── tests/                      # Pytest test suite
 ```
 
-See [Architecture Documentation](docs/architecture/architecture.md) for detailed system design.
+### 📚 Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/README.md) directory:
+
+| Guide | Description |
+|-------|-------------|
+| [**Getting Started**](docs/getting-started/README.md) | Installation, setup, and first run |
+| [**Architecture**](docs/architecture/README.md) | System design, data flow, diagrams |
+| [**Tech Stack**](docs/architecture/tech-stack.md) | Complete technology reference |
+| [**API Reference**](docs/api/README.md) | REST endpoints, WebSocket, authentication |
+| [**Bot Reference**](docs/bot/README.md) | Commands, handlers, verification flow |
+| [**Web Dashboard**](docs/web/README.md) | Admin panel, components, state management |
+| [**Database**](docs/database/README.md) | Schema, models, migrations |
+| [**Deployment**](docs/deployment/README.md) | Docker, CI/CD, production setup |
+| [**Contributing**](docs/contributing/README.md) | Development workflow, code style |
 
 ---
 
@@ -376,6 +388,8 @@ See [Architecture Documentation](docs/architecture/architecture.md) for detailed
 | **Logging** | ![structlog](https://img.shields.io/badge/structlog-JSON-000000?style=for-the-badge) |
 
 </div>
+
+*For complete technology details with versions, see [Tech Stack Documentation](docs/architecture/tech-stack.md).*
 
 ---
 
