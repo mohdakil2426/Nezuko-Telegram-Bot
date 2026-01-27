@@ -29,9 +29,23 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 - **Styling**: `TailwindCSS 4.1.18`, `Shadcn/UI` (Radix Primitives)
 - **State**: `Zustand 5.0.10` (Global), `TanStack Query 5.90` (Server State)
 - **Forms**: `React Hook Form 7.71`, `Zod 4.3.6`
-- **Visualization**: `Recharts 3.7.0`
+- **Visualization**: `Recharts 3.7.0`, `react-sparklines 1.7.0`
 - **Auth & Data**: `@supabase/ssr@0.8.0`, `@supabase/supabase-js@2.93.1`
-- **Testing**: `Vitest 3.0.4`
+- **Testing**: `Vitest 3.0.4`, `Playwright MCP`
+- **Package Manager**: `Bun 1.3.6+`
+
+### React Optimization (Vercel Best Practices - Phase 16)
+
+| Pattern | Purpose |
+|---------|---------|
+| `React.memo` | Prevent unnecessary re-renders for pure components |
+| `useMemo` | Memoize expensive derived state calculations |
+| `useCallback` | Stable function references across renders |
+| Hoisted JSX/Constants | Move static data outside component scope |
+| Functional setState | Prevent stale closures with `setState(prev => ...)` |
+
+**Optimized Components:**
+- `StatCard`, `ActivityFeed`, `DashboardChart`, `LogViewer`, `GroupsTable`
 
 ---
 
@@ -194,4 +208,5 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 
 **Total Line Count Target: 200+ Lines of technical reference.**
 _(This document encodes the technical DNA of the Nezuko Platform)._
-_(Updated 2026-01-26 with auth fix details: @supabase/ssr@0.8.0, proxy.ts)._
+_(Updated 2026-01-27 with React optimization, Vercel best practices, updated package.json)._
+

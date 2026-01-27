@@ -1,40 +1,25 @@
-# Active Context: Phase 16 - Admin Panel Enhancement v2 (In Progress)
+# Active Context: Phase 16 - Admin Panel Enhancement v2 + React Optimization
 
 ## 🎯 Current Status
 
-**Implementing OpenSpec change `enhance-admin-panel-v2`** - Real-time analytics and logging infrastructure.
+**Phase 16 continues** - React optimization with Vercel Best Practices applied.
 
 ---
 
 ## ✅ Completed Tasks (2026-01-27)
 
-### Phase 1: Verification Logging Infrastructure ✅
-- Created `verification_log` table in database
-- Created SQLAlchemy model `VerificationLog` in `apps/api/src/models/`
-- Created `bot/database/verification_logger.py` with async logging
-- Integrated logging into `bot/services/verification.py`
-- Added batch logging buffer for high-volume scenarios
+### Phase 1-5: Backend Infrastructure ✅ (Previous Session)
+- Verification logging infrastructure
+- Real analytics queries
+- Dashboard verification chart
+- WebSocket real-time logs
+- Audit log CSV export
 
-### Phase 2: Real Analytics Queries ✅
-- Rewrote `analytics_service.py` with real database queries
-- Analytics now query `verification_log` instead of mock data
-- Added hourly granularity for 24h period
-- Updated Dashboard stats endpoint with real verification counts
-
-### Phase 3: Dashboard Verification Chart ✅
-- Dashboard chart endpoint returns real data from `verification_log`
-- Dashboard chart component already exists with Recharts
-- Frontend hook fetches real data from API
-
-### Phase 4: WebSocket Real-time Logs ✅
-- Created WebSocket manager `apps/api/src/core/websocket.py`
-- Created WebSocket endpoint `/api/v1/ws/logs`
-- Added log level filtering support
-- Created frontend hook `use-websocket-logs.ts`
-
-### Phase 5: Audit Log Improvements ✅
-- Added CSV export to `GET /api/v1/audit?format=csv`
-- CSV download with proper Content-Disposition header
+### Phase 6: React Optimization (Vercel Best Practices) ✅ (Current Session)
+- Applied comprehensive React optimizations following Vercel guidelines
+- Fixed `images.domains` deprecation warning in `next.config.ts`
+- Updated `package.json` for production-grade configuration
+- Created `.vscode/settings.json` for proper TypeScript resolution
 
 ---
 
@@ -42,65 +27,60 @@
 
 | File | Type | Description |
 |------|------|-------------|
-| `apps/api/src/models/verification_log.py` | NEW | SQLAlchemy model for verification logs |
-| `bot/database/verification_logger.py` | NEW | Async verification logger with batch buffer |
-| `bot/services/verification.py` | MODIFIED | Integrated verification logging |
-| `apps/api/src/services/analytics_service.py` | MODIFIED | Real database queries |
-| `apps/api/src/api/v1/endpoints/dashboard.py` | MODIFIED | Real verification stats |
-| `apps/api/src/core/websocket.py` | NEW | WebSocket connection manager |
-| `apps/api/src/api/v1/endpoints/websocket.py` | NEW | WebSocket logs endpoint |
-| `apps/api/src/api/v1/router.py` | MODIFIED | Added WebSocket router |
-| `apps/api/src/api/v1/endpoints/audit.py` | MODIFIED | Added CSV export |
-| `apps/web/src/lib/hooks/use-websocket-logs.ts` | NEW | WebSocket hook for logs |
-| `openspec/changes/enhance-admin-panel-v2/tasks.md` | MODIFIED | Updated progress |
+| `apps/web/src/components/dashboard/activity-feed.tsx` | MODIFIED | Applied `React.memo`, hoisted helper functions (rendering-hoist-jsx) |
+| `apps/web/src/components/dashboard/stats-card.tsx` | MODIFIED | Applied `React.memo` for pure component |
+| `apps/web/src/components/charts/dashboard-chart.tsx` | MODIFIED | Hoisted CustomTooltip, applied `React.memo` |
+| `apps/web/src/components/logs/log-viewer.tsx` | MODIFIED | `useMemo`, `useCallback`, hoisted constants, memoized components |
+| `apps/web/src/components/tables/groups-table.tsx` | MODIFIED | `useMemo` for columns, `useCallback` for handlers |
+| `apps/web/src/lib/hooks/use-log-stream.ts` | MODIFIED | Applied `useCallback` for stable references |
+| `apps/web/next.config.ts` | MODIFIED | Fixed deprecated `images.domains` → `images.remotePatterns` |
+| `apps/web/package.json` | MODIFIED | Added engines, moved types to devDependencies, added clean script |
+| `apps/web/.vscode/settings.json` | NEW | TypeScript workspace configuration |
+
+---
+
+## 🎨 React Optimization Rules Applied
+
+| Rule | Components |
+|------|------------|
+| `rendering-hoist-jsx` | activity-feed, dashboard-chart, log-viewer |
+| `rerender-memoed-component-with-primitives` | StatCard, CustomTooltip, ActivityItemComponent, LogEntryRow |
+| `rerender-derived-state` | DashboardPage, LogViewer |
+| `rerender-functional-setstate` | use-log-stream, log-viewer, groups-table |
+| `rerender-memo-with-default-value` | groups-table columns |
+
+---
+
+## ✅ Playwright Testing Results
+
+| Page | Status | Elements Verified |
+|------|--------|-------------------|
+| **Dashboard** | ✅ Working | Sidebar, header, stats cards, skeleton states |
+| **Groups** | ✅ Working | Search, filter, data table, pagination |
+| **Logs** | ✅ Working | Connection status, search, level filter, controls |
+| **Analytics** | ✅ Working | Stats cards, tabs, date picker, export |
 
 ---
 
 ## 🔧 Remaining Tasks
 
-### Phase 2: Frontend Integration
-- [ ] Update Analytics page to handle empty data states
-- [ ] Update Dashboard stats cards with real change values
+### Frontend Polish
+- [ ] Mobile responsiveness for sidebar
+- [ ] Loading state improvements
 
-### Phase 3: Chart Interactivity
-- [ ] Add zoom/pan for date range selection
-
-### Phase 4: WebSocket Integration
-- [ ] Update Logs page to use WebSocket instead of polling
-- [ ] Add export functionality
-
-### Phase 6: Testing & Documentation
-- [ ] Unit tests for verification logger
-- [ ] Integration tests for analytics endpoints
-- [ ] Update README with new features
+### Testing & Documentation
+- [ ] Unit tests for optimized components
+- [ ] Performance benchmarks
 
 ---
 
-## 🏗️ Architecture Changes
+## ⚡ Build Status
 
-### New Data Flow: Verification Analytics
-```
-Telegram User → Bot Verification → log_verification() → verification_log table
-                                                            ↓
-Dashboard/Analytics ← API Endpoints ← Real SQL Queries ←──────┘
-```
-
-### New Data Flow: Real-time Logs
-```
-Bot/API Logs → emit_log() → ConnectionManager → WebSocket Broadcast
-                                                      ↓
-                              Logs Page ← useWebSocketLogs hook
-```
-
----
-
-## ⚡ Running Services
-
-| Service | Port | Status |
-|---------|------|--------|
-| Web (Next.js) | 3000 | ✅ Running |
-| API (FastAPI) | 8080 | ✅ Running |
-| Bot | - | ⏳ Not running |
+| Check | Status |
+|-------|--------|
+| TypeScript Type-Check | ✅ Passes |
+| Production Build | ✅ Completes (12.6s) |
+| All Dependencies | ✅ Installed |
 
 ---
 
@@ -109,3 +89,4 @@ Bot/API Logs → emit_log() → ConnectionManager → WebSocket Broadcast
 | User | Email | Password | Role |
 |------|-------|----------|------|
 | Admin | admin@nezuko.bot | Admin@123 | super_admin |
+
