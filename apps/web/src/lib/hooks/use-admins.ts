@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import { toast } from "@/hooks/use-toast";
+import { queryKeys, mutationKeys } from "@/lib/query-keys";
 
 import { AdminApiResponse } from "@/lib/api/types";
 
@@ -34,7 +35,7 @@ export const adminApi = {
     },
 
     deleteAdmin: async (id: string) => {
-        return api.delete<AdminApiResponse<any>>(`/admins/${id}`);
+        return api.delete<AdminApiResponse<unknown>>(`/admins/${id}`);
     }
 };
 
@@ -42,15 +43,15 @@ export function useAdmins() {
     const queryClient = useQueryClient();
 
     const query = useQuery({
-        queryKey: ["admins"],
+        queryKey: queryKeys.admins.all, // v5: Centralized query keys
         queryFn: adminApi.getAdmins,
     });
 
     const createMutation = useMutation({
-        mutationKey: ["admins", "create"], // v5: Enable tracking with useMutationState
+        mutationKey: mutationKeys.admins.create, // v5: Centralized mutation keys
         mutationFn: adminApi.createAdmin,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["admins"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.admins.all });
             toast({ title: "Admin invited successfully" });
         },
         onError: (error: Error) => {
@@ -63,10 +64,10 @@ export function useAdmins() {
     });
 
     const deleteMutation = useMutation({
-        mutationKey: ["admins", "delete"], // v5: Enable tracking with useMutationState
+        mutationKey: mutationKeys.admins.delete, // v5: Centralized mutation keys
         mutationFn: adminApi.deleteAdmin,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["admins"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.admins.all });
             toast({ title: "Admin removed successfully" });
         },
         onError: (error: Error) => {

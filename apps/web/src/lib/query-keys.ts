@@ -61,7 +61,7 @@ export const queryKeys = {
     // Audit Logs
     audit: {
         all: ["audit-logs"] as const,
-        list: (filters: Record<string, unknown>) => [...queryKeys.audit.all, filters] as const,
+        list: <T extends object>(filters: T) => [...queryKeys.audit.all, filters] as const,
     },
 
     // Admins
@@ -109,3 +109,42 @@ export const mutationKeys = {
         delete: (tableName: string) => ["database", tableName, "delete"] as const,
     },
 } as const;
+
+/**
+ * TanStack Query v5 - Query Options Factories
+ *
+ * Benefits:
+ * - Reusable across useQuery, useSuspenseQuery, prefetchQuery
+ * - Type-safe query configurations
+ * - Single source of truth for query settings
+ *
+ * @see https://tanstack.com/query/latest/docs/framework/react/typescript#typing-query-options
+ */
+import { queryOptions } from "@tanstack/react-query";
+import { dashboardApi, type ChartDataResponse } from "./api/endpoints/dashboard";
+import type { DashboardStatsResponse, ActivityResponse } from "@nezuko/types";
+
+// Dashboard query options (reusable across hooks and prefetching)
+export const dashboardQueryOptions = {
+    stats: () =>
+        queryOptions<DashboardStatsResponse>({
+            queryKey: queryKeys.dashboard.stats(),
+            queryFn: dashboardApi.getStats,
+            staleTime: 60 * 1000, // 1 minute
+        }),
+
+    chartData: () =>
+        queryOptions<ChartDataResponse>({
+            queryKey: queryKeys.dashboard.chartData(),
+            queryFn: dashboardApi.getChartData,
+            staleTime: 5 * 60 * 1000, // 5 minutes
+        }),
+
+    activity: (limit: number = 20) =>
+        queryOptions<ActivityResponse>({
+            queryKey: queryKeys.dashboard.activity(limit),
+            queryFn: () => dashboardApi.getActivity(limit),
+            staleTime: 30 * 1000, // 30 seconds
+            refetchInterval: 60 * 1000, // Auto-refresh every minute
+        }),
+};

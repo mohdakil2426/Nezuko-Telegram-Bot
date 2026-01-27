@@ -18,6 +18,7 @@ import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { queryKeys, mutationKeys } from "@/lib/query-keys";
 
 interface DeleteConfirmDialogProps {
     isOpen: boolean;
@@ -55,11 +56,11 @@ export function DeleteConfirmDialog({
     const isConfirmed = confirmText === tableName;
 
     const mutation = useMutation({
-        mutationKey: ["database", tableName, "delete"], // v5: Enable tracking with useMutationState
+        mutationKey: mutationKeys.database.delete(tableName), // v5: Centralized mutation keys
         mutationFn: () => deleteRow(tableName, rowId, hardDelete),
         onSuccess: () => {
             toast.success(hardDelete ? "Row permanently deleted" : "Row marked as deleted");
-            queryClient.invalidateQueries({ queryKey: ["database", tableName] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.database.all });
             onClose();
             setConfirmText("");
             setHardDelete(false);

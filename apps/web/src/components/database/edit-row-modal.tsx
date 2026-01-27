@@ -13,9 +13,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { queryKeys, mutationKeys } from "@/lib/query-keys";
 
 interface ColumnInfo {
     name: string;
@@ -59,11 +60,11 @@ export function EditRowModal({
     const queryClient = useQueryClient();
 
     const mutation = useMutation({
-        mutationKey: ["database", tableName, "update"], // v5: Enable tracking with useMutationState
+        mutationKey: mutationKeys.database.update(tableName), // v5: Centralized mutation keys
         mutationFn: () => updateRow(tableName, rowId, formData),
         onSuccess: () => {
             toast.success("Row updated successfully");
-            queryClient.invalidateQueries({ queryKey: ["database", tableName] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.database.all });
             onClose();
         },
         onError: (error: Error) => {

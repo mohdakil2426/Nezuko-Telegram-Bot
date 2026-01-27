@@ -1,11 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { dashboardApi, type ChartDataResponse } from "@/lib/api/endpoints/dashboard";
+import { dashboardQueryOptions } from "@/lib/query-keys";
+import type { ChartDataResponse } from "@/lib/api/endpoints/dashboard";
 
 export function useDashboardChartData() {
     const query = useQuery<ChartDataResponse>({
-        queryKey: ["dashboard", "chart-data"],
-        queryFn: dashboardApi.getChartData,
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        ...dashboardQueryOptions.chartData(), // v5: Reusable query options factory
         refetchOnWindowFocus: false,
     });
 

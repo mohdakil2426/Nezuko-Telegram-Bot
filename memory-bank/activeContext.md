@@ -2,15 +2,15 @@
 
 ## 🎯 Current Status
 
-**Phase 18 complete** - Comprehensive TanStack Query v5 skill-based code quality audit performed.
+**Phase 18 ENHANCED** - Comprehensive TanStack Query v5 skill-based code quality audit performed with additional improvements.
 
 ---
 
-## ✅ Completed Tasks (2026-01-27)
+## ✅ Completed Tasks (2026-01-27 - Enhanced Session)
 
-### Phase 18: TanStack Query v5 Best Practices Audit ✅ (Current Session)
+### Phase 18: TanStack Query v5 Best Practices Audit ✅ (ENHANCED)
 
-Applied comprehensive TanStack Query v5 best practices from `.agent/skills/tanstack-query/SKILL.md`:
+Applied comprehensive TanStack Query v5 best practices from `.agent/skills/tanstack-query/SKILL.md` (all 1059 lines):
 
 | Pattern | Files Updated | Description |
 |---------|---------------|-------------|
@@ -19,8 +19,10 @@ Applied comprehensive TanStack Query v5 best practices from `.agent/skills/tanst
 | `isPending` vs `isLoading` | `use-dashboard-chart.ts`, `use-admins.ts` | v5 semantics for initial load state |
 | `mutationKey` | All mutations | Enable tracking with `useMutationState` |
 | ReactQueryDevtools | `query-provider.tsx` | Added DevTools for development debugging |
-| Centralized Query Keys | `query-keys.ts` | NEW file with type-safe keys |
+| Centralized Query Keys | `query-keys.ts` | Type-safe query/mutation keys |
 | Retry Configuration | `query-provider.tsx` | Smart retry with exponential backoff |
+| **queryOptions Factories** | `query-keys.ts` (NEW) | v5 reusable query configuration patterns |
+| **Full Centralized Keys** | 11 hook files + 2 components | Every hook now uses centralized keys |
 
 ### Previous Phases ✅
 - Phase 17: Next.js 16 Deep Compliance Audit
@@ -30,19 +32,23 @@ Applied comprehensive TanStack Query v5 best practices from `.agent/skills/tanst
 
 ---
 
-## 📋 Files Created/Modified This Session
+## 📋 Files Created/Modified This Session (Enhanced)
 
 | File | Type | Description |
 |------|------|-------------|
-| `apps/web/src/providers/query-provider.tsx` | MODIFIED | gcTime, staleTime, retry config, DevTools |
-| `apps/web/src/lib/hooks/use-dashboard-chart.ts` | MODIFIED | Added `isPending` for v5 compliance |
-| `apps/web/src/lib/hooks/use-admins.ts` | MODIFIED | `isPending`, `mutationKey`, `error` |
-| `apps/web/src/lib/hooks/use-groups.ts` | MODIFIED | `mutationKey` on all mutations |
-| `apps/web/src/lib/hooks/use-channels.ts` | MODIFIED | `mutationKey` on createChannel |
-| `apps/web/src/lib/hooks/use-config.ts` | MODIFIED | `mutationKey` on mutations |
-| `apps/web/src/components/database/edit-row-modal.tsx` | MODIFIED | `mutationKey` for tracking |
-| `apps/web/src/components/database/delete-confirm-dialog.tsx` | MODIFIED | `mutationKey` for tracking |
-| `apps/web/src/lib/query-keys.ts` | **NEW** | Centralized query/mutation keys |
+| `apps/web/src/lib/query-keys.ts` | ENHANCED | Added `dashboardQueryOptions` factory with type-safe configs |
+| `apps/web/src/lib/hooks/use-dashboard-stats.ts` | MODIFIED | Uses `dashboardQueryOptions.stats()` |
+| `apps/web/src/lib/hooks/use-dashboard-chart.ts` | MODIFIED | Uses `dashboardQueryOptions.chartData()` |
+| `apps/web/src/lib/hooks/use-activity-feed.ts` | MODIFIED | Uses `dashboardQueryOptions.activity()` |
+| `apps/web/src/lib/hooks/use-admins.ts` | MODIFIED | Uses `queryKeys.admins` + `mutationKeys.admins` |
+| `apps/web/src/lib/hooks/use-channels.ts` | MODIFIED | Uses `queryKeys.channels` + `mutationKeys.channels` |
+| `apps/web/src/lib/hooks/use-groups.ts` | MODIFIED | Uses `queryKeys.groups` + `mutationKeys.groups` |
+| `apps/web/src/lib/hooks/use-config.ts` | MODIFIED | Uses `queryKeys.config` + `mutationKeys.config` |
+| `apps/web/src/lib/hooks/use-database.ts` | MODIFIED | Uses `queryKeys.database` |
+| `apps/web/src/lib/hooks/use-analytics.ts` | MODIFIED | Uses `queryKeys.analytics` |
+| `apps/web/src/lib/hooks/use-audit.ts` | MODIFIED | Uses `queryKeys.audit` |
+| `apps/web/src/components/database/edit-row-modal.tsx` | MODIFIED | Uses `mutationKeys.database.update()` |
+| `apps/web/src/components/database/delete-confirm-dialog.tsx` | MODIFIED | Uses `mutationKeys.database.delete()` |
 
 ---
 
@@ -51,18 +57,19 @@ Applied comprehensive TanStack Query v5 best practices from `.agent/skills/tanst
 | Category | Status | Evidence |
 |----------|--------|----------|
 | Object syntax for all hooks | ✅ | All `useQuery({ ... })` |
-| Array query keys | ✅ | `["groups", params]`, etc. |
+| Array query keys | ✅ | All use centralized `queryKeys.*` |
 | `isPending` for initial load | ✅ | Fixed in chart + admins hooks |
 | `gcTime` (not `cacheTime`) | ✅ | Per skill requirement |
-| `mutationKey` on mutations | ✅ | All 11 mutations |
+| `mutationKey` on mutations | ✅ | All 11 mutations via `mutationKeys.*` |
 | Query invalidation after mutations | ✅ | All mutations |
 | ReactQueryDevtools | ✅ | Added for dev debugging |
-| Centralized query keys | ✅ | `query-keys.ts` created |
+| **Centralized query keys** | ✅ | 100% adoption across 11 hooks + 2 components |
+| **queryOptions factories** | ✅ | Dashboard queries use factory pattern |
 | `placeholderData` (not `keepPreviousData`) | ✅ | Already correct |
 
 ---
 
-## 🔧 Anti-Patterns Fixed This Session
+## 🔧 Anti-Patterns Fixed This Session (Enhanced)
 
 | Anti-Pattern | Fix Applied |
 |--------------|-------------|
@@ -71,6 +78,9 @@ Applied comprehensive TanStack Query v5 best practices from `.agent/skills/tanst
 | Missing `mutationKey` | Added to all 11 mutations |
 | No DevTools | Added ReactQueryDevtools |
 | No centralized keys | Created `query-keys.ts` |
+| **Scattered string keys** | 100% adoption of centralized `queryKeys.*` |
+| **No queryOptions factories** | Added `dashboardQueryOptions` factory |
+| **TypeScript `any` type** | Replaced with `unknown` in adminApi |
 
 ---
 
@@ -84,10 +94,11 @@ Applied comprehensive TanStack Query v5 best practices from `.agent/skills/tanst
 
 ---
 
-## 📦 New Dependencies Added
+## 📦 Dependencies
 
 | Package | Version | Purpose |
 |---------|---------|---------|
+| `@tanstack/react-query` | `5.90.x` | Server state management |
 | `@tanstack/react-query-devtools` | `5.91.2` | Development debugging |
 
 ---
