@@ -78,7 +78,7 @@ cp apps/web/.env.example apps/web/.env.local
 # (See Configuration section below)
 
 # 8. Run the bot
-cd apps/bot && python main.py
+python -m apps.bot.main   # From project root
 ```
 
 ---
@@ -248,7 +248,7 @@ npx turbo dev --filter=@nezuko/web
 
 ```bash
 # Bot should show "Starting bot..." message
-cd apps/bot && python main.py
+python -m apps.bot.main   # From project root
 ```
 
 Send `/start` to your bot on Telegram - you should receive a welcome message.

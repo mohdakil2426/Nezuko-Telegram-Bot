@@ -49,6 +49,7 @@ logging.basicConfig(
     ],
 )
 # Add Postgres Handler (Real-time logs)
+postgres_handler = None
 try:
     from apps.bot.utils.postgres_logging import PostgresLogHandler
 
@@ -107,6 +108,10 @@ async def post_shutdown(_application: Application) -> None:
 
     # Flush Sentry events
     sentry_flush(timeout=2)
+
+    # Close Postgres log handler
+    if postgres_handler:
+        await postgres_handler.close_async()
 
     # Close connections
     await close_redis_connection()

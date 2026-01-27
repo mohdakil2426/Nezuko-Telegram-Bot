@@ -8,8 +8,11 @@ from typing import overload
 
 from dotenv import load_dotenv
 
-# Load environment variables from apps.bot.env file
-load_dotenv()
+# Get the directory where config.py lives (apps/bot/)
+_BOT_DIR = Path(__file__).resolve().parent
+
+# Load environment variables from apps/bot/.env file
+load_dotenv(_BOT_DIR / ".env")
 
 
 # pylint: disable=too-many-instance-attributes
@@ -42,10 +45,23 @@ class Config:
         # Required variables
         self.bot_token = self._get_required("BOT_TOKEN")
         self.environment = self._get_optional("ENVIRONMENT", "development")
-        self.database_url = self._get_optional(
+
+        # Database URL with path normalization for SQLite
+        db_url = self._get_optional(
             "DATABASE_URL",
-            f"sqlite+aiosqlite:///{self.data_dir}/nezuko.db",  # Default to storage directory
+            f"sqlite+aiosqlite:///{self.data_dir.as_posix()}/nezuko.db",
         )
+        # Normalize relative SQLite paths to absolute (relative to bot directory)
+        if db_url and "sqlite" in db_url.lower() and ":///" in db_url:
+            # Extract path from sqlite URL (after sqlite:/// or sqlite+aiosqlite:///)
+            prefix, _, path = db_url.partition(":///")
+            if path and not Path(path).is_absolute():
+                # Convert relative path to absolute (relative to apps/bot/)
+                abs_path = (_BOT_DIR / path).resolve()
+                # Ensure parent directory exists
+                abs_path.parent.mkdir(parents=True, exist_ok=True)
+                db_url = f"{prefix}:///{abs_path.as_posix()}"
+        self.database_url = db_url
 
         # Optional - Webhook
         self.webhook_url = self._get_optional("WEBHOOK_URL")

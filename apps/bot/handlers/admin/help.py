@@ -8,6 +8,7 @@ without needing to type commands every time.
 import logging
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
 from apps.bot.core.constants import (
@@ -46,6 +47,24 @@ def get_back_button_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("◀️ Back to Menu", callback_data=CALLBACK_MENU_BACK)],
     ]
     return InlineKeyboardMarkup(keyboard)
+
+
+async def safe_edit_message(query, text: str, reply_markup=None, **kwargs):
+    """
+    Safely edit a message, ignoring 'Message is not modified' errors.
+
+    This prevents log spam when users double-click buttons or click
+    a button that would show the same content.
+    """
+    try:
+        await query.edit_message_text(text, reply_markup=reply_markup, **kwargs)
+    except BadRequest as e:
+        if "Message is not modified" in str(e):
+            # Message already has this content - this is fine, just ignore
+            logger.debug("Edit skipped - message already has the same content")
+        else:
+            # Re-raise other BadRequest errors
+            raise
 
 
 async def handle_start(update: Update, _context: ContextTypes.DEFAULT_TYPE):
@@ -173,8 +192,8 @@ async def show_main_menu(query):
         "👇 **Use the buttons below to get started:**"
     )
 
-    await query.edit_message_text(
-        welcome_message, parse_mode="Markdown", reply_markup=get_main_menu_keyboard()
+    await safe_edit_message(
+        query, welcome_message, parse_mode="Markdown", reply_markup=get_main_menu_keyboard()
     )
 
 
@@ -197,8 +216,8 @@ async def show_setup_guide(query):
         "✅ **That's it!** I'll now verify all members automatically."
     )
 
-    await query.edit_message_text(
-        setup_message, parse_mode="Markdown", reply_markup=get_back_button_keyboard()
+    await safe_edit_message(
+        query, setup_message, parse_mode="Markdown", reply_markup=get_back_button_keyboard()
     )
 
 
@@ -222,8 +241,8 @@ async def show_how_it_works(query):
         "• **Multi-Channel** - Link multiple channels to one group"
     )
 
-    await query.edit_message_text(
-        how_it_works_message, parse_mode="Markdown", reply_markup=get_back_button_keyboard()
+    await safe_edit_message(
+        query, how_it_works_message, parse_mode="Markdown", reply_markup=get_back_button_keyboard()
     )
 
 
@@ -244,8 +263,8 @@ async def show_commands(query):
         "💡 _Tip: Type `/` in a chat to see available commands!_"
     )
 
-    await query.edit_message_text(
-        commands_message, parse_mode="Markdown", reply_markup=get_back_button_keyboard()
+    await safe_edit_message(
+        query, commands_message, parse_mode="Markdown", reply_markup=get_back_button_keyboard()
     )
 
 
@@ -271,8 +290,8 @@ async def show_help(query):
         "📬 _Still need help? Contact the bot owner._"
     )
 
-    await query.edit_message_text(
-        help_message, parse_mode="Markdown", reply_markup=get_back_button_keyboard()
+    await safe_edit_message(
+        query, help_message, parse_mode="Markdown", reply_markup=get_back_button_keyboard()
     )
 
 
@@ -306,7 +325,8 @@ async def show_add_to_group(query):
         [InlineKeyboardButton("◀️ Back to Menu", callback_data=CALLBACK_MENU_BACK)],
     ]
 
-    await query.edit_message_text(
+    await safe_edit_message(
+        query,
         add_to_group_message,
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup(keyboard),

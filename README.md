@@ -210,8 +210,8 @@ cp apps/bot/.env.example apps/bot/.env
 # Initialize database
 alembic upgrade head
 
-# Run the bot
-cd apps/bot && python -m bot.main
+# Run the bot (from project root)
+python -m apps.bot.main
 ```
 
 ### Setup Flow

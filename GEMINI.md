@@ -61,7 +61,7 @@ pip install -r requirements.txt    # Python
 bun install                        # Node.js
 
 # Run services
-cd apps/bot && python main.py      # Bot
+python -m apps.bot.main           # Bot (from project root)
 cd apps/api && uvicorn src.main:app --reload --port 8080  # API
 cd apps/web && bun dev             # Web Dashboard
 
