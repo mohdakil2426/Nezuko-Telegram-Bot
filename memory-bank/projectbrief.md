@@ -47,7 +47,7 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 - [x] **Asynchronous Handler Engine**: Processing updates in parallel using MTProto.
 - [x] **Smart Join/Leave Detection**: Real-time permission revocation.
 - [x] **Interactive Inline Verification**: One-click "Join -> Verify -> Chat" flow.
-- [x] **Hybrid Caching Implementation**: Redis 8 and local LRU for p99 performance.
+- [x] **Hybrid Caching Implementation**: Redis 7 and local LRU for p99 performance.
 
 ### Phase B: The Admin API (Intelligence) ✅
 

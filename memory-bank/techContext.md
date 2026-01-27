@@ -7,15 +7,15 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 ### 1. Bot Core (Python Runtime)
 
 - **Runtime**: `Python 3.13.1`
-- **Library**: `python-telegram-bot v22.5.0` [AsyncIO, Rate-Limiter]
+- **Library**: `python-telegram-bot v22.6+` [AsyncIO, Rate-Limiter]
 - **Database**: `PostgreSQL 15+` (Supabase) via `asyncpg`
 - **ORM**: `SQLAlchemy 2.0.46` [AsyncIO]
-- **Caching**: `Redis 7.1.0` (via `redis-py` async)
+- **Caching**: `Redis 7.1.0+` (via `redis-py` async)
 - **Observability**: `Structlog 25.5`, `Sentry 2.50.0`, `Prometheus Client 0.24`
 
 ### 2. Admin API (FastAPI Backend)
 
-- **Framework**: `FastAPI 0.124.4` (ASGI)
+- **Framework**: `FastAPI 0.128.0+` (ASGI)
 - **Server**: `Uvicorn 0.40.0`
 - **Validation**: `Pydantic V2.12.5`
 - **Authentication**: `Supabase Auth` (JWT Verification)
@@ -27,12 +27,12 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 
 - **Core**: `Next.js 16.1.4`, `React 19.2.3`, `TypeScript 5.9.3`
 - **Styling**: `TailwindCSS 4.1.18`, `Shadcn/UI` (Radix Primitives)
-- **State**: `Zustand 5.0.10` (Global), `TanStack Query 5.90` (Server State)
-- **Forms**: `React Hook Form 7.71`, `Zod 4.3.6`
+- **State**: `Zustand 5.0.10` (Global), `TanStack Query 5.90.20` (Server State)
+- **Forms**: `React Hook Form 7.71.1`, `Zod 4.3.6`
 - **Visualization**: `Recharts 3.7.0`, `react-sparklines 1.7.0`
 - **Auth & Data**: `@supabase/ssr@0.8.0`, `@supabase/supabase-js@2.93.1`
-- **Testing**: `Vitest 3.0.4`, `Playwright MCP`
-- **Package Manager**: `Bun 1.3.6+`
+- **Testing**: `Vitest 3.0.4`, `Playwright`
+- **Package Manager**: `Bun 1.3.6`
 
 ### React Optimization (Vercel Best Practices - Phase 16)
 
