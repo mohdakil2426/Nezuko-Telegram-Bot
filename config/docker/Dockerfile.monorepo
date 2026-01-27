@@ -22,8 +22,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python dependencies
-COPY requirements.txt .
+# Copy Python dependencies from apps/bot
+COPY apps/bot/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
@@ -43,7 +43,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONFAULTHANDLER=1 \
     PATH="/opt/venv/bin:$PATH" \
     # Default to production
-    ENVIRONMENT=production
+    ENVIRONMENT=production \
+    PYTHONPATH="/app"
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -59,13 +60,12 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code
-COPY --chown=nezuko:nezuko bot/ ./bot/
+COPY --chown=nezuko:nezuko apps/bot/ ./apps/bot/
 COPY --chown=nezuko:nezuko alembic.ini ./
-COPY --chown=nezuko:nezuko requirements.txt ./
 
-# Create directories for data
-RUN mkdir -p /app/data /app/logs && \
-    chown -R nezuko:nezuko /app
+# Create directories for data and logs in storage/
+RUN mkdir -p /app/storage/data /app/storage/logs && \
+    chown -R nezuko:nezuko /app/storage
 
 # Switch to non-root user
 USER nezuko
@@ -80,4 +80,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE 8000 8443
 
 # Default command
-CMD ["python", "-m", "bot.main"]
+CMD ["python", "-m", "apps.bot.main"]

@@ -8,7 +8,7 @@ from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from apps.api.src.models.admin_log import AdminLog
-from bot.config import config
+from apps.bot.config import config
 
 
 class PostgresLogHandler(logging.Handler):

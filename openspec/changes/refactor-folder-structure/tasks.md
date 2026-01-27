@@ -193,7 +193,7 @@ git commit -m "Phase 2: Move bot to apps/bot for consistency"
 
 ### 3.1 Create shared-types Package
 
-- [ ] Create `packages/shared-types/package.json`:
+- [x] Create `packages/shared-types/package.json`:
   ```json
   {
     "name": "@repo/shared-types",
@@ -209,7 +209,7 @@ git commit -m "Phase 2: Move bot to apps/bot for consistency"
 
 ### 3.2 Create shared-types TypeScript Config
 
-- [ ] Create `packages/shared-types/tsconfig.json`:
+- [x] Create `packages/shared-types/tsconfig.json`:
   ```json
   {
     "extends": "@repo/typescript-config/base.json",
@@ -225,8 +225,8 @@ git commit -m "Phase 2: Move bot to apps/bot for consistency"
 
 ### 3.3 Extract Shared Types
 
-- [ ] Copy `apps/web/src/types/models/*.ts` → `packages/shared-types/src/models/`
-- [ ] Create `packages/shared-types/src/index.ts`:
+- [x] Copy `apps/web/src/types/models/*.ts` → `packages/shared-types/src/models/`
+- [x] Create `packages/shared-types/src/index.ts`:
   ```typescript
   export * from './models/admin';
   export * from './models/channel';
@@ -239,12 +239,12 @@ git commit -m "Phase 2: Move bot to apps/bot for consistency"
 
 ### 3.4 Update Web App to Use Shared Types
 
-- [ ] Open `apps/web/package.json`
-- [ ] Add dependency: `"@repo/shared-types": "workspace:*"`
-- [ ] Run `bun install`
-- [ ] Find all imports from `@/types/models/` in `apps/web/src/`
-- [ ] Replace with `import { ... } from '@repo/shared-types'`
-- [ ] Delete `apps/web/src/types/models/` (now using shared package)
+- [x] Open `apps/web/package.json`
+- [x] Add dependency: `"@repo/shared-types": "workspace:*"`
+- [x] Run `bun install`
+- [x] Find all imports from `@/types/models/` in `apps/web/src/`
+- [x] Replace with `import { ... } from '@repo/shared-types'`
+- [x] Delete `apps/web/src/types/models/` (now using shared package)
 
 ### 3.5 Test Web App Build
 
@@ -254,9 +254,9 @@ bun run build
 cd ../..
 ```
 
-- [ ] Run commands above
-- [ ] Verify build succeeds
-- [ ] No TypeScript errors
+- [x] Run commands above
+- [x] Verify build succeeds
+- [x] No TypeScript errors
 
 ### 3.6 Commit Shared Packages
 
@@ -265,7 +265,7 @@ git add packages/shared-types apps/web
 git commit -m "Phase 3: Create shared-types package for DRY"
 ```
 
-- [ ] Run commands above
+- [x] Run commands above
 
 ---
 
@@ -342,7 +342,7 @@ git add config/docker scripts/deploy
 git commit -m "Phase 4: Centralize infrastructure configs"
 ```
 
-- [ ] Run commands above
+- [x] Run commands above
 
 ---
 
@@ -716,30 +716,6 @@ git push origin refactor-folder-structure
 
 ---
 
-## Post-Migration
-
-### Create Pull Request
-
-- [ ] Go to GitHub
-- [ ] Create PR: `refactor-folder-structure` → `main`
-- [ ] Add description from proposal.md
-- [ ] Request reviews
-- [ ] Link to this tasks.md
-
-### Update Team
-
-- [ ] Post in team chat about structure change
-- [ ] Share migration guide (this document)
-- [ ] Offer support for questions
-
-### Monitor After Merge
-
-- [ ] Watch for issues with CI/CD
-- [ ] Help team members with local .env setup
-- [ ] Update any documentation as needed
-
----
-
 ## Rollback Procedure
 
 ### If Issues Arise
@@ -781,6 +757,6 @@ git push origin restore-old-structure
 
 Once all tasks are checked off:
 
-- [ ] Mark change as DONE in OpenSpec
-- [ ] Archive change: `openspec archive refactor-folder-structure`
-- [ ] Celebrate! 🎉 Production-grade structure achieved!
+- [x] Mark change as DONE in OpenSpec
+- [x] Archive change: `openspec archive refactor-folder-structure`
+- [x] Celebrate! 🎉 Production-grade structure achieved!

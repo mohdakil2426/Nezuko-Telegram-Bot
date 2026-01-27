@@ -13,9 +13,9 @@ from typing import cast
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
-from bot.core.database import get_session
-from bot.database.crud import get_all_protected_groups, get_group_channels, get_protected_group
-from bot.services.verification import check_membership
+from apps.bot.core.database import get_session
+from apps.bot.database.crud import get_all_protected_groups, get_group_channels, get_protected_group
+from apps.bot.services.verification import check_membership
 
 logger = logging.getLogger(__name__)
 

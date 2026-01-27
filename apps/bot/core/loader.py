@@ -20,7 +20,7 @@ from telegram.ext import (
     filters,
 )
 
-from bot.core.constants import (
+from apps.bot.core.constants import (
     CALLBACK_MENU_ADD_TO_GROUP,
     CALLBACK_MENU_BACK,
     CALLBACK_MENU_COMMANDS,
@@ -29,17 +29,17 @@ from bot.core.constants import (
     CALLBACK_MENU_SETUP,
     CALLBACK_VERIFY,
 )
-from bot.handlers.admin.help import (
+from apps.bot.handlers.admin.help import (
     handle_help,
     handle_menu_callback,
     handle_start,
 )
-from bot.handlers.admin.settings import handle_settings, handle_status, handle_unprotect
-from bot.handlers.admin.setup import handle_protect
-from bot.handlers.events.join import handle_new_member
-from bot.handlers.events.leave import handle_channel_leave
-from bot.handlers.events.message import handle_message
-from bot.handlers.verify import handle_callback_verify
+from apps.bot.handlers.admin.settings import handle_settings, handle_status, handle_unprotect
+from apps.bot.handlers.admin.setup import handle_protect
+from apps.bot.handlers.events.join import handle_new_member
+from apps.bot.handlers.events.leave import handle_channel_leave
+from apps.bot.handlers.events.message import handle_message
+from apps.bot.handlers.verify import handle_callback_verify
 
 logger = logging.getLogger(__name__)
 

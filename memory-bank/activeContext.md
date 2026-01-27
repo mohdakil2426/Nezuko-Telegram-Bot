@@ -9,17 +9,16 @@
 ## ✅ Completed Tasks (2026-01-27)
 
 ### Phase 19: Production-Grade Folder Structure ✅
-
-Comprehensive monorepo restructuring following Turborepo/Next.js/FastAPI best practices:
-
-| Change | Description |
-|--------|-------------|
-| Bot moved | `bot/` → `apps/bot/` (all apps under `apps/`) |
-| Docker centralized | All files in `config/docker/` |
-| Scripts organized | `scripts/{setup,deploy,maintenance}/` |
-| Storage isolated | Runtime files in `storage/` (gitignored) |
-| Env per-app | Each app has `.env.example` template |
-| Root cleaned | 30+ files → 23 essential configs |
+- [x] Create folder scaffold
+- [x] Move bot to `apps/bot/`
+- [x] Fix bot imports and relative paths
+- [x] Centralize infrastructure in `config/docker/`
+- [x] Organize scripts in `scripts/`
+- [x] Move runtime files to `storage/` (gitignored)
+- [x] Implement per-app environment isolation
+- [x] Cleanup root directory (30+ -> 23 files)
+- [x] Fix bot logging path to `storage/logs/bot.log`
+- [x] Verify bot execution in new structure
 
 ### New Environment Variable Structure
 

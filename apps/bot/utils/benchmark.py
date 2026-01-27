@@ -16,17 +16,17 @@ import time
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
-from bot.config import config
-from bot.core.cache import cache_get, cache_set, get_redis_client, get_ttl_with_jitter
-from bot.core.database import get_session
-from bot.database.crud import (
+from apps.bot.config import config
+from apps.bot.core.cache import cache_get, cache_set, get_redis_client, get_ttl_with_jitter
+from apps.bot.core.database import get_session
+from apps.bot.database.crud import (
     create_owner,
     create_protected_group,
     get_group_channels,
     get_protected_group,
     link_group_channel,
 )
-from bot.services.verification import check_membership, reset_cache_stats
+from apps.bot.services.verification import check_membership, reset_cache_stats
 
 logging.basicConfig(
     level=logging.WARNING,  # Suppress debug logs for clean output

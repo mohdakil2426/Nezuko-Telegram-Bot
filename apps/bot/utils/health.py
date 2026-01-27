@@ -18,10 +18,10 @@ from typing import Any, cast
 
 from aiohttp import web
 
-from bot.config import config
-from bot.core.cache import _redis_available, _redis_client
-from bot.core.database import check_db_connectivity
-from bot.utils.metrics import (
+from apps.bot.config import config
+from apps.bot.core.cache import _redis_available, _redis_client
+from apps.bot.core.database import check_db_connectivity
+from apps.bot.utils.metrics import (
     get_metrics,
     get_metrics_content_type,
     set_db_connected,

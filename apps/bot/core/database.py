@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import NullPool
 
-from bot.config import config
+from apps.bot.config import config
 
 # Base class for ORM models
 Base = declarative_base()

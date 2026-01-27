@@ -16,7 +16,7 @@ from telegram import ChatPermissions
 from telegram.error import RetryAfter, TelegramError
 from telegram.ext import ContextTypes
 
-from bot.utils.metrics import record_api_call, record_error, record_rate_limit_delay
+from apps.bot.utils.metrics import record_api_call, record_error, record_rate_limit_delay
 
 logger = logging.getLogger(__name__)
 

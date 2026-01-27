@@ -13,10 +13,10 @@ from telegram import Update
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
-from bot.core.database import get_session
-from bot.database.crud import get_group_channels
-from bot.services.protection import unmute_user
-from bot.services.verification import check_multi_membership, invalidate_cache
+from apps.bot.core.database import get_session
+from apps.bot.database.crud import get_group_channels
+from apps.bot.services.protection import unmute_user
+from apps.bot.services.verification import check_multi_membership, invalidate_cache
 
 logger = logging.getLogger(__name__)
 

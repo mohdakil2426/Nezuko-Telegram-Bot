@@ -34,7 +34,7 @@ services:
     networks:
       - nezuko-network
     volumes:
-      - bot-logs:/app/logs
+      - bot-logs:/app/storage/logs
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

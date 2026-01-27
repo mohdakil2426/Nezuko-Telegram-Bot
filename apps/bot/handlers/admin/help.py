@@ -10,7 +10,7 @@ import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-from bot.core.constants import (
+from apps.bot.core.constants import (
     CALLBACK_MENU_ADD_TO_GROUP,
     CALLBACK_MENU_BACK,
     CALLBACK_MENU_COMMANDS,

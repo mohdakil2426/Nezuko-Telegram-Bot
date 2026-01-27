@@ -10,14 +10,14 @@ from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
-from bot.core.database import get_session
-from bot.database.crud import (
+from apps.bot.core.database import get_session
+from apps.bot.database.crud import (
     create_owner,
     create_protected_group,
     get_protected_group,
     link_group_channel,
 )
-from bot.utils.auto_delete import schedule_delete
+from apps.bot.utils.auto_delete import schedule_delete
 
 logger = logging.getLogger(__name__)
 

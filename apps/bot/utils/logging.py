@@ -19,7 +19,7 @@ from typing import Any
 import structlog
 from structlog.types import EventDict, WrappedLogger
 
-from bot.config import config
+from apps.bot.config import config
 
 
 def add_environment(_logger: WrappedLogger, _method_name: str, event_dict: EventDict) -> EventDict:

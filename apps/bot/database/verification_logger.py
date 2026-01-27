@@ -15,7 +15,7 @@ from sqlalchemy import BigInteger, Boolean, DateTime, Index, Integer, String
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Mapped, mapped_column
 
-from bot.core.database import Base, get_session
+from apps.bot.core.database import Base, get_session
 
 logger = logging.getLogger(__name__)
 

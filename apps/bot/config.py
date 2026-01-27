@@ -3,11 +3,12 @@ Configuration management and environment variable validation.
 """
 
 import os
+from pathlib import Path
 from typing import overload
 
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables from apps.bot.env file
 load_dotenv()
 
 
@@ -19,26 +20,31 @@ class Config:
     bot_token: str
     environment: str  # 'development' or 'production'
     database_url: str
-
-    # Optional - Webhook
-    webhook_url: str | None = None
-    webhook_secret: str | None = None
-    port: int = 8443
-
-    # Optional - Redis
-    redis_url: str | None = None
-
-    # Optional - Monitoring
-    sentry_dsn: str | None = None
+    base_dir: Path
+    storage_dir: Path
+    logs_dir: Path
+    data_dir: Path
+    log_file: Path
 
     def __init__(self):
         """Initialize and validate configuration from environment variables."""
+        # Setup paths
+        self.base_dir = Path(__file__).resolve().parent.parent.parent
+        self.storage_dir = self.base_dir / "storage"
+        self.logs_dir = self.storage_dir / "logs"
+        self.data_dir = self.storage_dir / "data"
+        self.log_file = self.logs_dir / "bot.log"
+
+        # Ensure directories exist
+        os.makedirs(self.logs_dir, exist_ok=True)
+        os.makedirs(self.data_dir, exist_ok=True)
+
         # Required variables
         self.bot_token = self._get_required("BOT_TOKEN")
         self.environment = self._get_optional("ENVIRONMENT", "development")
         self.database_url = self._get_optional(
             "DATABASE_URL",
-            "sqlite+aiosqlite:///./nezuko.db",  # Default to async SQLite for development
+            f"sqlite+aiosqlite:///{self.data_dir}/nezuko.db",  # Default to storage directory
         )
 
         # Optional - Webhook

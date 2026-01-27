@@ -8,7 +8,7 @@ from typing import Any
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-from bot.core.constants import CALLBACK_VERIFY
+from apps.bot.core.constants import CALLBACK_VERIFY
 
 logger = logging.getLogger(__name__)
 

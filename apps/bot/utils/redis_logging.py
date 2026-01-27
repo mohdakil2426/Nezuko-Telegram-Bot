@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 from redis import Redis
 
-from bot.config import config
+from apps.bot.config import config
 
 
 class RedisLogHandler(logging.Handler):

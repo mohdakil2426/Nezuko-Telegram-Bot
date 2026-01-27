@@ -26,7 +26,7 @@ except ImportError:
     SENTRY_AVAILABLE = False
     sentry_sdk = None
 
-from bot.config import config
+from apps.bot.config import config
 
 logger = logging.getLogger(__name__)
 

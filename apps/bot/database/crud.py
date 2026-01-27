@@ -7,7 +7,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from bot.database.models import EnforcedChannel, GroupChannelLink, Owner, ProtectedGroup
+from apps.bot.database.models import EnforcedChannel, GroupChannelLink, Owner, ProtectedGroup
 
 # ==================== Owner Operations ====================
 

@@ -14,23 +14,23 @@ import sys
 from telegram import Update
 from telegram.ext import Application
 
-from bot.config import config
-from bot.core.cache import close_redis_connection, get_redis_client
-from bot.core.database import close_db, get_session, init_db
-from bot.core.loader import register_handlers, setup_bot_commands
-from bot.core.rate_limiter import create_rate_limiter
-from bot.database.crud import get_all_protected_groups
-from bot.utils.health import stop_health_server
+from apps.bot.config import config
+from apps.bot.core.cache import close_redis_connection, get_redis_client
+from apps.bot.core.database import close_db, get_session, init_db
+from apps.bot.core.loader import register_handlers, setup_bot_commands
+from apps.bot.core.rate_limiter import create_rate_limiter
+from apps.bot.database.crud import get_all_protected_groups
+from apps.bot.utils.health import stop_health_server
 
 # Phase 4: Monitoring imports
-from bot.utils.metrics import (
+from apps.bot.utils.metrics import (
     set_active_groups_count,
     set_bot_start_time,
     set_db_connected,
     set_redis_connected,
 )
-from bot.utils.sentry import flush as sentry_flush
-from bot.utils.sentry import init_sentry
+from apps.bot.utils.sentry import flush as sentry_flush
+from apps.bot.utils.sentry import init_sentry
 
 # Setup standard logging with UTF-8 support for Windows console
 # Windows cp1252 can't handle Unicode emojis - use 'replace' mode to avoid crashes
@@ -43,11 +43,14 @@ if sys.platform == "win32":
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO if config.is_production else logging.DEBUG,
-    handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler("bot.log", encoding="utf-8")],
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler(config.log_file, encoding="utf-8"),
+    ],
 )
 # Add Postgres Handler (Real-time logs)
 try:
-    from bot.utils.postgres_logging import PostgresLogHandler
+    from apps.bot.utils.postgres_logging import PostgresLogHandler
 
     postgres_handler = PostgresLogHandler()
     postgres_handler.setLevel(logging.INFO)  # Always send INFO+ to dashboard

@@ -13,8 +13,8 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.core.database import check_db_connectivity, get_engine, get_session
-from bot.database.crud import (
+from apps.bot.core.database import check_db_connectivity, get_engine, get_session
+from apps.bot.database.crud import (
     get_all_protected_groups,
     get_group_channels,
     get_groups_for_channel,

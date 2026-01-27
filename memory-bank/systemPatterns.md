@@ -461,10 +461,10 @@ const channel = supabase
 ## Concurrency Model
 
 ```python
-# bot/main.py
+# apps/bot/main.py
 application = (
     ApplicationBuilder()
-    .token(settings.BOT_TOKEN)
+    .token(config.bot_token)
     .concurrent_updates(True)  # Async handling
     .build()
 )
@@ -727,7 +727,7 @@ python -m pyrefly check # Python types (0 errors)
 | `apps/web/src/lib/supabase/middleware.ts` | Session update logic |
 | `apps/api/src/core/security.py` | JWT verification |
 | `apps/api/src/core/database.py` | Database connection |
-| `bot/main.py` | Bot entry point |
+| `apps/bot/main.py` | Bot entry point |
 
 ## Error Codes
 

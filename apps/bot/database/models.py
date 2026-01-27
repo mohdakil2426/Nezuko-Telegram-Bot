@@ -18,7 +18,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from bot.core.database import Base
+from apps.bot.core.database import Base
 
 
 class Owner(Base):

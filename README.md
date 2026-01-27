@@ -352,8 +352,7 @@ nezuko-monorepo/
 │   ├── architecture/           # System design docs
 │   ├── api/                    # API documentation
 │   └── guides/                 # User guides
-│
-├── memory-bank/                # AI context files
+|
 └── tests/                      # Pytest test suite
 ```
 

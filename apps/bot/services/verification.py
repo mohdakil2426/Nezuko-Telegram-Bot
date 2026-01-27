@@ -18,10 +18,10 @@ from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
-from bot.core.cache import cache_delete, cache_get, cache_set, get_ttl_with_jitter
-from bot.core.constants import CACHE_JITTER_PERCENT, NEGATIVE_CACHE_TTL, POSITIVE_CACHE_TTL
-from bot.database.verification_logger import log_verification
-from bot.utils.metrics import (
+from apps.bot.core.cache import cache_delete, cache_get, cache_set, get_ttl_with_jitter
+from apps.bot.core.constants import CACHE_JITTER_PERCENT, NEGATIVE_CACHE_TTL, POSITIVE_CACHE_TTL
+from apps.bot.database.verification_logger import log_verification
+from apps.bot.utils.metrics import (
     record_api_call,
     record_cache_hit,
     record_cache_miss,

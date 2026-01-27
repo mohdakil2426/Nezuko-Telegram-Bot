@@ -9,9 +9,9 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 # Import models to register them with Base.metadata
-from bot.core.database import Base
-from bot.database import models  # noqa: F401 # pylint: disable=unused-import
-from bot.config import config as app_config
+from apps.bot.core.database import Base
+from apps.bot.database import models  # noqa: F401 # pylint: disable=unused-import
+from apps.bot.config import config as app_config
 
 # this is the Alembic Config object
 config = context.config
