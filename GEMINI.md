@@ -126,6 +126,8 @@ alembic downgrade -1               # Rollback last migration
 
 ## Browser Automation
 
+When searching web, always use 2025-2026 in the last to get latest results.
+
 Use Playwright MCP for browser automation, testing, and debugging.
 
 ## Documentation

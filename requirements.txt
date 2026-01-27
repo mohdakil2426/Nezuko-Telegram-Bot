@@ -1,0 +1,15 @@
+# ============================================================
+# Nezuko - Root Requirements File
+# ============================================================
+# This file combines all Python dependencies from the monorepo.
+# Install with: pip install -r requirements.txt
+# ============================================================
+
+# API dependencies
+-r apps/api/requirements.txt
+
+# Bot dependencies  
+-r apps/bot/requirements.txt
+
+# Development dependencies (optional)
+# -r apps/api/requirements-dev.txt

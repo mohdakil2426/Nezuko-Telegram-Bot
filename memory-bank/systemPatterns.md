@@ -1,6 +1,6 @@
 # System Patterns: Nezuko - Architectural Standards
 
-> **Last Updated**: 2026-01-28 | **Version**: 2.3.0 (Documentation Refinement)
+> **Last Updated**: 2026-01-28 | **Version**: 2.4.0 (Developer Experience)
 
 ---
 
@@ -89,10 +89,23 @@ Nezuko uses a **Turborepo** monorepo with three core domains:
 │   │   └── Dockerfile.api
 │   └── nginx/                  # Nginx configs (if needed)
 │
-├── scripts/                    # Organized scripts
-│   ├── setup/                  # One-time setup scripts
-│   ├── deploy/                 # Deployment scripts
-│   └── maintenance/            # Maintenance utilities
+├── scripts/                    # Development & utility scripts
+│   ├── dev/                   # 🚀 Development launchers
+│   │   ├── start.bat          # Start all services (CMD)
+│   │   ├── start.ps1          # Start all services (PowerShell)
+│   │   └── stop.bat           # Stop all services
+│   ├── setup/                 # 📦 Initial setup
+│   │   └── install.bat        # First-time project setup
+│   ├── db/                    # 🗄️ Database utilities
+│   │   ├── init.sql           # Schema initialization
+│   │   ├── setup.py           # Database setup
+│   │   └── debug.py           # Debug utilities
+│   ├── deploy/                # 🚢 Deployment scripts
+│   │   └── docker-build.sh    # Docker build
+│   └── utils/                 # 🔧 Utility scripts
+│       ├── generate-structure.ps1
+│       ├── manage.ps1
+│       └── run-tests.py
 │
 ├── storage/                    # Runtime files (GITIGNORED)
 │   ├── logs/                   # Application logs

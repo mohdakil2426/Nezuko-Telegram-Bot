@@ -1,6 +1,6 @@
 # Project Progress: Nezuko - Roadmap to v1.0.0
 
-## 🛠️ Current Status: Phase 20 - Documentation Refinement ✅
+## 🛠️ Current Status: Phase 21 - Developer Experience ✅
 
 **Overall Implementation Status**: **100%** 🚀
 
@@ -22,9 +22,52 @@
 | **Phase 17** | Next.js 16 Deep Compliance Audit | ✅ Complete |
 | **Phase 18** | TanStack Query v5 Best Practices Audit | ✅ Complete |
 | **Phase 19** | Production-Grade Folder Structure | ✅ Complete |
-| **Phase 20** | Documentation Refinement | ✅ **COMPLETE** |
+| **Phase 20** | Documentation Refinement | ✅ Complete |
+| **Phase 21** | Developer Experience Improvements | ✅ **COMPLETE** |
 
 ---
+
+## ✅ Phase 21: Developer Experience Improvements (2026-01-28)
+
+### Overview
+
+Fixed bot execution issues and created organized development scripts for easier project management.
+
+### Bot Fixes
+
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| Import errors when running bot | Running from wrong directory | Must use `python -m apps.bot.main` from root |
+| `.env` not loading | `load_dotenv()` searching CWD | Changed to `load_dotenv(_BOT_DIR / ".env")` |
+| SQLite path not found | Relative path not resolved | Normalize relative paths to absolute |
+| Postgres handler errors | Pending async tasks on shutdown | Added `close_async()` cleanup method |
+| "Message is not modified" | Editing message with same content | Added `safe_edit_message()` helper |
+
+### Development Scripts Created
+
+```
+scripts/
+├── dev/
+│   ├── start.bat     # Start all 3 services in separate terminals
+│   ├── start.ps1     # Same with colored PowerShell output
+│   └── stop.bat      # Kill all running services
+├── setup/
+│   └── install.bat   # First-time project setup
+├── db/               # Database utilities
+├── deploy/           # Deployment scripts
+└── utils/            # Utility scripts
+```
+
+### Quick Commands
+
+| Action | Command |
+|--------|---------|
+| Start all | `.\scripts\dev\start.ps1` |
+| Stop all | `.\scripts\dev\stop.bat` |
+| Setup | `.\scripts\setup\install.bat` |
+
+---
+
 
 ## ✅ Phase 20: Documentation Refinement (2026-01-28)
 
@@ -194,7 +237,8 @@ docs/           → Structured documentation
 - ✅ Next.js 16 Compliance: **98%**
 - ✅ TanStack Query v5 Compliance: **100%**
 - ✅ Documentation: **Fully Structured**
+- ✅ Developer Scripts: **Organized & Working**
 
 ---
 
-*Last Updated: 2026-01-28*
+*Last Updated: 2026-01-28 04:01 IST*

@@ -188,20 +188,35 @@ def validate_channel(self) -> 'GroupCreate':
 
 ## 🛠️ Development Setup
 
-### Quick Start Commands
+### Quick Start (Recommended)
 
 ```bash
-# 1. Start API (Terminal 1)
-cd apps/api
-python -m uvicorn src.main:app --host 0.0.0.0 --port 8080 --reload
+# Start all 3 services in separate terminals
+.\scripts\dev\start.ps1    # PowerShell (colored output)
+.\scripts\dev\start.bat    # Windows CMD
 
-# 2. Start Web (Terminal 2)
-cd apps/web
-bun dev                    # Runs on localhost:3000
+# Stop all services
+.\scripts\dev\stop.bat
+```
 
-# 3. Start Bot (Terminal 3)
-cd apps/bot
-python main.py             # Polling mode
+### Manual Commands (if needed)
+
+```bash
+# Terminal 1 - Web Dashboard
+cd apps/web && bun dev     # Runs on localhost:3000
+
+# Terminal 2 - API Server
+cd apps/api && uvicorn src.main:app --reload --port 8080
+
+# Terminal 3 - Bot (IMPORTANT: Run from project root!)
+python -m apps.bot.main    # ✅ Correct
+# cd apps/bot && python main.py  # ❌ Wrong - breaks imports!
+```
+
+### First-Time Setup
+
+```bash
+.\scripts\setup\install.bat
 ```
 
 ### Environment Variables

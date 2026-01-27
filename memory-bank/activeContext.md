@@ -1,42 +1,58 @@
-# Active Context: Phase 20 - Documentation Refinement
+# Active Context: Phase 21 - Developer Experience Improvements
 
 ## 🎯 Current Status
 
-**Phase 20 COMPLETE** - Documentation structure refined, GEMINI.md modernized.
+**Phase 21 COMPLETE** - Bot fixes, developer scripts, organized folder structure.
 
 ---
 
 ## ✅ Completed Tasks (2026-01-28)
 
-### Phase 20: Documentation Refinement ✅
+### Phase 21: Developer Experience Improvements ✅
 
-- [x] Remove `docs/local/` references from public documentation
-- [x] Remove `memory-bank/` references from public documentation
-- [x] Move `TECH_STACK.md` to `docs/architecture/tech-stack.md`
-- [x] Rewrite tech stack documentation completely
-- [x] Update `docs/README.md` navigation tree
-- [x] Fix all broken "Next Steps" links in docs
-- [x] Update GEMINI.md to follow official format with imports
-- [x] Create component-specific GEMINI.md files (web, api, bot)
-- [x] Make `CONTRIBUTING.md` a lightweight pointer
+- [x] Fixed bot module import path issue (must run from project root)
+- [x] Fixed `load_dotenv()` to find `.env` relative to `apps/bot/`
+- [x] Fixed SQLite database path normalization for relative URLs
+- [x] Fixed `PostgresLogHandler` async task management
+- [x] Fixed "Message is not modified" error with `safe_edit_message()` helper
+- [x] Created development launcher scripts (`scripts/dev/start.bat`, `start.ps1`)
+- [x] Created stop script (`scripts/dev/stop.bat`)
+- [x] Created first-time setup script (`scripts/setup/install.bat`)
+- [x] Reorganized `scripts/` folder into categories
+- [x] Created `scripts/README.md` documentation
+- [x] Updated documentation with correct bot run command
 
-### Documentation Structure
-
-| Document | Location | Purpose |
-|----------|----------|---------|
-| Main README | `README.md` | Project overview |
-| Docs Index | `docs/README.md` | Documentation hub |
-| Tech Stack | `docs/architecture/tech-stack.md` | Technology reference |
-| Contributing | `CONTRIBUTING.md` → `docs/contributing/README.md` | Lightweight pointer |
-| GEMINI.md | Root + per-app | AI context files |
-
-### GEMINI.md Hierarchy
+### Scripts Folder Structure
 
 ```
-GEMINI.md (root)
-├── @./apps/web/GEMINI.md    → Next.js 16 / React 19 patterns
-├── @./apps/api/GEMINI.md    → FastAPI / SQLAlchemy 2.0 patterns
-└── @./apps/bot/GEMINI.md    → python-telegram-bot v22.6 patterns
+scripts/
+├── README.md              # Documentation
+├── dev/                   # 🚀 Development server scripts
+│   ├── start.bat          # Start all (3 terminals) - CMD
+│   ├── start.ps1          # Start all (3 terminals) - PowerShell
+│   └── stop.bat           # Stop all services
+├── setup/                 # 📦 Initial setup
+│   └── install.bat        # First-time project setup
+├── db/                    # 🗄️ Database scripts
+│   ├── init.sql
+│   ├── setup.py
+│   └── debug.py
+├── deploy/                # 🚢 Deployment
+│   └── docker-build.sh
+└── utils/                 # 🔧 Utilities
+    ├── generate-structure.ps1
+    ├── manage.ps1
+    └── run-tests.py
+```
+
+### Bot Run Command (IMPORTANT)
+
+```bash
+# Correct way (from project root)
+python -m apps.bot.main
+
+# Wrong way (doesn't work)
+cd apps/bot && python main.py  # ❌ Breaks imports!
 ```
 
 ---
@@ -45,6 +61,7 @@ GEMINI.md (root)
 
 | Phase | Description | Date |
 |-------|-------------|------|
+| Phase 20 | Documentation Refinement | 2026-01-28 |
 | Phase 19 | Production-Grade Folder Structure | 2026-01-27 |
 | Phase 18 | TanStack Query v5 Best Practices Audit | 2026-01-27 |
 | Phase 17 | Next.js 16 Deep Compliance Audit | 2026-01-27 |
@@ -67,16 +84,32 @@ nezuko-monorepo/
 │       └── GEMINI.md     # Bot-specific AI context
 ├── packages/             # Shared packages
 ├── config/docker/        # Docker configuration
-├── scripts/              # Utility scripts
+├── scripts/              # Organized utility scripts
+│   ├── dev/              # Development launchers
+│   ├── setup/            # Setup scripts
+│   ├── db/               # Database scripts
+│   ├── deploy/           # Deployment scripts
+│   └── utils/            # Utility scripts
 ├── storage/              # Runtime files (GITIGNORED)
 ├── docs/                 # Public documentation
-│   ├── architecture/
-│   │   └── tech-stack.md # Technology reference
-│   └── local/            # Internal docs (not referenced publicly)
+│   └── local/            # Internal docs
 ├── memory-bank/          # AI context (internal use)
 ├── GEMINI.md             # Root AI context with imports
 └── README.md             # Project overview
 ```
+
+---
+
+## 🚀 Quick Start Commands
+
+| Action | Command |
+|--------|---------|
+| **Start all services** | `.\scripts\dev\start.ps1` |
+| **Stop all services** | `.\scripts\dev\stop.bat` |
+| **First-time setup** | `.\scripts\setup\install.bat` |
+| **Run bot manually** | `python -m apps.bot.main` |
+| **Run web manually** | `cd apps/web && bun dev` |
+| **Run API manually** | `cd apps/api && uvicorn src.main:app --reload --port 8080` |
 
 ---
 
@@ -90,17 +123,6 @@ nezuko-monorepo/
 
 ---
 
-## ⚡ Build Status
-
-| Check | Status |
-|-------|--------|
-| TypeScript Type-Check | ✅ Passes |
-| Production Build | ✅ Completes |
-| Documentation Links | ✅ All Valid |
-| GEMINI.md Structure | ✅ Modular |
-
----
-
 ## 🔐 Test Credentials
 
 | User | Email | Password | Role |
@@ -109,4 +131,4 @@ nezuko-monorepo/
 
 ---
 
-*Last Updated: 2026-01-28*
+*Last Updated: 2026-01-28 04:01 IST*
