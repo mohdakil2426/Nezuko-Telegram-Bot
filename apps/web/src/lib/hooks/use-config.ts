@@ -13,6 +13,7 @@ export function useUpdateConfig() {
     const queryClient = useQueryClient();
 
     return useMutation({
+        mutationKey: ["config", "update"], // v5: Enable tracking with useMutationState
         mutationFn: (data: ConfigUpdateRequest) => configApi.updateConfig(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["config"] });
@@ -22,6 +23,7 @@ export function useUpdateConfig() {
 
 export function useTestWebhook() {
     return useMutation({
+        mutationKey: ["config", "testWebhook"], // v5: Enable tracking with useMutationState
         mutationFn: () => configApi.testWebhook(),
     });
 }

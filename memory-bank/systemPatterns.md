@@ -1,6 +1,6 @@
 # System Patterns: Nezuko - Architectural Standards
 
-> **Last Updated**: 2026-01-27 | **Version**: 2.0.0
+> **Last Updated**: 2026-01-27 | **Version**: 2.1.0 (TanStack Query v5 patterns added)
 
 ---
 
@@ -12,7 +12,7 @@
 4. [Authentication (Supabase)](#-authentication-supabase)
 5. [Database Patterns](#-database-patterns)
 6. [Bot Engine Architecture](#-bot-engine-architecture)
-7. [Anti-Patterns Reference](#-anti-patterns-reference)
+7. [Anti-Patterns Reference](#-anti-patterns-reference) (incl. TanStack Query v5)
 8. [Security Standards](#-security-standards)
 9. [DevOps & CI/CD](#-devops--cicd)
 10. [Quick Reference](#-quick-reference)
@@ -468,6 +468,126 @@ value={`${data.rate ?? 0}%`}
 
 /* ⚠️ VS Code shows false positives - add to settings.json: */
 /* { "css.validate": false, "files.associations": { "*.css": "tailwindcss" } } */
+```
+
+## TanStack Query v5 Anti-Patterns
+
+### ❌ Never Do
+
+| ❌ Wrong | ✅ Correct | Reason |
+|----------|-----------|--------|
+| `useQuery(['todos'], fetchTodos)` | `useQuery({ queryKey, queryFn })` | v5 removed array/function syntax |
+| `cacheTime: 60000` | `gcTime: 60000` | Renamed in v5 |
+| `isLoading` for initial load | `isPending` | v5 changed semantics |
+| `keepPreviousData: true` | `placeholderData: keepPreviousData` | Option removed, use helper |
+| `useErrorBoundary: true` | `throwOnError: true` | Renamed in v5 |
+| Missing `initialPageParam` | Required for infinite queries | v5 requires explicit value |
+| `onSuccess` in queries | Use `useEffect` instead | Removed from queries in v5 |
+| Missing `mutationKey` | Add for tracking | Enables `useMutationState` |
+
+### Query Callbacks Removed (v5)
+
+```tsx
+// ❌ REMOVED in v5 - Query callbacks
+useQuery({
+    queryKey: ['todos'],
+    queryFn: fetchTodos,
+    onSuccess: (data) => { },  // ❌ No longer works
+    onError: (error) => { },   // ❌ No longer works
+});
+
+// ✅ CORRECT - Use useEffect
+const { data, error } = useQuery({ queryKey: ['todos'], queryFn: fetchTodos });
+useEffect(() => {
+    if (data) { /* handle success */ }
+    if (error) { /* handle error */ }
+}, [data, error]);
+
+// ✅ Mutation callbacks STILL work
+useMutation({
+    mutationFn: addTodo,
+    onSuccess: () => { },  // ✅ Still works for mutations
+});
+```
+
+### Loading State Changes (v5)
+
+```tsx
+// ❌ WRONG - v4 semantics
+const { isLoading } = useQuery(...);
+if (isLoading) return <Loading />;  // Wrong meaning in v5
+
+// ✅ CORRECT - v5 semantics
+const { isPending, isLoading, isFetching } = useQuery(...);
+
+// isPending = no data yet (use this for initial load)
+// isLoading = isPending && isFetching
+// isFetching = background refetch in progress
+
+if (isPending) return <Loading />;  // ✅ Correct for initial load
+```
+
+### Infinite Query Requirements (v5)
+
+```tsx
+// ❌ WRONG - Missing initialPageParam
+useInfiniteQuery({
+    queryKey: ['projects'],
+    queryFn: ({ pageParam = 0 }) => fetchProjects(pageParam),  // ❌ Default not allowed
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+});
+
+// ✅ CORRECT - Required initialPageParam
+useInfiniteQuery({
+    queryKey: ['projects'],
+    queryFn: ({ pageParam }) => fetchProjects(pageParam),
+    initialPageParam: 0,  // ✅ Required in v5
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+});
+```
+
+### useSuspenseQuery + enabled (v5)
+
+```tsx
+// ❌ WRONG - enabled not available with Suspense
+useSuspenseQuery({
+    queryKey: ['todo', id],
+    queryFn: () => fetchTodo(id),
+    enabled: !!id,  // ❌ TypeScript error
+});
+
+// ✅ CORRECT - Use conditional rendering
+{id && <TodoComponent id={id} />}
+
+// Inside TodoComponent - no enabled needed
+function TodoComponent({ id }: { id: number }) {
+    const { data } = useSuspenseQuery({
+        queryKey: ['todo', id],
+        queryFn: () => fetchTodo(id),
+    });
+    return <div>{data.title}</div>;
+}
+```
+
+### Centralized Query Keys Pattern
+
+```tsx
+// ❌ ANTI-PATTERN - Scattered string keys
+useQuery({ queryKey: ['groups', params], ... });
+queryClient.invalidateQueries({ queryKey: ['groups'] });
+
+// ✅ BEST PRACTICE - Centralized typed keys (query-keys.ts)
+export const queryKeys = {
+    groups: {
+        all: ['groups'] as const,
+        list: (params) => [...queryKeys.groups.all, params] as const,
+        detail: (id) => [...queryKeys.groups.all, id] as const,
+    },
+};
+
+// Usage
+useQuery({ queryKey: queryKeys.groups.list(params), ... });
+queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
 ```
 
 ---

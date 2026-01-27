@@ -22,6 +22,7 @@ export function useUpdateGroup() {
     const queryClient = useQueryClient();
 
     return useMutation({
+        mutationKey: ["groups", "update"], // v5: Enable tracking with useMutationState
         mutationFn: ({ id, data }: { id: number; data: GroupUpdateRequest }) =>
             groupsApi.updateGroup(id, data),
         onSuccess: (data) => {
@@ -35,6 +36,7 @@ export function useLinkChannel() {
     const queryClient = useQueryClient();
 
     return useMutation({
+        mutationKey: ["groups", "linkChannel"], // v5: Enable tracking with useMutationState
         mutationFn: ({ groupId, channelId }: { groupId: number; channelId: number }) =>
             groupsApi.linkChannel(groupId, channelId),
         onSuccess: (_, variables) => {
@@ -47,6 +49,7 @@ export function useUnlinkChannel() {
     const queryClient = useQueryClient();
 
     return useMutation({
+        mutationKey: ["groups", "unlinkChannel"], // v5: Enable tracking with useMutationState
         mutationFn: ({ groupId, channelId }: { groupId: number; channelId: number }) =>
             groupsApi.unlinkChannel(groupId, channelId),
         onSuccess: (_, variables) => {

@@ -47,6 +47,7 @@ export function useAdmins() {
     });
 
     const createMutation = useMutation({
+        mutationKey: ["admins", "create"], // v5: Enable tracking with useMutationState
         mutationFn: adminApi.createAdmin,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admins"] });
@@ -62,6 +63,7 @@ export function useAdmins() {
     });
 
     const deleteMutation = useMutation({
+        mutationKey: ["admins", "delete"], // v5: Enable tracking with useMutationState
         mutationFn: adminApi.deleteAdmin,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admins"] });
@@ -78,8 +80,10 @@ export function useAdmins() {
 
     return {
         admins: query.data?.data,
-        isLoading: query.isLoading,
+        isPending: query.isPending, // v5: Use isPending for initial load state
+        isLoading: query.isLoading, // v5: isPending && isFetching (backward compat)
         isError: query.isError,
+        error: query.error,
         createAdmin: createMutation.mutate,
         deleteAdmin: deleteMutation.mutate,
         isCreating: createMutation.isPending,

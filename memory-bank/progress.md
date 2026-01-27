@@ -1,6 +1,6 @@
 # Project Progress: Nezuko - Roadmap to v1.0.0
 
-## 🛠️ Current Status: Phase 17 - Next.js 16 Deep Compliance Audit ✅
+## 🛠️ Current Status: Phase 18 - TanStack Query v5 Best Practices Audit ✅
 
 **Overall Implementation Status**: **100%** 🚀
 
@@ -19,7 +19,42 @@
 | **Phase 14**    | Supabase One-Stack Migration                | ✅ Complete     |
 | **Phase 15**    | Comprehensive Testing                       | ✅ Complete     |
 | **Phase 16**    | React Optimization (Vercel Best Practices)  | ✅ Complete     |
-| **Phase 17**    | Next.js 16 Deep Compliance Audit            | ✅ **Complete** |
+| **Phase 17**    | Next.js 16 Deep Compliance Audit            | ✅ Complete     |
+| **Phase 18**    | TanStack Query v5 Best Practices Audit      | ✅ **Complete** |
+
+---
+
+## ✅ Phase 18: TanStack Query v5 Best Practices Audit (2026-01-27)
+
+### Skill-Based Audit Performed
+
+Applied all best practices from `.agent/skills/tanstack-query/SKILL.md` (1059 lines of guidance).
+
+### Improvements Made
+
+| Improvement | Files | Description |
+|-------------|-------|-------------|
+| `gcTime` added | `query-provider.tsx` | 1 hour garbage collection (v5 renamed from `cacheTime`) |
+| `staleTime` increased | `query-provider.tsx` | 5 min to prevent excessive refetches |
+| `isPending` for initial load | `use-dashboard-chart.ts`, `use-admins.ts` | v5 semantics (not `isLoading`) |
+| `mutationKey` on all mutations | 11 mutations | Enable tracking with `useMutationState` |
+| ReactQueryDevtools | `query-provider.tsx` | Development debugging |
+| Centralized query keys | `query-keys.ts` (NEW) | Type-safe key management |
+| Retry configuration | `query-provider.tsx` | Smart retry with exponential backoff |
+
+### Dependencies Added
+
+| Package | Version |
+|---------|---------|
+| `@tanstack/react-query-devtools` | `5.91.2` |
+
+### Build Results
+
+```
+✓ Compiled successfully in 8.5s
+✓ TypeScript passed in 5.9s
+✓ 14 routes generated (3 dynamic, 11 static)
+```
 
 ---
 

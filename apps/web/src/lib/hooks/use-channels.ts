@@ -21,6 +21,7 @@ export function useCreateChannel() {
     const queryClient = useQueryClient();
 
     return useMutation({
+        mutationKey: ["channels", "create"], // v5: Enable tracking with useMutationState
         mutationFn: (data: ChannelCreateRequest) => channelsApi.createChannel(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["channels"] });

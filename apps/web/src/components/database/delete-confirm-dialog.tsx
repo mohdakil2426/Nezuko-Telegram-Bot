@@ -55,6 +55,7 @@ export function DeleteConfirmDialog({
     const isConfirmed = confirmText === tableName;
 
     const mutation = useMutation({
+        mutationKey: ["database", tableName, "delete"], // v5: Enable tracking with useMutationState
         mutationFn: () => deleteRow(tableName, rowId, hardDelete),
         onSuccess: () => {
             toast.success(hardDelete ? "Row permanently deleted" : "Row marked as deleted");

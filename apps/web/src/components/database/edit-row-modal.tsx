@@ -59,6 +59,7 @@ export function EditRowModal({
     const queryClient = useQueryClient();
 
     const mutation = useMutation({
+        mutationKey: ["database", tableName, "update"], // v5: Enable tracking with useMutationState
         mutationFn: () => updateRow(tableName, rowId, formData),
         onSuccess: () => {
             toast.success("Row updated successfully");
