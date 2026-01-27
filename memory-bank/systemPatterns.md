@@ -1,6 +1,6 @@
 # System Patterns: Nezuko - Architectural Standards
 
-> **Last Updated**: 2026-01-27 | **Version**: 2.1.0 (TanStack Query v5 patterns added)
+> **Last Updated**: 2026-01-27 | **Version**: 2.2.0 (Production-grade folder structure)
 
 ---
 
@@ -29,7 +29,7 @@ Nezuko uses a **Turborepo** monorepo with three core domains:
 ┌─────────────────────────────────────────────────────────────────┐
 │                        NEZUKO MONOREPO                          │
 ├─────────────────┬─────────────────┬─────────────────────────────┤
-│   apps/web      │    apps/api     │          bot/               │
+│   apps/web      │    apps/api     │       apps/bot/             │
 │   (Next.js 16)  │   (FastAPI)     │    (python-telegram-bot)    │
 │                 │                 │                             │
 │   Admin Panel   │   REST API      │   Enforcement Engine        │
@@ -49,33 +49,64 @@ Nezuko uses a **Turborepo** monorepo with three core domains:
 
 ```bash
 .
-├── apps/
-│   ├── web/                     # Next.js 16 Admin Panel
-│   │   ├── src/app/             # App Router pages
-│   │   ├── src/components/      # shadcn/ui components
-│   │   ├── src/lib/             # API clients, hooks, utils
-│   │   ├── src/providers/       # Context providers
-│   │   └── src/stores/          # Zustand state
+├── apps/                       # All applications
+│   ├── web/                    # Next.js 16 Admin Panel
+│   │   ├── .env.example        # Environment template
+│   │   ├── .env.local          # Local env (gitignored)
+│   │   ├── src/app/            # App Router pages
+│   │   ├── src/components/     # shadcn/ui components
+│   │   ├── src/lib/            # API clients, hooks, utils
+│   │   ├── src/providers/      # Context providers
+│   │   └── src/stores/         # Zustand state
 │   │
-│   └── api/                     # FastAPI Backend
-│       ├── src/api/v1/          # REST endpoints
-│       ├── src/core/            # Auth, DB, Security
-│       ├── src/models/          # SQLAlchemy models
-│       └── src/services/        # Business logic
+│   ├── api/                    # FastAPI Backend
+│   │   ├── .env.example        # Environment template
+│   │   ├── .env                # Local env (gitignored)
+│   │   ├── src/api/v1/         # REST endpoints
+│   │   ├── src/core/           # Auth, DB, Security
+│   │   ├── src/models/         # SQLAlchemy models
+│   │   └── src/services/       # Business logic
+│   │
+│   └── bot/                    # Telegram Bot (PTB v22)
+│       ├── .env.example        # Environment template
+│       ├── .env                # Local env (gitignored)
+│       ├── core/               # Initialization
+│       ├── database/           # Bot-specific models
+│       ├── handlers/           # Commands & events
+│       └── services/           # Verification logic
 │
-├── bot/                         # Telegram Bot (PTB v22)
-│   ├── core/                    # Initialization
-│   ├── database/                # Bot-specific models
-│   ├── handlers/                # Commands & events
-│   └── services/                # Verification logic
+├── packages/                   # Shared packages
+│   ├── types/                  # Shared TypeScript types (@nezuko/types)
+│   └── config/                 # Shared ESLint/TypeScript configs
 │
-├── packages/
-│   ├── types/                   # Shared TypeScript types
-│   └── config/                  # Environment validation
+├── config/                     # Infrastructure configs
+│   ├── docker/                 # All Docker files
+│   │   ├── docker-compose.yml
+│   │   ├── docker-compose.dev.yml
+│   │   ├── docker-compose.prod.yml
+│   │   ├── Dockerfile.monorepo
+│   │   ├── Dockerfile.web
+│   │   └── Dockerfile.api
+│   └── nginx/                  # Nginx configs (if needed)
 │
-├── docker/                      # Docker Compose configs
-├── memory-bank/                 # AI context files
-└── tests/                       # Pytest test suite
+├── scripts/                    # Organized scripts
+│   ├── setup/                  # One-time setup scripts
+│   ├── deploy/                 # Deployment scripts
+│   └── maintenance/            # Maintenance utilities
+│
+├── storage/                    # Runtime files (GITIGNORED)
+│   ├── logs/                   # Application logs
+│   ├── data/                   # Local databases
+│   └── uploads/                # Uploaded files
+│
+├── docs/                       # Documentation
+│   ├── architecture/           # Architecture docs
+│   ├── api/                    # API documentation
+│   └── guides/                 # User guides
+│
+├── memory-bank/                # AI context files
+├── tests/                      # Pytest test suite
+└── openspec/                   # OpenSpec change management
 ```
 
 ## Package Management
@@ -85,6 +116,40 @@ Nezuko uses a **Turborepo** monorepo with three core domains:
 | JavaScript/TypeScript | **Bun** | `bun install`, `bun run dev` |
 | Python | **UV** | `uv pip install`, `uv sync` |
 | Monorepo | **Turbo** | `turbo dev`, `turbo build` |
+
+## Folder Organization Principles
+
+### 1. **Separation of Concerns**
+- **apps/**: All runnable applications live here
+- **packages/**: Shared code reused across apps (types, configs)
+- **config/**: Infrastructure and deployment configurations
+- **scripts/**: Utility scripts categorized by purpose
+- **storage/**: Runtime files (logs, databases) - **ALWAYS GITIGNORED**
+
+### 2. **Per-App Environment Isolation**
+Each app manages its own environment variables (Turborepo best practice):
+
+| App | Environment File | Template |
+|-----|-----------------|----------|
+| `apps/web` | `.env.local` | `.env.example` |
+| `apps/api` | `.env` | `.env.example` |
+| `apps/bot` | `.env` | `.env.example` |
+
+> **Root `.env.example`** is documentation only - lists all variables for reference.
+
+### 3. **Infrastructure as Code**
+All Docker, Nginx, and deployment configs in `config/`:
+```bash
+# Run from project root
+docker-compose -f config/docker/docker-compose.yml up -d
+```
+
+### 4. **Script Categories**
+| Folder | Purpose | Example |
+|--------|---------|---------|
+| `scripts/setup/` | One-time initialization | `setup-db.py` |
+| `scripts/deploy/` | Deployment automation | `docker-build.sh` |
+| `scripts/maintenance/` | Debugging, utilities | `generate-structure.ps1` |
 
 ---
 

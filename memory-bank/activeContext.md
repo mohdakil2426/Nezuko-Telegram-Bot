@@ -1,8 +1,44 @@
-# Active Context: Phase 18 - TanStack Query v5 Best Practices Audit
+# Active Context: Phase 19 - Production-Grade Folder Structure
 
 ## 🎯 Current Status
 
-**Phase 18 ENHANCED** - Comprehensive TanStack Query v5 skill-based code quality audit performed with additional improvements.
+**Phase 19 COMPLETE** - Production-grade folder structure refactoring merged to main.
+
+---
+
+## ✅ Completed Tasks (2026-01-27)
+
+### Phase 19: Production-Grade Folder Structure ✅
+
+Comprehensive monorepo restructuring following Turborepo/Next.js/FastAPI best practices:
+
+| Change | Description |
+|--------|-------------|
+| Bot moved | `bot/` → `apps/bot/` (all apps under `apps/`) |
+| Docker centralized | All files in `config/docker/` |
+| Scripts organized | `scripts/{setup,deploy,maintenance}/` |
+| Storage isolated | Runtime files in `storage/` (gitignored) |
+| Env per-app | Each app has `.env.example` template |
+| Root cleaned | 30+ files → 23 essential configs |
+
+### New Environment Variable Structure
+
+| App | File | Template |
+|-----|------|----------|
+| `apps/web` | `.env.local` | `.env.example` |
+| `apps/api` | `.env` | `.env.example` |
+| `apps/bot` | `.env` | `.env.example` |
+
+### Key Folders Created
+
+- `config/docker/` - All Docker/infrastructure files
+- `scripts/setup/` - One-time init scripts
+- `scripts/deploy/` - Deployment automation
+- `scripts/maintenance/` - Utilities
+- `storage/` - Runtime files (GITIGNORED)
+- `docs/architecture/` - Architecture docs
+- `docs/api/` - API documentation
+- `docs/guides/` - User guides
 
 ---
 

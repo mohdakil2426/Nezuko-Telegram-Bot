@@ -191,20 +191,27 @@ git clone https://github.com/mohdakil2426/Nezuko-Telegram-Bot.git
 cd Nezuko-Telegram-Bot
 
 # Create virtual environment
-python -m venv venv
+python -m venv .venv
 
 # Activate (choose your OS)
-source venv/bin/activate      # Linux/Mac
-.\venv\Scripts\activate       # Windows
+source .venv/bin/activate      # Linux/Mac
+.\.venv\Scripts\activate       # Windows
 
-# Install dependencies
+# Install JavaScript dependencies (for web/api)
+bun install
+
+# Install Python dependencies
 pip install -r requirements.txt
+
+# Set up environment (copy templates)
+cp apps/bot/.env.example apps/bot/.env
+# Edit apps/bot/.env with your BOT_TOKEN
 
 # Initialize database
 alembic upgrade head
 
 # Run the bot
-python -m bot.main
+cd apps/bot && python -m bot.main
 ```
 
 ### Setup Flow
@@ -297,31 +304,57 @@ Required variables:
 
 ## Architecture
 
+### Project Structure
+
 ```
-bot/
-├── config.py              # Environment configuration
-├── main.py                # Entry point (polling/webhook)
-├── core/                  # Singletons
-│   ├── database.py        # Async SQLAlchemy session factory
-│   ├── cache.py           # Redis distributed cache
-│   └── rate_limiter.py    # AIORateLimiter configuration
-├── database/              # Persistence layer
-│   ├── models.py          # SQLAlchemy ORM models
-│   ├── crud.py            # Database operations
-│   └── migrations/        # Alembic migrations
-├── handlers/              # Telegram update handlers
-│   ├── admin/             # /protect, /unprotect, /settings
-│   ├── events/            # join, leave, message events
-│   └── callbacks/         # Inline button callbacks
-├── services/              # Business logic
-│   ├── verification.py    # Membership checking
-│   ├── protection.py      # Group protection logic
-│   └── batch.py           # Bulk operations
-└── utils/                 # Cross-cutting concerns
-    ├── metrics.py         # Prometheus instrumentation
-    ├── health.py          # Health check endpoints
-    ├── logging.py         # Structured logging setup
-    └── resilience.py      # Circuit breakers, retries
+nezuko-monorepo/
+├── apps/                       # All applications
+│   ├── web/                    # Next.js 16 Admin Dashboard
+│   │   ├── .env.example        # Environment template
+│   │   ├── src/app/            # App Router pages
+│   │   ├── src/components/     # shadcn/ui components
+│   │   └── src/lib/            # API clients, hooks
+│   │
+│   ├── api/                    # FastAPI REST Backend
+│   │   ├── .env.example        # Environment template
+│   │   ├── src/api/v1/         # REST endpoints
+│   │   └── src/services/       # Business logic
+│   │
+│   └── bot/                    # Telegram Bot (PTB v22)
+│       ├── .env.example        # Environment template
+│       ├── config.py           # Environment configuration
+│       ├── main.py             # Entry point (polling/webhook)
+│       ├── core/               # Database, cache, rate limiter
+│       ├── database/           # SQLAlchemy models, CRUD
+│       ├── handlers/           # Telegram update handlers
+│       ├── services/           # Verification, protection logic
+│       └── utils/              # Metrics, health, logging
+│
+├── packages/                   # Shared packages
+│   ├── types/                  # @nezuko/types (Zod + TS)
+│   └── config/                 # Shared ESLint/TypeScript configs
+│
+├── config/                     # Infrastructure configs
+│   └── docker/                 # All Docker files
+│       ├── docker-compose.yml
+│       └── Dockerfile.monorepo
+│
+├── scripts/                    # Organized scripts
+│   ├── setup/                  # One-time setup
+│   ├── deploy/                 # Deployment automation
+│   └── maintenance/            # Utilities
+│
+├── storage/                    # Runtime files (GITIGNORED)
+│   ├── logs/                   # Application logs
+│   └── data/                   # Local databases
+│
+├── docs/                       # Documentation
+│   ├── architecture/           # System design docs
+│   ├── api/                    # API documentation
+│   └── guides/                 # User guides
+│
+├── memory-bank/                # AI context files
+└── tests/                      # Pytest test suite
 ```
 
 See [Architecture Documentation](docs/architecture/architecture.md) for detailed system design.
