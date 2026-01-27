@@ -31,70 +31,65 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 
 ## 👥 Stakeholders
 
-| Stakeholder            | Primary Need    | Value Delivered                                                |
-| :--------------------- | :-------------- | :------------------------------------------------------------- |
-| **Community Managers** | Audience Growth | Automated subscriber acquisition from group chats.             |
-| **Moderators**         | Spam Control    | Automated muting of unverified or non-compliant users.         |
-| **End Users**          | Group Access    | Clear, interactive guidance on how to gain permission quickly. |
-| **Bot Owners**         | System Overview | Detailed analytics, log streaming, and RBAC management.        |
+| Stakeholder | Primary Need | Value Delivered |
+|:------------|:-------------|:----------------|
+| **Community Managers** | Audience Growth | Automated subscriber acquisition from group chats |
+| **Moderators** | Spam Control | Automated muting of unverified or non-compliant users |
+| **End Users** | Group Access | Clear, interactive guidance on how to gain permission quickly |
+| **Bot Owners** | System Overview | Detailed analytics, log streaming, and RBAC management |
 
 ---
 
-## 🛠️ Detailed Feature Roadmap
+## 🛠️ Feature Roadmap
 
 ### Phase A: The Bot Core (Foundation) ✅
 
-- [x] **Asynchronous Handler Engine**: Processing updates in parallel using MTProto.
-- [x] **Smart Join/Leave Detection**: Real-time permission revocation.
-- [x] **Interactive Inline Verification**: One-click "Join -> Verify -> Chat" flow.
-- [x] **Hybrid Caching Implementation**: Redis 7 and local LRU for p99 performance.
+- [x] **Asynchronous Handler Engine**: Processing updates in parallel using MTProto
+- [x] **Smart Join/Leave Detection**: Real-time permission revocation
+- [x] **Interactive Inline Verification**: One-click "Join -> Verify -> Chat" flow
+- [x] **Hybrid Caching Implementation**: Redis 7 and local LRU for p99 performance
 
 ### Phase B: The Admin API (Intelligence) ✅
 
-- [x] **FastAPI REST Backbone**: Pydantic V2 validated endpoints.
-- [x] **Supabase Auth Integration**: Industry-standard secure identity (JWT).
-- [x] **RBAC Management**: Owner, Admin, and Viewer roles with granular scoping.
-- [x] **Audit Logging System**: Immutable record of every administrative action.
-- [x] **Database-Agnostic Models**: Supabase Postgres or SQLite for all environments.
+- [x] **FastAPI REST Backbone**: Pydantic V2 validated endpoints
+- [x] **Supabase Auth Integration**: Industry-standard secure identity (JWT)
+- [x] **RBAC Management**: Owner, Admin, and Viewer roles with granular scoping
+- [x] **Audit Logging System**: Immutable record of every administrative action
+- [x] **Database-Agnostic Models**: Supabase Postgres or SQLite for all environments
 
 ### Phase C: Dashboard & Analytics (Visualization) ✅
 
-- [x] **Next.js 16 Web Interface**: Server Components and Streaming.
-- [x] **Supabase Realtime Streams**: Live logs via `postgres_changes`.
-- [x] **Verification Analytics**: Recharts-driven growth and conversion visualization.
-- [x] **Database Browser**: Direct inspection of system state from the UI.
-- [x] **Supabase Authentication Flow**: Login, sync, and session management - **FULLY WORKING**.
+- [x] **Next.js 16 Web Interface**: Server Components and Streaming
+- [x] **Supabase Realtime Streams**: Live logs via `postgres_changes`
+- [x] **Verification Analytics**: Recharts-driven growth and conversion visualization
+- [x] **Database Browser**: Direct inspection of system state from the UI
+- [x] **Supabase Authentication Flow**: Login, sync, and session management
 
 ### Phase D: Advanced Management (Configuration) 🚧
 
-- [x] **Global Settings Form**: Manage messages, rate limits, and security keys.
-- [x] **Webhook Management**: High-availability production delivery configuration.
-- [ ] **i18n Support**: Multi-language translation system for bot messages.
-- [ ] **Community Marketplace**: Template sharing for protection settings.
-- [ ] **Mobile Responsive Sidebar**: Hamburger menu for mobile devices.
+- [x] **Global Settings Form**: Manage messages, rate limits, and security keys
+- [x] **Webhook Management**: High-availability production delivery configuration
+- [ ] **i18n Support**: Multi-language translation system for bot messages
+- [ ] **Community Marketplace**: Template sharing for protection settings
+- [ ] **Mobile Responsive Sidebar**: Hamburger menu for mobile devices
 
 ---
 
 ## 📈 Success Metrics
 
-### Product Performance (Productivity)
-
-- **Reduction in Manual Check**: Eliminate 100% of manual subscription verification.
-- **User Retention**: Maintain >95% user retention after the verification hurdle.
-
 ### Technical Performance (SLAs)
 
-| Metric                | Target   | Status (2026-01-26) |
-| :-------------------- | :------- | :------------------ |
-| **Uptime**            | 99.9%    | ✅ On Track         |
-| **API Latency (p90)** | <50ms    | ✅ Achieved         |
-| **Pylint Score**      | 10.00/10 | ✅ Achieved         |
-| **Pyrefly Errors**    | 0        | ✅ Zero Errors      |
-| **Supabase Auth**     | Working  | ✅ **INTEGRATED**   |
-| **Local Dev Setup**   | <5 min   | ✅ Achieved         |
-| **Auth Tests**        | 6/6      | ✅ **All Passed**   |
-| **UI Pages**          | 8/8      | ✅ **All Working**  |
-| **Security Tests**    | 3/3      | ✅ **All Passed**   |
+| Metric | Target | Status |
+|:-------|:-------|:-------|
+| **Uptime** | 99.9% | ✅ On Track |
+| **API Latency (p90)** | <50ms | ✅ Achieved |
+| **Pylint Score** | 10.00/10 | ✅ Achieved |
+| **Pyrefly Errors** | 0 | ✅ Zero Errors |
+| **Supabase Auth** | Working | ✅ Integrated |
+| **Local Dev Setup** | <5 min | ✅ Achieved |
+| **Auth Tests** | 6/6 | ✅ All Passed |
+| **UI Pages** | 9/9 | ✅ All Working |
+| **Security Tests** | 3/3 | ✅ All Passed |
 
 ---
 
@@ -118,18 +113,27 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 ## 🤝 Project Governance
 
 - **Version Control**: Semantic Versioning (SemVer) 2.0.
-- **Documentation**: "Documentation as Code" using Markdown (memory-bank/).
+- **Documentation**: Structured in `docs/` directory with comprehensive guides.
 - **Branching Strategy**: Trunk-based development with strict PR reviews.
 
 ---
 
-## 🗺️ Long-Term Horizon
+## 📁 Project Structure
 
-Beyond channel enforcement, Nezuko aims to become a full-service AI community moderator, integrating:
-
-- [ ] LLM-based sentiment analysis
-- [ ] Automated FAQ handling
-- [ ] Crypto-integrated tip/reward systems
+```
+nezuko-monorepo/
+├── apps/
+│   ├── web/          # Next.js 16 Admin Dashboard
+│   ├── api/          # FastAPI REST Backend
+│   └── bot/          # Telegram Bot (PTB v22.6)
+├── packages/         # Shared packages
+├── config/docker/    # Docker configuration
+├── scripts/          # Utility scripts
+├── storage/          # Runtime files (GITIGNORED)
+├── docs/             # Public documentation
+├── memory-bank/      # AI context (internal)
+└── tests/            # Test suites
+```
 
 ---
 
@@ -146,24 +150,26 @@ python -m uvicorn src.main:app --port 8080 --reload
 cd apps/web
 bun dev
 
-# Login Credentials
-# Email: admin@nezuko.bot
-# Password: Admin@123
+# Bot
+cd apps/bot
+python main.py
 ```
 
-### Key Files
+### Test Credentials
 
-| Purpose           | File Path                                      |
-| :---------------- | :--------------------------------------------- |
-| DB Initialization | `apps/api/init_db.py`                          |
-| Database Config   | `apps/api/src/core/database.py`                |
-| Auth Service      | `apps/api/src/services/auth_service.py`        |
-| Supabase Client   | `apps/web/src/lib/supabase/client.ts`          |
-| Login Form        | `apps/web/src/components/forms/login-form.tsx` |
-| Auth Proxy        | `apps/web/src/proxy.ts` (Next.js 16)           |
-| Logout Handler    | `apps/web/src/components/layout/sidebar.tsx`   |
+| User | Email | Password | Role |
+|------|-------|----------|------|
+| Admin | admin@nezuko.bot | Admin@123 | super_admin |
+
+### Key Documentation
+
+| Topic | Location |
+|-------|----------|
+| Full Docs | `docs/README.md` |
+| Tech Stack | `docs/architecture/tech-stack.md` |
+| Architecture | `docs/architecture/README.md` |
+| Contributing | `docs/contributing/README.md` |
 
 ---
 
-**End of Brief**
-_(Updated 2026-01-26 - Auth fully working, 19/19 tests passed)_
+*Last Updated: 2026-01-28*

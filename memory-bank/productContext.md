@@ -4,10 +4,12 @@
 
 Telegram community managers face a "Growth vs. Quality" paradox:
 
-1.  **Manual Verification**: Checking thousands of members for channel subscriptions is impossible.
-2.  **Slow Tooling**: Existing bots are often slow, causing "verification lag" that frustrates users.
-3.  **UI/UX Decay**: Common bots provide cryptic errors or no feedback, leading to dropped engagement.
-4.  **Operational Blindness**: Admins lack real-time data on how many users are being restricted or converted.
+1. **Manual Verification**: Checking thousands of members for channel subscriptions is impossible.
+2. **Slow Tooling**: Existing bots are often slow, causing "verification lag" that frustrates users.
+3. **UI/UX Decay**: Common bots provide cryptic errors or no feedback, leading to dropped engagement.
+4. **Operational Blindness**: Admins lack real-time data on how many users are being restricted or converted.
+
+---
 
 ## 💡 The Nezuko Solution
 
@@ -28,6 +30,8 @@ The **Nezuko Dashboard** provides a unified interface for system owners:
 - **Insightful Analytics**: Visualizing verification trends and user growth through interactive charts.
 - **Config-as-UI**: Modify bot behavior (messages, rate limits, webhooks) without touching environment variables.
 
+---
+
 ## 👤 User Experience (UX) Goals
 
 ### For The "Newbie" User
@@ -42,45 +46,83 @@ The **Nezuko Dashboard** provides a unified interface for system owners:
 - **Transparency**: View detailed audit logs for every admin action.
 - **Reliability**: The bot handles Telegram API rate limits gracefully.
 
+---
+
 ## 🛠️ Technology Rationale
 
-| Component         | Technology           | Reason                                      |
-| :---------------- | :------------------- | :------------------------------------------ |
-| **Bot Core**      | Python 3.13, PTB v22 | Maximum async performance, modern typing    |
-| **Admin API**     | FastAPI, Pydantic V2 | High-performance REST with validation       |
-| **Dashboard**     | Next.js 16, React 19 | Server Components, streaming, premium UX    |
-| **Auth**          | Supabase Auth        | JWT-based secure identity management        |
-| **Realtime Logs** | Supabase Realtime    | Postgres Change Detection (No WebSocket server needed) |
-| **Database**      | PostgreSQL (Supabase)| Production-grade SQL at any scale           |
-| **Cache**         | Redis 8              | Distributed caching, session management     |
-
-## 📈 Success Metrics
-
-| Metric                     | Target   | Current Status (2026-01-26) |
-| :------------------------- | :------- | :-------------------------- |
-| **p99 Verification**       | < 150ms  | ✅ Achieved                 |
-| **Uptime**                 | 99.9%    | ✅ On Track                 |
-| **Admin Login Success**    | 100%     | ✅ **WORKING**              |
-| **Static Analysis Errors** | 0        | ✅ Zero Errors              |
-| **Pylint Score**           | 10.00/10 | ✅ Achieved                 |
-| **TypeScript Errors**      | 0        | ✅ Zero Errors              |
-| **UI Pages Working**       | 8/8      | ✅ All Tested               |
-| **Auth Tests Passed**      | 6/6      | ✅ All Passed               |
-| **Security Tests Passed**  | 3/3      | ✅ All Passed               |
-
-## 🎯 Current State Summary (2026-01-26)
-
-- **Bot Core**: Fully functional enforcement engine.
-- **Admin API**: Supabase JWT verification integrated (MOCK_AUTH for dev).
-- **Dashboard**: Migrated to Supabase Client. All 8 pages tested and working.
-- **Authentication**: ✅ **FULLY WORKING** - Login, session, logout all verified.
-- **Code Quality**: Zero TypeScript errors, clean linting status.
-
-### Auth Fix Applied This Session
-
-The authentication system was fixed by updating `@supabase/ssr` from v0.1.0 to v0.8.0 and migrating from `middleware.ts` to `proxy.ts` for Next.js 16 compatibility.
+| Component | Technology | Reason |
+|:----------|:-----------|:-------|
+| **Bot Core** | Python 3.13, PTB v22.6 | Maximum async performance, modern typing |
+| **Admin API** | FastAPI, Pydantic V2 | High-performance REST with validation |
+| **Dashboard** | Next.js 16, React 19 | Server Components, streaming, premium UX |
+| **Auth** | Supabase Auth | JWT-based secure identity management |
+| **Realtime Logs** | Supabase Realtime | Postgres Change Detection |
+| **Database** | PostgreSQL (Supabase) | Production-grade SQL at any scale |
+| **Cache** | Redis 7+ | Distributed caching, session management |
 
 ---
 
-**End of Product Context**
-_(Updated 2026-01-26 - Auth fully working, comprehensive testing complete)_
+## 📈 Success Metrics
+
+| Metric | Target | Current Status |
+|:-------|:-------|:---------------|
+| **p99 Verification** | < 150ms | ✅ Achieved |
+| **Uptime** | 99.9% | ✅ On Track |
+| **Admin Login Success** | 100% | ✅ Working |
+| **Static Analysis Errors** | 0 | ✅ Zero Errors |
+| **Pylint Score** | 10.00/10 | ✅ Achieved |
+| **TypeScript Errors** | 0 | ✅ Zero Errors |
+| **UI Pages Working** | 9/9 | ✅ All Tested |
+| **Auth Tests Passed** | 6/6 | ✅ All Passed |
+| **Security Tests Passed** | 3/3 | ✅ All Passed |
+
+---
+
+## 🎯 Current State Summary (2026-01-28)
+
+### Platform Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Bot Core** | ✅ Functional | Enforcement engine working |
+| **Admin API** | ✅ Functional | Supabase JWT verification |
+| **Dashboard** | ✅ Functional | All 9 pages tested |
+| **Authentication** | ✅ Working | Login, session, logout verified |
+| **Documentation** | ✅ Complete | Structured in docs/ |
+
+### Recent Improvements (Phase 20)
+
+- Modernized GEMINI.md with modular imports
+- Created per-app GEMINI.md context files
+- Moved tech stack to proper documentation location
+- Cleaned all public documentation of internal references
+- Made CONTRIBUTING.md a lightweight pointer
+
+---
+
+## 🔮 Future Roadmap
+
+### Post v1.0.0
+
+- [ ] Multi-language support (i18n)
+- [ ] Member Whitelisting UI
+- [ ] Telegram Login Widget integration
+- [ ] Mobile-responsive sidebar
+- [ ] LLM-based sentiment analysis
+- [ ] Automated FAQ handling
+
+---
+
+## 📚 Documentation
+
+| Topic | Location |
+|-------|----------|
+| Full Documentation | `docs/README.md` |
+| Tech Stack | `docs/architecture/tech-stack.md` |
+| Architecture | `docs/architecture/README.md` |
+| API Reference | `docs/api/README.md` |
+| Contributing | `docs/contributing/README.md` |
+
+---
+
+*Last Updated: 2026-01-28*

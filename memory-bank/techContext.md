@@ -1,177 +1,210 @@
 # Technical Context: Nezuko - Stack, Infrastructure & Ecosystem
 
-## 🚀 The Multi-Tier Technology Stack
+## 🚀 Technology Stack Overview
 
 Nezuko is built on a "Precision First" philosophy, selecting the most stable yet advanced versions of every library in the ecosystem.
 
-### 1. Bot Core (Python Runtime)
-
-- **Runtime**: `Python 3.13.1`
-- **Library**: `python-telegram-bot v22.6+` [AsyncIO, Rate-Limiter]
-- **Database**: `PostgreSQL 15+` (Supabase) via `asyncpg`
-- **ORM**: `SQLAlchemy 2.0.46` [AsyncIO]
-- **Caching**: `Redis 7.1.0+` (via `redis-py` async)
-- **Observability**: `Structlog 25.5`, `Sentry 2.50.0`, `Prometheus Client 0.24`
-
-### 2. Admin API (FastAPI Backend)
-
-- **Framework**: `FastAPI 0.128.0+` (ASGI)
-- **Server**: `Uvicorn 0.40.0`
-- **Validation**: `Pydantic V2.12.5`
-- **Authentication**: `Supabase Auth` (JWT Verification)
-- **Database**: `PostgreSQL 15+` (Supabase) or SQLite (local dev)
-- **Rate Limiting**: `SlowAPI 0.1.9`
-- **Testing**: `Pytest 9.0`, `Pyrefly 0.49`, `Pylint 4.0`
-
-### 3. Admin Web (Next.js Frontend)
-
-- **Core**: `Next.js 16.1.4`, `React 19.2.3`, `TypeScript 5.9.3`
-- **Styling**: `TailwindCSS 4.1.18`, `Shadcn/UI` (Radix Primitives)
-- **State**: `Zustand 5.0.10` (Global), `TanStack Query 5.90.20` (Server State)
-- **Forms**: `React Hook Form 7.71.1`, `Zod 4.3.6`
-- **Visualization**: `Recharts 3.7.0`, `react-sparklines 1.7.0`
-- **Auth & Data**: `@supabase/ssr@0.8.0`, `@supabase/supabase-js@2.93.1`
-- **Testing**: `Vitest 3.0.4`, `Playwright`
-- **Package Manager**: `Bun 1.3.6`
-
-### React Optimization (Vercel Best Practices - Phase 16)
-
-| Pattern | Purpose |
-|---------|---------|
-| `React.memo` | Prevent unnecessary re-renders for pure components |
-| `useMemo` | Memoize expensive derived state calculations |
-| `useCallback` | Stable function references across renders |
-| Hoisted JSX/Constants | Move static data outside component scope |
-| Functional setState | Prevent stale closures with `setState(prev => ...)` |
-
-**Optimized Components:**
-- `StatCard`, `ActivityFeed`, `DashboardChart`, `LogViewer`, `GroupsTable`
+> **Full Reference**: See `docs/architecture/tech-stack.md` for complete version matrix and feature details.
 
 ---
 
-## 🔑 Critical Auth Package Versions
+## 📦 Core Stack Summary
 
-> **IMPORTANT**: The `@supabase/ssr` package version is critical for authentication.
+| Layer | Technologies |
+|-------|-------------|
+| **Frontend** | Next.js 16, React 19, TypeScript 5.9, Tailwind v4, shadcn/ui |
+| **Backend API** | FastAPI 0.128+, Python 3.13, SQLAlchemy 2.0, Pydantic V2 |
+| **Bot Engine** | python-telegram-bot v22.6, AsyncIO |
+| **Database** | PostgreSQL 15+ (Supabase), Redis 7+ |
+| **Infrastructure** | Docker, Turborepo, Caddy |
+
+---
+
+## 🟢 Frontend Stack (apps/web)
+
+### Core Framework
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Next.js | 16.1.4 | React meta-framework with App Router |
+| React | 19.2.3 | UI component library with Compiler |
+| TypeScript | 5.9.3 | Type-safe JavaScript |
+| Bun | 1.3.6+ | Package manager and runtime |
+
+### UI & Styling
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Tailwind CSS | 4.1.x | Utility-first CSS (`@theme` inline pattern) |
+| shadcn/ui | Latest | Accessible component library (Radix) |
+| Lucide React | 0.563+ | Icon library |
+| Motion | 12.29+ | Animation library (Framer Motion) |
+| Recharts | 3.7+ | Charting library |
+| Sonner | 2.0+ | Toast notifications |
+
+### State & Data Management
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| TanStack Query | 5.90+ | Server state management |
+| Zustand | 5.0+ | Client state management |
+| React Hook Form | 7.71+ | Form handling |
+| Zod | 4.3+ | Schema validation |
+
+### Key Patterns (Next.js 16)
+
+```typescript
+// ✅ Async route params (Next.js 16)
+export default async function Page({ 
+  params 
+}: { 
+  params: Promise<{ id: string }> 
+}) {
+  const { id } = await params;
+}
+
+// ✅ TanStack Query v5
+const { data, isPending } = useQuery({
+  queryKey: ['groups'],
+  queryFn: fetchGroups,
+});
+```
+
+---
+
+## 🔵 Backend API Stack (apps/api)
+
+### Core Framework
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Python | 3.13+ | Programming language |
+| FastAPI | 0.128+ | Modern async web framework |
+| Uvicorn | 0.40+ | ASGI server |
+| Pydantic | 2.12+ | Data validation and settings |
+
+### Database & ORM
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| SQLAlchemy | 2.0+ | Async ORM |
+| AsyncPG | 0.31+ | PostgreSQL async driver |
+| AIOSQLite | 0.22+ | SQLite async driver (dev) |
+| Alembic | 1.18+ | Database migrations |
+| Redis | 7.1+ | Caching and pub/sub |
+
+### Key Patterns (SQLAlchemy 2.0)
+
+```python
+# ✅ Use select() style queries (SQLAlchemy 2.0)
+from sqlalchemy import select
+
+async def get_groups(session: AsyncSession):
+    result = await session.execute(
+        select(ProtectedGroup).where(ProtectedGroup.is_active == True)
+    )
+    return result.scalars().all()
+
+# ✅ Pydantic V2 model_validator
+@model_validator(mode='after')
+def validate_channel(self) -> 'GroupCreate':
+    return self
+```
+
+---
+
+## 🤖 Bot Engine Stack (apps/bot)
+
+### Core
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Python | 3.13+ | Programming language |
+| python-telegram-bot | 22.6+ | Telegram Bot API wrapper |
+| AIOHTTP | 3.13+ | Async HTTP client |
+| HTTPX | 0.28+ | Modern HTTP client |
+
+### Infrastructure
+- Shared SQLAlchemy models with API
+- Shared Redis cache layer
+- Prometheus metrics integration
+
+---
+
+## 🔑 Authentication Architecture
+
+### Supabase Auth Flow
+
+1. **Web Client** → `supabase.auth.signInWithPassword` → **Supabase Auth**
+2. **Web Client** → Receives `access_token` (JWT) stored in HTTP-only cookie
+3. **Proxy (proxy.ts)** → Verifies session using `getSession()`
+4. **API Requests** → Sends `Authorization: Bearer <jwt>`
+5. **API** → Verifies JWT signature using `SUPABASE_JWT_SECRET`
+
+### Critical Package Versions
 
 | Package | Required Version | Notes |
 |---------|------------------|-------|
 | `@supabase/ssr` | `^0.8.0` | ⚠️ v0.1.0 has cookie parsing bugs |
 | `@supabase/supabase-js` | `^2.93.1` | Latest stable |
 
-### Next.js 16 Middleware Migration
-
-Next.js 16 deprecated `middleware.ts` in favor of `proxy.ts`:
-
-```typescript
-// apps/web/src/proxy.ts (NEW in Next.js 16)
-export async function proxy(request: NextRequest) {
-  // Supabase session handling
-}
-
-// apps/web/src/middleware.ts (DEPRECATED - DELETE)
-```
-
 ---
 
-## 📄 Detailed Schema Reference (API & DB)
+## 📄 Database Schema Reference
 
-### 1. SQLAlchemy Models (`apps/api/src/models/`)
+### Model: `AdminUser`
 
-> **Important**: Models are configured for PostgreSQL (Supabase) or SQLite (dev).
+| Column | Type | Notes |
+|:-------|:-----|:------|
+| `id` | `String(36)` | Primary Key, UUID |
+| `supabase_uid` | `String(36)` | Unique, Indexed (Auth ID) |
+| `email` | `String(255)` | Unique |
+| `role` | `String(20)` | Default: "viewer" |
+| `is_active` | `Boolean` | Default: True |
+| `telegram_id` | `BigInteger` | Nullable, Unique |
 
-#### Model: `AdminUser` (`admin_user.py`)
+### Model: `AdminAuditLog`
 
-| Column          | Type           | Notes                     |
-| :-------------- | :------------- | :------------------------ |
-| `id`            | `String(36)`   | Primary Key, UUID |
-| `supabase_uid`  | `String(36)`   | Unique, Indexed (Auth ID) |
-| `email`         | `String(255)`  | Unique                    |
-| `full_name`     | `String(100)`  | Nullable                  |
-| `role`          | `String(20)`   | Default: "viewer"         |
-| `is_active`     | `Boolean`      | Default: True             |
-| `telegram_id`   | `BigInteger`   | Nullable, Unique          |
-| `created_at`    | `DateTime(tz)` | Server default            |
-| `updated_at`    | `DateTime(tz)` | Auto-update               |
-| `last_login`    | `DateTime(tz)` | Nullable                  |
+| Column | Type | Notes |
+|:-------|:-----|:------|
+| `id` | `String(36)` | Primary Key |
+| `user_id` | `String(36)` | FK, Nullable |
+| `action` | `String(50)` | Required |
+| `resource_type` | `String(50)` | Required |
+| `old_value` | `JSON` | Nullable |
+| `new_value` | `JSON` | Nullable |
 
-#### Model: `AdminAuditLog` (`admin_audit_log.py`)
+### Real-time Logging: `admin_logs`
 
-| Column          | Type            | Notes        |
-| :-------------- | :-------------- | :----------- |
-| `id`            | `String(36)`    | Primary Key  |
-| `user_id`       | `String(36)`    | FK, Nullable |
-| `action`        | `String(50)`    | Required     |
-| `resource_type` | `String(50)`    | Required     |
-| `resource_id`   | `String(100)`   | Nullable     |
-| `old_value`     | `JSON`          | Nullable     |
-| `new_value`     | `JSON`          | Nullable     |
-| `ip_address`    | `String(45)`    | Nullable     |
-| `created_at`    | `TIMESTAMP(tz)` | Indexed      |
-
-#### Real-time Logging Table: `admin_logs` (Supabase Specific)
-
-This table is used for real-time log streaming via Supabase Realtime (Postgres Changes).
-
-| Column      | Type        | Notes |
-| :---------- | :---------- | :---- |
-| `id`        | `UUID`      | PK    |
-| `level`     | `VARCHAR`   | INFO, ERROR, WARN |
-| `message`   | `TEXT`      | Log content |
-| `metadata`  | `JSONB`     | Context data |
+| Column | Type | Notes |
+|:-------|:-----|:------|
+| `id` | `UUID` | PK |
+| `level` | `VARCHAR` | INFO, ERROR, WARN |
+| `message` | `TEXT` | Log content |
+| `metadata` | `JSONB` | Context data |
 | `timestamp` | `TIMESTAMP` | Event time |
 
 ---
 
-## 🔒 Supabase Security
-
-### 1. Row Level Security (RLS)
-
-- **Public Tables**: `admin_logs` may have restricted access policies.
-- **Bot Access**: The bot uses the `SERVICE_ROLE_KEY` for unrestricted database access.
-- **Web/Anonymous Access**: Uses `ANON_KEY` combined with User JWTs for RLS enforcement.
-
-### 2. Authentication Flow
-
-1.  **Web Client** -> `supabase.auth.signInWithPassword` -> **Supabase Auth**.
-2.  **Web Client** -> Receives `access_token` (JWT) stored in HTTP-only cookie.
-3.  **Middleware (proxy.ts)** -> Verifies session using `getSession()`.
-4.  **API Requests** -> Sends `Authorization: Bearer <jwt>`.
-5.  **API** -> Verifies JWT signature using `SUPABASE_JWT_SECRET` (or MOCK_AUTH in dev).
-
----
-
-## 🌐 Network Topology & Data Flow
-
-### 1. Request Path
-
-1.  **Client** -> `HTTPS` -> **Next.js Web** / **FastAPI**.
-2.  **Next.js** -> `Supabase Client` -> **Supabase (Auth/DB/Realtime)**.
-3.  **FastAPI** -> `SQLAlchemy` -> **Supabase Postgres** or **SQLite (dev)**.
-4.  **FastAPI** -> `JWT Check` -> **Local validation** (MOCK_AUTH=true in dev).
-
----
-
-## 🛠️ Local Development Setup
+## 🛠️ Development Setup
 
 ### Quick Start Commands
 
 ```bash
 # 1. Start API (Terminal 1)
 cd apps/api
-# Ensure .env has MOCK_AUTH=true for local dev
 python -m uvicorn src.main:app --host 0.0.0.0 --port 8080 --reload
 
 # 2. Start Web (Terminal 2)
 cd apps/web
 bun dev                    # Runs on localhost:3000
 
-# 3. Login
-# Navigate to http://localhost:3000/login
-# Email: admin@nezuko.bot
-# Password: Admin@123
+# 3. Start Bot (Terminal 3)
+cd apps/bot
+python main.py             # Polling mode
 ```
 
-### Environment Variables (Required)
+### Environment Variables
 
 ```bash
 # apps/api/.env
@@ -198,15 +231,36 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 
 ---
 
-## 💰 Infrastructure Cost Optimization
+## 🔧 Code Quality Tools
 
-- **Supabase Free Tier**: Generous limits for DB size and Auth users.
-- **Redis**: Optional if using Supabase for caching, but recommended for high-performance bot ops.
-- **Postgres**: Managed by Supabase (No maintenance overhead).
+### Python
+
+| Tool | Purpose |
+|------|---------|
+| Ruff | Fast linter and formatter |
+| Pylint | Static code analysis (target: 10.00/10) |
+| Pyrefly | Type checking (target: 0 errors) |
+
+### TypeScript
+
+| Tool | Purpose |
+|------|---------|
+| ESLint 9.18+ | Linting |
+| Prettier 3.4+ | Code formatting |
+| TypeScript 5.9+ | Type checking |
 
 ---
 
-**Total Line Count Target: 200+ Lines of technical reference.**
-_(This document encodes the technical DNA of the Nezuko Platform)._
-_(Updated 2026-01-27 with React optimization, Vercel best practices, updated package.json)._
+## 📚 Documentation Reference
 
+| Topic | Location |
+|-------|----------|
+| Tech Stack (Full) | `docs/architecture/tech-stack.md` |
+| Architecture | `docs/architecture/README.md` |
+| API Reference | `docs/api/README.md` |
+| Bot Reference | `docs/bot/README.md` |
+| Deployment | `docs/deployment/README.md` |
+
+---
+
+*Last Updated: 2026-01-28*

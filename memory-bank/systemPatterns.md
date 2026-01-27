@@ -1,6 +1,6 @@
 # System Patterns: Nezuko - Architectural Standards
 
-> **Last Updated**: 2026-01-27 | **Version**: 2.2.0 (Production-grade folder structure)
+> **Last Updated**: 2026-01-28 | **Version**: 2.3.0 (Documentation Refinement)
 
 ---
 
@@ -100,13 +100,17 @@ Nezuko uses a **Turborepo** monorepo with three core domains:
 │   └── uploads/                # Uploaded files
 │
 ├── docs/                       # Documentation
-│   ├── architecture/           # Architecture docs
+│   ├── architecture/           # Architecture docs + tech-stack.md
 │   ├── api/                    # API documentation
-│   └── guides/                 # User guides
+│   ├── bot/                    # Bot documentation
+│   ├── web/                    # Web dashboard docs
+│   ├── database/               # Database documentation
+│   ├── deployment/             # Deployment guides
+│   └── contributing/           # Contribution guidelines
 │
-├── memory-bank/                # AI context files
+├── memory-bank/                # AI context files (internal)
 ├── tests/                      # Pytest test suite
-└── openspec/                   # OpenSpec change management
+└── GEMINI.md                   # AI context with modular imports
 ```
 
 ## Package Management
@@ -751,4 +755,18 @@ python -m pyrefly check # Python types (0 errors)
 
 ---
 
+## 📚 Documentation Reference
+
+| Topic | Location |
+|-------|----------|
+| Full Documentation | `docs/README.md` |
+| Tech Stack | `docs/architecture/tech-stack.md` |
+| Architecture | `docs/architecture/README.md` |
+| Folder Structure | `docs/architecture/folder-structure.md` |
+| AI Context | `GEMINI.md` (with imports) |
+
+---
+
 **This document is the authoritative guide for all system implementations.**
+
+*Last Updated: 2026-01-28*
