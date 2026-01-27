@@ -1,0 +1,174 @@
+{
+  "tech-stack-rules": {
+    "type": "guardrail",
+    "enforcement": "suggest",
+    "priority": "critical",
+    "description": "Authoritative coding standards for Nezuko. Backend: Python 3.13+, AsyncIO, SQLAlchemy 2.0, Pydantic V2, PTB v22, Redis, Sentry, Structlog. Frontend: Next.js 16, React 19, TypeScript strict, TanStack Query, Zustand, Tailwind v4, Shadcn/UI. Use for: code review, refactoring, debugging, architecture decisions, library selection, async patterns, database patterns, type safety, error handling, testing, security, performance tuning, technical debt. Prevents forbidden anti-patterns. Essential for project best practices.",
+    "promptTriggers": {
+      "keywords": [
+        "best practices",
+        "coding standards",
+        "project rules",
+        "tech stack",
+        "code review",
+        "review code",
+        "audit code",
+        "check code",
+        "verify code",
+        "validate code",
+        "refactor",
+        "clean code",
+        "technical debt",
+        "modernize",
+        "async pattern",
+        "database pattern",
+        "api pattern",
+        "type safety",
+        "strict typing",
+        "pyright",
+        "typescript strict",
+        "performance",
+        "optimization",
+        "memory",
+        "caching",
+        "error handling",
+        "sentry",
+        "logging",
+        "structlog",
+        "testing",
+        "pytest",
+        "unit test",
+        "security",
+        "authentication",
+        "jwt",
+        "deployment",
+        "architecture",
+        "implementation"
+      ],
+      "intentPatterns": [
+        "(is|does) this (code|file|implementation|pattern) (correct|valid|follow|following|good)",
+        "(review|check|audit|validate|verify) (my |the |this )?(code|implementation|file)",
+        "(refactor|clean|fix|improve|optimize) (this|my|the)",
+        "how (to|do I|should I) (implement|write|structure|organize|handle)",
+        "what('s| is) the (best|correct|right|proper) (way|pattern|approach)",
+        "(is|should|can) (this|I) (use|do|implement)",
+        "(help|assist) (me )?(with|on) (implementing|writing|fixing)",
+        "(debug|troubleshoot|investigate) (this|the|my)"
+      ]
+    },
+    "fileTriggers": {
+      "includes": [
+        "**/*.py",
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "excludes": [
+        "**/node_modules/**",
+        "**/.venv/**",
+        "**/__pycache__/**",
+        "**/dist/**",
+        "**/.next/**"
+      ]
+    }
+  },
+  "skill-developer": {
+    "type": "domain",
+    "enforcement": "suggest",
+    "priority": "high",
+    "description": "Comprehensive guide for Architecting and Managing Claude Code skills. Use when: 1) Defining triggers, enforcement policies, and hooks. 2) Debugging skill activation. 3) Structuring 'Progressive Disclosure' for large documentation. 4) Managing skill-rules.json. Covers the 500-line rule, frontmatter validation, and best practices for creating maintainable agentic skills.",
+    "promptTriggers": {
+      "keywords": [
+        "create skill",
+        "edit skill",
+        "skill rules",
+        "skill structure",
+        "skill-developer",
+        "skill triggers",
+        "skill hooks",
+        "progressive disclosure"
+      ],
+      "intentPatterns": [
+        "(create|modify|update) (a )?skill",
+        "how to (make|edit|debug) (a )?skill",
+        "skill (activation|trigger) (issue|problem)"
+      ]
+    },
+    "fileTriggers": {
+      "includes": [
+        ".agent/skills/**/*.md",
+        ".agent/skills/skill-rules.json",
+        ".claude/hooks/**/*.ts"
+      ]
+    }
+  },
+  "skill-creator": {
+    "type": "domain",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "description": "Process guide for Scaffolding and Packaging skills. Distinct from skill-developer (which is about architecture), this skill focuses on the *mechanics* of: 1) Running init_skill.py scripts, 2) Creating 'references/' and 'assets/' folders, 3) Packaging .skill files for distribution. Use this when physically building the skill files.",
+    "promptTriggers": {
+      "keywords": [
+        "new skill",
+        "scaffold skill",
+        "generate skill",
+        "package skill",
+        "init_skill"
+      ],
+      "intentPatterns": [
+        "generate (a )?new skill",
+        "start (a )?new skill",
+        "package (a )?skill"
+      ]
+    }
+  },
+  "telegram-bot-builder": {
+    "type": "domain",
+    "enforcement": "suggest",
+    "priority": "high",
+    "description": "Expert knowledge on Telegram Bot API (PTB, grammY, Telegraf). Capabilities: 1) Bot Architecture (Handlers, Middleware), 2) UX Patterns (Inline Keyboards, Menus), 3) Monetization Models (Payments, Subscriptions), 4) Anti-patterns to avoid (Blocking I/O, Spamming). Use when building or optimizing bot logic.",
+    "promptTriggers": {
+      "keywords": [
+        "telegram",
+        "bot api",
+        "ptb",
+        "python-telegram-bot",
+        "bot architecture",
+        "inline keyboard",
+        "bot payment",
+        "telegram menu"
+      ],
+      "intentPatterns": [
+        "build (a )?bot",
+        "how to (use|implement) telegram",
+        "create (a )?keyboard",
+        "monetize (a )?bot"
+      ]
+    }
+  },
+  "ui-ux-pro-max": {
+    "type": "domain",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "description": "Deep UI/UX Design Intelligence. Features 50+ styles, 97 color palettes, and strict rules for Accessibility/Interaction. Actions: 1) Generate Design Systems (Python script), 2) Audit UI (Contrast, Click targets), 3) Verify Stack-specific patterns (Tailwind v4, React 19). STRICTLY FORBIDS: Emojis as icons, low contrast, and layout shifts.",
+    "promptTriggers": {
+      "keywords": [
+        "design system",
+        "ui audit",
+        "ux review",
+        "color palette",
+        "tailwind",
+        "shadcn",
+        "accessibility",
+        "contrast check",
+        "design pattern"
+      ],
+      "intentPatterns": [
+        "design (a )?page",
+        "create (a )?component",
+        "improve (the )?ui",
+        "generate (a )?design system",
+        "audit (my )?ui"
+      ]
+    }
+  }
+}
