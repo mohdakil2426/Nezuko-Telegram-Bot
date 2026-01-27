@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}  
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
         run: |
@@ -30,10 +30,10 @@ jobs:
           pip install ruff mypy
 
       - name: Run Ruff linter
-        run: ruff check bot/
+        run: ruff check apps/bot/
 
       - name: Run Ruff formatter check
-        run: ruff format --check bot/
+        run: ruff format --check apps/bot/
 
   # ==========================================================
   # Unit Tests
@@ -95,7 +95,7 @@ jobs:
           REDIS_URL: "redis://localhost:6379/0"
           ENVIRONMENT: "development"
         run: |
-          pytest tests/ -v --cov=bot --cov-report=xml --cov-report=term-missing
+          pytest tests/ -v --cov=apps/bot --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -121,7 +121,7 @@ jobs:
         run: pip install bandit[toml]
 
       - name: Run Bandit security scan
-        run: bandit -r bot/ -ll -ii
+        run: bandit -r apps/bot/ -ll -ii
 
   # ==========================================================
   # Docker Build Test
