@@ -118,6 +118,30 @@ function Show-DockerMenu {
     Write-Host ""
 }
 
+function Show-CleanMenu {
+    <#
+    .SYNOPSIS
+        Displays the clean/delete options submenu.
+    #>
+    Write-Host ""
+    Write-Host "  ┌──────────────────────────────────────────────────────┐" -ForegroundColor White
+    Write-Host "  │  " -ForegroundColor White -NoNewline
+    Write-Host "CLEAN OPTIONS" -ForegroundColor Yellow -NoNewline
+    Write-Host "                                     │" -ForegroundColor White
+    Write-Host "  │                                                      │" -ForegroundColor White
+    Write-Host "  │    [1] 📦 Clean node_modules only                    │" -ForegroundColor White
+    Write-Host "  │    [2] 🐍 Clean Python .venv only                    │" -ForegroundColor White
+    Write-Host "  │    [3] 🧹 Clean ALL (node_modules + .venv)           │" -ForegroundColor White
+    Write-Host "  │                                                      │" -ForegroundColor White
+    Write-Host "  │    [0] ⬅️  Back to Main Menu                          │" -ForegroundColor White
+    Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  " -NoNewline
+    Write-Host "⚠️  WARNING:" -ForegroundColor Red -NoNewline
+    Write-Host " These actions are irreversible!" -ForegroundColor Yellow
+    Write-Host ""
+}
+
 # ============================================================
 # Action Functions
 # ============================================================
@@ -151,11 +175,85 @@ function Invoke-Setup {
     & $setupScript
 }
 
-function Invoke-Clean {
-    Write-Host ""
-    Write-Host "  🧹 Cleaning all build artifacts..." -ForegroundColor Yellow
+function Invoke-CleanMenu {
+    <#
+    .SYNOPSIS
+        Clean submenu with options and confirmations.
+    #>
     $cleanScript = Join-Path $ScriptRoot "..\utils\clean.ps1"
-    & $cleanScript
+    
+    while ($true) {
+        Show-Banner
+        Show-CleanMenu
+        
+        $choice = Read-Host "  Enter choice"
+        
+        switch ($choice) {
+            "1" {
+                # Clean node_modules only
+                Write-Host ""
+                Write-Host "  📦 This will delete all node_modules folders." -ForegroundColor Yellow
+                $confirm = Read-Host "  Are you sure? (y/N)"
+                if ($confirm -eq "y" -or $confirm -eq "Y") {
+                    Write-Host ""
+                    & $cleanScript
+                    Write-Host "  ✅ node_modules cleaned!" -ForegroundColor Green
+                }
+                else {
+                    Write-Host "  ❌ Cancelled." -ForegroundColor Gray
+                }
+                Wait-ForKeyPress
+            }
+            "2" {
+                # Clean .venv only
+                Write-Host ""
+                Write-Host "  🐍 This will delete the Python virtual environment (.venv)." -ForegroundColor Yellow
+                Write-Host "  ⚠️  You will need to run 'nezuko setup' to recreate it!" -ForegroundColor Red
+                $confirm = Read-Host "  Are you sure? (y/N)"
+                if ($confirm -eq "y" -or $confirm -eq "Y") {
+                    Write-Host ""
+                    $projectRoot = Get-ProjectRoot
+                    $venvPath = Join-Path $projectRoot ".venv"
+                    if (Test-Path $venvPath) {
+                        Write-Host "  Removing .venv..." -ForegroundColor Gray
+                        Remove-Item -Path $venvPath -Recurse -Force -ErrorAction SilentlyContinue
+                        Write-Host "  ✅ .venv deleted!" -ForegroundColor Green
+                    }
+                    else {
+                        Write-Host "  ℹ️  .venv not found." -ForegroundColor Gray
+                    }
+                }
+                else {
+                    Write-Host "  ❌ Cancelled." -ForegroundColor Gray
+                }
+                Wait-ForKeyPress
+            }
+            "3" {
+                # Clean ALL
+                Write-Host ""
+                Write-Host "  🧹 This will delete ALL:" -ForegroundColor Yellow
+                Write-Host "     - node_modules folders" -ForegroundColor Gray
+                Write-Host "     - Python .venv" -ForegroundColor Gray
+                Write-Host ""
+                Write-Host "  ⚠️  You will need to run 'nezuko setup' to reinstall!" -ForegroundColor Red
+                $confirm = Read-Host "  Are you sure? (y/N)"
+                if ($confirm -eq "y" -or $confirm -eq "Y") {
+                    Write-Host ""
+                    & $cleanScript -IncludeVenv
+                    Write-Host "  ✅ All artifacts cleaned!" -ForegroundColor Green
+                }
+                else {
+                    Write-Host "  ❌ Cancelled." -ForegroundColor Gray
+                }
+                Wait-ForKeyPress
+            }
+            "0" { return }
+            default {
+                Write-Host "  ⚠️  Invalid choice. Please try again." -ForegroundColor Yellow
+                Start-Sleep -Seconds 1
+            }
+        }
+    }
 }
 
 function Invoke-TotalReset {
@@ -298,7 +396,7 @@ function Start-MainMenu {
             "2" { Invoke-StopServices; Wait-ForKeyPress }
             "3" { Invoke-RestartServices; Wait-ForKeyPress }
             "4" { Invoke-Setup; Wait-ForKeyPress }
-            "5" { Invoke-Clean; Wait-ForKeyPress }
+            "5" { Invoke-CleanMenu }
             "6" { Invoke-TotalReset; Wait-ForKeyPress }
             "7" { Invoke-RunTests; Wait-ForKeyPress }
             "8" { Invoke-DatabaseMenu }

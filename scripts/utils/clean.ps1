@@ -31,9 +31,18 @@ param(
     [switch]$DryRun
 )
 
-# Get project root
+# Import utilities for logging
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ProjectRoot = Resolve-Path (Join-Path $ScriptDir "..\..") | Select-Object -ExpandProperty Path
+. "$ScriptDir\..\core\utils.ps1"
+
+$ProjectRoot = Get-ProjectRoot
+
+# Initialize logging
+Initialize-LogSystem
+Write-LogSection -Title "NEZUKO CLEAN STARTED"
+Write-Log -Message "Project Root: $ProjectRoot" -Category "CLEAN"
+Write-Log -Message "IncludeVenv: $IncludeVenv" -Category "CLEAN"
+Write-Log -Message "DryRun: $DryRun" -Category "CLEAN"
 
 Write-Host ""
 Write-Host "  ====================================" -ForegroundColor Cyan
@@ -65,6 +74,7 @@ $allowedNodeModulePaths = @(
 # ============================================================
 
 Write-Host "  [1/2] Removing node_modules..." -ForegroundColor Blue
+Write-Log -Message "Step 1/2: Removing node_modules" -Category "CLEAN"
 
 $removedCount = 0
 
@@ -75,11 +85,14 @@ foreach ($relativePath in $allowedNodeModulePaths) {
     if ((Test-Path $fullPath -PathType Container) -and ($relativePath -like "*node_modules")) {
         if ($DryRun) {
             Write-Host "        [WOULD DELETE] $relativePath" -ForegroundColor Gray
+            Write-Log -Message "[DRY RUN] Would delete: $relativePath" -Category "CLEAN"
         }
         else {
             Write-Host "        Removing $relativePath..." -ForegroundColor Gray
+            Write-Log -Message "Removing: $relativePath" -Category "CLEAN"
             Remove-Item -Path $fullPath -Recurse -Force -ErrorAction SilentlyContinue
             Write-Host "        Done." -ForegroundColor Green
+            Write-Log -Message "Removed: $relativePath" -Level "SUCCESS" -Category "CLEAN"
         }
         $removedCount++
     }
@@ -87,9 +100,11 @@ foreach ($relativePath in $allowedNodeModulePaths) {
 
 if ($removedCount -eq 0) {
     Write-Host "        No node_modules found." -ForegroundColor Gray
+    Write-Log -Message "No node_modules found" -Category "CLEAN"
 }
 else {
     Write-Host "        Removed $removedCount folder(s)." -ForegroundColor Green
+    Write-Log -Message "Removed $removedCount node_modules folder(s)" -Level "SUCCESS" -Category "CLEAN"
 }
 
 # ============================================================
@@ -102,18 +117,23 @@ Write-Host "  [2/2] Python virtual environment..." -ForegroundColor Yellow
 $venvPath = Join-Path $ProjectRoot ".venv"
 
 if ($IncludeVenv) {
+    Write-Log -Message "IncludeVenv flag set - checking .venv" -Category "CLEAN"
     if (Test-Path $venvPath -PathType Container) {
         if ($DryRun) {
             Write-Host "        [WOULD DELETE] .venv" -ForegroundColor Gray
+            Write-Log -Message "[DRY RUN] Would delete: .venv" -Category "CLEAN"
         }
         else {
             Write-Host "        Removing .venv..." -ForegroundColor Gray
+            Write-Log -Message "Removing: .venv" -Category "CLEAN"
             Remove-Item -Path $venvPath -Recurse -Force -ErrorAction SilentlyContinue
             Write-Host "        Done." -ForegroundColor Green
+            Write-Log -Message "Removed: .venv" -Level "SUCCESS" -Category "CLEAN"
         }
     }
     else {
         Write-Host "        .venv not found." -ForegroundColor Gray
+        Write-Log -Message ".venv not found" -Category "CLEAN"
     }
 }
 else {
@@ -124,8 +144,14 @@ else {
 # Summary
 # ============================================================
 
+Write-LogSection -Title "NEZUKO CLEAN COMPLETED"
+Write-Log -Message "Clean operation completed" -Level "SUCCESS" -Category "CLEAN"
+
 Write-Host ""
 Write-Host "  ====================================" -ForegroundColor Cyan
 Write-Host "   Complete!" -ForegroundColor Green
 Write-Host "  ====================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "  📋 Log file: " -NoNewline -ForegroundColor Gray
+Write-Host (Get-LogPath) -ForegroundColor DarkGray
 Write-Host ""

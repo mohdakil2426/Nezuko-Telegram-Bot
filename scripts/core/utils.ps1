@@ -27,6 +27,159 @@ function Get-ProjectRoot {
     return (Resolve-Path (Join-Path $scriptPath "..\..")).Path
 }
 
+# ============================================================
+# Logging System
+# ============================================================
+
+# Global log file path
+$script:LogsDir = $null
+$script:CurrentLogFile = $null
+
+function Initialize-LogSystem {
+    <#
+    .SYNOPSIS
+        Initializes the logging system and creates log directory.
+    .DESCRIPTION
+        Creates the scripts/logs directory and sets up the current log file
+        based on the current date.
+    #>
+    [CmdletBinding()]
+    param()
+    
+    $projectRoot = Get-ProjectRoot
+    $script:LogsDir = Join-Path $projectRoot "scripts\logs"
+    
+    # Create logs directory if it doesn't exist
+    if (-not (Test-Path $script:LogsDir)) {
+        New-Item -ItemType Directory -Path $script:LogsDir -Force | Out-Null
+    }
+    
+    # Set current log file (daily rotation)
+    $dateStr = Get-Date -Format "yyyy-MM-dd"
+    $script:CurrentLogFile = Join-Path $script:LogsDir "nezuko-$dateStr.log"
+    
+    # Create .gitignore for logs
+    $gitignorePath = Join-Path $script:LogsDir ".gitignore"
+    if (-not (Test-Path $gitignorePath)) {
+        "# Ignore all log files`n*.log" | Out-File -FilePath $gitignorePath -Encoding utf8
+    }
+}
+
+function Write-Log {
+    <#
+    .SYNOPSIS
+        Writes a timestamped message to the log file.
+    .PARAMETER Message
+        The message to log.
+    .PARAMETER Level
+        Log level: INFO, WARN, ERROR, DEBUG, SUCCESS
+    .PARAMETER Category
+        Category/source of the log: INSTALL, CLEAN, DEV, TEST, MENU, SYSTEM
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Message,
+        
+        [ValidateSet("INFO", "WARN", "ERROR", "DEBUG", "SUCCESS")]
+        [string]$Level = "INFO",
+        
+        [ValidateSet("INSTALL", "CLEAN", "DEV", "TEST", "MENU", "SYSTEM", "PYTHON", "NODE")]
+        [string]$Category = "SYSTEM"
+    )
+    
+    # Initialize if not already done
+    if (-not $script:CurrentLogFile) {
+        Initialize-LogSystem
+    }
+    
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logEntry = "[$timestamp] [$Level] [$Category] $Message"
+    
+    # Append to log file
+    try {
+        $logEntry | Out-File -FilePath $script:CurrentLogFile -Append -Encoding utf8
+    }
+    catch {
+        # Silently fail if we can't write to log
+    }
+}
+
+function Write-LogSection {
+    <#
+    .SYNOPSIS
+        Writes a section header to the log file.
+    .PARAMETER Title
+        The section title.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Title
+    )
+    
+    Write-Log -Message "===============================================" -Level "INFO" -Category "SYSTEM"
+    Write-Log -Message $Title -Level "INFO" -Category "SYSTEM"
+    Write-Log -Message "===============================================" -Level "INFO" -Category "SYSTEM"
+}
+
+function Write-CommandLog {
+    <#
+    .SYNOPSIS
+        Logs a command execution with its output.
+    .PARAMETER Command
+        The command that was executed.
+    .PARAMETER Output
+        The command output.
+    .PARAMETER ExitCode
+        The exit code (optional).
+    .PARAMETER Category
+        The category for the log entry.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Command,
+        
+        [string]$Output = "",
+        
+        [int]$ExitCode = 0,
+        
+        [ValidateSet("INSTALL", "CLEAN", "DEV", "TEST", "MENU", "SYSTEM", "PYTHON", "NODE")]
+        [string]$Category = "SYSTEM"
+    )
+    
+    $level = if ($ExitCode -eq 0) { "INFO" } else { "ERROR" }
+    
+    Write-Log -Message "COMMAND: $Command" -Level $level -Category $Category
+    if ($Output) {
+        # Truncate long output
+        $truncated = if ($Output.Length -gt 500) { $Output.Substring(0, 500) + "... [truncated]" } else { $Output }
+        Write-Log -Message "OUTPUT: $truncated" -Level $level -Category $Category
+    }
+    if ($ExitCode -ne 0) {
+        Write-Log -Message "EXIT CODE: $ExitCode" -Level "ERROR" -Category $Category
+    }
+}
+
+function Get-LogPath {
+    <#
+    .SYNOPSIS
+        Gets the path to the current log file.
+    .OUTPUTS
+        System.String - Path to current log file.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+    
+    if (-not $script:CurrentLogFile) {
+        Initialize-LogSystem
+    }
+    
+    return $script:CurrentLogFile
+}
+
 function Get-VenvPath {
     <#
     .SYNOPSIS

@@ -1,6 +1,62 @@
+#Requires -Version 5.1
+
+<#
+.SYNOPSIS
+    Nezuko Development Server Launcher (PowerShell)
+.DESCRIPTION
+    Opens 3 separate PowerShell 7 terminals for Web, API, and Bot services.
+    Prefers pwsh (PowerShell 7) with fallback to powershell (5.1).
+.EXAMPLE
+    .\start.ps1
+    Launches all development services in separate terminals.
+#>
+
+[CmdletBinding()]
+param()
+
+# Import utilities for logging
+$ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+. "$ScriptRoot\..\core\utils.ps1"
+
+# Initialize logging
+Initialize-LogSystem
+Write-LogSection -Title "DEV SERVICES START"
+
 # ============================================================
-# Nezuko Development Server Launcher (PowerShell)
-# Opens 3 separate terminals for Web, API, and Bot
+# Detect PowerShell: Prefer pwsh (PS7) over powershell (PS5.1)
+# ============================================================
+
+$PwshPath = $null
+
+# Check for PowerShell 7 (pwsh)
+$pwsh7 = Get-Command pwsh -ErrorAction SilentlyContinue
+if ($pwsh7) {
+    $PwshPath = $pwsh7.Source
+}
+else {
+    # Fallback to PowerShell 5.1
+    $ps5 = Get-Command powershell -ErrorAction SilentlyContinue
+    if ($ps5) {
+        $PwshPath = $ps5.Source
+    }
+}
+
+if (-not $PwshPath) {
+    Write-Host ""
+    Write-Host "  [ERROR] PowerShell not found!" -ForegroundColor Red
+    Write-Host "  Please install PowerShell 7 from: https://aka.ms/powershell" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Log -Message "PowerShell not found!" -Level "ERROR" -Category "DEV"
+    exit 1
+}
+
+$ProjectRoot = Get-ProjectRoot
+
+Write-Log -Message "Project Root: $ProjectRoot" -Category "DEV"
+Write-Log -Message "PowerShell: $PwshPath" -Category "DEV"
+
+# ============================================================
+# Setup
 # ============================================================
 
 Write-Host ""
@@ -9,31 +65,55 @@ Write-Host "   🦊 Nezuko Development Launcher" -ForegroundColor Yellow
 Write-Host "  ====================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Get script directory
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$projectRoot = Split-Path -Parent $scriptDir
-
-# Change to project root
-Set-Location $projectRoot
-
+Write-Host "  Project: $ProjectRoot" -ForegroundColor Gray
+Write-Host "  PowerShell: $PwshPath" -ForegroundColor Gray
+Write-Host ""
 Write-Host "  Starting services in separate terminals..." -ForegroundColor White
 Write-Host ""
 
-# Start Web Dashboard
+# ============================================================
+# Start Services in Separate Terminals
+# ============================================================
+
+# Start Web Dashboard (Next.js)
 Write-Host "  [1/3] Starting Web Dashboard..." -ForegroundColor Blue
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$projectRoot\apps\web'; bun dev"
+Write-Log -Message "Starting Web Dashboard (bun dev)" -Category "DEV"
+$webCmd = "Set-Location '$ProjectRoot\apps\web'; Write-Host '  🌐 Web Dashboard - http://localhost:3000' -ForegroundColor Cyan; Write-Host ''; bun dev"
+Start-Process $PwshPath -ArgumentList "-NoExit", "-Command", $webCmd
 
 Start-Sleep -Seconds 2
 
-# Start API Server
+# Start API Server (FastAPI)
 Write-Host "  [2/3] Starting API Server..." -ForegroundColor Green
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$projectRoot'; & '$projectRoot\.venv\Scripts\Activate.ps1'; Set-Location apps\api; uvicorn src.main:app --reload --port 8080"
+Write-Log -Message "Starting API Server (uvicorn)" -Category "DEV"
+$venvActivate = Join-Path $ProjectRoot ".venv\Scripts\Activate.ps1"
+if (Test-Path $venvActivate) {
+    $apiCmd = "Set-Location '$ProjectRoot\apps\api'; Write-Host '  🔌 API Server - http://localhost:8080' -ForegroundColor Green; Write-Host ''; & '$venvActivate'; uvicorn src.main:app --reload --port 8080"
+}
+else {
+    $apiCmd = "Set-Location '$ProjectRoot\apps\api'; Write-Host '  🔌 API Server - http://localhost:8080' -ForegroundColor Green; Write-Host ''; uvicorn src.main:app --reload --port 8080"
+}
+Start-Process $PwshPath -ArgumentList "-NoExit", "-Command", $apiCmd
 
 Start-Sleep -Seconds 2
 
 # Start Telegram Bot
 Write-Host "  [3/3] Starting Telegram Bot..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$projectRoot'; & '$projectRoot\.venv\Scripts\Activate.ps1'; python -m apps.bot.main"
+Write-Log -Message "Starting Telegram Bot (python -m apps.bot.main)" -Category "DEV"
+if (Test-Path $venvActivate) {
+    $botCmd = "Set-Location '$ProjectRoot'; Write-Host '  🤖 Telegram Bot - Polling Mode' -ForegroundColor Yellow; Write-Host ''; & '$venvActivate'; python -m apps.bot.main"
+}
+else {
+    $botCmd = "Set-Location '$ProjectRoot'; Write-Host '  🤖 Telegram Bot - Polling Mode' -ForegroundColor Yellow; Write-Host ''; python -m apps.bot.main"
+}
+Start-Process $PwshPath -ArgumentList "-NoExit", "-Command", $botCmd
+
+# ============================================================
+# Summary
+# ============================================================
+
+Write-LogSection -Title "DEV SERVICES STARTED"
+Write-Log -Message "All 3 services started successfully" -Level "SUCCESS" -Category "DEV"
 
 Write-Host ""
 Write-Host "  ====================================" -ForegroundColor Cyan

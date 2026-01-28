@@ -44,15 +44,12 @@ scripts/
 ├── dev/                   # 🚀 Development server scripts
 │   ├── start.ps1          # Start all services (Windows)
 │   ├── start.sh           # Start all services (Mac/Linux)
-│   ├── start.bat          # Legacy Windows CMD (deprecated)
 │   ├── stop.ps1           # Stop all services (Windows)
-│   ├── stop.sh            # Stop all services (Mac/Linux)
-│   └── stop.bat           # Legacy Windows CMD (deprecated)
+│   └── stop.sh            # Stop all services (Mac/Linux)
 │
 ├── setup/                 # 📦 Initial setup scripts
 │   ├── install.ps1        # First-time setup (Windows)
-│   ├── install.sh         # First-time setup (Mac/Linux)
-│   └── install.bat        # Legacy Windows CMD (deprecated)
+│   └── install.sh         # First-time setup (Mac/Linux)
 │
 ├── test/                  # 🧪 Test runners
 │   ├── run.ps1            # Test runner (Windows)
@@ -66,12 +63,15 @@ scripts/
 ├── deploy/                # 🚢 Deployment scripts
 │   └── docker-build.sh    # Docker build script
 │
+├── logs/                  # 📋 Script execution logs (git-ignored)
+│   ├── nezuko-YYYY-MM-DD.log  # Daily log files
+│   └── README.md          # Log format documentation
+│
 └── utils/                 # 🔧 Utility scripts
     ├── clean.ps1          # Clean build artifacts (Windows)
     ├── clean.sh           # Clean build artifacts (Mac/Linux)
     ├── generate-structure.ps1  # Generate folder structure
-    ├── manage.ps1         # Project management utilities
-    └── run-tests.py       # Legacy test runner (deprecated)
+    └── manage.ps1         # Project management utilities
 ```
 
 ---
@@ -214,12 +214,54 @@ cd config/docker && docker-compose logs -f
 
 ---
 
+## 📋 Logging
+
+All script operations are logged to `scripts/logs/nezuko-YYYY-MM-DD.log` with daily rotation.
+
+### Log Format
+
+```
+[2026-01-28 17:30:47] [INFO] [DEV] Starting Web Dashboard (bun dev)
+[2026-01-28 17:30:51] [SUCCESS] [DEV] All 3 services started successfully
+[2026-01-28 17:30:57] [ERROR] [INSTALL] Prerequisites check FAILED
+```
+
+### Log Categories
+
+| Category | Description |
+|----------|-------------|
+| `SYSTEM` | General system operations |
+| `INSTALL` | Setup/installation operations |
+| `CLEAN` | Cleanup operations |
+| `DEV` | Development server operations |
+| `TEST` | Test runner operations |
+| `PYTHON` | Python-specific operations (pip, venv) |
+| `NODE` | Node.js/Bun operations |
+| `MENU` | Menu interactions |
+
+### Viewing Logs
+
+```powershell
+# View last 50 lines (Windows)
+Get-Content scripts/logs/nezuko-2026-01-28.log -Tail 50
+
+# View last 50 lines (Mac/Linux)
+tail -n 50 scripts/logs/nezuko-2026-01-28.log
+
+# Watch logs in real-time (Mac/Linux)
+tail -f scripts/logs/nezuko-*.log
+```
+
+> **Note:** Log files are git-ignored and will not be committed to the repository.
+
+---
+
 ## 📝 Notes
 
-- **Legacy scripts** (`.bat` files) are deprecated but kept for backward compatibility
 - **PowerShell scripts** (`.ps1`) are the primary Windows scripts
 - **Bash scripts** (`.sh`) are the primary Mac/Linux scripts
 - All scripts support `--help` or `-h` for usage information
+- Logs are automatically created in `scripts/logs/`
 
 ---
 

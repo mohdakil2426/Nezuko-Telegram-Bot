@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # Nezuko CLI - Mac/Linux Entry Point
-# Launches the interactive bash menu
+# Launches the interactive bash menu or runs commands
 # ============================================================
 # Usage: ./nezuko [command]
 #   ./nezuko          - Opens interactive menu
@@ -9,6 +9,8 @@
 #   ./nezuko stop     - Stop all services
 #   ./nezuko setup    - First-time setup
 #   ./nezuko test     - Run tests
+#   ./nezuko clean    - Clean node_modules and .venv
+#   ./nezuko tree     - Generate project structure
 #   ./nezuko help     - Show commands
 # ============================================================
 
@@ -40,13 +42,50 @@ show_help() {
     echo "    stop      Stop all services"
     echo "    setup     First-time project setup"
     echo "    test      Run test suite"
-    echo "    clean     Clean build artifacts"
+    echo "    clean     Clean node_modules and .venv"
+    echo "    tree      Generate project folder structure"
     echo "    help      Show this help message"
     echo ""
     echo "  Examples:"
     echo "    ./nezuko            # Open menu"
     echo "    ./nezuko dev        # Start all servers"
     echo "    ./nezuko setup      # Install dependencies"
+    echo "    ./nezuko tree       # Show project structure"
+    echo ""
+}
+
+# Generate tree structure (bash equivalent)
+generate_tree() {
+    echo ""
+    echo -e "${CYAN}  ====================================${NC}"
+    echo -e "${YELLOW}   📁 Nezuko Project Structure${NC}"
+    echo -e "${CYAN}  ====================================${NC}"
+    echo ""
+    
+    # Check if tree command is available
+    if command -v tree &> /dev/null; then
+        tree -I 'node_modules|.venv|__pycache__|.git|.next|.turbo|.ruff_cache|.pytest_cache|dist|build|htmlcov|.opencode|.playwright-mcp|.agent|docs' -L 4 --dirsfirst
+    else
+        # Fallback using find
+        echo "Nezuko-Telegram-Bot"
+        echo "│"
+        find . -maxdepth 4 \
+            -not -path '*/node_modules/*' \
+            -not -path '*/.venv/*' \
+            -not -path '*/__pycache__/*' \
+            -not -path '*/.git/*' \
+            -not -path '*/.next/*' \
+            -not -path '*/.turbo/*' \
+            -not -path '*/.ruff_cache/*' \
+            -not -path '*/.agent/*' \
+            -not -path '*/docs/*' \
+            -not -name '.git' \
+            -not -name 'node_modules' \
+            -not -name '.venv' \
+            | sed 's|^\./||' | head -50
+        echo ""
+        echo -e "${GRAY}(Install 'tree' for better output: brew install tree)${NC}"
+    fi
     echo ""
 }
 
@@ -69,6 +108,9 @@ case "${1:-menu}" in
         ;;
     "clean")
         exec "$SCRIPT_DIR/scripts/utils/clean.sh"
+        ;;
+    "tree"|"structure")
+        generate_tree
         ;;
     "help"|"-h"|"--help")
         show_help
