@@ -43,6 +43,14 @@
   --warning: hsl(45 85% 55%);
   --error: hsl(0 75% 55%);
   --info: hsl(220 80% 55%);
+
+  /* Semantic UI Tokens (Light) */
+  --text-primary: hsl(222.2 84% 4.9%);
+  --text-secondary: hsl(215.4 16.3% 46.9%);
+  --text-tertiary: hsl(215.4 16.3% 56.9%);
+  --surface: hsl(210 40% 98% / 0.5);
+  --surface-hover: hsl(210 40% 96.1%);
+  --border-hover: hsl(215.4 16.3% 80%);
 }
 
 .dark {
@@ -80,6 +88,14 @@
   --warning: hsl(45 85% 60%);
   --error: hsl(0 75% 60%);
   --info: hsl(220 80% 60%);
+
+  /* Semantic UI Tokens (Dark) */
+  --text-primary: oklch(0.95 0.01 265);
+  --text-secondary: oklch(0.7 0.01 265);
+  --text-tertiary: oklch(0.5 0.01 265);
+  --surface: oklch(0.15 0.01 265);
+  --surface-hover: oklch(0.18 0.01 265);
+  --border-hover: oklch(0.35 0.02 265);
 }
 
 /* ============================================
@@ -136,17 +152,17 @@
   --color-error: var(--error);
   --color-info: var(--info);
 
-  /* Surface colors for dark mode cards/panels */
-  --color-surface: oklch(0.15 0.01 265);
-  --color-surface-hover: oklch(0.18 0.01 265);
+  /* Surface colors */
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
 
   /* Text hierarchy */
-  --color-text-primary: oklch(0.95 0.01 265);
-  --color-text-secondary: oklch(0.7 0.01 265);
-  --color-text-tertiary: oklch(0.5 0.01 265);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
 
   /* Border variants */
-  --color-border-hover: oklch(0.35 0.02 265);
+  --color-border-hover: var(--border-hover);
 
   /* Radius */
   --radius: 0.5rem;

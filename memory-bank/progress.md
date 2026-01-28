@@ -1,6 +1,6 @@
 # Project Progress: Nezuko - Roadmap to v1.0.0
 
-## 🛠️ Current Status: Phase 22 - Script Logging ✅
+## 🛠️ Current Status: Phase 23 - SQLite Migration & Dashboard Fixes ✅
 
 **Overall Implementation Status**: **100%** 🚀
 
@@ -24,9 +24,35 @@
 | **Phase 19** | Production-Grade Folder Structure | ✅ Complete |
 | **Phase 20** | Documentation Refinement | ✅ Complete |
 | **Phase 21** | Developer Experience Improvements | ✅ Complete |
-| **Phase 22** | Script Logging System | ✅ **COMPLETE** |
+| **Phase 22** | Script Logging System | ✅ Complete |
+| **Phase 23** | SQLite Migration & Dashboard Fixes | ✅ **COMPLETE** |
 
 ---
+
+## ✅ Phase 23: SQLite Migration & Dashboard Fixes (2026-01-28)
+
+### Overview
+
+Unified the database architecture for local development and fixed major UI/UX issues in the Admin Dashboard.
+
+### Key Achievements
+
+| Achievement | Description |
+|-------------|-------------|
+| **Unified DB** | Both API and Bot now share `storage/data/nezuko.db` |
+| **Migration Fixes** | Dialect-agnostic Alembic migrations (Postgres ↔ SQLite) |
+| **UI Theme Fix** | Text visibility in light mode resolved via semantic tokens |
+| **API Integration** | Fixed data unwrapping for Stats and Activity feeds |
+| **Verification** | 100% pass rate on manual E2E verification flow |
+
+### Detailed Fixes
+
+| Component | Issue | Resolution |
+|-----------|-------|------------|
+| Migrations | `postgresql.UUID` / `now()` | Replaced with `sa.String` and `sa.func.now()` |
+| Styles | Transparent text in light mode | Refactored `globals.css` with semantic variables |
+| API Client | Nested `data` property ignored | Updated `dashboardApi.ts` to unwrap `response.data` |
+| Database | Missing bot tables in dashboard | Unified database engine in both apps |
 
 ## ✅ Phase 22: Script Logging System (2026-01-28)
 

@@ -1,12 +1,30 @@
-# Active Context: Phase 22 - Comprehensive Script Logging
+# Active Context: Phase 23 - SQLite Migration & Dashboard Fixes
 
 ## 🎯 Current Status
 
-**Phase 22 COMPLETE** - Logging system implemented across all scripts.
+**Phase 23 COMPLETE** - Database unified, migrations fixed, and Dashboard UI polished.
 
 ---
 
 ## ✅ Completed Tasks (2026-01-28)
+
+### Phase 23: SQLite Migration & Dashboard Fixes ✅
+
+- [x] **Unified Database Architecture**:
+  - Consolidated all domains (API, Bot) into a single production-grade SQLite database at `storage/data/nezuko.db`.
+  - Updated connection strings across all `.env` files.
+- [x] **Dialect-Agnostic Migrations**:
+  - Fixed Alembic migrations to support SQLite by replacing Postgres-specific types (`UUID`, `INET`, `JSONB`) with standard SQLAlchemy types (`String(36)`, `String(45)`, `JSON`).
+  - Corrected `sa.text("now()")` to `sa.func.now()` for cross-database compatibility.
+  - Added `supabase_uid` to `admin_users` table for seamless auth syncing.
+- [x] **Dashboard UI/UX Polish**:
+  - Refactored `globals.css` to use theme-aware semantic tokens, fixing text visibility issues in light mode.
+  - Corrected data unwrapping logic in `dashboardApi` client to properly display stats and activity.
+  - Verified CORS settings between frontend (3000) and backend (8080/8081).
+- [x] **End-to-End Verification**:
+  - Verified full login flow (Mock and Supabase).
+  - Verified Bot Core startup and handler registration.
+  - Verified database browser functionality with real data.
 
 ### Phase 22: Script Logging System ✅
 
@@ -90,6 +108,7 @@ scripts/
 
 | Phase | Description | Date |
 |-------|-------------|------|
+| Phase 23 | SQLite Migration & Dashboard Fixes | 2026-01-28 |
 | Phase 22 | Script Logging System | 2026-01-28 |
 | Phase 21 | Developer Experience Improvements | 2026-01-28 |
 | Phase 20 | Documentation Refinement | 2026-01-28 |

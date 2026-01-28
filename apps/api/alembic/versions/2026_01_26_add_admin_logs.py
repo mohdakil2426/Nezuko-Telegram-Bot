@@ -21,7 +21,7 @@ def upgrade() -> None:
         "admin_logs",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column(
-            "timestamp", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+            "timestamp", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
         ),
         sa.Column("level", sa.String(length=10), nullable=False),
         sa.Column("logger", sa.String(length=100), nullable=False),

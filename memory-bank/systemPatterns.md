@@ -1,6 +1,6 @@
 # System Patterns: Nezuko - Architectural Standards
 
-> **Last Updated**: 2026-01-28 | **Version**: 2.4.0 (Developer Experience)
+> **Last Updated**: 2026-01-28 | **Version**: 2.5.0 (SQLite Unified)
 
 ---
 
@@ -436,9 +436,30 @@ def verify_jwt(token: str) -> dict:
 
 # 🗄️ Database Patterns
 
-## Supabase Postgres (Unified)
+## Unified Development Database (SQLite)
 
-Since Phase 14, all environments use **Supabase Postgres**:
+For local development, both **Backend API** and **Bot Core** use a shared SQLite database. This ensures data consistency across the ecosystem without requiring a full Postgres instance.
+
+- **Location**: `storage/data/nezuko.db`
+- **Driver**: `sqlite+aiosqlite`
+- **Migrations**: Dialect-agnostic (Alembic). Avoid Postgres-specific types (`JSONB`, `INET`, `UUID`) in migrations to maintain compatibility.
+
+```python
+# ✅ CORRECT - Dialect-agnostic migrations
+import sqlalchemy as sa
+from alembic import op
+
+def upgrade():
+    op.create_table(
+        'admin_users',
+        sa.Column('id', sa.String(36), primary_key=True),  # Standard String over postgresql.UUID
+        sa.Column('created_at', sa.DateTime(), server_default=sa.func.now()), # sa.func.now() works on both
+    )
+```
+
+## Supabase Postgres (Production)
+
+In production, the application connects to **Supabase Postgres**:
 
 ```python
 # apps/api/src/core/database.py

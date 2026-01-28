@@ -15,7 +15,7 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 | **Frontend** | Next.js 16, React 19, TypeScript 5.9, Tailwind v4, shadcn/ui |
 | **Backend API** | FastAPI 0.128+, Python 3.13, SQLAlchemy 2.0, Pydantic V2 |
 | **Bot Engine** | python-telegram-bot v22.6, AsyncIO |
-| **Database** | PostgreSQL 15+ (Supabase), Redis 7+ |
+| **Database** | PostgreSQL 15+ (Supabase), Unified SQLite (Local Dev) |
 | **Infrastructure** | Docker, Turborepo, Caddy |
 
 ---
@@ -128,6 +128,7 @@ def validate_channel(self) -> 'GroupCreate':
 - Shared SQLAlchemy models with API
 - Shared Redis cache layer
 - Prometheus metrics integration
+- Unified SQLite database (`storage/data/nezuko.db`)
 
 ---
 

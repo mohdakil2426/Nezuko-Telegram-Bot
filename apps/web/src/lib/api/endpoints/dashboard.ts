@@ -20,11 +20,15 @@ export interface ChartDataResponse {
 
 export const dashboardApi = {
     getStats: async (): Promise<DashboardStatsResponse> => {
-        return api.get<DashboardStatsResponse>("/dashboard/stats");
+        const response = await api.get<AdminApiResponse<DashboardStatsResponse>>("/dashboard/stats");
+        return response.data;
     },
 
     getActivity: async (limit: number = 20): Promise<ActivityResponse> => {
-        return api.get<ActivityResponse>(`/dashboard/activity`, { params: { limit } });
+        const response = await api.get<AdminApiResponse<ActivityResponse>>(`/dashboard/activity`, {
+            params: { limit },
+        });
+        return response.data;
     },
 
     getChartData: async (): Promise<ChartDataResponse> => {
