@@ -188,16 +188,38 @@ def validate_channel(self) -> 'GroupCreate':
 
 ## 🛠️ Development Setup
 
-### Quick Start (Recommended)
+### Quick Start (For Humans)
+
+> **Note**: `nezuko.bat` CLI menu is for humans. AI agents should use direct commands below.
 
 ```bash
-# Start all 3 services in separate terminals
-.\scripts\dev\start.ps1    # PowerShell (colored output)
-.\scripts\dev\start.bat    # Windows CMD
+# Launch unified CLI menu (humans only)
+.\nezuko.bat
 
-# Stop all services
-.\scripts\dev\stop.bat
+# Direct commands (for AI agents)
+.\scripts\dev\start.ps1    # Start services
+.\scripts\dev\stop.ps1     # Stop services
 ```
+
+### Logging System
+
+All scripts write to `scripts/logs/nezuko-YYYY-MM-DD.log`:
+
+```bash
+# View recent logs
+Get-Content scripts/logs/nezuko-*.log -Tail 50
+
+# Log format
+[2026-01-28 17:49:26] [INFO] [PYTHON] COMMAND: pip install -r requirements.txt
+[2026-01-28 17:49:26] [SUCCESS] [PYTHON] Installed from requirements.txt
+```
+
+| Feature | Behavior |
+|---------|----------|
+| **Rotation** | Daily (new file each day) |
+| **Mode** | Append-only (never overwrites) |
+| **Retention** | Logs never auto-deleted |
+| **Categories** | INSTALL, CLEAN, DEV, PYTHON, NODE, SYSTEM |
 
 ### Manual Commands (if needed)
 
@@ -216,7 +238,9 @@ python -m apps.bot.main    # ✅ Correct
 ### First-Time Setup
 
 ```bash
-.\scripts\setup\install.bat
+.\nezuko.bat  # Then select option 4
+# Or directly:
+.\scripts\setup\install.ps1
 ```
 
 ### Environment Variables

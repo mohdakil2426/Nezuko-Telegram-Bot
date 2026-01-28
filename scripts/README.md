@@ -2,6 +2,8 @@
 
 Cross-platform utility scripts for development, deployment, and maintenance.
 
+> **Note**: The `nezuko.bat` CLI menu is for **human developers**. AI agents should use direct PowerShell/Bash commands.
+
 ## 🚀 Quick Start
 
 ### One Command to Rule Them All

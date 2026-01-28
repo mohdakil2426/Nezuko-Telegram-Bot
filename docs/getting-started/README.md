@@ -47,6 +47,28 @@ This guide will walk you through setting up the complete Nezuko platform, includ
 
 ## Quick Start (5 Minutes)
 
+### Option A: Using CLI Menu (Recommended)
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/mohdakil2426/Nezuko-Telegram-Bot.git
+cd Nezuko-Telegram-Bot
+
+# 2. Launch the CLI menu
+.\nezuko.bat           # Windows
+./nezuko               # Mac/Linux
+
+# 3. Select [4] First-Time Setup
+#    This installs all dependencies automatically
+
+# 4. Edit environment files with your credentials
+#    (See Configuration section below)
+
+# 5. Select [1] Start All Services
+```
+
+### Option B: Manual Installation
+
 ```bash
 # 1. Clone the repository
 git clone https://github.com/mohdakil2426/Nezuko-Telegram-Bot.git
@@ -205,12 +227,21 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 
 ## Running the Services
 
-### Development Mode (All Services)
+### Using CLI Menu (Recommended)
 
 ```bash
-# Terminal 1: Bot
-cd apps/bot
-python main.py
+.\nezuko.bat           # Windows
+./nezuko               # Mac/Linux
+
+# Select [1] Start All Services
+# Select [2] Stop All Services
+```
+
+### Manual Mode (3 Terminals)
+
+```bash
+# Terminal 1: Bot (from project root!)
+python -m apps.bot.main
 
 # Terminal 2: API
 cd apps/api

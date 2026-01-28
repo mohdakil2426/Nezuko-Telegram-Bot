@@ -55,6 +55,8 @@ nezuko-monorepo/
 
 ## Build & Run Commands
 
+> **Note**: `nezuko.bat` CLI menu is for humans. AI agents should use direct commands below.
+
 ```bash
 # Install dependencies
 pip install -r requirements.txt    # Python

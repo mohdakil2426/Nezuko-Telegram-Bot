@@ -1,59 +1,88 @@
-# Active Context: Phase 21 - Developer Experience Improvements
+# Active Context: Phase 22 - Comprehensive Script Logging
 
 ## 🎯 Current Status
 
-**Phase 21 COMPLETE** - Bot fixes, developer scripts, organized folder structure.
+**Phase 22 COMPLETE** - Logging system implemented across all scripts.
 
 ---
 
 ## ✅ Completed Tasks (2026-01-28)
 
-### Phase 21: Developer Experience Improvements ✅
+### Phase 22: Script Logging System ✅
 
-- [x] Fixed bot module import path issue (must run from project root)
-- [x] Fixed `load_dotenv()` to find `.env` relative to `apps/bot/`
-- [x] Fixed SQLite database path normalization for relative URLs
-- [x] Fixed `PostgresLogHandler` async task management
-- [x] Fixed "Message is not modified" error with `safe_edit_message()` helper
-- [x] Created development launcher scripts (`scripts/dev/start.bat`, `start.ps1`)
-- [x] Created stop script (`scripts/dev/stop.bat`)
-- [x] Created first-time setup script (`scripts/setup/install.bat`)
-- [x] Reorganized `scripts/` folder into categories
-- [x] Created `scripts/README.md` documentation
-- [x] Updated documentation with correct bot run command
+- [x] Created `scripts/logs/` directory structure
+- [x] Created `.gitignore` for log files (*.log ignored)
+- [x] Created `README.md` documenting log format and usage
+- [x] Added logging functions to `scripts/core/utils.ps1`:
+  - `Initialize-LogSystem` - Creates log directory and file
+  - `Write-Log` - Writes timestamped log entries (APPEND mode)
+  - `Write-LogSection` - Writes section headers
+  - `Write-CommandLog` - Logs command execution
+  - `Get-LogPath` - Returns current log file path
+- [x] Updated `scripts/setup/install.ps1` with verbose logging
+- [x] Updated `scripts/utils/clean.ps1` with cleanup logging
+- [x] Updated `scripts/dev/start.ps1` with service startup logging
+- [x] Updated `scripts/dev/stop.ps1` with process termination logging
+- [x] Fixed ErrorRecord type issue (cast to `[string]` before `.Trim()`)
+- [x] Updated `scripts/README.md` with logging documentation
+- [x] Created `nezuko.bat` unified CLI entry point
 
-### Scripts Folder Structure
+### Logging System Features
+
+| Feature | Implementation |
+|---------|----------------|
+| **Daily Rotation** | `nezuko-YYYY-MM-DD.log` |
+| **Append-Only** | Uses `Out-File -Append` |
+| **Never Deleted** | Logs preserved indefinitely |
+| **Categories** | INSTALL, CLEAN, DEV, TEST, PYTHON, NODE, SYSTEM |
+| **Levels** | INFO, SUCCESS, WARN, ERROR, DEBUG |
+
+### Log Format
+
+```
+[2026-01-28 17:49:26] [INFO] [PYTHON] COMMAND: pip install -r requirements.txt
+[2026-01-28 17:49:26] [SUCCESS] [PYTHON] Installed from requirements.txt
+[2026-01-28 17:49:26] [INFO] [NODE] COMMAND: bun install
+```
+
+---
+
+## 📁 Updated Scripts Structure
 
 ```
 scripts/
-├── README.md              # Documentation
-├── dev/                   # 🚀 Development server scripts
-│   ├── start.bat          # Start all (3 terminals) - CMD
-│   ├── start.ps1          # Start all (3 terminals) - PowerShell
-│   └── stop.bat           # Stop all services
-├── setup/                 # 📦 Initial setup
-│   └── install.bat        # First-time project setup
-├── db/                    # 🗄️ Database scripts
-│   ├── init.sql
-│   ├── setup.py
-│   └── debug.py
+├── README.md              # Updated with logging docs
+├── nezuko.bat             # CLI entry point (calls menu.ps1)
+├── core/                  # 🔧 Core utilities
+│   ├── menu.ps1           # Interactive menu
+│   └── utils.ps1          # Shared functions + LOGGING
+├── dev/                   # 🚀 Development
+│   ├── start.ps1          # Start services (with logging)
+│   └── stop.ps1           # Stop services (with logging)
+├── setup/                 # 📦 Setup
+│   └── install.ps1        # Install deps (verbose + logging)
+├── utils/                 # 🧹 Utilities
+│   └── clean.ps1          # Clean artifacts (with logging)
+├── db/                    # 🗄️ Database
 ├── deploy/                # 🚢 Deployment
-│   └── docker-build.sh
-└── utils/                 # 🔧 Utilities
-    ├── generate-structure.ps1
-    ├── manage.ps1
-    └── run-tests.py
+└── logs/                  # 📋 LOG FILES (NEW)
+    ├── .gitignore         # Ignores *.log
+    ├── README.md          # Log documentation
+    └── nezuko-*.log       # Daily log files
 ```
 
-### Bot Run Command (IMPORTANT)
+---
 
-```bash
-# Correct way (from project root)
-python -m apps.bot.main
+## 🚀 Quick Start Commands
 
-# Wrong way (doesn't work)
-cd apps/bot && python main.py  # ❌ Breaks imports!
-```
+> **Note**: `nezuko.bat` CLI is for humans. AI agents use direct commands.
+
+| Action | Human | AI Agent |
+|--------|-------|----------|
+| **Start services** | `.\nezuko.bat` → [1] | `.\scripts\dev\start.ps1` |
+| **Stop services** | `.\nezuko.bat` → [2] | `.\scripts\dev\stop.ps1` |
+| **Setup** | `.\nezuko.bat` → [4] | `.\scripts\setup\install.ps1` |
+| **View logs** | — | `Get-Content scripts/logs/nezuko-*.log -Tail 50` |
 
 ---
 
@@ -61,6 +90,8 @@ cd apps/bot && python main.py  # ❌ Breaks imports!
 
 | Phase | Description | Date |
 |-------|-------------|------|
+| Phase 22 | Script Logging System | 2026-01-28 |
+| Phase 21 | Developer Experience Improvements | 2026-01-28 |
 | Phase 20 | Documentation Refinement | 2026-01-28 |
 | Phase 19 | Production-Grade Folder Structure | 2026-01-27 |
 | Phase 18 | TanStack Query v5 Best Practices Audit | 2026-01-27 |
@@ -68,58 +99,6 @@ cd apps/bot && python main.py  # ❌ Breaks imports!
 | Phase 16 | React Optimization (Vercel Best Practices) | 2026-01-27 |
 | Phase 15 | Comprehensive Testing | 2026-01-26 |
 | Phase 14 | Supabase One-Stack Migration | 2026-01-26 |
-
----
-
-## 📁 Current Project Structure
-
-```
-nezuko-monorepo/
-├── apps/
-│   ├── web/              # Next.js 16 Admin Dashboard
-│   │   └── GEMINI.md     # Web-specific AI context
-│   ├── api/              # FastAPI REST Backend
-│   │   └── GEMINI.md     # API-specific AI context
-│   └── bot/              # Telegram Bot (PTB v22)
-│       └── GEMINI.md     # Bot-specific AI context
-├── packages/             # Shared packages
-├── config/docker/        # Docker configuration
-├── scripts/              # Organized utility scripts
-│   ├── dev/              # Development launchers
-│   ├── setup/            # Setup scripts
-│   ├── db/               # Database scripts
-│   ├── deploy/           # Deployment scripts
-│   └── utils/            # Utility scripts
-├── storage/              # Runtime files (GITIGNORED)
-├── docs/                 # Public documentation
-│   └── local/            # Internal docs
-├── memory-bank/          # AI context (internal use)
-├── GEMINI.md             # Root AI context with imports
-└── README.md             # Project overview
-```
-
----
-
-## 🚀 Quick Start Commands
-
-| Action | Command |
-|--------|---------|
-| **Start all services** | `.\scripts\dev\start.ps1` |
-| **Stop all services** | `.\scripts\dev\stop.bat` |
-| **First-time setup** | `.\scripts\setup\install.bat` |
-| **Run bot manually** | `python -m apps.bot.main` |
-| **Run web manually** | `cd apps/web && bun dev` |
-| **Run API manually** | `cd apps/api && uvicorn src.main:app --reload --port 8080` |
-
----
-
-## 🔧 Environment Setup
-
-| App | Env File | Template |
-|-----|----------|----------|
-| `apps/web` | `.env.local` | `.env.example` |
-| `apps/api` | `.env` | `.env.example` |
-| `apps/bot` | `.env` | `.env.example` |
 
 ---
 
@@ -131,4 +110,4 @@ nezuko-monorepo/
 
 ---
 
-*Last Updated: 2026-01-28 04:01 IST*
+*Last Updated: 2026-01-28 17:51 IST*

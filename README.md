@@ -183,7 +183,22 @@ Error Rate:       0.02%
 - PostgreSQL 16+ (production) or SQLite (development)
 - Redis 7+ (optional, recommended)
 
-### Installation
+### Option A: Using CLI Menu (Recommended)
+
+```bash
+# Clone repository
+git clone https://github.com/mohdakil2426/Nezuko-Telegram-Bot.git
+cd Nezuko-Telegram-Bot
+
+# Launch interactive CLI
+.\nezuko.bat           # Windows
+./nezuko               # Mac/Linux
+
+# Select [4] First-Time Setup
+# Then select [1] Start All Services
+```
+
+### Option B: Manual Installation
 
 ```bash
 # Clone repository
@@ -442,6 +457,20 @@ Nezuko is built to evolve. The modular architecture supports:
 ---
 
 ## Development
+
+<details>
+<summary><b>CLI Commands (Recommended)</b></summary>
+
+```bash
+# Launch interactive menu
+.\nezuko.bat           # Windows
+./nezuko               # Mac/Linux
+
+# All script operations are logged to:
+# scripts/logs/nezuko-YYYY-MM-DD.log
+```
+
+</details>
 
 <details>
 <summary><b>Running Tests</b></summary>
