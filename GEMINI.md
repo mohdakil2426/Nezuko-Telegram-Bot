@@ -126,12 +126,6 @@ alembic downgrade -1               # Rollback last migration
 - **Pydantic V2**: Use `model_validator` not `root_validator`
 - **TanStack Query v5**: Use `isPending` not `isLoading`
 
-## Browser Automation
-
-When searching web, always use 2025-2026 in the last to get latest results.
-
-Use Playwright MCP for browser automation, testing, and debugging.
-
 ## Documentation
 
 Full documentation is available in `docs/README.md`.

@@ -115,5 +115,9 @@ apps/api/alembic/versions/*.pyc
 *.tsbuildinfo
 .tsbuildinfo
 
-# Storage folder (runtime files - Phase 1 refactoring)
+# Storage folder (runtime files)
 /storage/
+
+# local Docs
+docs/local/
+
