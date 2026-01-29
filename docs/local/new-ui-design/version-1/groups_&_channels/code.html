@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nezuko Groups &amp; Channels Management</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6325f4",
+                        "primary-hover": "#4e1dbf",
+                        "background-light": "#f6f5f8",
+                        "background-dark": "#0A0D1F",
+                        "glass-surface": "rgba(255, 255, 255, 0.03)",
+                        "glass-border": "rgba(255, 255, 255, 0.08)",
+                        "glass-highlight": "rgba(255, 255, 255, 0.1)",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"],
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem", "2xl": "1.5rem", "full": "9999px"},
+                    boxShadow: {
+                        "glow": "0 0 20px rgba(99, 37, 244, 0.3)",
+                        "glass": "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
+                    },
+                    backdropBlur: {
+                        "xs": "2px",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0A0D1F; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d2839; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6325f4; 
+        }
+        
+        .glass-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(99, 37, 244, 0.3);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px -5px rgba(0, 0, 0, 0.4), 0 0 15px rgba(99, 37, 244, 0.1);
+        }
+
+        .text-gradient {
+            background: linear-gradient(to right, #ffffff, #a59cba);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .text-gradient-primary {
+            background: linear-gradient(135deg, #6325f4 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .sparkline path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: dash 2s linear forwards;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white antialiased min-h-screen flex flex-col overflow-x-hidden selection:bg-primary selection:text-white">
+<!-- Top Navigation -->
+<header class="sticky top-0 z-50 w-full border-b border-white/5 bg-[#0A0D1F]/80 backdrop-blur-xl">
+<div class="px-6 lg:px-12 flex h-16 items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="size-8 flex items-center justify-center rounded-lg bg-gradient-to-br from-primary to-purple-800 text-white shadow-glow">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-white">Nezuko<span class="text-primary">.admin</span></h1>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-sm font-medium text-white hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-sm font-medium text-primary shadow-glow bg-primary/10 px-3 py-1 rounded-full" href="#">Groups</a>
+<a class="text-sm font-medium text-[#a59cba] hover:text-white transition-colors" href="#">Analytics</a>
+<a class="text-sm font-medium text-[#a59cba] hover:text-white transition-colors" href="#">Settings</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="relative flex items-center justify-center p-2 text-[#a59cba] hover:text-white transition-colors rounded-full hover:bg-white/5">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary ring-2 ring-[#0A0D1F]"></span>
+</button>
+<div class="h-8 w-[1px] bg-white/10"></div>
+<div class="flex items-center gap-3 cursor-pointer group">
+<div class="text-right hidden sm:block">
+<p class="text-sm font-medium text-white group-hover:text-primary transition-colors">Admin User</p>
+<p class="text-xs text-[#a59cba]">Super Admin</p>
+</div>
+<div class="size-9 rounded-full bg-cover bg-center ring-2 ring-white/10 group-hover:ring-primary/50 transition-all" data-alt="User Avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCSpzaBCoybHc0iNoS_XFpjEUxT4qk4qSeSLtG46bSkSyaVuCjSYFFyninG11YZc6eEMnsRLve8mKRRLvbZwE9IKZ6PvppuVl89SF9CnnlGLToTmFKKskvyDyQM8XgYuG6kAbyB3YJhSzjY8t-TwmUeffhyUCylpWoM60T0oef9FW08imFxHQvs1DXphzxTTR3ctiVL8NzP2HQldA95EoTrMkrrMz6Wasz3Flt5TvRmIm1-K4htM-aXYmsNJgbAmcpF7ERwZlDX1SE');"></div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-[1600px] mx-auto px-6 lg:px-12 py-8 flex flex-col gap-8">
+<!-- Page Heading -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="flex flex-col gap-2">
+<nav class="flex items-center gap-2 text-sm text-[#a59cba]">
+<span>Dashboard</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-white">Assets</span>
+</nav>
+<h2 class="text-4xl font-bold tracking-tight">
+<span class="text-gradient-primary">Groups &amp; Channels</span>
+</h2>
+<p class="text-[#a59cba] max-w-lg">Manage permissions, configurations, and monitor health status across all your connected Telegram communities.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 text-white hover:bg-white/5 hover:border-white/20 transition-all backdrop-blur-sm">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+<span class="font-medium text-sm">Filter</span>
+</button>
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white shadow-glow transition-all active:scale-95">
+<span class="material-symbols-outlined text-[20px] animate-spin-slow" style="animation-duration: 3s;">sync</span>
+<span class="font-bold text-sm tracking-wide">Sync Assets</span>
+</button>
+</div>
+</div>
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<div class="glass-card relative overflow-hidden rounded-2xl p-6 group">
+<div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-white">groups</span>
+</div>
+<div class="flex flex-col gap-4 relative z-10">
+<div class="flex items-center gap-2">
+<div class="p-2 rounded-lg bg-primary/20 text-primary">
+<span class="material-symbols-outlined">group</span>
+</div>
+<p class="text-[#a59cba] font-medium text-sm uppercase tracking-wider">Total Audience</p>
+</div>
+<div>
+<p class="text-4xl font-bold text-white font-mono">1.2M</p>
+<div class="flex items-center gap-1 mt-1 text-[#0bda6f] text-sm font-mono">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>+12.5% vs last month</span>
+</div>
+</div>
+</div>
+<!-- Abstract chart bg -->
+<div class="absolute bottom-0 left-0 right-0 h-16 opacity-20 pointer-events-none">
+<svg class="w-full h-full text-primary fill-current" preserveaspectratio="none" viewbox="0 0 100 20">
+<path d="M0 20 L0 10 Q10 15 20 5 T40 10 T60 5 T80 12 L100 8 L100 20 Z"></path>
+</svg>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="glass-card relative overflow-hidden rounded-2xl p-6 group">
+<div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-white">podcasts</span>
+</div>
+<div class="flex flex-col gap-4 relative z-10">
+<div class="flex items-center gap-2">
+<div class="p-2 rounded-lg bg-blue-500/20 text-blue-400">
+<span class="material-symbols-outlined">podcasts</span>
+</div>
+<p class="text-[#a59cba] font-medium text-sm uppercase tracking-wider">Active Channels</p>
+</div>
+<div>
+<p class="text-4xl font-bold text-white font-mono">24</p>
+<div class="flex items-center gap-1 mt-1 text-[#0bda6f] text-sm font-mono">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span>+2 new this week</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="glass-card relative overflow-hidden rounded-2xl p-6 group">
+<div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-white">health_and_safety</span>
+</div>
+<div class="flex flex-col gap-4 relative z-10">
+<div class="flex items-center gap-2">
+<div class="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
+<span class="material-symbols-outlined">activity_zone</span>
+</div>
+<p class="text-[#a59cba] font-medium text-sm uppercase tracking-wider">System Health</p>
+</div>
+<div>
+<p class="text-4xl font-bold text-white font-mono">99.9%</p>
+<div class="flex items-center gap-1 mt-1 text-[#a59cba] text-sm font-mono">
+<span class="material-symbols-outlined text-[16px] text-emerald-500">check_circle</span>
+<span>All systems operational</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Controls Section: Search & Tabs -->
+<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 py-2">
+<!-- Search -->
+<div class="w-full lg:max-w-md relative group">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-primary group-focus-within:text-white transition-colors">auto_fix_high</span>
+</div>
+<input class="w-full bg-[#151226] border border-white/10 text-white text-sm rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 placeholder:text-[#a59cba]/70 transition-all shadow-inner" placeholder="Ask AI to find groups with low engagement..." type="text"/>
+<div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+<span class="text-[10px] text-[#a59cba] border border-white/10 px-1.5 py-0.5 rounded">⌘ K</span>
+</div>
+</div>
+<!-- Tabs -->
+<div class="flex p-1 bg-[#151226] rounded-xl border border-white/5 w-full lg:w-auto overflow-x-auto">
+<button class="flex-1 lg:flex-none px-6 py-2 rounded-lg bg-primary/20 text-white text-sm font-bold shadow-sm ring-1 ring-white/10 transition-all whitespace-nowrap">
+                    All Assets
+                </button>
+<button class="flex-1 lg:flex-none px-6 py-2 rounded-lg text-[#a59cba] hover:text-white hover:bg-white/5 text-sm font-medium transition-all whitespace-nowrap">
+                    Supervising
+                </button>
+<button class="flex-1 lg:flex-none px-6 py-2 rounded-lg text-[#a59cba] hover:text-white hover:bg-white/5 text-sm font-medium transition-all whitespace-nowrap">
+                    Channels
+                </button>
+<button class="flex-1 lg:flex-none px-6 py-2 rounded-lg text-[#a59cba] hover:text-white hover:bg-white/5 text-sm font-medium transition-all whitespace-nowrap">
+                    Archived
+                </button>
+</div>
+</div>
+<!-- Asset Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-12">
+<!-- Add New Asset Card -->
+<button class="group flex flex-col items-center justify-center min-h-[260px] rounded-2xl border-2 border-dashed border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300">
+<div class="h-16 w-16 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all duration-300 shadow-lg">
+<span class="material-symbols-outlined text-3xl text-[#a59cba] group-hover:text-white">add</span>
+</div>
+<h3 class="mt-4 text-lg font-bold text-white group-hover:text-primary transition-colors">Connect New Asset</h3>
+<p class="text-sm text-[#a59cba] text-center max-w-[200px] mt-2 group-hover:text-white/70">Add a Telegram group or channel to the dashboard</p>
+</button>
+<!-- Asset Card 1 -->
+<div class="glass-card rounded-2xl p-5 flex flex-col gap-5 transition-all duration-300">
+<div class="flex items-start justify-between">
+<div class="flex gap-4">
+<div class="relative">
+<div class="size-14 rounded-full bg-cover bg-center ring-2 ring-white/10" data-alt="Crypto VIP Icon" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBwScZDUZEVWYKZG6k3ufcg0FkGHjtZXgH8EhBshnhU7h0O0IQv8OBzO8K2RR969LGvGGYsgQFH8qPXXv8_yuU2G-g2QgU9ljIbJGCj1KgYSmNtdi0MHpfqZbvakvswVLb4eYyQ0OCWyRt7XZy0oKdXXyaoLAwchA8iXDq49tcdZ5NCptcCebrM1Rvx_9XZn2Vdg5ocml4Nrl-TOc4_OSdZXWfyNMsydea45mXQ-wYsoHEdxvnCbngoljQB6U0ZjLQxJLW1slOmuUo');"></div>
+<div class="absolute -bottom-1 -right-1 bg-black rounded-full p-0.5">
+<span class="material-symbols-outlined text-blue-400 text-[18px]" title="Verified">verified</span>
+</div>
+</div>
+<div>
+<h3 class="text-lg font-bold text-white leading-tight">Crypto Signals VIP</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/20 uppercase tracking-wide">Channel</span>
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-wide">Active</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="px-2 py-1 rounded bg-primary/20 text-primary text-[10px] font-bold border border-primary/20 uppercase">Full Admin</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 py-2 border-y border-white/5">
+<div>
+<p class="text-[11px] text-[#a59cba] uppercase tracking-wider font-semibold">Members</p>
+<p class="text-xl font-bold font-mono text-white">142,892</p>
+</div>
+<div class="flex flex-col justify-end">
+<!-- Sparkline SVG -->
+<svg class="w-full h-8 sparkline" fill="none" viewbox="0 0 100 30">
+<path d="M0 25 Q10 20 20 22 T40 15 T60 18 T80 5 L100 10" fill="none" stroke="#6325f4" stroke-width="2"></path>
+<defs>
+<lineargradient id="grad1" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" style="stop-color:#6325f4;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#a78bfa;stop-opacity:1"></stop>
+</lineargradient>
+</defs>
+</svg>
+<p class="text-[10px] text-right text-emerald-400 font-mono">+4.2% this week</p>
+</div>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex -space-x-2">
+<div class="size-7 rounded-full bg-cover bg-center ring-2 ring-[#0A0D1F]" data-alt="User 1" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDxh71HLKitVlw83UsIkvQX5M-DgrDRiZuzNuwg9wHBsAurEOLTzz0RO1ugiFT5fOmHkNi8yXH0njXI7Jq4yTNjOHShaX6xzjTTYPQUbq_8N72DaDt1D-CUHfuwTFC-uk-FfeYwYIzJSYJyc3TCVUSir9_itL1Z3TqSEZI0OpNG-CuhFdwB8rH4XJvH9MtzcX5aVaBblE9F9ed804XV8Hlt5ZQWb9OfQKfzvYeQzOcQrptVztlUwnd1VJce-8YheIdN9vK7LmLkp28');"></div>
+<div class="size-7 rounded-full bg-cover bg-center ring-2 ring-[#0A0D1F]" data-alt="User 2" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBnTHhA6V5y1Co6S8DPbsYYyodx8wf1-l4uR6wBurrbig3QmPQFkq8XDmYFrHgYWhhkefsVehVQhAV6CcX2O3a0_Hbn5ibeZhJdZQE33f7cxE1oE5UGaX0UgaTfS4TadAOY_RI-e9nUY-gHEQAIteIVq3xJTka5uXxWUXvhq9NgtWD7KAGoZGlus5pAEPKCkl1rxwIR576sGilZJVuAh2nYBQ0HHJ3M3py6zLbDoKYl_BF47pmRfN9G6wcf1_VXR_F4dq8m9_9kyyI');"></div>
+<div class="size-7 rounded-full bg-cover bg-center ring-2 ring-[#0A0D1F]" data-alt="User 3" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAUHjS38vM5O1oE-rs-ibt6A8thzIcALQPlZrq5d7IxkJaiAYjCGnhiGD5dAhgawiCW9A3rxpCpNScz6lIukHOt5Z1JI_mQoiaftP3qgOOL7dZTQNcF-SKI4ehf3t-8y8mD-veVicLlh-8gxh2vBA1gLsDxgy6Exi_H70crfeds0MkOZwQ3Q_Dm1PRQe8_FB9NSmACWBR3cBCgcCFNQWaO7O-zAxMaLKKImTYuzyMMWUEFkrNhymqQqgp1gcVzEOwIE8GzQbejejcs');"></div>
+<div class="size-7 rounded-full bg-[#2d2839] flex items-center justify-center ring-2 ring-[#0A0D1F] text-[10px] font-bold text-white">+5</div>
+</div>
+<button class="px-4 py-2 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-lg text-xs font-bold transition-all border border-primary/20 hover:border-primary uppercase tracking-wide">
+                        Config
+                    </button>
+</div>
+</div>
+<!-- Asset Card 2 -->
+<div class="glass-card rounded-2xl p-5 flex flex-col gap-5 transition-all duration-300">
+<div class="flex items-start justify-between">
+<div class="flex gap-4">
+<div class="relative">
+<div class="size-14 rounded-full bg-cover bg-center ring-2 ring-white/10" data-alt="Dev Support Icon" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCW67tjVVXcOTO1S5r3MKhI4MBXnrBxejUYnF3ZunL18uBEGX-2lFLx1ynEljAf8Kocn_TBXs0DMqZwuSTU6k6f7hulvjYJb7VTgXpoTq2y1dhoXnKUmy_zZX6X4WekoUTmmtH-nvs9yxeY1CpYuPoQxss7zBMkFYU4WWvDlEt4_HHfnqDOnwkYwPjSSst_JN0cUP0gvdeUo-usVXJSjKt-b2belwnMANlzNrdMt53YtEDqtcolO92pwDSVT1_xfthpBmYrCEvfJdY');"></div>
+</div>
+<div>
+<h3 class="text-lg font-bold text-white leading-tight">Dev Support</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/20 uppercase tracking-wide">Supergroup</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="px-2 py-1 rounded bg-red-500/10 text-red-400 text-[10px] font-bold border border-red-500/20 uppercase">Restricted</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 py-2 border-y border-white/5">
+<div>
+<p class="text-[11px] text-[#a59cba] uppercase tracking-wider font-semibold">Members</p>
+<p class="text-xl font-bold font-mono text-white">4,521</p>
+</div>
+<div class="flex flex-col justify-end">
+<!-- Sparkline SVG -->
+<svg class="w-full h-8 sparkline" fill="none" viewbox="0 0 100 30">
+<path d="M0 15 Q25 15 50 15 T100 15" fill="none" stroke="#a59cba" stroke-dasharray="4 4" stroke-width="2"></path>
+</svg>
+<p class="text-[10px] text-right text-[#a59cba] font-mono">0.0% stable</p>
+</div>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-xs text-[#a59cba]">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+<span>Write-only access</span>
+</div>
+<button class="px-4 py-2 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-lg text-xs font-bold transition-all border border-primary/20 hover:border-primary uppercase tracking-wide">
+                        Config
+                    </button>
+</div>
+</div>
+<!-- Asset Card 3 -->
+<div class="glass-card rounded-2xl p-5 flex flex-col gap-5 transition-all duration-300">
+<div class="flex items-start justify-between">
+<div class="flex gap-4">
+<div class="relative">
+<div class="size-14 rounded-full bg-cover bg-center ring-2 ring-white/10" data-alt="Announcements Icon" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDVV7FwmKCllCud0ETYra94PVWkzKUJeut7o1R8rGDF_WU7CBQde4QnlCu-K1wcDZSX44CoA-cI6CvLS84-D4dD4I-Sw6Z2XvrG_i84g1q2_RNW9frJ3nUnktT9pxujTWdh0AQLqz36Vq36HDl_xscizj8I9u_Gf-j3Q7QlVSxRf2wyr1ovvb9yGd0GsXB6MIvY6cYN4MVIXjJ86lQTcmeu8_i5hGzA7v42K0QpPjSZxvdnVC902iM4AHycmL6GRpKSyRlgM9bdeak');"></div>
+<div class="absolute -bottom-1 -right-1 bg-black rounded-full p-0.5">
+<span class="material-symbols-outlined text-blue-400 text-[18px]" title="Verified">verified</span>
+</div>
+</div>
+<div>
+<h3 class="text-lg font-bold text-white leading-tight">Nezuko Public</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/20 uppercase tracking-wide">Channel</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="px-2 py-1 rounded bg-orange-500/10 text-orange-400 text-[10px] font-bold border border-orange-500/20 uppercase">Publisher</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 py-2 border-y border-white/5">
+<div>
+<p class="text-[11px] text-[#a59cba] uppercase tracking-wider font-semibold">Members</p>
+<p class="text-xl font-bold font-mono text-white">890.2K</p>
+</div>
+<div class="flex flex-col justify-end">
+<!-- Sparkline SVG -->
+<svg class="w-full h-8 sparkline" fill="none" viewbox="0 0 100 30">
+<path d="M0 28 Q20 25 30 15 T60 10 T100 5" fill="none" stroke="#6325f4" stroke-width="2"></path>
+</svg>
+<p class="text-[10px] text-right text-emerald-400 font-mono">+1.8% today</p>
+</div>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex -space-x-2">
+<div class="size-7 rounded-full bg-cover bg-center ring-2 ring-[#0A0D1F]" data-alt="User 4" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCK3kNuTxqduezw4-p1zzY5_QcSs3KM6SuvM1O_r9wcfu8WRakSLtsuMe0krHWbZMywR5cEqbhVWSkAGQcyFOmVqf6aF_HRbEbrOXIrBWBT9zGwpxkE2Pd59cTKoLMb-M-L6BkB9uJKxBesDA0iFcTG-lzzSJdv13GrtubNxI-_tmQxkTb9ZdAyk36Riv8ueZvYXYYHurVstN3EEE3YSrLsNFkjl_B3CJyoW4KxhEdNJvN3eXLQG2JnPxk2CilYM3-ihWLsyhZrqG8');"></div>
+<div class="size-7 rounded-full bg-[#2d2839] flex items-center justify-center ring-2 ring-[#0A0D1F] text-[10px] font-bold text-white">+12</div>
+</div>
+<button class="px-4 py-2 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-lg text-xs font-bold transition-all border border-primary/20 hover:border-primary uppercase tracking-wide">
+                        Config
+                    </button>
+</div>
+</div>
+<!-- Asset Card 4 -->
+<div class="glass-card rounded-2xl p-5 flex flex-col gap-5 transition-all duration-300">
+<div class="flex items-start justify-between">
+<div class="flex gap-4">
+<div class="relative">
+<div class="size-14 rounded-full bg-cover bg-center ring-2 ring-white/10" data-alt="Trading Bot Icon" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC0sj37oxOaxFwNWMSNDDSrCAkbIAn7_Se3_gLtABzQKpqCEYSsXJnRh1XG41r-A0zXqqVQkzrHFxvhO61pM8Rc3AkGSxzCDg6apxpboi2KvXn-xdfyUzj0Vbl7NBM-Fiw6ioEV6exEPaKVdU9rAXxeH6nsMTyPcc6Wb2vi61PwKrzDIrhP8sDsHPAuxytVu_LsrE-ou2dlPSS3b9DqGtaHI0cIUpvfVTT215klTay2StJ-hu5raIrePruwKaWMyjEvHhXxP_zEWn8');"></div>
+</div>
+<div>
+<h3 class="text-lg font-bold text-white leading-tight">Elite Traders</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/20 uppercase tracking-wide">Supergroup</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="px-2 py-1 rounded bg-teal-500/10 text-teal-400 text-[10px] font-bold border border-teal-500/20 uppercase">Post-Only</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 py-2 border-y border-white/5">
+<div>
+<p class="text-[11px] text-[#a59cba] uppercase tracking-wider font-semibold">Members</p>
+<p class="text-xl font-bold font-mono text-white">12,403</p>
+</div>
+<div class="flex flex-col justify-end">
+<!-- Sparkline SVG -->
+<svg class="w-full h-8 sparkline" fill="none" viewbox="0 0 100 30">
+<path d="M0 20 L20 25 L40 10 L60 15 L80 5 L100 12" fill="none" stroke="#ef4444" stroke-width="2"></path>
+</svg>
+<p class="text-[10px] text-right text-red-400 font-mono">-0.5% this week</p>
+</div>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-xs text-[#a59cba]">
+<span class="material-symbols-outlined text-[16px]">smart_toy</span>
+<span>Bot Managed</span>
+</div>
+<button class="px-4 py-2 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-lg text-xs font-bold transition-all border border-primary/20 hover:border-primary uppercase tracking-wide">
+                        Config
+                    </button>
+</div>
+</div>
+<!-- Asset Card 5 (Archived Style) -->
+<div class="glass-card rounded-2xl p-5 flex flex-col gap-5 transition-all duration-300 opacity-70 hover:opacity-100">
+<div class="flex items-start justify-between">
+<div class="flex gap-4">
+<div class="relative">
+<div class="size-14 rounded-full bg-cover bg-center ring-2 ring-white/10 grayscale" data-alt="Old Community Icon" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCy4Nbdf_ouYOohsWw7ln6TOPUY5g34giEjRd4X3Ay0CnXocZ5RFPJTAe5SWaZMiTAhTlIkDAO3Go6GbdiYjMndlEq8vNkMClx1mGyd9Z0vqyCu5VwqODA-a0ZPT5mroby-3jfQ9ah48OoVRDL3wf47_BxCAK-ook2aizfux6wrvnPdFAeCMUEwYc9inMEgBz1tDDGN-GrnDE-YMKC6xjS-vb4vd3zgCjzodqH_hqBQy-tLPG9OIwiaXaRzIKrVJoghdro-BIT-F94');"></div>
+</div>
+<div>
+<h3 class="text-lg font-bold text-gray-400 leading-tight">Legacy Community</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-500/20 text-gray-400 border border-gray-500/20 uppercase tracking-wide">Archived</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="px-2 py-1 rounded bg-gray-700/30 text-gray-500 text-[10px] font-bold border border-gray-500/10 uppercase">Read Only</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 py-2 border-y border-white/5">
+<div>
+<p class="text-[11px] text-[#a59cba] uppercase tracking-wider font-semibold">Members</p>
+<p class="text-xl font-bold font-mono text-gray-400">2,100</p>
+</div>
+<div class="flex flex-col justify-end">
+<!-- Flat Sparkline -->
+<svg class="w-full h-8 sparkline" fill="none" viewbox="0 0 100 30">
+<line stroke="#4b5563" stroke-width="2" x1="0" x2="100" y1="15" y2="15"></line>
+</svg>
+<p class="text-[10px] text-right text-gray-500 font-mono">Inactive</p>
+</div>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-xs text-[#a59cba]">
+<span class="material-symbols-outlined text-[16px]">archive</span>
+<span>Archived 2023</span>
+</div>
+<button class="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-xs font-bold transition-all border border-white/10 uppercase tracking-wide">
+                        Restore
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</body></html>
