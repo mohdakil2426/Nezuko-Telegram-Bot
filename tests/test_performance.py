@@ -36,7 +36,7 @@ async def test_verification_latency():
 
     Target: p95 < 100ms
     """
-    from bot.services.verification import check_membership, reset_cache_stats
+    from apps.bot.services.verification import check_membership, reset_cache_stats
 
     reset_cache_stats()
     context = MockContext()
@@ -90,7 +90,7 @@ async def test_concurrent_verification_load():
 
     Target: Handle 100 concurrent verifications without errors
     """
-    from bot.services.verification import check_membership, reset_cache_stats
+    from apps.bot.services.verification import check_membership, reset_cache_stats
 
     reset_cache_stats()
     context = MockContext()
@@ -135,7 +135,7 @@ async def test_throughput_target():
 
     Target: >= 1000 verifications per minute
     """
-    from bot.services.verification import check_membership, get_cache_stats, reset_cache_stats
+    from apps.bot.services.verification import check_membership, get_cache_stats, reset_cache_stats
 
     reset_cache_stats()
     context = MockContext()
@@ -291,7 +291,7 @@ async def test_protection_service_retry_logic():
     """
     from telegram.error import RetryAfter
 
-    from bot.services.protection import get_protection_stats, restrict_user
+    from apps.bot.services.protection import get_protection_stats, restrict_user
 
     context = MockContext()
 

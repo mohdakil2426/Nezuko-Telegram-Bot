@@ -55,12 +55,23 @@ async_session_factory = async_sessionmaker(
 
 async def get_session() -> AsyncIterator[AsyncSession]:
     """
-    Dependency to get a database session.
-    Yields an AsyncSession and ensures it's closed after use.
+    FastAPI dependency to get a database session.
+
+    Usage:
+        @router.get("/items")
+        async def list_items(session: AsyncSession = Depends(get_session)):
+            result = await session.execute(select(Item))
+            return result.scalars().all()
+
+    Note:
+        - Session auto-commits on successful request completion
+        - Rolls back on any exception
+        - Always closes the session
     """
     async with async_session_factory() as session:
         try:
             yield session
+            await session.commit()  # Commit on success
         except Exception:
             await session.rollback()
             raise

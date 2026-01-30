@@ -11,9 +11,12 @@ from src.models.bot import GroupChannelLink, ProtectedGroup
 from src.schemas.group import GroupUpdateRequest
 
 
-@dataclass
+@dataclass(slots=True)
 class GroupFilterParams:
-    """Parameters for filtering groups."""
+    """Parameters for filtering groups.
+
+    Uses __slots__ for memory efficiency (Python Performance Optimization).
+    """
 
     page: int = 1
     per_page: int = 25

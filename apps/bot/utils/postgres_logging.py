@@ -18,7 +18,7 @@ class PostgresLogHandler(logging.Handler):
     Handles async operations gracefully with proper task management.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.engine = None
         self._pending_tasks: set[asyncio.Task] = set()
@@ -34,7 +34,7 @@ class PostgresLogHandler(logging.Handler):
             return False
         return "sqlite" not in config.database_url.lower()
 
-    def _connect(self):
+    def _connect(self) -> None:
         """Create database engine connection."""
         try:
             self.engine = create_async_engine(
@@ -47,7 +47,7 @@ class PostgresLogHandler(logging.Handler):
             self.engine = None
             self._enabled = False
 
-    async def _log_async(self, log_entry: dict):
+    async def _log_async(self, log_entry: dict) -> None:
         """Async insert into database with error handling."""
         if not self.engine:
             return
@@ -64,11 +64,11 @@ class PostgresLogHandler(logging.Handler):
             # Silently fail - don't crash the bot for logging issues
             pass
 
-    def _task_done_callback(self, task: asyncio.Task):
+    def _task_done_callback(self, task: asyncio.Task) -> None:
         """Remove completed task from pending set."""
         self._pending_tasks.discard(task)
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         """Emit a log record to Postgres."""
         if not self._enabled or not self.engine:
             return
@@ -114,7 +114,7 @@ class PostgresLogHandler(logging.Handler):
             await self.engine.dispose()
             self.engine = None
 
-    def close(self):
+    def close(self) -> None:
         """Synchronous close - schedules async cleanup if possible."""
         try:
             loop = asyncio.get_running_loop()

@@ -26,7 +26,7 @@ async def test_verify_user_not_in_channel():
     """Test verification when user is NOT a channel member."""
     from telegram.constants import ChatMemberStatus
 
-    from bot.services.verification import check_membership
+    from apps.bot.services.verification import check_membership
     from tests.utils import create_mock_context
 
     context = create_mock_context(user_status=ChatMemberStatus.LEFT)
@@ -45,7 +45,7 @@ async def test_verify_user_banned_from_channel():
     """Test verification when user is BANNED from channel."""
     from telegram.constants import ChatMemberStatus
 
-    from bot.services.verification import check_membership
+    from apps.bot.services.verification import check_membership
     from tests.utils import create_mock_context
 
     context = create_mock_context(user_status=ChatMemberStatus.BANNED)
@@ -65,7 +65,7 @@ async def test_verify_user_is_admin():
     """Test verification when user is channel ADMIN."""
     from telegram.constants import ChatMemberStatus
 
-    from bot.services.verification import check_membership
+    from apps.bot.services.verification import check_membership
     from tests.utils import create_mock_context
 
     context = create_mock_context(user_status=ChatMemberStatus.ADMINISTRATOR)
@@ -85,7 +85,7 @@ async def test_verify_user_telegram_api_error():
     """Test verification when Telegram API throws an error."""
     from telegram.error import TelegramError
 
-    from bot.services.verification import check_membership
+    from apps.bot.services.verification import check_membership
 
     context = MagicMock()
     context.bot.get_chat_member = AsyncMock(side_effect=TelegramError("API Error"))
@@ -102,7 +102,7 @@ async def test_verify_user_telegram_api_error():
 @pytest.mark.asyncio
 async def test_verify_cache_hit_positive():
     """Test verification with cache HIT (positive - user is member)."""
-    from bot.services.verification import check_membership
+    from apps.bot.services.verification import check_membership
 
     context = MagicMock()
     context.bot.get_chat_member = AsyncMock()  # Should NOT be called
@@ -120,7 +120,7 @@ async def test_verify_cache_hit_positive():
 @pytest.mark.asyncio
 async def test_verify_cache_hit_negative():
     """Test verification with cache HIT (negative - user is NOT member)."""
-    from bot.services.verification import check_membership
+    from apps.bot.services.verification import check_membership
 
     context = MagicMock()
     context.bot.get_chat_member = AsyncMock()  # Should NOT be called
@@ -144,7 +144,7 @@ async def test_verify_cache_hit_negative():
 async def test_mute_already_muted_user():
     """Test muting a user who is already muted."""
 
-    from bot.services.protection import restrict_user
+    from apps.bot.services.protection import restrict_user
 
     context = MagicMock()
     # Telegram may raise error or return True for already muted
@@ -158,7 +158,7 @@ async def test_mute_already_muted_user():
 @pytest.mark.asyncio
 async def test_unmute_not_muted_user():
     """Test unmuting a user who was never muted."""
-    from bot.services.protection import unmute_user
+    from apps.bot.services.protection import unmute_user
 
     context = MagicMock()
     context.bot.restrict_chat_member = AsyncMock(return_value=True)
@@ -173,7 +173,7 @@ async def test_mute_bot_account():
     """Test trying to mute a bot (should fail gracefully)."""
     from telegram.error import BadRequest
 
-    from bot.services.protection import restrict_user
+    from apps.bot.services.protection import restrict_user
 
     context = MagicMock()
     # Telegram doesn't allow muting bots
@@ -190,7 +190,7 @@ async def test_mute_group_admin():
     """Test trying to mute a group admin (should fail gracefully)."""
     from telegram.error import BadRequest
 
-    from bot.services.protection import restrict_user
+    from apps.bot.services.protection import restrict_user
 
     context = MagicMock()
     # Telegram doesn't allow muting admins
@@ -208,7 +208,7 @@ async def test_protection_max_retries_exceeded():
     """Test protection service when max retries are exceeded."""
     from telegram.error import TelegramError
 
-    from bot.services.protection import restrict_user
+    from apps.bot.services.protection import restrict_user
 
     context = MagicMock()
     # Always fail
@@ -283,7 +283,7 @@ async def test_concurrent_verification_calls():
     """Test multiple concurrent verification calls."""
     from telegram.constants import ChatMemberStatus
 
-    from bot.services.verification import check_membership
+    from apps.bot.services.verification import check_membership
     from tests.utils import create_mock_context
 
     context = create_mock_context(user_status=ChatMemberStatus.MEMBER)
@@ -308,7 +308,7 @@ async def test_concurrent_verification_calls():
 @pytest.mark.asyncio
 async def test_concurrent_mute_operations():
     """Test multiple concurrent mute operations."""
-    from bot.services.protection import restrict_user
+    from apps.bot.services.protection import restrict_user
 
     context = MagicMock()
     context.bot.restrict_chat_member = AsyncMock(return_value=True)
@@ -333,11 +333,11 @@ async def test_concurrent_mute_operations():
 @pytest.mark.asyncio
 async def test_cache_expired_entry():
     """Test behavior when cache entry has expired."""
-    from bot.core.cache import cache_get
+    from apps.bot.core.cache import cache_get
 
     with (
-        patch("bot.core.cache._redis_available", True),
-        patch("bot.core.cache._redis_client") as mock_redis,
+        patch("apps.bot.core.cache._redis_available", True),
+        patch("apps.bot.core.cache._redis_client") as mock_redis,
     ):
         # Simulate expired entry (returns None)
         mock_redis.get = AsyncMock(return_value=None)
@@ -368,7 +368,7 @@ async def test_cache_special_characters_in_key():
 
 def test_ttl_jitter_edge_cases():
     """Test TTL jitter with edge case values."""
-    from bot.core.cache import get_ttl_with_jitter
+    from apps.bot.core.cache import get_ttl_with_jitter
 
     # Test with very small TTL
     small_ttl = get_ttl_with_jitter(10, 15)
