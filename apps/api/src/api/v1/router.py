@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from src.api.v1.endpoints import (
+from .endpoints import (
     admins,
     analytics,
     audit,

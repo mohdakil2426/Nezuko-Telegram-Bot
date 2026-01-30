@@ -1,16 +1,24 @@
-# Active Context: Phase 25 - GitHub Push Readiness & Codebase Cleanup
+# Active Context: Phase 25.1 - Test Verification & Import Fixes
 
 ## 🎯 Current Status
 
-**Phase 25 COMPLETE** - Comprehensive codebase cleanup, security fixes, professional environment files, modular requirements structure, and storage organization.
+**Phase 25.1 COMPLETE** - Verified and fixed tests after Phase 25 restructuring. Fixed import paths, script parameters, and ran full test suite.
+
+### Test Results (2026-01-30)
+
+| Status | Count |
+|--------|-------|
+| ✅ Passed | 77 |
+| ❌ Failed | 8 (pre-existing) |
+| ⏭️ Skipped | 2 |
 
 ---
 
 ## ✅ Completed Tasks (2026-01-30)
 
-### Phase 25: GitHub Push Readiness & Codebase Cleanup ✅
+### Phase 25.1: Test Verification & Import Fixes ✅
 
-Comprehensive audit and cleanup of the entire codebase for production readiness.
+Fixes made to ensure tests work with the new project structure:
 
 #### 1. Security Fixes
 
@@ -18,25 +26,10 @@ Comprehensive audit and cleanup of the entire codebase for production readiness.
 |-------|--------|--------|
 | `.env.backup` with real tokens | Removed from git tracking | ✅ Fixed |
 | `docs/local/` (internal docs) | Removed from git tracking | ✅ Fixed |
+| `apps/web/.env` with secrets | Deleted (duplicate of .env.local) | ✅ Fixed |
 | `.gitignore` patterns | Added comprehensive patterns | ✅ Fixed |
 
-#### 2. Professional Environment Files
-
-All `.env.example` files rewritten with:
-- ASCII art headers
-- Clear section separators
-- Descriptive comments for each variable
-- Example values showing format
-- Links to credential sources
-
-| File | Status |
-|------|--------|
-| `.env.example` (root) | ✅ Professional documentation file |
-| `apps/web/.env.example` | ✅ Comprehensive with sections |
-| `apps/api/.env.example` | ✅ Comprehensive with sections |
-| `apps/bot/.env.example` | ✅ Comprehensive with sections |
-
-#### 3. Modular Requirements Structure
+#### 2. Modular Requirements Structure
 
 Restructured Python dependencies to eliminate duplicates:
 
@@ -51,11 +44,26 @@ requirements/                 ← NEW DIRECTORY
 └── prod-bot.txt              # Production Bot (base + bot)
 ```
 
-**Benefits:**
-- DRY: Shared dependencies defined once
-- Minimal Production Images: Only required packages installed
-- Fast Docker Builds: Smaller images
-- Clear Separation: Dev vs Prod clearly separated
+#### 3. Centralized Test Structure
+
+Reorganized tests from scattered locations to centralized structure:
+
+```
+tests/
+├── conftest.py               # Shared fixtures
+├── api/                      # API tests (7 files)
+│   ├── conftest.py           # API client fixtures
+│   ├── unit/
+│   └── integration/
+└── bot/                      # Bot tests (5 files)
+    ├── conftest.py           # Bot mock fixtures
+    ├── unit/
+    └── integration/
+```
+
+**Removed:**
+- `apps/api/tests/` → Moved to `tests/api/`
+- `tests/unit/`, `tests/integration/` → Reorganized into app subdirs
 
 #### 4. Storage Directory Structure
 
@@ -70,15 +78,13 @@ storage/
 └── uploads/.gitkeep          # User uploads
 ```
 
-#### 5. Code Quality Fixes
+#### 5. Environment Files Cleanup
 
-| Fix | Status |
-|-----|--------|
-| Ruff linting | ✅ All checks passed |
-| `.agent/` excluded from Ruff | ✅ Configured |
-| `scripts/` excluded from Ruff | ✅ Configured |
-| TypeScript compilation | ✅ No errors |
-| Missing `pytest-mock` dependency | ✅ Added |
+| App | Before | After |
+|-----|--------|-------|
+| `apps/web/` | `.env` + `.env.local` (duplicate) | `.env.local` only |
+| `apps/api/` | `.env` | `.env` (gitignored) |
+| `apps/bot/` | `.env` | `.env` (gitignored) |
 
 #### 6. Useless Files Removed
 
@@ -87,12 +93,23 @@ storage/
 | `apps/api/test_db.py` | Debug script | Removed from git |
 | `apps/api/test_db_connect.py` | Debug script | Removed from git |
 | `apps/api/test_settings.py` | Debug script | Removed from git |
-| `apps/api/init_db.py` | Utility script (use alembic) | Removed from git |
-| `apps/api/nezuko.db` | Orphaned database | Deleted locally |
+| `apps/api/init_db.py` | Use alembic instead | Removed from git |
+| `apps/web/.env` | Duplicate with secrets | Deleted |
+
+#### 7. Script Updates
+
+Updated CLI scripts to reflect new structure:
+
+| Script | Change |
+|--------|--------|
+| `scripts/test/run.ps1` | Test paths → `tests/api/`, `tests/bot/` |
+| `scripts/test/run.sh` | Test paths → `tests/api/`, `tests/bot/` |
+| `scripts/setup/install.ps1` | Uses only root `requirements.txt` |
+| `scripts/setup/install.sh` | Uses only root `requirements.txt` |
 
 ---
 
-## 📁 Project Structure (Updated)
+## 📁 Project Structure (Final)
 
 ```
 nezuko-monorepo/
@@ -101,22 +118,14 @@ nezuko-monorepo/
 │   ├── bot/                   # Telegram Bot (PTB v22)
 │   └── web/                   # Next.js 16 Admin Dashboard
 ├── packages/                  # Shared TypeScript packages
-├── requirements/              # ← NEW: Modular Python deps
-│   ├── base.txt               # Shared dependencies
-│   ├── api.txt                # API-specific
-│   ├── bot.txt                # Bot-specific
-│   ├── dev.txt                # Development tools
-│   ├── prod-api.txt           # Production API
-│   └── prod-bot.txt           # Production Bot
-├── storage/                   # ← ORGANIZED: Runtime files
-│   ├── cache/                 # Cache files
-│   ├── data/                  # SQLite databases
-│   ├── logs/                  # Log files
-│   └── uploads/               # User uploads
+├── requirements/              # Modular Python deps
+├── tests/                     # Centralized tests
+│   ├── api/                   # API tests
+│   └── bot/                   # Bot tests
+├── storage/                   # Runtime files (.gitkeep preserved)
 ├── config/docker/             # Docker configuration
-├── scripts/                   # Utility scripts
+├── scripts/                   # CLI utilities (updated)
 ├── docs/                      # Documentation
-├── tests/                     # Test suites
 └── memory-bank/               # Project context
 ```
 
@@ -131,6 +140,11 @@ pip install -r requirements.txt
 
 # Run services
 ./nezuko.bat  # Interactive menu
+
+# Run tests
+pytest                    # All tests
+pytest tests/api/         # API tests only
+pytest tests/bot/         # Bot tests only
 ```
 
 ### Production Docker
@@ -163,4 +177,4 @@ pip install -r requirements/prod-bot.txt
 
 ---
 
-*Last Updated: 2026-01-30 20:30 IST*
+*Last Updated: 2026-01-30 22:34 IST*

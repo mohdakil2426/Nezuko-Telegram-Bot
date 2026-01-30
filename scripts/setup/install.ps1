@@ -118,33 +118,32 @@ if (-not $SkipPython) {
         }
     }
     
-    # Install requirements
-    $requirementsFiles = @(
-        (Join-Path $ProjectRoot "requirements.txt"),
-        (Join-Path $ProjectRoot "apps\api\requirements.txt")
-    )
+    # Install requirements (root requirements.txt includes all dependencies)
+    $requirementsFile = Join-Path $ProjectRoot "requirements.txt"
     
-    foreach ($reqFile in $requirementsFiles) {
-        if (Test-Path $reqFile) {
-            $reqName = Split-Path -Leaf $reqFile
-            Write-Host ""
-            Write-Host "        Installing $reqName..." -ForegroundColor Cyan
-            Write-Log -Message "COMMAND: pip install -r $reqName" -Category "PYTHON"
-            
-            & $venvPython -m pip install -r $reqFile 2>&1 | ForEach-Object {
-                $line = [string]$_
-                # Show only important lines (not every package)
-                if ($line -match "^(Installing|Collecting|Requirement|Successfully|WARNING|ERROR)" -or $line -match "already satisfied") {
-                    Write-Host "        $line" -ForegroundColor DarkGray
-                }
-                if ($line -and $line.Trim()) {
-                    Write-Log -Message $line -Category "PYTHON"
-                }
+    if (Test-Path $requirementsFile) {
+        Write-Host ""
+        Write-Host "        Installing requirements.txt (all dependencies)..." -ForegroundColor Cyan
+        Write-Log -Message "COMMAND: pip install -r requirements.txt" -Category "PYTHON"
+        
+        & $venvPython -m pip install -r $requirementsFile 2>&1 | ForEach-Object {
+            $line = [string]$_
+            # Show only important lines (not every package)
+            if ($line -match "^(Installing|Collecting|Requirement|Successfully|WARNING|ERROR)" -or $line -match "already satisfied") {
+                Write-Host "        $line" -ForegroundColor DarkGray
             }
-            
-            Write-Success "Installed from $reqName"
-            Write-Log -Message "Installed from $reqName" -Level "SUCCESS" -Category "PYTHON"
+            if ($line -and $line.Trim()) {
+                Write-Log -Message $line -Category "PYTHON"
+            }
         }
+        
+        Write-Success "All Python dependencies installed"
+        Write-Log -Message "Installed from requirements.txt" -Level "SUCCESS" -Category "PYTHON"
+    }
+    else {
+        Write-Failure "requirements.txt not found"
+        Write-Log -Message "requirements.txt not found" -Level "ERROR" -Category "PYTHON"
+        exit 1
     }
 }
 else {

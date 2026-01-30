@@ -7,7 +7,7 @@
     Runs pytest with various options for testing the project.
 .PARAMETER Suite
     Test suite to run: all, edge, handlers, services
-.PARAMETER Verbose
+.PARAMETER VerboseOutput
     Enable verbose output.
 .PARAMETER Coverage
     Generate coverage report.
@@ -27,7 +27,7 @@ param(
     [ValidateSet("all", "edge", "handlers", "services", "")]
     [string]$Suite = "",
     
-    [switch]$Verbose,
+    [switch]$VerboseOutput,
     
     [switch]$Coverage
 )
@@ -58,7 +58,7 @@ Push-Location $ProjectRoot
 # Build pytest arguments
 $pytestArgs = @("tests/")
 
-if ($Verbose) {
+if ($VerboseOutput) {
     $pytestArgs += "-v"
 }
 
@@ -106,15 +106,15 @@ switch ($Suite) {
     }
     "edge" {
         Write-Host "  🔬 Running edge case tests..." -ForegroundColor Green
-        $pytestArgs = @("tests/test_edge_cases.py") + $pytestArgs[1..($pytestArgs.Length - 1)]
+        $pytestArgs = @("tests/api/test_edge_cases.py") + $pytestArgs[1..($pytestArgs.Length - 1)]
     }
     "handlers" {
         Write-Host "  📡 Running handler tests..." -ForegroundColor Green
-        $pytestArgs = @("tests/test_handlers.py") + $pytestArgs[1..($pytestArgs.Length - 1)]
+        $pytestArgs = @("tests/bot/test_handlers.py") + $pytestArgs[1..($pytestArgs.Length - 1)]
     }
     "services" {
         Write-Host "  ⚙️  Running service tests..." -ForegroundColor Green
-        $pytestArgs = @("tests/test_services.py") + $pytestArgs[1..($pytestArgs.Length - 1)]
+        $pytestArgs = @("tests/bot/test_services.py") + $pytestArgs[1..($pytestArgs.Length - 1)]
     }
 }
 

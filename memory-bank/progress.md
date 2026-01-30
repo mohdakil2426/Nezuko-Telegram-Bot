@@ -41,9 +41,10 @@ Comprehensive codebase audit and cleanup for production readiness and GitHub pub
 
 | Category | Achievement |
 |----------|-------------|
-| **Security** | Removed `.env.backup` and `docs/local/` from git tracking |
+| **Security** | Removed `.env.backup`, `docs/local/`, duplicate `.env` files |
 | **Environment** | Professional `.env.example` files with documentation |
 | **Dependencies** | Modular requirements structure (DRY, dev/prod separation) |
+| **Tests** | Centralized test structure (`tests/api/`, `tests/bot/`) |
 | **Storage** | Organized `storage/` with `.gitkeep` files |
 | **Cleanup** | Removed debug scripts and orphaned files |
 
@@ -59,7 +60,20 @@ requirements/
 └── prod-bot.txt   # Production Bot (base + bot)
 ```
 
-### Files Removed from Git
+### Centralized Test Structure
+
+```
+tests/
+├── conftest.py    # Shared fixtures
+├── api/           # API tests (moved from apps/api/tests/)
+│   ├── unit/
+│   └── integration/
+└── bot/           # Bot tests (reorganized)
+    ├── unit/
+    └── integration/
+```
+
+### Files Removed/Cleaned
 
 | File | Reason |
 |------|--------|
@@ -67,16 +81,31 @@ requirements/
 | `docs/local/` | Internal documentation |
 | `apps/api/test_*.py` | Debug scripts |
 | `apps/api/init_db.py` | Utility (use alembic) |
+| `apps/api/tests/` | Moved to `tests/api/` |
+| `apps/web/.env` | Duplicate with secrets |
 
 ### Gitignore Patterns Added
 
 ```gitignore
 .env.backup*
+apps/web/.env
+apps/api/.env
+apps/bot/.env
 apps/*/test_*.py
-apps/*/init_db.py
 apps/*/*.db
-/storage/**/* (except .gitkeep and README.md)
+/storage/**/*
 ```
+
+### Script Updates
+
+Updated CLI scripts to reflect new structure:
+
+| Script | Change |
+|--------|--------|
+| `scripts/test/run.ps1` | Test paths → `tests/api/`, `tests/bot/` |
+| `scripts/test/run.sh` | Test paths → `tests/api/`, `tests/bot/` |
+| `scripts/setup/install.ps1` | Uses only root `requirements.txt` |
+| `scripts/setup/install.sh` | Uses only root `requirements.txt` |
 
 ---
 

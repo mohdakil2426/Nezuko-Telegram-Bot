@@ -86,15 +86,13 @@ if [[ "$SKIP_PYTHON" != "true" ]]; then
     # Upgrade pip first
     "$VENV_PYTHON" -m pip install --upgrade pip --quiet
     
-    # Install requirements
+    # Install requirements (root requirements.txt includes all dependencies)
     if [[ -f "$PROJECT_ROOT/requirements.txt" ]]; then
         "$VENV_PYTHON" -m pip install -r requirements.txt --quiet
-        write_success "Installed from requirements.txt"
-    fi
-    
-    if [[ -f "$PROJECT_ROOT/apps/api/requirements.txt" ]]; then
-        "$VENV_PYTHON" -m pip install -r apps/api/requirements.txt --quiet
-        write_success "Installed from apps/api/requirements.txt"
+        write_success "All Python dependencies installed"
+    else
+        write_failure "requirements.txt not found"
+        exit 1
     fi
 else
     write_step "2/6" "Skipping Python setup (--skip-python)"

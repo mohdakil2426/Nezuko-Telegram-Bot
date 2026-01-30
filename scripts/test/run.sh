@@ -107,17 +107,17 @@ case $SUITE in
         ;;
     "edge")
         echo -e "  ${GREEN}🔬 Running edge case tests...${NC}"
-        PYTEST_ARGS="tests/test_edge_cases.py $VERBOSE"
+        PYTEST_ARGS="tests/api/test_edge_cases.py $VERBOSE"
         [[ "$COVERAGE" == "true" ]] && PYTEST_ARGS="$PYTEST_ARGS --cov=apps"
         ;;
     "handlers")
         echo -e "  ${GREEN}📡 Running handler tests...${NC}"
-        PYTEST_ARGS="tests/test_handlers.py $VERBOSE"
+        PYTEST_ARGS="tests/bot/test_handlers.py $VERBOSE"
         [[ "$COVERAGE" == "true" ]] && PYTEST_ARGS="$PYTEST_ARGS --cov=apps"
         ;;
     "services")
         echo -e "  ${GREEN}⚙️  Running service tests...${NC}"
-        PYTEST_ARGS="tests/test_services.py $VERBOSE"
+        PYTEST_ARGS="tests/bot/test_services.py $VERBOSE"
         [[ "$COVERAGE" == "true" ]] && PYTEST_ARGS="$PYTEST_ARGS --cov=apps"
         ;;
 esac

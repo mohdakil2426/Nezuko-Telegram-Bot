@@ -11,10 +11,18 @@ Following Python Testing Patterns skill best practices:
 """
 
 import os
+import sys
 from collections.abc import AsyncGenerator
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
+
+# Add apps/api to Python path so 'from src.' imports work when running from project root
+_PROJECT_ROOT = Path(__file__).parent.parent
+_API_PATH = _PROJECT_ROOT / "apps" / "api"
+if str(_API_PATH) not in sys.path:
+    sys.path.insert(0, str(_API_PATH))
 
 # Override database URL for tests to use in-memory SQLite
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"

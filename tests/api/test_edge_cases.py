@@ -31,10 +31,10 @@ async def test_verify_user_not_in_channel():
 
     context = create_mock_context(user_status=ChatMemberStatus.LEFT)
 
-    with patch("bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
+    with patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
         mock_cache.return_value = None  # Cache miss
 
-        with patch("bot.services.verification.cache_set", new_callable=AsyncMock):
+        with patch("apps.bot.services.verification.cache_set", new_callable=AsyncMock):
             result = await check_membership(123, "@testchannel", context)
             assert result is False
             print("[PASS] User not in channel correctly returns False")
@@ -50,10 +50,10 @@ async def test_verify_user_banned_from_channel():
 
     context = create_mock_context(user_status=ChatMemberStatus.BANNED)
 
-    with patch("bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
+    with patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
         mock_cache.return_value = None
 
-        with patch("bot.services.verification.cache_set", new_callable=AsyncMock):
+        with patch("apps.bot.services.verification.cache_set", new_callable=AsyncMock):
             result = await check_membership(123, "@testchannel", context)
             # Banned users should NOT pass verification
             assert result is False
@@ -70,10 +70,10 @@ async def test_verify_user_is_admin():
 
     context = create_mock_context(user_status=ChatMemberStatus.ADMINISTRATOR)
 
-    with patch("bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
+    with patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
         mock_cache.return_value = None
 
-        with patch("bot.services.verification.cache_set", new_callable=AsyncMock):
+        with patch("apps.bot.services.verification.cache_set", new_callable=AsyncMock):
             result = await check_membership(123, "@testchannel", context)
             # Admins should pass verification
             assert result is True
@@ -90,7 +90,7 @@ async def test_verify_user_telegram_api_error():
     context = MagicMock()
     context.bot.get_chat_member = AsyncMock(side_effect=TelegramError("API Error"))
 
-    with patch("bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
+    with patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
         mock_cache.return_value = None
 
         # Should handle error gracefully and return None or False
@@ -107,7 +107,7 @@ async def test_verify_cache_hit_positive():
     context = MagicMock()
     context.bot.get_chat_member = AsyncMock()  # Should NOT be called
 
-    with patch("bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
+    with patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
         mock_cache.return_value = "1"  # Cached as member
 
         result = await check_membership(123, "@testchannel", context)
@@ -125,7 +125,7 @@ async def test_verify_cache_hit_negative():
     context = MagicMock()
     context.bot.get_chat_member = AsyncMock()  # Should NOT be called
 
-    with patch("bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
+    with patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
         mock_cache.return_value = "0"  # Cached as non-member
 
         result = await check_membership(123, "@testchannel", context)
@@ -289,8 +289,8 @@ async def test_concurrent_verification_calls():
     context = create_mock_context(user_status=ChatMemberStatus.MEMBER)
 
     with (
-        patch("bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache_get,
-        patch("bot.services.verification.cache_set", new_callable=AsyncMock),
+        patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache_get,
+        patch("apps.bot.services.verification.cache_set", new_callable=AsyncMock),
     ):
         mock_cache_get.return_value = None  # All cache misses
 
