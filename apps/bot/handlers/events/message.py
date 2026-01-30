@@ -21,7 +21,7 @@ from apps.bot.utils.ui import send_verification_warning
 logger = logging.getLogger(__name__)
 
 
-# pylint: disable=too-many-locals, too-many-branches, duplicate-code
+# pylint: disable=too-many-locals, too-many-branches, duplicate-code, too-many-return-statements
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Intercept group messages and verify channel membership (multi-tenant).
@@ -43,6 +43,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Skip private chats
         if update.effective_chat.type == "private":
+            return
+
+        # Ignored bots
+        if update.effective_user.is_bot:
             return
 
         user_id = update.effective_user.id

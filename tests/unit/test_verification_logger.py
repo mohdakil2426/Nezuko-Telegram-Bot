@@ -19,11 +19,12 @@ class TestVerificationLogger:
     @pytest.mark.asyncio
     async def test_log_verification_success(self, mock_db_connection):
         """Test successful verification logging."""
-        from bot.database.verification_logger import log_verification
+        from apps.bot.database.verification_logger import log_verification
 
-        with patch("bot.database.verification_logger._get_connection") as mock_get_conn:
-            mock_get_conn.return_value.__aenter__ = AsyncMock(return_value=mock_db_connection)
-            mock_get_conn.return_value.__aexit__ = AsyncMock(return_value=None)
+        with patch("apps.bot.database.verification_logger.get_session") as mock_get_session:
+            mock_session = MagicMock()
+            mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+            mock_get_session.return_value.__aexit__ = AsyncMock(return_value=None)
 
             await log_verification(
                 user_id=123456,
@@ -34,21 +35,22 @@ class TestVerificationLogger:
                 cached=False,
             )
 
-            # Verify execute was called
-            mock_db_connection.execute.assert_called()
+            # Verify add was called on session
+            mock_session.add.assert_called()
 
     @pytest.mark.asyncio
     async def test_log_verification_handles_db_error(self, mock_db_connection):
         """Test that DB errors don't crash the logger."""
-        from bot.database.verification_logger import log_verification
+        from apps.bot.database.verification_logger import log_verification
 
-        with patch("bot.database.verification_logger._get_connection") as mock_get_conn:
-            mock_get_conn.return_value.__aenter__ = AsyncMock(
-                side_effect=Exception("DB connection failed")
+        with patch("apps.bot.database.verification_logger.get_session") as mock_get_session:
+            # Mock session context manager to raise OSError (which is caught)
+            mock_get_session.return_value.__aenter__ = AsyncMock(
+                side_effect=OSError("DB connection failed")
             )
-            mock_get_conn.return_value.__aexit__ = AsyncMock(return_value=None)
+            mock_get_session.return_value.__aexit__ = AsyncMock(return_value=None)
 
-            # Should not raise
+            # Should not raise exception
             await log_verification(
                 user_id=123456,
                 group_id=-100123,
@@ -65,17 +67,15 @@ class TestVerificationLoggerValidation:
     @pytest.mark.asyncio
     async def test_log_verification_validates_status(self):
         """Test that only valid statuses are accepted."""
-        from bot.database.verification_logger import log_verification
+        from apps.bot.database.verification_logger import log_verification
 
         # Valid statuses should work
         valid_statuses = ["verified", "restricted", "error"]
         for status in valid_statuses:
-            with patch("bot.database.verification_logger._get_connection") as mock_get_conn:
-                mock_conn = MagicMock()
-                mock_conn.execute = AsyncMock()
-                mock_conn.commit = AsyncMock()
-                mock_get_conn.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
-                mock_get_conn.return_value.__aexit__ = AsyncMock(return_value=None)
+            with patch("apps.bot.database.verification_logger.get_session") as mock_get_session:
+                mock_session = MagicMock()
+                mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+                mock_get_session.return_value.__aexit__ = AsyncMock(return_value=None)
 
                 await log_verification(
                     user_id=1,

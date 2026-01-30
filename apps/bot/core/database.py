@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import NullPool, StaticPool
 
 from apps.bot.config import config
 
@@ -36,10 +36,11 @@ def get_engine() -> AsyncEngine:
         # Configure pooling based on database type
         if is_sqlite:
             # SQLite doesn't support connection pooling well
+            pool_class = StaticPool if ":memory:" in config.database_url else NullPool
             _engine = create_async_engine(
                 config.database_url,
                 echo=config.is_development,  # Log SQL in development
-                poolclass=NullPool,
+                poolclass=pool_class,
                 connect_args={"check_same_thread": False},
             )
         else:
@@ -97,6 +98,7 @@ async def get_session() -> AsyncGenerator[AsyncSession]:
 async def init_db():
     """Initialize database (create tables if needed)."""
     # Import models to register them
+    import apps.bot.database.models  # noqa: F401 # pylint: disable=unused-import
 
     engine = get_engine()
     async with engine.begin() as conn:

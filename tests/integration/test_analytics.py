@@ -47,7 +47,7 @@ class TestUserGrowthEndpoint:
     async def test_user_growth_returns_valid_structure(self, client, mock_auth_headers):
         """Test that user growth endpoint returns expected structure."""
         response = await client.get(
-            "/api/v1/analytics/user-growth",
+            "/api/v1/analytics/users",
             headers=mock_auth_headers,
             params={"period": "7d"},
         )
@@ -65,7 +65,7 @@ class TestUserGrowthEndpoint:
     async def test_user_growth_handles_empty_data(self, client, mock_auth_headers):
         """Test that user growth handles empty data gracefully."""
         response = await client.get(
-            "/api/v1/analytics/user-growth",
+            "/api/v1/analytics/users",
             headers=mock_auth_headers,
             params={"period": "30d"},
         )
@@ -81,7 +81,7 @@ class TestVerificationTrendsEndpoint:
     async def test_verification_trends_returns_valid_structure(self, client, mock_auth_headers):
         """Test that verification trends endpoint returns expected structure."""
         response = await client.get(
-            "/api/v1/analytics/verification-trends",
+            "/api/v1/analytics/verifications",
             headers=mock_auth_headers,
             params={"period": "7d"},
         )
@@ -98,7 +98,7 @@ class TestVerificationTrendsEndpoint:
     async def test_verification_trends_24h_period(self, client, mock_auth_headers):
         """Test hourly granularity for 24h period."""
         response = await client.get(
-            "/api/v1/analytics/verification-trends",
+            "/api/v1/analytics/verifications",
             headers=mock_auth_headers,
             params={"period": "24h"},
         )

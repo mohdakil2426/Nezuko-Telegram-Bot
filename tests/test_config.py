@@ -10,10 +10,20 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# pylint: disable=wrong-import-position, import-outside-toplevel, unused-import
-from bot.config import config
-from bot.core.database import get_session, init_db
-from bot.database.crud import create_owner, create_protected_group, get_owner, link_group_channel
+# Set in-memory DB before imports to ensure config picks it up
+import os
+
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+
+# pylint: disable=wrong-import-position, import-outside-toplevel, unused-import, wrong-import-order
+from apps.bot.config import config  # noqa: E402
+from apps.bot.core.database import get_session, init_db
+from apps.bot.database.crud import (
+    create_owner,
+    create_protected_group,
+    get_owner,
+    link_group_channel,
+)
 
 
 async def test_configuration():

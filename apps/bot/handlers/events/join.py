@@ -41,6 +41,14 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not update.message.new_chat_members:
             return
 
+        new_members = update.message.new_chat_members
+        # Filter out bots first
+        human_members = [u for u in new_members if not u.is_bot]
+
+        if not human_members:
+            logger.debug("Only bots joined, skipping verification")
+            return
+
         chat_id = update.effective_chat.id
 
         # Get linked channels from database
@@ -61,11 +69,8 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         # Process each new member
-        for user in new_members:
-            # Skip bots
-            if user.is_bot:
-                logger.debug("Skipping bot user: %s", user.id)
-                continue
+        for user in human_members:
+            # Bots already filtered out
 
             user_id = user.id
             username = user.username or "no_username"
