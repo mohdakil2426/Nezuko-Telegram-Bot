@@ -24,7 +24,7 @@ from tests.utils import create_mock_context, create_mock_update
 @pytest.mark.asyncio
 async def test_start_command_private_chat():
     """Test /start in private chat."""
-    from bot.handlers.admin.help import handle_start
+    from apps.bot.handlers.admin.help import handle_start
 
     update = create_mock_update(chat_type="private", text="/start")
     context = create_mock_context()
@@ -43,7 +43,7 @@ async def test_start_command_private_chat():
 @pytest.mark.asyncio
 async def test_start_command_group_chat():
     """Test /start in group chat (should work but with different message)."""
-    from bot.handlers.admin.help import handle_start
+    from apps.bot.handlers.admin.help import handle_start
 
     update = create_mock_update(chat_type="supergroup", text="/start")
     context = create_mock_context()
@@ -62,7 +62,7 @@ async def test_start_command_group_chat():
 @pytest.mark.asyncio
 async def test_help_command():
     """Test /help command shows command list."""
-    from bot.handlers.admin.help import handle_help
+    from apps.bot.handlers.admin.help import handle_help
 
     update = create_mock_update(text="/help")
     context = create_mock_context()
@@ -88,7 +88,7 @@ async def test_help_command():
 @pytest.mark.asyncio
 async def test_protect_command_no_args():
     """Test /protect without channel argument."""
-    from bot.handlers.admin.setup import handle_protect
+    from apps.bot.handlers.admin.setup import handle_protect
 
     update = create_mock_update(chat_type="supergroup", text="/protect")
     context = create_mock_context()
@@ -114,7 +114,7 @@ async def test_protect_command_no_args():
 @pytest.mark.asyncio
 async def test_protect_command_in_private_chat():
     """Test /protect in private chat (should reject)."""
-    from bot.handlers.admin.setup import handle_protect
+    from apps.bot.handlers.admin.setup import handle_protect
 
     update = create_mock_update(chat_type="private", text="/protect @channel")
     context = create_mock_context()
@@ -135,7 +135,7 @@ async def test_protect_command_non_admin():
     """Test /protect by non-admin user."""
     from telegram.constants import ChatMemberStatus
 
-    from bot.handlers.admin.setup import handle_protect
+    from apps.bot.handlers.admin.setup import handle_protect
 
     update = create_mock_update(chat_type="supergroup", text="/protect @channel")
     context = create_mock_context()
@@ -164,18 +164,18 @@ async def test_protect_command_non_admin():
 @pytest.mark.asyncio
 async def test_status_command():
     """Test /status command shows protection status."""
-    from bot.handlers.admin.settings import handle_status
+    from apps.bot.handlers.admin.settings import handle_status
 
     update = create_mock_update(chat_type="supergroup", text="/status")
     context = create_mock_context()
 
-    with patch("bot.handlers.admin.settings.get_session") as mock_get_session:
+    with patch("apps.bot.handlers.admin.settings.get_session") as mock_get_session:
         mock_session = MagicMock()
         mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock()
 
         with patch(
-            "bot.handlers.admin.settings.get_protected_group", new_callable=AsyncMock
+            "apps.bot.handlers.admin.settings.get_protected_group", new_callable=AsyncMock
         ) as mock_get_grp:
             mock_get_grp.return_value = None  # Not protected
 
@@ -196,7 +196,7 @@ async def test_unprotect_command_non_admin():
     """Test /unprotect by non-admin user."""
     from telegram.constants import ChatMemberStatus
 
-    from bot.handlers.admin.settings import handle_unprotect
+    from apps.bot.handlers.admin.settings import handle_unprotect
 
     update = create_mock_update(chat_type="supergroup", text="/unprotect")
     context = create_mock_context()
@@ -221,18 +221,18 @@ async def test_unprotect_command_non_admin():
 @pytest.mark.asyncio
 async def test_message_handler_no_protection():
     """Test message handler when group has no protection."""
-    from bot.handlers.events.message import handle_message
+    from apps.bot.handlers.events.message import handle_message
 
     update = create_mock_update(chat_type="supergroup", text="Hello everyone!")
     context = create_mock_context()
 
-    with patch("bot.handlers.events.message.get_session") as mock_get_session:
+    with patch("apps.bot.handlers.events.message.get_session") as mock_get_session:
         mock_session = MagicMock()
         mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock()
 
         with patch(
-            "bot.handlers.events.message.get_group_channels", new_callable=AsyncMock
+            "apps.bot.handlers.events.message.get_group_channels", new_callable=AsyncMock
         ) as mk_channels:
             mk_channels.return_value = []  # No channels linked
 
@@ -246,7 +246,7 @@ async def test_message_handler_no_protection():
 @pytest.mark.asyncio
 async def test_message_handler_from_bot():
     """Test message handler skips messages from bots."""
-    from bot.handlers.events.message import handle_message
+    from apps.bot.handlers.events.message import handle_message
 
     update = create_mock_update(chat_type="supergroup", text="Bot message", is_bot=True)
     context = create_mock_context()
@@ -260,7 +260,7 @@ async def test_message_handler_from_bot():
 @pytest.mark.asyncio
 async def test_message_handler_anonymous_admin():
     """Test message handler for anonymous admin messages."""
-    from bot.handlers.events.message import handle_message
+    from apps.bot.handlers.events.message import handle_message
 
     # Anonymous admin has specific user ID
     update = create_mock_update(
@@ -286,7 +286,7 @@ async def test_message_handler_anonymous_admin():
 @pytest.mark.asyncio
 async def test_join_handler_new_member():
     """Test join handler for new group member."""
-    from bot.handlers.events.join import handle_new_member
+    from apps.bot.handlers.events.join import handle_new_member
 
     update = MagicMock()
     update.message = MagicMock()
@@ -301,13 +301,13 @@ async def test_join_handler_new_member():
 
     context = create_mock_context()
 
-    with patch("bot.handlers.events.join.get_session") as mock_get_session:
+    with patch("apps.bot.handlers.events.join.get_session") as mock_get_session:
         mock_session = MagicMock()
         mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock()
 
         with patch(
-            "bot.handlers.events.join.get_group_channels", new_callable=AsyncMock
+            "apps.bot.handlers.events.join.get_group_channels", new_callable=AsyncMock
         ) as mk_channels:
             mk_channels.return_value = []  # No protection
 
@@ -319,7 +319,7 @@ async def test_join_handler_new_member():
 @pytest.mark.asyncio
 async def test_join_handler_bot_joining():
     """Test join handler when a bot joins (skip verification)."""
-    from bot.handlers.events.join import handle_new_member
+    from apps.bot.handlers.events.join import handle_new_member
 
     update = MagicMock()
     update.message = MagicMock()
@@ -350,7 +350,7 @@ async def test_verify_callback():
     """Test verification callback button."""
     from telegram.constants import ChatMemberStatus
 
-    from bot.handlers.verify import handle_callback_verify
+    from apps.bot.handlers.verify import handle_callback_verify
 
     # Create callback query mock
     update = MagicMock()
@@ -371,12 +371,14 @@ async def test_verify_callback():
 
     context = create_mock_context()
 
-    with patch("bot.handlers.verify.get_session") as mock_get_session:
+    with patch("apps.bot.handlers.verify.get_session") as mock_get_session:
         mock_session = MagicMock()
         mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock()
 
-        with patch("bot.handlers.verify.get_group_channels", new_callable=AsyncMock) as mk_channels:
+        with patch(
+            "apps.bot.handlers.verify.get_group_channels", new_callable=AsyncMock
+        ) as mk_channels:
             # Mock channel with membership check
             mock_channel = MagicMock()
             mock_channel.channel_id = -100555666777
@@ -398,7 +400,7 @@ async def test_verify_callback():
 @pytest.mark.asyncio
 async def test_verify_callback_wrong_user():
     """Test verification callback from wrong user."""
-    from bot.handlers.verify import handle_callback_verify
+    from apps.bot.handlers.verify import handle_callback_verify
 
     # User clicking is NOT the one being verified
     update = MagicMock()
@@ -417,12 +419,14 @@ async def test_verify_callback_wrong_user():
 
     context = create_mock_context()
 
-    with patch("bot.handlers.verify.get_session") as mock_get_session:
+    with patch("apps.bot.handlers.verify.get_session") as mock_get_session:
         mock_session = MagicMock()
         mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_get_session.return_value.__aexit__ = AsyncMock()
 
-        with patch("bot.handlers.verify.get_group_channels", new_callable=AsyncMock) as mk_channels:
+        with patch(
+            "apps.bot.handlers.verify.get_group_channels", new_callable=AsyncMock
+        ) as mk_channels:
             mk_channels.return_value = []  # No channels, just testing flow doesn't crash
 
             await handle_callback_verify(update, context)

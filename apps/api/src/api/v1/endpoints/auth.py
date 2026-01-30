@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.v1.dependencies.auth import get_current_active_user
 from src.core.config import get_settings
 from src.core.database import get_session
+from src.core.security import verify_jwt
 from src.models.admin_user import AdminUser
 from src.schemas.auth import UserResponse
 from src.schemas.base import SuccessResponse
@@ -39,10 +40,6 @@ async def sync_user(
         raise HTTPException(status_code=401, detail="Missing token")
 
     token = auth_header.split(" ")[1]
-
-    token = auth_header.split(" ")[1]
-
-    from src.core.security import verify_jwt
 
     try:
         auth_user = verify_jwt(token)

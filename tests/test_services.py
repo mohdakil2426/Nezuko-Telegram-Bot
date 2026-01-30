@@ -5,7 +5,6 @@ Unit tests for bot services.
 Tests for verification service, protection service, and cache operations.
 """
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -14,7 +13,7 @@ import pytest
 @pytest.mark.asyncio
 async def test_cache_ttl_jitter():
     """Test TTL jitter prevents thundering herd."""
-    from bot.core.cache import get_ttl_with_jitter
+    from apps.bot.core.cache import get_ttl_with_jitter
 
     # Test with 600s base TTL
     results = [get_ttl_with_jitter(600, 15) for _ in range(100)]
@@ -33,7 +32,7 @@ async def test_verification_service_cache_logic():
     """Test verification service uses cache before API."""
     from telegram.constants import ChatMemberStatus
 
-    from bot.services.verification import check_membership
+    from apps.bot.services.verification import check_membership
     from tests.utils import create_mock_context
 
     # Mock context
@@ -41,8 +40,8 @@ async def test_verification_service_cache_logic():
 
     # Mock cache (return None = cache miss)
     with (
-        patch("bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache_get,
-        patch("bot.services.verification.cache_set", new_callable=AsyncMock) as mock_cache_set,
+        patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache_get,
+        patch("apps.bot.services.verification.cache_set", new_callable=AsyncMock) as mock_cache_set,
     ):
         mock_cache_get.return_value = None  # Cache miss
 
@@ -62,7 +61,7 @@ async def test_protection_service_retry_logic():
     """Test protection service retries on transient failures."""
     from telegram.error import TelegramError
 
-    from bot.services.protection import restrict_user
+    from apps.bot.services.protection import restrict_user
 
     # Mock context that fails twice then succeeds
     context = MagicMock()
@@ -89,12 +88,12 @@ async def test_protection_service_retry_logic():
 @pytest.mark.asyncio
 async def test_cache_graceful_degradation():
     """Test cache gracefully degrades when Redis unavailable."""
-    from bot.core.cache import cache_get, cache_set
+    from apps.bot.core.cache import cache_get, cache_set
 
     # Simulate Redis unavailable
     with (
-        patch("bot.core.cache._redis_available", False),
-        patch("bot.core.cache._redis_client", None),
+        patch("apps.bot.core.cache._redis_available", False),
+        patch("apps.bot.core.cache._redis_client", None),
     ):
         # Should return None without crashing
         result = await cache_get("test_key")
@@ -109,7 +108,7 @@ async def test_cache_graceful_degradation():
 
 def test_protection_stats_tracking():
     """Test protection service tracks mute/unmute stats."""
-    from bot.services.protection import get_protection_stats, reset_protection_stats
+    from apps.bot.services.protection import get_protection_stats, reset_protection_stats
 
     # Reset first
     reset_protection_stats()
@@ -124,7 +123,7 @@ def test_protection_stats_tracking():
 
 def test_verification_stats_tracking():
     """Test verification service tracks cache stats."""
-    from bot.services.verification import get_cache_stats, reset_cache_stats
+    from apps.bot.services.verification import get_cache_stats, reset_cache_stats
 
     # Reset first
     reset_cache_stats()
@@ -144,8 +143,8 @@ async def test_database_crud_operations():
     # Initialize test database (SQLite)
     import os
 
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import create_owner, get_owner
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import create_owner, get_owner
 
     os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
@@ -165,21 +164,3 @@ async def test_database_crud_operations():
         print("[OK] Database CRUD: create and get operations work")
     finally:
         await close_db()
-
-
-if __name__ == "__main__":
-    """Run tests manually without pytest."""
-    print("Running Service Unit Tests...\n")
-
-    # Run async tests
-    asyncio.run(test_cache_ttl_jitter())
-    asyncio.run(test_verification_service_cache_logic())
-    asyncio.run(test_protection_service_retry_logic())
-    asyncio.run(test_cache_graceful_degradation())
-
-    # Run sync tests
-    test_protection_stats_tracking()
-    test_verification_stats_tracking()
-
-    print("\n[SUCCESS] All service tests passed!")
-    print("\nTo run integration tests: pytest tests/test_services.py -m integration")

@@ -80,38 +80,61 @@ async def check_membership(
     cache_key = f"verify:{user_id}:{channel_id}"
 
     # Step 1: Check cache
-    try:
-        cached_value = await cache_get(cache_key)
-        if cached_value is not None:
-            _cache_hits += 1
-            record_cache_hit()
-            logger.debug("Cache HIT: %s", cache_key)
-            is_member = cached_value == "1"
-            status = "verified" if is_member else "restricted"
-            latency_ms = int((time.perf_counter() - wall_start) * 1000)
-            record_verification_end(start_time, status)
-            # Log to database (fire-and-forget)
-            if group_id is not None:
-                asyncio.create_task(
-                    log_verification(
-                        user_id=user_id,
-                        group_id=group_id,
-                        channel_id=channel_id_int,
-                        status=status,
-                        latency_ms=latency_ms,
-                        cached=True,
-                    )
-                )
-            return is_member
-    except (ConnectionError, TimeoutError) as e:
-        logger.warning("Cache check error: %s", e)
+    cached_value = await _check_cache(cache_key)
+    if cached_value is not None:
+        _cache_hits += 1
+        record_cache_hit()
+        logger.debug("Cache HIT: %s", cache_key)
+        is_member = cached_value == "1"
+        status = "verified" if is_member else "restricted"
+
+        await _log_result(
+            user_id, group_id, channel_id_int, start_time, wall_start, status, cached=True
+        )
+        return is_member
 
     # Step 2: Cache miss - call Telegram API
     _cache_misses += 1
     record_cache_miss()
     logger.debug("Cache MISS: %s - calling API", cache_key)
 
-    is_member = False
+    is_member = await _verify_via_api(
+        context, channel_id, user_id, start_time, wall_start, group_id, channel_id_int
+    )
+    if is_member is None:  # Error occurred
+        return False
+
+    # Step 3: Cache the result with jittered TTL
+    await _cache_result(cache_key, is_member)
+
+    # Record final verification outcome
+    status = "verified" if is_member else "restricted"
+    await _log_result(
+        user_id, group_id, channel_id_int, start_time, wall_start, status, cached=False
+    )
+
+    return is_member
+
+
+async def _check_cache(cache_key: str) -> str | None:
+    """Helper to check cache safely."""
+    try:
+        return await cache_get(cache_key)
+    except (ConnectionError, TimeoutError) as e:
+        logger.warning("Cache check error: %s", e)
+        return None
+
+
+async def _verify_via_api(
+    context: ContextTypes.DEFAULT_TYPE,
+    channel_id: str | int,
+    user_id: int,
+    start_time: float,
+    wall_start: float,
+    group_id: int | None,
+    channel_id_int: int,
+) -> bool | None:
+    """Helper to verify via API. Returns True/False or None on error."""
     try:
         record_api_call("getChatMember")
         member = await context.bot.get_chat_member(chat_id=channel_id, user_id=user_id)
@@ -125,27 +148,19 @@ async def check_membership(
         logger.debug(
             "User %s in channel %s: %s (status: %s)", user_id, channel_id, status_str, member.status
         )
+        return is_member
     except TelegramError as e:
         logger.error("Error checking membership for user %s in %s: %s", user_id, channel_id, e)
         record_error("telegram_error")
-        latency_ms = int((time.perf_counter() - wall_start) * 1000)
         record_verification_end(start_time, "error")
-        # Log error to database
-        if group_id is not None:
-            asyncio.create_task(
-                log_verification(
-                    user_id=user_id,
-                    group_id=group_id,
-                    channel_id=channel_id_int,
-                    status="error",
-                    latency_ms=latency_ms,
-                    cached=False,
-                )
-            )
-        # Fail-safe: Return False on error (deny access)
-        return False
+        await _log_result(
+            user_id, group_id, channel_id_int, start_time, wall_start, "error", cached=False
+        )
+        return None
 
-    # Step 3: Cache the result with jittered TTL
+
+async def _cache_result(cache_key: str, is_member: bool):
+    """Helper to cache result."""
     try:
         if is_member:
             ttl = get_ttl_with_jitter(POSITIVE_CACHE_TTL, CACHE_JITTER_PERCENT)
@@ -159,13 +174,26 @@ async def check_membership(
         logger.warning("Failed to cache result: %s", e)
         record_error("cache_error")
 
-    # Record final verification outcome
-    status = "verified" if is_member else "restricted"
-    latency_ms = int((time.perf_counter() - wall_start) * 1000)
-    record_verification_end(start_time, status)
 
-    # Log to database (fire-and-forget)
+async def _log_result(
+    user_id: int,
+    group_id: int | None,
+    channel_id_int: int,
+    start_time: float,
+    wall_start: float,
+    status: str,
+    cached: bool,
+):
+    """Helper to log verification result and metrics."""
+
+    if status == "error":
+        # Metrics already recorded in exception handler for error
+        pass
+    else:
+        record_verification_end(start_time, status)
+
     if group_id is not None:
+        latency_ms = int((time.perf_counter() - wall_start) * 1000)
         asyncio.create_task(
             log_verification(
                 user_id=user_id,
@@ -173,11 +201,9 @@ async def check_membership(
                 channel_id=channel_id_int,
                 status=status,
                 latency_ms=latency_ms,
-                cached=False,
+                cached=cached,
             )
         )
-
-    return is_member
 
 
 async def check_multi_membership(
@@ -198,14 +224,19 @@ async def check_multi_membership(
     Returns:
         List of channels user is NOT a member of
     """
-    missing_channels = []
-    for channel in channels:
-        is_member = await check_membership(
+    tasks = [
+        check_membership(
             user_id=user_id,
             channel_id=channel.channel_id,
             context=context,
             group_id=group_id,
         )
+        for channel in channels
+    ]
+    results = await asyncio.gather(*tasks)
+
+    missing_channels = []
+    for channel, is_member in zip(channels, results, strict=True):
         if not is_member:
             missing_channels.append(channel)
 

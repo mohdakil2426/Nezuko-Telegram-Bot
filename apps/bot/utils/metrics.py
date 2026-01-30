@@ -294,12 +294,12 @@ def get_metrics() -> bytes:
     Returns:
         Bytes containing Prometheus text format metrics
     """
-    return generate_latest(REGISTRY)
+    return generate_latest(REGISTRY)  # type: ignore[no-any-return]
 
 
 def get_metrics_content_type() -> str:
     """Get content type for Prometheus metrics."""
-    return CONTENT_TYPE_LATEST
+    return CONTENT_TYPE_LATEST  # type: ignore[no-any-return]
 
 
 # ====================
@@ -341,4 +341,4 @@ def calculate_cache_hit_rate() -> float:
     total = hits + misses
     if total == 0:
         return 0.0
-    return round((hits / total) * 100, 2)
+    return round((hits / total) * 100, 2)  # type: ignore[no-any-return]

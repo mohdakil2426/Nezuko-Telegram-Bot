@@ -98,3 +98,22 @@ exclude_lines = [
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
 ]
+
+[tool.pylint.main]
+py-version = "3.13"
+ignore-paths = ["migrations", "venv", ".venv", "__pycache__"]
+extension-pkg-allow-list = ["pydantic"]
+
+[tool.pylint.messages_control]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "invalid-name",
+    "too-few-public-methods",
+    "fixme",
+    "line-too-long", # Handled by ruff
+]
+
+[tool.pylint.format]
+max-line-length = 100

@@ -22,7 +22,7 @@ os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 @pytest.fixture
 async def db_session():
     """Fixture to provide a fresh database session for each test."""
-    from bot.core.database import close_db, get_session, init_db
+    from apps.bot.core.database import close_db, get_session, init_db
 
     await init_db()
 
@@ -40,8 +40,8 @@ async def db_session():
 @pytest.mark.asyncio
 async def test_create_owner():
     """Test creating a new owner."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import create_owner
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import create_owner
 
     await init_db()
 
@@ -60,8 +60,8 @@ async def test_create_owner():
 @pytest.mark.asyncio
 async def test_get_owner():
     """Test fetching an existing owner."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import create_owner, get_owner
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import create_owner, get_owner
 
     await init_db()
 
@@ -84,8 +84,8 @@ async def test_get_owner():
 @pytest.mark.asyncio
 async def test_get_nonexistent_owner():
     """Test fetching an owner that doesn't exist."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import get_owner
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import get_owner
 
     await init_db()
 
@@ -101,8 +101,8 @@ async def test_get_nonexistent_owner():
 @pytest.mark.asyncio
 async def test_create_owner_without_username():
     """Test creating owner without username (optional field)."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import create_owner
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import create_owner
 
     await init_db()
 
@@ -126,8 +126,8 @@ async def test_create_owner_without_username():
 @pytest.mark.asyncio
 async def test_create_protected_group():
     """Test creating a protected group."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import create_owner, create_protected_group
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import create_owner, create_protected_group
 
     await init_db()
 
@@ -154,8 +154,8 @@ async def test_create_protected_group():
 @pytest.mark.asyncio
 async def test_get_protected_group():
     """Test fetching a protected group."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import create_owner, create_protected_group, get_protected_group
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import create_owner, create_protected_group, get_protected_group
 
     await init_db()
 
@@ -177,8 +177,8 @@ async def test_get_protected_group():
 @pytest.mark.asyncio
 async def test_toggle_protection():
     """Test enabling/disabling group protection."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import (
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import (
         create_owner,
         create_protected_group,
         get_protected_group,
@@ -220,8 +220,8 @@ async def test_toggle_protection():
 @pytest.mark.asyncio
 async def test_link_group_to_channel():
     """Test linking a group to a channel."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import (
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import (
         create_owner,
         create_protected_group,
         get_group_channels,
@@ -256,8 +256,8 @@ async def test_link_group_to_channel():
 @pytest.mark.asyncio
 async def test_link_group_to_multiple_channels():
     """Test linking a group to multiple channels."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import (
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import (
         create_owner,
         create_protected_group,
         get_group_channels,
@@ -293,8 +293,8 @@ async def test_link_group_to_multiple_channels():
 @pytest.mark.asyncio
 async def test_unlink_all_channels():
     """Test unlinking all channels from a group."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import (
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import (
         create_owner,
         create_protected_group,
         get_group_channels,
@@ -339,8 +339,8 @@ async def test_unlink_all_channels():
 @pytest.mark.asyncio
 async def test_multi_tenant_isolation():
     """Test that different groups have isolated configurations."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import (
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import (
         create_owner,
         create_protected_group,
         get_group_channels,
@@ -384,8 +384,8 @@ async def test_multi_tenant_isolation():
 @pytest.mark.asyncio
 async def test_very_long_title():
     """Test handling of very long group/channel titles."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import create_owner, create_protected_group
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import create_owner, create_protected_group
 
     await init_db()
 
@@ -407,8 +407,8 @@ async def test_very_long_title():
 @pytest.mark.asyncio
 async def test_unicode_in_titles():
     """Test Unicode characters in titles."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import create_owner, create_protected_group
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import create_owner, create_protected_group
 
     await init_db()
 
@@ -429,8 +429,8 @@ async def test_unicode_in_titles():
 @pytest.mark.asyncio
 async def test_special_chars_in_invite_link():
     """Test special characters in invite links."""
-    from bot.core.database import close_db, get_session, init_db
-    from bot.database.crud import (
+    from apps.bot.core.database import close_db, get_session, init_db
+    from apps.bot.database.crud import (
         create_owner,
         create_protected_group,
         get_group_channels,

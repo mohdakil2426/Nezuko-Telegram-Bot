@@ -12,4 +12,4 @@
 -r apps/bot/requirements.txt
 
 # Development dependencies (optional)
-# -r apps/api/requirements-dev.txt
+-r apps/api/requirements-dev.txt

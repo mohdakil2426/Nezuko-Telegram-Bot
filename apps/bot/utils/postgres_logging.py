@@ -1,3 +1,5 @@
+"""Postgres logging handler for bot."""
+
 from __future__ import annotations
 
 import asyncio

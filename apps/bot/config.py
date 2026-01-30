@@ -2,11 +2,14 @@
 Configuration management and environment variable validation.
 """
 
+import logging
 import os
 from pathlib import Path
 from typing import overload
 
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 # Get the directory where config.py lives (apps/bot/)
 _BOT_DIR = Path(__file__).resolve().parent
@@ -55,7 +58,7 @@ class Config:
         if db_url and "sqlite" in db_url.lower() and ":///" in db_url:
             # Extract path from sqlite URL (after sqlite:/// or sqlite+aiosqlite:///)
             prefix, _, path = db_url.partition(":///")
-            if path and not Path(path).is_absolute():
+            if path and path != ":memory:" and not Path(path).is_absolute():
                 # Convert relative path to absolute (relative to apps/bot/)
                 abs_path = (_BOT_DIR / path).resolve()
                 # Ensure parent directory exists
@@ -122,7 +125,7 @@ class Config:
 
         # Redis warning
         if self.is_production and not self.redis_url:
-            print(
+            logger.warning(
                 "⚠️  WARNING: REDIS_URL not set. Running without distributed cache.\n"
                 "   Performance will be degraded. Set REDIS_URL for production use."
             )

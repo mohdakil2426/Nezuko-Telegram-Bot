@@ -33,12 +33,12 @@ async def get_groups(
     stmt = select(ProtectedGroup)
 
     # Filtering
-    # Filtering
     if filters.search:
         # Search by title or ID (if numeric)
         if filters.search.isdigit():
             stmt = stmt.where(ProtectedGroup.group_id == int(filters.search))
         else:
+            # Note: Leading wildcard (%) prevents index usage. Consider FTS for large datasets.
             stmt = stmt.where(ProtectedGroup.title.ilike(f"%{filters.search}%"))
 
     if filters.status == "active":

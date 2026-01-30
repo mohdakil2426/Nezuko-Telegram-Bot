@@ -77,7 +77,7 @@ async def cache_get(key: str) -> str | None:
         return None
 
     try:
-        return await _redis_client.get(key)
+        return cast(str | None, await _redis_client.get(key))
     except RedisConnectionError:
         logger.warning("Redis connection lost - falling back to API calls")
         _redis_available = False

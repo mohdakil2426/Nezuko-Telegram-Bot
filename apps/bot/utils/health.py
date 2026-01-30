@@ -52,7 +52,6 @@ async def check_database() -> dict:
     """
     try:
         start = time.perf_counter()
-        start = time.perf_counter()
         await check_db_connectivity()
 
         latency_ms = (time.perf_counter() - start) * 1000

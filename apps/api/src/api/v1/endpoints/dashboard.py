@@ -26,51 +26,19 @@ async def get_dashboard_stats(
     """
     Get dashboard statistics with real data.
     """
-    # Query database for counts
-    # Protected Groups
-    stmt_groups = select(func.count()).select_from(ProtectedGroup)
-    total_groups = await session.scalar(stmt_groups) or 0
-
-    # Enforced Channels
-    stmt_channels = select(func.count()).select_from(EnforcedChannel)
-    total_channels = await session.scalar(stmt_channels) or 0
+    total_groups, total_channels = await _get_entity_counts(session)
 
     # Real verification stats from verification_log
     now = datetime.now(UTC)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = today_start - timedelta(days=7)
 
-    # Today's verifications
-    stmt_today = select(func.count()).where(VerificationLog.timestamp >= today_start)
-    verifications_today = await session.scalar(stmt_today) or 0
+    verifications_today, verifications_week = await _get_verification_counts(
+        session, today_start, week_start
+    )
 
-    # This week's verifications
-    stmt_week = select(func.count()).where(VerificationLog.timestamp >= week_start)
-    verifications_week = await session.scalar(stmt_week) or 0
-
-    # Success rate (last 7 days)
-    stmt_success = select(
-        func.count().label("total"),
-        func.sum(case((VerificationLog.status == "verified", 1), else_=0)).label("successful"),
-    ).where(VerificationLog.timestamp >= week_start)
-
-    result = await session.execute(stmt_success)
-    row = result.one()
-    total = row.total or 0
-    successful = row.successful or 0
-    success_rate = (successful / total * 100) if total > 0 else 0.0
-
-    # Cache hit rate from last 24 hours
-    stmt_cache = select(
-        func.count().label("total"),
-        func.sum(case((VerificationLog.cached.is_(True), 1), else_=0)).label("cached"),
-    ).where(VerificationLog.timestamp >= today_start - timedelta(days=1))
-
-    cache_result = await session.execute(stmt_cache)
-    cache_row = cache_result.one()
-    cache_total = cache_row.total or 0
-    cache_hits = cache_row.cached or 0
-    cache_hit_rate = (cache_hits / cache_total * 100) if cache_total > 0 else 0.0
+    success_rate = await _get_success_rate(session, week_start)
+    cache_hit_rate = await _get_cache_hit_rate(session, today_start)
 
     # Bot uptime - placeholder for now (would need Prometheus/Redis)
     bot_uptime_seconds = 0
@@ -86,6 +54,60 @@ async def get_dashboard_stats(
             cache_hit_rate=round(cache_hit_rate, 2),
         )
     )
+
+
+async def _get_entity_counts(session: AsyncSession) -> tuple[int, int]:
+    """Get total counts for groups and channels."""
+    # Protected Groups
+    stmt_groups = select(func.count()).select_from(ProtectedGroup)
+    total_groups = await session.scalar(stmt_groups) or 0
+
+    # Enforced Channels
+    stmt_channels = select(func.count()).select_from(EnforcedChannel)
+    total_channels = await session.scalar(stmt_channels) or 0
+    return total_groups, total_channels
+
+
+async def _get_verification_counts(
+    session: AsyncSession, today_start: datetime, week_start: datetime
+) -> tuple[int, int]:
+    """Get verification counts for today and this week."""
+    # Today's verifications
+    stmt_today = select(func.count()).where(VerificationLog.timestamp >= today_start)
+    verifications_today = await session.scalar(stmt_today) or 0
+
+    # This week's verifications
+    stmt_week = select(func.count()).where(VerificationLog.timestamp >= week_start)
+    verifications_week = await session.scalar(stmt_week) or 0
+    return verifications_today, verifications_week
+
+
+async def _get_success_rate(session: AsyncSession, week_start: datetime) -> float:
+    """Calculate success rate for the last 7 days."""
+    stmt_success = select(
+        func.count().label("total"),
+        func.sum(case((VerificationLog.status == "verified", 1), else_=0)).label("successful"),
+    ).where(VerificationLog.timestamp >= week_start)
+
+    result = await session.execute(stmt_success)
+    row = result.one()
+    total = row.total or 0
+    successful = row.successful or 0
+    return (successful / total * 100) if total > 0 else 0.0
+
+
+async def _get_cache_hit_rate(session: AsyncSession, today_start: datetime) -> float:
+    """Calculate cache hit rate for the last 24 hours."""
+    stmt_cache = select(
+        func.count().label("total"),
+        func.sum(case((VerificationLog.cached.is_(True), 1), else_=0)).label("cached"),
+    ).where(VerificationLog.timestamp >= today_start - timedelta(days=1))
+
+    cache_result = await session.execute(stmt_cache)
+    cache_row = cache_result.one()
+    cache_total = cache_row.total or 0
+    cache_hits = cache_row.cached or 0
+    return (cache_hits / cache_total * 100) if cache_total > 0 else 0.0
 
 
 @router.get("/activity", response_model=SuccessResponse[ActivityResponse])
