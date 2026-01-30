@@ -1,37 +1,12 @@
 """Integration tests for analytics API endpoints.
 
-Note: Run from project root with: pytest tests/integration/test_analytics.py
+Note: Run from project root with: pytest tests/api/integration/test_analytics.py
+
+These tests use the api/conftest.py fixtures which properly set up the database
+with all required tables including verification_log and protected_groups.
 """
 
-# ruff: noqa: E402
-# pylint: disable=wrong-import-position
-
-import sys
-from pathlib import Path
-
 import pytest
-from httpx import ASGITransport, AsyncClient
-
-# Add apps/api to path for src imports - MUST be before src imports
-_api_path = Path(__file__).resolve().parent.parent.parent / "apps" / "api"
-sys.path.insert(0, str(_api_path))
-
-
-@pytest.fixture
-def anyio_backend():
-    """Specify async backend."""
-    return "asyncio"
-
-
-@pytest.fixture
-async def client():
-    """Create async test client."""
-    # Import inside fixture after path is set
-    from src.main import app
-
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
 
 
 @pytest.fixture
@@ -55,9 +30,10 @@ class TestUserGrowthEndpoint:
         # May return 401 if auth not configured, but structure check is key
         if response.status_code == 200:
             data = response.json()
-            assert "success" in data
+            # API uses status: "success" not success: True
+            assert data.get("status") == "success"
             assert "data" in data
-            if data["success"]:
+            if data.get("status") == "success":
                 assert "series" in data["data"]
                 assert "summary" in data["data"]
 
@@ -88,9 +64,9 @@ class TestVerificationTrendsEndpoint:
 
         if response.status_code == 200:
             data = response.json()
-            assert "success" in data
+            assert data.get("status") == "success"
             assert "data" in data
-            if data["success"]:
+            if data.get("status") == "success":
                 assert "series" in data["data"]
                 assert "summary" in data["data"]
 
@@ -106,7 +82,7 @@ class TestVerificationTrendsEndpoint:
         if response.status_code == 200:
             data = response.json()
             # 24h period should use hourly granularity
-            if data.get("success") and data.get("data", {}).get("series"):
+            if data.get("status") == "success" and data.get("data", {}).get("series"):
                 series = data["data"]["series"]
                 # Should have up to 24 data points for hourly
                 assert len(series) <= 25
@@ -125,7 +101,7 @@ class TestDashboardChartDataEndpoint:
 
         if response.status_code == 200:
             data = response.json()
-            if data.get("success") and data.get("data", {}).get("series"):
+            if data.get("status") == "success" and data.get("data", {}).get("series"):
                 series = data["data"]["series"]
                 # Should have approximately 30 days
                 assert 28 <= len(series) <= 32
@@ -140,7 +116,7 @@ class TestDashboardChartDataEndpoint:
 
         if response.status_code == 200:
             data = response.json()
-            if data.get("success") and data.get("data", {}).get("series"):
+            if data.get("status") == "success" and data.get("data", {}).get("series"):
                 for point in data["data"]["series"]:
                     assert "date" in point
                     assert "verified" in point
@@ -160,7 +136,7 @@ class TestDashboardStatsEndpoint:
 
         if response.status_code == 200:
             data = response.json()
-            if data.get("success") and data.get("data"):
+            if data.get("status") == "success" and data.get("data"):
                 stats = data["data"]
                 required_fields = [
                     "total_groups",

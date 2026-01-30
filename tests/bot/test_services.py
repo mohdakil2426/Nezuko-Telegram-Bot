@@ -152,12 +152,12 @@ async def test_database_crud_operations():
 
     try:
         async with get_session() as session:
-            # Create owner
-            owner = await create_owner(session, 12345, "testuser")
-            assert owner.user_id == 12345
+            # Create owner - use unique ID to avoid collision with other tests
+            owner = await create_owner(session, 99999, "testuser")
+            assert owner.user_id == 99999
 
             # Get owner
-            fetched = await get_owner(session, 12345)
+            fetched = await get_owner(session, 99999)
             assert fetched is not None
             assert fetched.username == "testuser"
 

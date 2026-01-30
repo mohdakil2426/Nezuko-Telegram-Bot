@@ -114,8 +114,18 @@ disable = [
     "invalid-name",
     "too-few-public-methods",
     "fixme",
-    "line-too-long", # Handled by ruff
+    "line-too-long",           # Handled by ruff
+    "not-callable",            # False positive with SQLAlchemy func.*
+    "duplicate-code",          # Bot and API share model definitions (architectural)
+    "cyclic-import",           # Common SQLAlchemy pattern (models <-> database)
+    "too-many-locals",         # Complex analytics functions require many variables
+    "too-many-positional-arguments",  # Some functions need many args
+    "too-many-arguments",      # FastAPI endpoints often have many dependencies
+    "import-outside-toplevel", # Lazy imports for performance/circular deps
+    "unused-argument",         # Framework callbacks often have unused args
+    "redefined-outer-name",    # Common in factory functions and fixtures
 ]
 
 [tool.pylint.format]
 max-line-length = 100
+
