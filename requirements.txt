@@ -1,15 +1,22 @@
-# ============================================================
-# Nezuko - Root Requirements File
-# ============================================================
-# This file combines all Python dependencies from the monorepo.
-# Install with: pip install -r requirements.txt
-# ============================================================
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                    NEZUKO - ROOT REQUIREMENTS                                 ║
+# ║                                                                               ║
+# ║  Development: Installs ALL dependencies (API + Bot + Dev Tools)               ║
+# ║  Command: pip install -r requirements.txt                                     ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  USAGE GUIDE                                                                │
+# ├─────────────────────────────────────────────────────────────────────────────┤
+# │  Development (full):     pip install -r requirements.txt                    │
+# │  Production API:         pip install -r requirements/prod-api.txt           │
+# │  Production Bot:         pip install -r requirements/prod-bot.txt           │
+# │  CI/CD Testing:          pip install -r requirements.txt                    │
+# └─────────────────────────────────────────────────────────────────────────────┘
 
-# API dependencies
--r apps/api/requirements.txt
+# All production dependencies
+-r requirements/prod-api.txt
+-r requirements/prod-bot.txt
 
-# Bot dependencies  
--r apps/bot/requirements.txt
-
-# Development dependencies (optional)
--r apps/api/requirements-dev.txt
+# Development tools (testing, linting, type checking)
+-r requirements/dev.txt

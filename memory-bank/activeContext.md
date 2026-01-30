@@ -1,142 +1,157 @@
-# Active Context: Phase 24 - Code Quality Improvements
+# Active Context: Phase 25 - GitHub Push Readiness & Codebase Cleanup
 
 ## 🎯 Current Status
 
-**Phase 24 COMPLETE** - Python codebase improved based on FastAPI, Python Performance, and Testing skills audit.
+**Phase 25 COMPLETE** - Comprehensive codebase cleanup, security fixes, professional environment files, modular requirements structure, and storage organization.
 
 ---
 
 ## ✅ Completed Tasks (2026-01-30)
 
-### Phase 24: Code Quality Improvements (Skills Audit) ✅
+### Phase 25: GitHub Push Readiness & Codebase Cleanup ✅
 
-Applied improvements from three skill files:
-- **FastAPI Skill** - Pydantic V2, SQLAlchemy 2.0 async, error handling
-- **Python Performance Optimization** - Memory efficiency, caching patterns
-- **Python Testing Patterns** - pytest fixtures, test isolation
+Comprehensive audit and cleanup of the entire codebase for production readiness.
 
-#### Changes Made:
+#### 1. Security Fixes
 
-| File | Improvement | Skill |
-|------|-------------|-------|
-| `apps/api/src/core/database.py` | Added explicit commit on success, improved docstring | FastAPI |
-| `apps/api/src/core/cache.py` | Added graceful error handling for Redis (degraded mode) | FastAPI + Performance |
-| `apps/api/src/services/group_service.py` | Added `__slots__` to dataclass for memory efficiency | Performance |
-| `apps/bot/utils/postgres_logging.py` | Added missing type hints to all methods | FastAPI |
-| `tests/conftest.py` | Enhanced with comprehensive fixtures, markers, sample data | Testing |
+| Issue | Action | Status |
+|-------|--------|--------|
+| `.env.backup` with real tokens | Removed from git tracking | ✅ Fixed |
+| `docs/local/` (internal docs) | Removed from git tracking | ✅ Fixed |
+| `.gitignore` patterns | Added comprehensive patterns | ✅ Fixed |
+
+#### 2. Professional Environment Files
+
+All `.env.example` files rewritten with:
+- ASCII art headers
+- Clear section separators
+- Descriptive comments for each variable
+- Example values showing format
+- Links to credential sources
+
+| File | Status |
+|------|--------|
+| `.env.example` (root) | ✅ Professional documentation file |
+| `apps/web/.env.example` | ✅ Comprehensive with sections |
+| `apps/api/.env.example` | ✅ Comprehensive with sections |
+| `apps/bot/.env.example` | ✅ Comprehensive with sections |
+
+#### 3. Modular Requirements Structure
+
+Restructured Python dependencies to eliminate duplicates:
+
+```
+requirements/                 ← NEW DIRECTORY
+├── README.md                 # Documentation
+├── base.txt                  # Shared deps (14 packages)
+├── api.txt                   # API-specific (8 packages)
+├── bot.txt                   # Bot-specific (1 package)
+├── dev.txt                   # Dev tools (9 packages)
+├── prod-api.txt              # Production API (base + api)
+└── prod-bot.txt              # Production Bot (base + bot)
+```
+
+**Benefits:**
+- DRY: Shared dependencies defined once
+- Minimal Production Images: Only required packages installed
+- Fast Docker Builds: Smaller images
+- Clear Separation: Dev vs Prod clearly separated
+
+#### 4. Storage Directory Structure
+
+Organized runtime files with `.gitkeep` preservation:
+
+```
+storage/
+├── README.md                 # Documentation
+├── cache/.gitkeep            # Redis fallback cache
+├── data/.gitkeep             # SQLite databases
+├── logs/.gitkeep             # Application logs
+└── uploads/.gitkeep          # User uploads
+```
+
+#### 5. Code Quality Fixes
+
+| Fix | Status |
+|-----|--------|
+| Ruff linting | ✅ All checks passed |
+| `.agent/` excluded from Ruff | ✅ Configured |
+| `scripts/` excluded from Ruff | ✅ Configured |
+| TypeScript compilation | ✅ No errors |
+| Missing `pytest-mock` dependency | ✅ Added |
+
+#### 6. Useless Files Removed
+
+| File | Reason | Action |
+|------|--------|--------|
+| `apps/api/test_db.py` | Debug script | Removed from git |
+| `apps/api/test_db_connect.py` | Debug script | Removed from git |
+| `apps/api/test_settings.py` | Debug script | Removed from git |
+| `apps/api/init_db.py` | Utility script (use alembic) | Removed from git |
+| `apps/api/nezuko.db` | Orphaned database | Deleted locally |
 
 ---
 
-## ✅ Previous Phase (2026-01-28)
-
-- [x] **Unified Database Architecture**:
-  - Consolidated all domains (API, Bot) into a single production-grade SQLite database at `storage/data/nezuko.db`.
-  - Updated connection strings across all `.env` files.
-- [x] **Dialect-Agnostic Migrations**:
-  - Fixed Alembic migrations to support SQLite by replacing Postgres-specific types (`UUID`, `INET`, `JSONB`) with standard SQLAlchemy types (`String(36)`, `String(45)`, `JSON`).
-  - Corrected `sa.text("now()")` to `sa.func.now()` for cross-database compatibility.
-  - Added `supabase_uid` to `admin_users` table for seamless auth syncing.
-- [x] **Dashboard UI/UX Polish**:
-  - Refactored `globals.css` to use theme-aware semantic tokens, fixing text visibility issues in light mode.
-  - Corrected data unwrapping logic in `dashboardApi` client to properly display stats and activity.
-  - Verified CORS settings between frontend (3000) and backend (8080/8081).
-- [x] **End-to-End Verification**:
-  - Verified full login flow (Mock and Supabase).
-  - Verified Bot Core startup and handler registration.
-  - Verified database browser functionality with real data.
-
-### Phase 22: Script Logging System ✅
-
-- [x] Created `scripts/logs/` directory structure
-- [x] Created `.gitignore` for log files (*.log ignored)
-- [x] Created `README.md` documenting log format and usage
-- [x] Added logging functions to `scripts/core/utils.ps1`:
-  - `Initialize-LogSystem` - Creates log directory and file
-  - `Write-Log` - Writes timestamped log entries (APPEND mode)
-  - `Write-LogSection` - Writes section headers
-  - `Write-CommandLog` - Logs command execution
-  - `Get-LogPath` - Returns current log file path
-- [x] Updated `scripts/setup/install.ps1` with verbose logging
-- [x] Updated `scripts/utils/clean.ps1` with cleanup logging
-- [x] Updated `scripts/dev/start.ps1` with service startup logging
-- [x] Updated `scripts/dev/stop.ps1` with process termination logging
-- [x] Fixed ErrorRecord type issue (cast to `[string]` before `.Trim()`)
-- [x] Updated `scripts/README.md` with logging documentation
-- [x] Created `nezuko.bat` unified CLI entry point
-
-### Logging System Features
-
-| Feature | Implementation |
-|---------|----------------|
-| **Daily Rotation** | `nezuko-YYYY-MM-DD.log` |
-| **Append-Only** | Uses `Out-File -Append` |
-| **Never Deleted** | Logs preserved indefinitely |
-| **Categories** | INSTALL, CLEAN, DEV, TEST, PYTHON, NODE, SYSTEM |
-| **Levels** | INFO, SUCCESS, WARN, ERROR, DEBUG |
-
-### Log Format
+## 📁 Project Structure (Updated)
 
 ```
-[2026-01-28 17:49:26] [INFO] [PYTHON] COMMAND: pip install -r requirements.txt
-[2026-01-28 17:49:26] [SUCCESS] [PYTHON] Installed from requirements.txt
-[2026-01-28 17:49:26] [INFO] [NODE] COMMAND: bun install
-```
-
----
-
-## 📁 Updated Scripts Structure
-
-```
-scripts/
-├── README.md              # Updated with logging docs
-├── nezuko.bat             # CLI entry point (calls menu.ps1)
-├── core/                  # 🔧 Core utilities
-│   ├── menu.ps1           # Interactive menu
-│   └── utils.ps1          # Shared functions + LOGGING
-├── dev/                   # 🚀 Development
-│   ├── start.ps1          # Start services (with logging)
-│   └── stop.ps1           # Stop services (with logging)
-├── setup/                 # 📦 Setup
-│   └── install.ps1        # Install deps (verbose + logging)
-├── utils/                 # 🧹 Utilities
-│   └── clean.ps1          # Clean artifacts (with logging)
-├── db/                    # 🗄️ Database
-├── deploy/                # 🚢 Deployment
-└── logs/                  # 📋 LOG FILES (NEW)
-    ├── .gitignore         # Ignores *.log
-    ├── README.md          # Log documentation
-    └── nezuko-*.log       # Daily log files
+nezuko-monorepo/
+├── apps/
+│   ├── api/                   # FastAPI REST Backend
+│   ├── bot/                   # Telegram Bot (PTB v22)
+│   └── web/                   # Next.js 16 Admin Dashboard
+├── packages/                  # Shared TypeScript packages
+├── requirements/              # ← NEW: Modular Python deps
+│   ├── base.txt               # Shared dependencies
+│   ├── api.txt                # API-specific
+│   ├── bot.txt                # Bot-specific
+│   ├── dev.txt                # Development tools
+│   ├── prod-api.txt           # Production API
+│   └── prod-bot.txt           # Production Bot
+├── storage/                   # ← ORGANIZED: Runtime files
+│   ├── cache/                 # Cache files
+│   ├── data/                  # SQLite databases
+│   ├── logs/                  # Log files
+│   └── uploads/               # User uploads
+├── config/docker/             # Docker configuration
+├── scripts/                   # Utility scripts
+├── docs/                      # Documentation
+├── tests/                     # Test suites
+└── memory-bank/               # Project context
 ```
 
 ---
 
 ## 🚀 Quick Start Commands
 
-> **Note**: `nezuko.bat` CLI is for humans. AI agents use direct commands.
+### Development
+```bash
+# Install all dependencies
+pip install -r requirements.txt
 
-| Action | Human | AI Agent |
-|--------|-------|----------|
-| **Start services** | `.\nezuko.bat` → [1] | `.\scripts\dev\start.ps1` |
-| **Stop services** | `.\nezuko.bat` → [2] | `.\scripts\dev\stop.ps1` |
-| **Setup** | `.\nezuko.bat` → [4] | `.\scripts\setup\install.ps1` |
-| **View logs** | — | `Get-Content scripts/logs/nezuko-*.log -Tail 50` |
+# Run services
+./nezuko.bat  # Interactive menu
+```
+
+### Production Docker
+```bash
+# API container
+pip install -r requirements/prod-api.txt
+
+# Bot container
+pip install -r requirements/prod-bot.txt
+```
 
 ---
 
-## ✅ Previous Phases Summary
+## ✅ Previous Phase Summary
 
 | Phase | Description | Date |
 |-------|-------------|------|
+| Phase 24 | Code Quality Improvements (Skills Audit) | 2026-01-30 |
 | Phase 23 | SQLite Migration & Dashboard Fixes | 2026-01-28 |
 | Phase 22 | Script Logging System | 2026-01-28 |
 | Phase 21 | Developer Experience Improvements | 2026-01-28 |
-| Phase 20 | Documentation Refinement | 2026-01-28 |
-| Phase 19 | Production-Grade Folder Structure | 2026-01-27 |
-| Phase 18 | TanStack Query v5 Best Practices Audit | 2026-01-27 |
-| Phase 17 | Next.js 16 Deep Compliance Audit | 2026-01-27 |
-| Phase 16 | React Optimization (Vercel Best Practices) | 2026-01-27 |
-| Phase 15 | Comprehensive Testing | 2026-01-26 |
-| Phase 14 | Supabase One-Stack Migration | 2026-01-26 |
 
 ---
 
@@ -148,4 +163,4 @@ scripts/
 
 ---
 
-*Last Updated: 2026-01-28 17:51 IST*
+*Last Updated: 2026-01-30 20:30 IST*

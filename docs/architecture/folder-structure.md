@@ -12,11 +12,15 @@ This document provides a detailed breakdown of the Nezuko monorepo structure, ex
 2. [Root Directory](#root-directory)
 3. [Apps Directory](#apps-directory)
 4. [Packages Directory](#packages-directory)
-5. [Configuration Files](#configuration-files)
-6. [Scripts](#scripts)
-7. [Documentation](#documentation)
+5. [Requirements Directory](#requirements-directory)
+6. [Tests Directory](#tests-directory)
+7. [Configuration Files](#configuration-files)
+8. [Scripts](#scripts)
+9. [Storage](#storage-runtime)
+10. [Documentation](#documentation)
 
 ---
+
 
 ## Overview
 
@@ -25,15 +29,18 @@ Nezuko uses a **Turborepo monorepo** structure with the following key directorie
 ```
 nezuko-monorepo/
 ├── apps/                  # All runnable applications
-├── packages/              # Shared packages
+├── packages/              # Shared TypeScript packages
+├── requirements/          # Modular Python dependencies
 ├── config/                # Infrastructure configuration
 ├── scripts/               # Utility scripts
 ├── storage/               # Runtime files (GITIGNORED)
 ├── docs/                  # Documentation
-└── tests/                 # Test suites
+├── tests/                 # Test suites
+
 ```
 
 ---
+
 
 ## Root Directory
 
@@ -318,6 +325,93 @@ packages/
 
 ---
 
+## Requirements Directory
+
+### Modular Python Dependencies (`requirements/`)
+
+```
+requirements/
+├── README.md              # Documentation and usage guide
+├── base.txt               # Shared dependencies (SQLAlchemy, Redis, Pydantic)
+├── api.txt                # API-specific (FastAPI, Uvicorn, Slowapi)
+├── bot.txt                # Bot-specific (python-telegram-bot)
+├── dev.txt                # Development tools (pytest, ruff, mypy)
+├── prod-api.txt           # Production API (base + api)
+└── prod-bot.txt           # Production Bot (base + bot)
+```
+
+### Usage
+
+| Scenario | Command |
+|----------|---------|
+| Development (full) | `pip install -r requirements.txt` |
+| Production API | `pip install -r requirements/prod-api.txt` |
+| Production Bot | `pip install -r requirements/prod-bot.txt` |
+| CI/CD Testing | `pip install -r requirements.txt` |
+
+### Benefits
+
+- **DRY**: Shared dependencies defined once in `base.txt`
+- **Minimal Production**: Only required packages installed
+- **Fast Docker Builds**: Smaller images, faster builds
+- **Clear Separation**: Dev tools never in production
+
+---
+
+## Tests Directory
+
+### Centralized Test Structure (`tests/`)
+
+All tests are organized in a centralized `tests/` directory at the project root:
+
+```
+tests/
+├── conftest.py            # Shared fixtures (database, sample data)
+├── __init__.py
+│
+├── api/                   # API tests
+│   ├── conftest.py        # API-specific fixtures (client, session)
+│   ├── __init__.py
+│   ├── test_auth_api.py   # Auth endpoint tests
+│   ├── test_database.py   # Database tests
+│   ├── test_edge_cases.py # Edge case tests
+│   ├── test_performance.py# Performance tests
+│   ├── utils.py           # Test utilities
+│   ├── unit/
+│   │   └── test_security.py
+│   └── integration/
+│       └── test_auth.py
+│
+└── bot/                   # Bot tests
+    ├── conftest.py        # Bot-specific fixtures
+    ├── __init__.py
+    ├── test_config.py     # Config tests
+    ├── test_handlers.py   # Handler tests
+    ├── test_services.py   # Service tests
+    ├── unit/
+    │   └── test_verification_logger.py
+    └── integration/
+        └── test_analytics.py
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run API tests only
+pytest tests/api/
+
+# Run Bot tests only
+pytest tests/bot/
+
+# Run with coverage
+pytest --cov=apps --cov-report=html
+```
+
+---
+
 ## Configuration Files
 
 ### Infrastructure (`config/`)
@@ -399,23 +493,36 @@ docs/
 
 ## Storage (Runtime)
 
-### Gitignored Runtime Files (`storage/`)
+### Runtime Files (`storage/`)
+
+The `storage/` directory contains all runtime files. Contents are gitignored except for `.gitkeep` files which preserve the directory structure.
 
 ```
-storage/                      # ⚠️ GITIGNORED
-├── logs/                     # Application logs
-│   ├── bot.log
-│   ├── api.log
-│   └── access.log
-│
-├── data/                     # Local databases
-│   └── nezuko.db             # SQLite (dev only)
-│
-└── uploads/                  # User uploads
-    └── ...
+storage/
+├── README.md              # Documentation (tracked)
+├── cache/                 # Redis fallback cache
+│   └── .gitkeep          # Preserves directory
+├── data/                  # SQLite databases
+│   ├── .gitkeep          # Preserves directory
+│   └── nezuko.db         # Main database (gitignored)
+├── logs/                  # Application logs
+│   ├── .gitkeep          # Preserves directory
+│   └── bot.log           # Bot logs (gitignored)
+└── uploads/               # User-uploaded files
+    └── .gitkeep          # Preserves directory
+```
+
+### Database Location
+
+Both API and Bot use the same SQLite database for local development:
+
+```bash
+# In apps/api/.env and apps/bot/.env
+DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
 ```
 
 ---
+
 
 ## Key Principles
 

@@ -109,15 +109,20 @@ yarn.lock
 
 # Admin Panel Specific
 apps/web/.env.local
+apps/web/.env
 apps/api/.env.local
+apps/api/.env
+apps/bot/.env
 apps/api/alembic/versions/*.pyc
 
 # TypeScript
 *.tsbuildinfo
 .tsbuildinfo
 
-# Storage folder (runtime files)
-/storage/
+# Storage folder (runtime files - but preserve structure with .gitkeep)
+/storage/**/*
+!/storage/**/.gitkeep
+!/storage/README.md
 
 # local Docs
 docs/local/

@@ -1,16 +1,10 @@
-# ============================================================
-# Nezuko v1.0.0 - Bot Dependencies
-# ============================================================
-python-telegram-bot[rate-limiter]>=22.6
-python-dotenv>=1.2.1
-supabase>=2.27.2
-pyjwt>=2.10.1
-sqlalchemy[asyncio]>=2.0.46
-asyncpg>=0.31.0
-alembic>=1.18.1
-aiosqlite>=0.22.1
-redis[asyncio]>=7.1.0
-aiohttp>=3.13.3
-prometheus-client>=0.24.1
-sentry-sdk>=2.50.0
-structlog>=25.5.0
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                    NEZUKO BOT - REQUIREMENTS                                  ║
+# ║                                                                               ║
+# ║  ⚠️  DEPRECATED: Use requirements/prod-bot.txt instead                       ║
+# ║                                                                               ║
+# ║  This file is kept for backward compatibility with existing scripts.         ║
+# ║  It simply references the new modular requirements structure.                ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+-r ../../requirements/prod-bot.txt

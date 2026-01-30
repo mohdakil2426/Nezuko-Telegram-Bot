@@ -239,9 +239,37 @@ python -m apps.bot.main    # ✅ Correct
 ### First-Time Setup
 
 ```bash
-.\nezuko.bat  # Then select option 4
+./nezuko.bat  # Then select option 4
 # Or directly:
-.\scripts\setup\install.ps1
+./scripts/setup/install.ps1
+```
+
+### Python Dependencies Structure
+
+```
+requirements/
+├── base.txt       # Shared dependencies (SQLAlchemy, Redis, Pydantic)
+├── api.txt        # API-specific (FastAPI, Uvicorn)
+├── bot.txt        # Bot-specific (python-telegram-bot)
+├── dev.txt        # Development tools (pytest, ruff, mypy)
+├── prod-api.txt   # Production API (base + api)
+└── prod-bot.txt   # Production Bot (base + bot)
+```
+
+| Command | Purpose |
+|---------|---------|
+| `pip install -r requirements.txt` | Development (all deps) |
+| `pip install -r requirements/prod-api.txt` | Production API |
+| `pip install -r requirements/prod-bot.txt` | Production Bot |
+
+### Storage Directory
+
+```
+storage/
+├── cache/         # Redis fallback cache
+├── data/          # SQLite databases (nezuko.db)
+├── logs/          # Application logs (bot.log)
+└── uploads/       # User-uploaded files
 ```
 
 ### Environment Variables
@@ -252,7 +280,7 @@ SUPABASE_URL=https://<project>.supabase.co
 SUPABASE_ANON_KEY=<public-anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<private-service-key>
 SUPABASE_JWT_SECRET=<jwt-secret>
-DATABASE_URL=sqlite+aiosqlite:///./nezuko.db  # Local dev
+DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db  # Local dev
 MOCK_AUTH=true  # Enable mock auth for local dev
 
 # apps/web/.env.local
@@ -260,6 +288,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<public-anon-key>
 NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 ```
+
 
 ---
 

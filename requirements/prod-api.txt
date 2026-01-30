@@ -1,10 +1,12 @@
 # ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                    NEZUKO API - REQUIREMENTS                                  ║
+# ║                    NEZUKO API - PRODUCTION DEPENDENCIES                       ║
 # ║                                                                               ║
-# ║  ⚠️  DEPRECATED: Use requirements/prod-api.txt instead                       ║
-# ║                                                                               ║
-# ║  This file is kept for backward compatibility with existing scripts.         ║
-# ║  It simply references the new modular requirements structure.                ║
+# ║  Use this file for production Docker builds                                   ║
+# ║  Command: pip install --no-cache-dir -r requirements/prod-api.txt             ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 
--r ../../requirements/prod-api.txt
+# Shared dependencies
+-r base.txt
+
+# API-specific dependencies
+-r api.txt

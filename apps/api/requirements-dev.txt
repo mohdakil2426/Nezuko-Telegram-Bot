@@ -1,9 +1,10 @@
-# Development Dependencies
-pytest>=8.3.4
-pytest-asyncio>=0.25.2
-pytest-cov>=6.0.0
-pytest-mock>=3.14.0
-ruff>=0.9.3
-mypy>=1.14.0
-pylint>=3.3.4
-httpx>=0.28.1  # For testing API endpoints
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                    NEZUKO API - DEVELOPMENT REQUIREMENTS                      ║
+# ║                                                                               ║
+# ║  ⚠️  DEPRECATED: Use requirements/dev.txt instead                            ║
+# ║                                                                               ║
+# ║  This file is kept for backward compatibility with existing scripts.         ║
+# ║  It simply references the new modular requirements structure.                ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+-r ../../requirements/dev.txt

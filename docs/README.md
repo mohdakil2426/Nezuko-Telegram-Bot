@@ -59,6 +59,56 @@ docs/
 
 ---
 
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 20+ with Bun
+- Python 3.13+
+- Git
+
+### Installation
+
+```bash
+# Clone repository
+git clone https://github.com/mohdakil2426/Nezuko-Telegram-Bot.git
+cd Nezuko-Telegram-Bot
+
+# Install dependencies (use the unified CLI)
+./nezuko.bat  # Select option 4
+
+# Or install directly
+pip install -r requirements.txt
+bun install
+```
+
+### Run Development Servers
+
+```bash
+# Option 1: Interactive menu
+./nezuko.bat
+
+# Option 2: Direct commands
+./scripts/dev/start.ps1    # Start all services
+./scripts/dev/stop.ps1     # Stop all services
+```
+
+---
+
+## 📂 Key Directories
+
+| Directory | Purpose |
+|-----------|---------|
+| `apps/api/` | FastAPI REST backend |
+| `apps/bot/` | Telegram bot application |
+| `apps/web/` | Next.js admin dashboard |
+| `requirements/` | Modular Python dependencies |
+| `storage/` | Runtime files (databases, logs, cache) |
+| `scripts/` | CLI utilities and automation |
+| `memory-bank/` | Project context for AI agents |
+
+---
+
 ## 🔗 Quick Links
 
 - **[GitHub Repository](https://github.com/mohdakil2426/Nezuko-Telegram-Bot)**
@@ -79,4 +129,4 @@ docs/
 
 ---
 
-*Last Updated: 2026-01-28*
+*Last Updated: 2026-01-30*
