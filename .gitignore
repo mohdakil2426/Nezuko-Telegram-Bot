@@ -132,3 +132,5 @@ apps/*/test_*.py
 apps/*/init_db.py
 apps/*/*.db
 
+# next-agents-md
+.next-docs/

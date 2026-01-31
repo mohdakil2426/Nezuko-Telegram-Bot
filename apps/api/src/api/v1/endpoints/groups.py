@@ -25,7 +25,7 @@ router = APIRouter()
 
 
 @router.get("", response_model=GroupListResponse)
-async def list_groups(  # noqa: PLR0913
+async def list_groups(
     *,
     page: int = Query(1, ge=1),
     per_page: int = Query(25, ge=1, le=100),
@@ -99,17 +99,16 @@ async def get_group_details(
     if not group:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
 
-    linked_channels = []
-    for link in group.channel_links:
-        if link.channel:
-            linked_channels.append(
-                GroupChannelLinkSchema(
-                    channel_id=link.channel.channel_id,
-                    title=link.channel.title,
-                    username=link.channel.username,
-                    is_required=True,
-                ),
-            )
+    linked_channels = [
+        GroupChannelLinkSchema(
+            channel_id=link.channel.channel_id,
+            title=link.channel.title,
+            username=link.channel.username,
+            is_required=True,
+        )
+        for link in group.channel_links
+        if link.channel
+    ]
 
     response = GroupDetailResponse(
         group_id=group.group_id,
@@ -143,17 +142,16 @@ async def update_group(
 
     updated_group = await group_service.update_group(session, group, data)
 
-    linked_channels = []
-    for link in updated_group.channel_links:
-        if link.channel:
-            linked_channels.append(
-                GroupChannelLinkSchema(
-                    channel_id=link.channel.channel_id,
-                    title=link.channel.title,
-                    username=link.channel.username,
-                    is_required=True,
-                ),
-            )
+    linked_channels = [
+        GroupChannelLinkSchema(
+            channel_id=link.channel.channel_id,
+            title=link.channel.title,
+            username=link.channel.username,
+            is_required=True,
+        )
+        for link in updated_group.channel_links
+        if link.channel
+    ]
 
     response = GroupDetailResponse(
         group_id=updated_group.group_id,

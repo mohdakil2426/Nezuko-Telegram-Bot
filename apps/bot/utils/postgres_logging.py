@@ -118,7 +118,9 @@ class PostgresLogHandler(logging.Handler):
         """Synchronous close - schedules async cleanup if possible."""
         try:
             loop = asyncio.get_running_loop()
-            loop.create_task(self.close_async())
+            task = loop.create_task(self.close_async())
+            self._pending_tasks.add(task)
+            task.add_done_callback(self._task_done_callback)
         except RuntimeError:
             # No running loop, just disable
             pass

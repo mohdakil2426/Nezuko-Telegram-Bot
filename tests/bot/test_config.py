@@ -16,7 +16,7 @@ import os
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
 # pylint: disable=wrong-import-position, import-outside-toplevel, unused-import, wrong-import-order
-from apps.bot.config import config  # noqa: E402
+from apps.bot.config import config
 from apps.bot.core.database import get_session, init_db
 from apps.bot.database.crud import (
     create_owner,

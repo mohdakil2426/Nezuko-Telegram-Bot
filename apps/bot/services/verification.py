@@ -36,6 +36,9 @@ logger = logging.getLogger(__name__)
 _cache_hits = 0  # pylint: disable=invalid-name
 _cache_misses = 0  # pylint: disable=invalid-name
 
+# Hold references to background tasks to prevent garbage collection
+_background_tasks: set[asyncio.Task[None]] = set()
+
 
 async def check_membership(
     user_id: int,
@@ -194,7 +197,7 @@ async def _log_result(
 
     if group_id is not None:
         latency_ms = int((time.perf_counter() - wall_start) * 1000)
-        asyncio.create_task(
+        task = asyncio.create_task(
             log_verification(
                 user_id=user_id,
                 group_id=group_id,
@@ -204,6 +207,8 @@ async def _log_result(
                 cached=cached,
             )
         )
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
 
 
 async def check_multi_membership(

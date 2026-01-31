@@ -1,8 +1,8 @@
 # ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                    NEZUKO - SHARED DEPENDENCIES                               ║
-# ║                                                                               ║
-# ║  Core packages used by both API and Bot applications                          ║
-# ║  Last Updated: January 30, 2026                                               ║
+# ║                    NEZUKO - SHARED DEPENDENCIES                              ║
+# ║                                                                              ║
+# ║  Core packages used by both API and Bot applications                         ║
+# ║  Last Updated: January 30, 2026                                              ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 
 # ─────────────────────────────────────────────────────────────────────────────────
@@ -11,7 +11,7 @@
 sqlalchemy[asyncio]>=2.0.46
 asyncpg>=0.31.0                    # PostgreSQL async driver
 aiosqlite>=0.22.1                  # SQLite async driver (development)
-alembic>=1.18.1                    # Database migrations
+alembic>=1.18.3                    # Database migrations
 
 # ─────────────────────────────────────────────────────────────────────────────────
 # Cache & Storage
@@ -22,7 +22,7 @@ redis>=7.1.0                       # Redis cache client
 # Authentication
 # ─────────────────────────────────────────────────────────────────────────────────
 supabase>=2.27.2                   # Supabase client
-pyjwt>=2.10.1                      # JWT token handling
+pyjwt>=2.11.0                      # JWT token handling
 
 # ─────────────────────────────────────────────────────────────────────────────────
 # HTTP & Async
@@ -45,4 +45,4 @@ prometheus-client>=0.24.1          # Prometheus metrics
 # ─────────────────────────────────────────────────────────────────────────────────
 # Error Tracking
 # ─────────────────────────────────────────────────────────────────────────────────
-sentry-sdk>=2.50.0                 # Error tracking (base, extras added per-app)
+sentry-sdk>=2.51.0                 # Error tracking (base, extras added per-app)

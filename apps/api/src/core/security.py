@@ -47,4 +47,4 @@ def verify_jwt(token: str) -> dict[str, Any]:
             "role": payload.get("role"),
         }
     except jwt.PyJWTError as e:
-        raise ValueError(f"Invalid token: {str(e)}") from e
+        raise ValueError(f"Invalid token: {e!s}") from e

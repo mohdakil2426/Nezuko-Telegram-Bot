@@ -228,6 +228,10 @@ async def handle_websocket_logs(websocket: WebSocket, user_id: str | None = None
         await connection_manager.disconnect(websocket)
 
 
+# Hold references to background tasks to prevent garbage collection
+_background_tasks: set[asyncio.Task[None]] = set()
+
+
 def emit_log(
     level: str,
     message: str,
@@ -245,7 +249,9 @@ def emit_log(
 
     try:
         asyncio.get_running_loop()
-        asyncio.create_task(connection_manager.queue_log(log_msg))
+        task = asyncio.create_task(connection_manager.queue_log(log_msg))
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
     except RuntimeError:
         # No event loop running - skip WebSocket broadcast
         pass

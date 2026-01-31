@@ -98,15 +98,14 @@ async def get_channel(session: AsyncSession, channel_id: int) -> dict[str, Any] 
         return None
 
     # Format linked groups
-    linked_groups = []
-    for link in channel.group_links:
-        if link.group:
-            linked_groups.append(
-                {
-                    "group_id": link.group.group_id,
-                    "title": link.group.title,
-                },
-            )
+    linked_groups = [
+        {
+            "group_id": link.group.group_id,
+            "title": link.group.title,
+        }
+        for link in channel.group_links
+        if link.group
+    ]
 
     return {
         "channel_id": channel.channel_id,

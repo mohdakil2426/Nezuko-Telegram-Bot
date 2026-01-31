@@ -1,6 +1,6 @@
 # Project Progress: Nezuko - Roadmap to v1.0.0
 
-## 🛠️ Current Status: Phase 25 - GitHub Push Readiness ✅
+## 🛠️ Current Status: Phase 26 - Linting & Dependencies ✅
 
 **Overall Implementation Status**: **100%** 🚀
 
@@ -27,7 +27,58 @@
 | **Phase 22** | Script Logging System | ✅ Complete |
 | **Phase 23** | SQLite Migration & Dashboard Fixes | ✅ Complete |
 | **Phase 24** | Code Quality Improvements (Skills Audit) | ✅ Complete |
-| **Phase 25** | GitHub Push Readiness & Cleanup | ✅ **COMPLETE** |
+| **Phase 25** | GitHub Push Readiness & Cleanup | ✅ Complete |
+| **Phase 26** | Linting Fixes & Dependencies Update | ✅ **COMPLETE** |
+
+---
+
+## ✅ Phase 26: Linting Fixes & Dependencies Update (2026-01-31)
+
+### Overview
+
+Comprehensive linting audit with strict Ruff rules (RUF, PERF, ASYNC) and dependency updates to latest stable versions.
+
+### Key Achievements
+
+| Category | Achievement |
+|----------|-------------|
+| **Ruff Rules** | Enabled RUF, PERF, ASYNC rules - all passing |
+| **RUF006 Fixes** | Background task references stored to prevent GC |
+| **PERF401 Fixes** | Converted loop+append to list comprehensions |
+| **Dependencies** | Updated all dev/base packages to latest stable |
+| **OpenSpec** | Archived `refactor-folder-structure` change |
+
+### Linting Results
+
+| Tool | Status |
+|------|--------|
+| Ruff | ✅ All checks passed |
+| Pylint | ✅ 10.00/10 |
+| Pyrefly | ✅ 0 errors |
+
+### Dependencies Updated
+
+| Package | Version |
+|---------|---------|
+| pytest | 9.0.2 |
+| pytest-asyncio | 1.3.0 |
+| pytest-cov | 7.0.0 |
+| pytest-mock | 3.15.1 |
+| ruff | 0.14.14 |
+| pylint | 4.0.4 |
+| pyrefly | 0.50.1 |
+| mypy | 1.19.1 |
+| alembic | 1.18.3 |
+| pyjwt | 2.11.0 |
+| sentry-sdk | 2.51.0 |
+
+### Files Modified
+
+- `pyproject.toml` - Added RUF, PERF, ASYNC rules
+- `requirements/base.txt` - Updated versions
+- `requirements/api.txt` - Removed starlette (FastAPI manages)
+- `requirements/dev.txt` - All packages to latest
+- 8 Python files for RUF006/PERF401 fixes
 
 ---
 

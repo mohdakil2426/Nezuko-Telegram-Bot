@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 # Default auto-delete delay in seconds
 DEFAULT_DELETE_DELAY = 60
 
+# Hold references to background tasks to prevent garbage collection
+_background_tasks: set[asyncio.Task[None]] = set()
+
 
 def is_group_chat(chat: Chat | None) -> bool:
     """Check if the chat is a group or supergroup."""
@@ -69,7 +72,9 @@ async def schedule_delete(
                 logger.debug("Could not delete command %s: %s", command_message.message_id, e)
 
     # Schedule the deletion in the background (don't await)
-    asyncio.create_task(_delete_after_delay())
+    task = asyncio.create_task(_delete_after_delay())
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
 
 
 async def reply_and_delete(

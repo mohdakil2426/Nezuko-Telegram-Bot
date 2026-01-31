@@ -90,7 +90,7 @@ const { data, isPending } = useQuery({
 | SQLAlchemy | 2.0+ | Async ORM |
 | AsyncPG | 0.31+ | PostgreSQL async driver |
 | AIOSQLite | 0.22+ | SQLite async driver (dev) |
-| Alembic | 1.18+ | Database migrations |
+| Alembic | 1.18.3+ | Database migrations |
 | Redis | 7.1+ | Caching and pub/sub |
 
 ### Key Patterns (SQLAlchemy 2.0)
@@ -306,9 +306,10 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 
 | Tool | Purpose |
 |------|---------|
-| Ruff | Fast linter and formatter |
-| Pylint | Static code analysis (target: 10.00/10) |
-| Pyrefly | Type checking (target: 0 errors) |
+| Ruff 0.14.14+ | Fast linter and formatter (RUF, PERF, ASYNC rules) |
+| Pylint 4.0.4+ | Static code analysis (target: 10.00/10) |
+| Pyrefly 0.50.1+ | Type checking (target: 0 errors) |
+| Pytest 9.0.2+ | Testing framework |
 
 ### TypeScript
 
@@ -332,4 +333,4 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 
 ---
 
-*Last Updated: 2026-01-28*
+*Last Updated: 2026-01-31*

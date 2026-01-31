@@ -1,8 +1,8 @@
 # Pyrefly Configuration for Nezuko - The Ultimate All-In-One Bot
 
 # Source Code Inclusion
-# Explicitly targeting the main bot logic and entry point
-project-includes = ["bot", "main.py", "apps"]
+# Target the monorepo apps structure
+project-includes = ["apps/bot", "apps/api/src"]
 
 # Exclusion Patterns
 # Excluding tests, virtual environments, and cache to improve performance and focus on production code
@@ -22,7 +22,7 @@ python-version = "3.13"
 python-platform = "windows"
 
 # Search Path
-search-path = [".", "apps/api", "bot", ".venv/Lib/site-packages"]
+search-path = [".", "apps/api", "apps/bot", ".venv/Lib/site-packages"]
 
 
 # Type Checking Strictness

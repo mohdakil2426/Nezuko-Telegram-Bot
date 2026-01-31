@@ -23,9 +23,16 @@ Homepage = "https://github.com/mohdakil2426/Nezuko-Telegram-Bot"
 Repository = "https://github.com/mohdakil2426/Nezuko-Telegram-Bot.git"
 Issues = "https://github.com/mohdakil2426/Nezuko-Telegram-Bot/issues"
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUFF - Fast Python Linter & Formatter
+# Docs: https://docs.astral.sh/ruff/
+# ═══════════════════════════════════════════════════════════════════════════════
+
 [tool.ruff]
 target-version = "py313"
 line-length = 100
+# Include both bot and api source directories
+src = ["apps/bot", "apps/api/src"]
 exclude = [
     ".git",
     ".venv",
@@ -34,6 +41,8 @@ exclude = [
     "migrations",
     ".agent",
     "scripts",
+    "node_modules",
+    "apps/web",     # TypeScript frontend
 ]
 
 [tool.ruff.lint]
@@ -47,26 +56,96 @@ select = [
     "UP",     # pyupgrade
     "ARG",    # flake8-unused-arguments
     "SIM",    # flake8-simplify
+    "RUF",    # Ruff-specific rules
+    "PERF",   # Performance anti-patterns
+    "ASYNC",  # Async best practices
 ]
 ignore = [
     "E501",   # line too long (handled by formatter)
-    "B008",   # function call in default argument (FastAPI standard)
+    "B008",   # function call in default argument (FastAPI standard: Depends())
     "B904",   # raise without from inside except
-    "ANN",    # missing type annotations (gradual adoption)
-    "PLR2004",# magic values
     "ARG001", # unused arguments (often required by frameworks)
     "ARG002", # unused arguments
-    "DTZ",    # datetime timezone (gradual adoption)
-    "PLC0415",# import placement
-    "TRY003", # long exception messages
+    "RUF001", # ambiguous unicode (we use emoji intentionally in user messages)
+    "RUF012", # mutable class attributes (Pydantic models)
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["bot", "apps"]
+known-first-party = ["apps", "src"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "S105", "ARG001", "PLR2004", "F841", "TID252"]
-"apps/api/tests/*" = ["S101", "S105", "ARG001", "PLR2004", "PLC0415", "PT003", "F841"]
+"**/conftest.py" = ["F401", "F811"]  # Fixtures may appear unused
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PYLINT - Deep Code Analysis
+# Docs: https://pylint.readthedocs.io/
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[tool.pylint.main]
+py-version = "3.13"
+ignore-paths = [
+    "migrations",
+    "venv",
+    ".venv",
+    "__pycache__",
+    "node_modules",
+    "apps/web",
+    ".agent",
+]
+extension-pkg-allow-list = ["pydantic"]
+jobs = 0  # Auto-detect CPU cores for parallel processing
+load-plugins = []
+
+[tool.pylint.messages_control]
+disable = [
+    # Documentation (handled separately)
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    # Naming (project conventions)
+    "invalid-name",
+    # Design patterns
+    "too-few-public-methods",
+    "too-many-arguments",              # FastAPI endpoints have many dependencies
+    "too-many-positional-arguments",   # Same as above
+    "too-many-locals",                 # Complex analytics functions
+    "too-many-instance-attributes",    # Pydantic models
+    # False positives
+    "not-callable",                    # SQLAlchemy func.* false positives
+    "duplicate-code",                  # Bot/API share models (architectural)
+    "cyclic-import",                   # SQLAlchemy pattern (models <-> database)
+    # Framework patterns
+    "import-outside-toplevel",         # Lazy imports for performance/circular deps
+    "unused-argument",                 # Framework callbacks often have unused args
+    "redefined-outer-name",            # pytest fixtures redefine names
+    # Code quality
+    "fixme",                           # Allow TODO comments
+    "line-too-long",                   # Handled by ruff formatter
+    "broad-exception-caught",          # Sometimes needed for resilience
+]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pylint.design]
+max-args = 10
+max-locals = 20
+max-returns = 8
+max-branches = 15
+max-statements = 60
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MYPY - Static Type Checker (Alternative to Pyrefly)
+# Docs: https://mypy.readthedocs.io/
+# ═══════════════════════════════════════════════════════════════════════════════
 
 [tool.mypy]
 python_version = "3.13"
@@ -77,7 +156,13 @@ exclude = [
     "venv",
     "migrations",
     "tests",
+    "node_modules",
 ]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PYTEST - Testing Framework
+# Docs: https://docs.pytest.org/
+# ═══════════════════════════════════════════════════════════════════════════════
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -85,12 +170,22 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# COVERAGE - Code Coverage
+# Docs: https://coverage.readthedocs.io/
+# ═══════════════════════════════════════════════════════════════════════════════
 
 [tool.coverage.run]
-source = ["bot"]
+source = ["apps/bot", "apps/api/src"]
 omit = [
-    "bot/database/migrations/*",
-    "bot/__pycache__/*",
+    "**/migrations/*",
+    "**/__pycache__/*",
+    "**/tests/*",
 ]
 
 [tool.coverage.report]
@@ -99,33 +194,5 @@ exclude_lines = [
     "def __repr__",
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
 ]
-
-[tool.pylint.main]
-py-version = "3.13"
-ignore-paths = ["migrations", "venv", ".venv", "__pycache__"]
-extension-pkg-allow-list = ["pydantic"]
-
-[tool.pylint.messages_control]
-disable = [
-    "missing-module-docstring",
-    "missing-class-docstring",
-    "missing-function-docstring",
-    "invalid-name",
-    "too-few-public-methods",
-    "fixme",
-    "line-too-long",           # Handled by ruff
-    "not-callable",            # False positive with SQLAlchemy func.*
-    "duplicate-code",          # Bot and API share model definitions (architectural)
-    "cyclic-import",           # Common SQLAlchemy pattern (models <-> database)
-    "too-many-locals",         # Complex analytics functions require many variables
-    "too-many-positional-arguments",  # Some functions need many args
-    "too-many-arguments",      # FastAPI endpoints often have many dependencies
-    "import-outside-toplevel", # Lazy imports for performance/circular deps
-    "unused-argument",         # Framework callbacks often have unused args
-    "redefined-outer-name",    # Common in factory functions and fixtures
-]
-
-[tool.pylint.format]
-max-line-length = 100
-

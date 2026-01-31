@@ -38,12 +38,12 @@ class AuditLogFilters:
 
 @router.get("", response_model=AuditLogListResponse)
 async def get_audit_logs(
-    filters: AuditLogFilters = Depends(),  # noqa: B008
+    filters: AuditLogFilters = Depends(),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     output_format: str | None = Query(None, description="Response format: json or csv"),
-    session: AsyncSession = Depends(get_session),  # noqa: B008
-    current_user: AdminUser = Depends(require_permission(Permission.VIEW_AUDIT_LOG)),  # noqa: B008
+    session: AsyncSession = Depends(get_session),
+    current_user: AdminUser = Depends(require_permission(Permission.VIEW_AUDIT_LOG)),
 ) -> AuditLogListResponse | StreamingResponse:
     """
     Get audit logs with filtering.

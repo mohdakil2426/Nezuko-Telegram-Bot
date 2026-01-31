@@ -49,11 +49,11 @@ class DatabaseService:
             for row in result:
                 table_name = row.name
                 # Get row count
-                count_query = text(f"SELECT COUNT(*) FROM {table_name}")  # noqa: S608
+                count_query = text(f"SELECT COUNT(*) FROM {table_name}")
                 count = (await session.execute(count_query)).scalar()
 
                 # Get columns
-                col_query = text(f"PRAGMA table_info({table_name})")  # noqa: S608
+                col_query = text(f"PRAGMA table_info({table_name})")
                 col_result = await session.execute(col_query)
                 columns = [r.name for r in col_result]
 
@@ -133,13 +133,13 @@ class DatabaseService:
         # 2. Get columns info
         columns = []
         if is_sqlite:
-            col_query = text(f"PRAGMA table_info({table_name})")  # noqa: S608
+            col_query = text(f"PRAGMA table_info({table_name})")
             col_result = await session.execute(col_query)
-            for r in col_result:
-                # SQLite PRAGMA returns: cid, name, type, notnull, dflt_value, pk
-                columns.append(
-                    ColumnInfo(name=r.name, type=str(r.type), nullable=not r.notnull),
-                )
+            # SQLite PRAGMA returns: cid, name, type, notnull, dflt_value, pk
+            columns = [
+                ColumnInfo(name=r.name, type=str(r.type), nullable=not r.notnull)
+                for r in col_result
+            ]
         else:
             col_query = text("""
                 SELECT column_name, data_type, is_nullable
@@ -148,21 +148,19 @@ class DatabaseService:
                 ORDER BY ordinal_position
             """)
             col_result = await session.execute(col_query, {"table_name": table_name})
-            for r in col_result:
-                columns.append(
-                    ColumnInfo(
-                        name=r.column_name, type=r.data_type, nullable=r.is_nullable == "YES"
-                    ),
-                )
+            columns = [
+                ColumnInfo(name=r.column_name, type=r.data_type, nullable=r.is_nullable == "YES")
+                for r in col_result
+            ]
 
         # 3. Get total count
         # Use safe string formatting for table name since we validated it
-        count_query = text(f"SELECT COUNT(*) FROM {table_name}")  # noqa: S608
+        count_query = text(f"SELECT COUNT(*) FROM {table_name}")
         total_rows = (await session.execute(count_query)).scalar() or 0
 
         # 4. Fetch data
         offset = (page - 1) * per_page
-        data_query = text(f"SELECT * FROM {table_name} LIMIT :limit OFFSET :offset")  # noqa: S608
+        data_query = text(f"SELECT * FROM {table_name} LIMIT :limit OFFSET :offset")
         data_result = await session.execute(data_query, {"limit": per_page, "offset": offset})
 
         rows = []
@@ -208,7 +206,7 @@ class DatabaseService:
         pk_column = "id"
 
         # Get the row
-        query = text(f"SELECT * FROM {table_name} WHERE {pk_column} = :row_id")  # noqa: S608
+        query = text(f"SELECT * FROM {table_name} WHERE {pk_column} = :row_id")
         result = await session.execute(query, {"row_id": row_id})
         row = result.fetchone()
 
@@ -217,7 +215,7 @@ class DatabaseService:
 
         # Get column names
         if is_sqlite:
-            col_query = text(f"PRAGMA table_info({table_name})")  # noqa: S608
+            col_query = text(f"PRAGMA table_info({table_name})")
             col_result = await session.execute(col_query)
             columns = [r.name for r in col_result]
         else:
@@ -254,7 +252,7 @@ class DatabaseService:
             raise ValueError("No data provided for update")
 
         set_clause = ", ".join(set_parts)
-        query = text(f"UPDATE {table_name} SET {set_clause} WHERE id = :row_id")  # noqa: S608
+        query = text(f"UPDATE {table_name} SET {set_clause} WHERE id = :row_id")
         await session.execute(query, params)
         await session.commit()
 
@@ -275,11 +273,11 @@ class DatabaseService:
         table_name = validate_table_name(table_name)
 
         if hard_delete:
-            query = text(f"DELETE FROM {table_name} WHERE id = :row_id")  # noqa: S608
+            query = text(f"DELETE FROM {table_name} WHERE id = :row_id")
         else:
             # Soft delete - set deleted_at if column exists
             query = text(
-                f"UPDATE {table_name} SET deleted_at = CURRENT_TIMESTAMP WHERE id = :row_id"  # noqa: S608
+                f"UPDATE {table_name} SET deleted_at = CURRENT_TIMESTAMP WHERE id = :row_id"
             )
 
         await session.execute(query, {"row_id": row_id})
@@ -309,9 +307,7 @@ class DatabaseService:
             dep_table = validate_table_name(fk["table"])
             fk_column = validate_table_name(fk["column"])
 
-            count_query = text(
-                f"SELECT COUNT(*) FROM {dep_table} WHERE {fk_column} = :row_id"  # noqa: S608
-            )
+            count_query = text(f"SELECT COUNT(*) FROM {dep_table} WHERE {fk_column} = :row_id")
             count = (await session.execute(count_query, {"row_id": row_id})).scalar() or 0
 
             if count > 0:

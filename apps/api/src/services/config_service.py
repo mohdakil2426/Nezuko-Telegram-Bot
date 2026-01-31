@@ -168,7 +168,7 @@ class ConfigService:
 
             return WebhookTestResult(
                 webhook_url=webhook_url,
-                status=("reachable" if 200 <= status_code < 400 else f"error_{status_code}"),  # noqa: PLR2004
+                status=("reachable" if 200 <= status_code < 400 else f"error_{status_code}"),
                 latency_ms=latency,
                 ssl_valid=ssl_valid,
                 ssl_expires_at=str(ssl_expires_at) if ssl_expires_at else None,
@@ -211,7 +211,7 @@ class ConfigService:
         await self.session.execute(stmt)
 
     def _mask_token(self, token: str) -> str:
-        if not token or len(token) < 8:  # noqa: PLR2004
+        if not token or len(token) < 8:
             return "***"
         return f"{'*' * (len(token) - 4)}{token[-4:]}"
 

@@ -1,8 +1,8 @@
 # ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                    NEZUKO BOT - SPECIFIC DEPENDENCIES                         ║
-# ║                                                                               ║
-# ║  Telegram bot specific packages                                               ║
-# ║  Last Updated: January 30, 2026                                               ║
+# ║                    NEZUKO BOT - SPECIFIC DEPENDENCIES                        ║
+# ║                                                                              ║
+# ║  Telegram bot specific packages                                              ║
+# ║  Last Updated: January 30, 2026                                              ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 
 # ─────────────────────────────────────────────────────────────────────────────────

@@ -1,8 +1,8 @@
 # ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                    NEZUKO API - PRODUCTION DEPENDENCIES                       ║
-# ║                                                                               ║
-# ║  Use this file for production Docker builds                                   ║
-# ║  Command: pip install --no-cache-dir -r requirements/prod-api.txt             ║
+# ║                    NEZUKO API - PRODUCTION DEPENDENCIES                      ║
+# ║                                                                              ║
+# ║  Use this file for production Docker builds                                  ║
+# ║  Command: pip install --no-cache-dir -r requirements/prod-api.txt            ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 
 # Shared dependencies

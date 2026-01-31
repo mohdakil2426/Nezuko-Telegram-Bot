@@ -27,7 +27,8 @@ def configure_logging(
 
     if environment == "production":
         # Production: JSON output for log aggregation
-        processors = shared_processors + [
+        processors = [
+            *shared_processors,
             structlog.processors.format_exc_info,  # Format exceptions
             structlog.processors.JSONRenderer(),  # JSON output
         ]
@@ -40,7 +41,8 @@ def configure_logging(
         )
     else:
         # Development: Pretty console output
-        processors = shared_processors + [
+        processors = [
+            *shared_processors,
             structlog.dev.ConsoleRenderer(colors=True),  # Pretty colors
         ]
 

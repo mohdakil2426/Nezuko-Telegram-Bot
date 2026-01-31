@@ -66,8 +66,8 @@ def validate_table_access(table_name: str) -> None:
 
 @router.get("/tables", response_model=SuccessResponse[TableListResponse])
 async def list_tables(
-    session: AsyncSession = Depends(get_session),  # noqa: B008
-    current_user: AdminUser = Depends(get_current_active_user),  # noqa: B008
+    session: AsyncSession = Depends(get_session),
+    current_user: AdminUser = Depends(get_current_active_user),
 ) -> SuccessResponse[TableListResponse]:
     """List all database tables with stats."""
     tables = await _db_service.get_tables(session)
@@ -79,8 +79,8 @@ async def get_table_data(
     table_name: str,
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=1000),
-    session: AsyncSession = Depends(get_session),  # noqa: B008
-    current_user: AdminUser = Depends(get_current_active_user),  # noqa: B008
+    session: AsyncSession = Depends(get_session),
+    current_user: AdminUser = Depends(get_current_active_user),
 ) -> SuccessResponse[TableDataResponse]:
     """Get raw data from a specific table."""
     try:
@@ -96,8 +96,8 @@ async def update_row(
     row_id: str,
     body: UpdateRowRequest,
     request: Request,
-    session: AsyncSession = Depends(get_session),  # noqa: B008
-    current_user: AdminUser = Depends(  # noqa: B008
+    session: AsyncSession = Depends(get_session),
+    current_user: AdminUser = Depends(
         require_permission(Permission.MODIFY_DATABASE)
     ),
 ) -> SuccessResponse[dict[str, Any]]:
@@ -142,8 +142,8 @@ async def delete_row(
     row_id: str,
     request: Request,
     hard_delete: bool = Query(False, description="Permanently delete instead of soft delete"),
-    session: AsyncSession = Depends(get_session),  # noqa: B008
-    current_user: AdminUser = Depends(  # noqa: B008
+    session: AsyncSession = Depends(get_session),
+    current_user: AdminUser = Depends(
         require_permission(Permission.MODIFY_DATABASE)
     ),
 ) -> SuccessResponse[DeleteRowResponse]:
@@ -193,8 +193,8 @@ async def delete_row(
 
 @router.get("/migrations", response_model=SuccessResponse[MigrationStatusResponse])
 async def get_migrations(
-    session: AsyncSession = Depends(get_session),  # noqa: B008
-    current_user: AdminUser = Depends(get_current_active_user),  # noqa: B008
+    session: AsyncSession = Depends(get_session),
+    current_user: AdminUser = Depends(get_current_active_user),
 ) -> SuccessResponse[MigrationStatusResponse]:
     """Get database migration status."""
     status = await _db_service.get_migrations(session)

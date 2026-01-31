@@ -1,122 +1,109 @@
-# Active Context: Phase 25.2 - All Tests & Lints Passing
+# Active Context: Phase 26 - Linting & Dependencies Update
 
 ## 🎯 Current Status
 
-**Phase 25.2 COMPLETE** - All tests passing, all lints at 10/10.
+**Phase 26 COMPLETE** - All linters passing, dependencies updated to latest stable versions.
 
 ### Test Results (2026-01-31)
 
 | Status | Count |
 |--------|-------|
 | ✅ Passed | 85 |
-| ⏭️ Skipped | 2 |
+| ⏭️ Skipped | 2 (auth mocking required) |
 | ❌ Failed | 0 |
 
 ### Lint Results (2026-01-31)
 
 | Tool | Status |
 |------|--------|
-| Ruff | ✅ All checks passed |
+| Ruff | ✅ All checks passed (RUF, PERF, ASYNC rules enabled) |
 | Pylint | ✅ 10.00/10 |
+| Pyrefly | ✅ 0 errors (2 suppressed) |
 
 ---
 
-## ✅ Completed Tasks (2026-01-30)
+## ✅ Completed Tasks (2026-01-31)
 
-### Phase 25.1: Test Verification & Import Fixes ✅
+### Phase 26.1: Ruff Linting Fixes ✅
 
-Fixes made to ensure tests work with the new project structure:
+Fixed all Ruff linting issues with RUF, PERF, and ASYNC rules enabled:
 
-#### 1. Security Fixes
+| Rule | Issue | Fix Applied | Files |
+|------|-------|-------------|-------|
+| **RUF006** | Untracked `asyncio.create_task` | Store task reference + done callback | 4 files |
+| **RUF005** | List concatenation instead of unpacking | Use `*iterable` unpacking | 1 file |
+| **PERF401** | Loop+append instead of list comprehension | Convert to list comprehension | 4 files |
+| **RUF001** | Ambiguous unicode characters | Added to ignore list (intentional emoji) | Config |
 
-| Issue | Action | Status |
-|-------|--------|--------|
-| `.env.backup` with real tokens | Removed from git tracking | ✅ Fixed |
-| `docs/local/` (internal docs) | Removed from git tracking | ✅ Fixed |
-| `apps/web/.env` with secrets | Deleted (duplicate of .env.local) | ✅ Fixed |
-| `.gitignore` patterns | Added comprehensive patterns | ✅ Fixed |
+#### Files Modified:
+- `apps/api/src/api/v1/endpoints/groups.py` - PERF401 fix
+- `apps/api/src/core/logging.py` - RUF005 fix
+- `apps/api/src/core/websocket.py` - RUF006 fix
+- `apps/api/src/services/channel_service.py` - PERF401 fix
+- `apps/api/src/services/db_service.py` - PERF401 fix
+- `apps/bot/services/verification.py` - RUF006 fix
+- `apps/bot/utils/auto_delete.py` - RUF006 fix
+- `apps/bot/utils/postgres_logging.py` - RUF006 fix
 
-#### 2. Modular Requirements Structure
+#### Pattern for RUF006 Fix:
+```python
+# Module-level task storage to prevent garbage collection
+_background_tasks: set[asyncio.Task[None]] = set()
 
-Restructured Python dependencies to eliminate duplicates:
-
-```
-requirements/                 ← NEW DIRECTORY
-├── README.md                 # Documentation
-├── base.txt                  # Shared deps (14 packages)
-├── api.txt                   # API-specific (8 packages)
-├── bot.txt                   # Bot-specific (1 package)
-├── dev.txt                   # Dev tools (9 packages)
-├── prod-api.txt              # Production API (base + api)
-└── prod-bot.txt              # Production Bot (base + bot)
-```
-
-#### 3. Centralized Test Structure
-
-Reorganized tests from scattered locations to centralized structure:
-
-```
-tests/
-├── conftest.py               # Shared fixtures
-├── api/                      # API tests (7 files)
-│   ├── conftest.py           # API client fixtures
-│   ├── unit/
-│   └── integration/
-└── bot/                      # Bot tests (5 files)
-    ├── conftest.py           # Bot mock fixtures
-    ├── unit/
-    └── integration/
+# Usage
+task = asyncio.create_task(some_coroutine())
+_background_tasks.add(task)
+task.add_done_callback(_background_tasks.discard)
 ```
 
-**Removed:**
-- `apps/api/tests/` → Moved to `tests/api/`
-- `tests/unit/`, `tests/integration/` → Reorganized into app subdirs
+### Phase 26.2: Dependencies Update ✅
 
-#### 4. Storage Directory Structure
+Updated all Python dependencies to latest stable versions:
 
-Organized runtime files with `.gitkeep` preservation:
+#### Dev Tools (requirements/dev.txt)
 
-```
-storage/
-├── README.md                 # Documentation
-├── cache/.gitkeep            # Redis fallback cache
-├── data/.gitkeep             # SQLite databases
-├── logs/.gitkeep             # Application logs
-└── uploads/.gitkeep          # User uploads
-```
+| Package | Old Version | New Version |
+|---------|-------------|-------------|
+| pytest | >=8.3.4 | >=9.0.2 |
+| pytest-asyncio | >=0.25.2 | >=1.3.0 |
+| pytest-cov | >=6.0.0 | >=7.0.0 |
+| pytest-mock | >=3.14.0 | >=3.15.1 |
+| ruff | >=0.14.0 | >=0.14.14 |
+| pylint | >=4.0.0 | >=4.0.4 |
+| pyrefly | >=0.50.0 | >=0.50.1 |
+| mypy | >=1.14.0 | >=1.19.1 |
 
-#### 5. Environment Files Cleanup
+#### Base Dependencies (requirements/base.txt)
 
-| App | Before | After |
-|-----|--------|-------|
-| `apps/web/` | `.env` + `.env.local` (duplicate) | `.env.local` only |
-| `apps/api/` | `.env` | `.env` (gitignored) |
-| `apps/bot/` | `.env` | `.env` (gitignored) |
+| Package | Old Version | New Version |
+|---------|-------------|-------------|
+| alembic | >=1.18.1 | >=1.18.3 |
+| pyjwt | >=2.10.1 | >=2.11.0 |
+| sentry-sdk | >=2.50.0 | >=2.51.0 |
 
-#### 6. Useless Files Removed
+#### API Dependencies (requirements/api.txt)
 
-| File | Reason | Action |
-|------|--------|--------|
-| `apps/api/test_db.py` | Debug script | Removed from git |
-| `apps/api/test_db_connect.py` | Debug script | Removed from git |
-| `apps/api/test_settings.py` | Debug script | Removed from git |
-| `apps/api/init_db.py` | Use alembic instead | Removed from git |
-| `apps/web/.env` | Duplicate with secrets | Deleted |
-
-#### 7. Script Updates
-
-Updated CLI scripts to reflect new structure:
-
-| Script | Change |
+| Change | Reason |
 |--------|--------|
-| `scripts/test/run.ps1` | Test paths → `tests/api/`, `tests/bot/` |
-| `scripts/test/run.sh` | Test paths → `tests/api/`, `tests/bot/` |
-| `scripts/setup/install.ps1` | Uses only root `requirements.txt` |
-| `scripts/setup/install.sh` | Uses only root `requirements.txt` |
+| Removed explicit starlette | FastAPI manages this dependency |
+
+#### Known Limitation:
+- **Supabase**: Installed at 2.25.1 (binary wheel) instead of 2.27.2 because the latest requires pyroaring which needs C++ build tools
+
+### Phase 26.3: OpenSpec Archive ✅
+
+Archived the completed `refactor-folder-structure` change:
+
+| Field | Value |
+|-------|-------|
+| Change | `refactor-folder-structure` |
+| Schema | `spec-driven` |
+| Archived to | `openspec/changes/archive/2026-01-31-refactor-folder-structure/` |
+| Artifacts | All 4 complete (proposal, design, specs, tasks) |
 
 ---
 
-## 📁 Project Structure (Final)
+## 📁 Project Structure (Current)
 
 ```
 nezuko-monorepo/
@@ -125,14 +112,17 @@ nezuko-monorepo/
 │   ├── bot/                   # Telegram Bot (PTB v22)
 │   └── web/                   # Next.js 16 Admin Dashboard
 ├── packages/                  # Shared TypeScript packages
-├── requirements/              # Modular Python deps
+├── requirements/              # Modular Python deps (updated 2026-01-31)
 ├── tests/                     # Centralized tests
-│   ├── api/                   # API tests
+│   ├── api/                   # API tests (85 tests)
 │   └── bot/                   # Bot tests
 ├── storage/                   # Runtime files (.gitkeep preserved)
 ├── config/docker/             # Docker configuration
-├── scripts/                   # CLI utilities (updated)
+├── scripts/                   # CLI utilities
 ├── docs/                      # Documentation
+├── openspec/                  # OpenSpec workflow
+│   ├── changes/archive/       # Archived changes
+│   └── schemas/               # Workflow schemas
 └── memory-bank/               # Project context
 ```
 
@@ -142,7 +132,7 @@ nezuko-monorepo/
 
 ### Development
 ```bash
-# Install all dependencies
+# Install all dependencies (with latest versions)
 pip install -r requirements.txt
 
 # Run services
@@ -152,15 +142,10 @@ pip install -r requirements.txt
 pytest                    # All tests
 pytest tests/api/         # API tests only
 pytest tests/bot/         # Bot tests only
-```
 
-### Production Docker
-```bash
-# API container
-pip install -r requirements/prod-api.txt
-
-# Bot container
-pip install -r requirements/prod-bot.txt
+# Linting
+ruff check .              # Fast linting
+pylint apps/bot apps/api/src  # Full analysis
 ```
 
 ---
@@ -169,10 +154,10 @@ pip install -r requirements/prod-bot.txt
 
 | Phase | Description | Date |
 |-------|-------------|------|
+| Phase 26 | Linting Fixes & Dependencies Update | 2026-01-31 |
+| Phase 25 | GitHub Push Readiness & Cleanup | 2026-01-30 |
 | Phase 24 | Code Quality Improvements (Skills Audit) | 2026-01-30 |
 | Phase 23 | SQLite Migration & Dashboard Fixes | 2026-01-28 |
-| Phase 22 | Script Logging System | 2026-01-28 |
-| Phase 21 | Developer Experience Improvements | 2026-01-28 |
 
 ---
 
@@ -184,4 +169,4 @@ pip install -r requirements/prod-bot.txt
 
 ---
 
-*Last Updated: 2026-01-30 22:34 IST*
+*Last Updated: 2026-01-31 05:13 IST*

@@ -1,8 +1,8 @@
 # ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                    NEZUKO API - SPECIFIC DEPENDENCIES                         ║
-# ║                                                                               ║
-# ║  FastAPI backend specific packages                                            ║
-# ║  Last Updated: January 30, 2026                                               ║
+# ║                    NEZUKO API - SPECIFIC DEPENDENCIES                        ║
+# ║                                                                              ║
+# ║  FastAPI backend specific packages                                           ║
+# ║  Last Updated: January 30, 2026                                              ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 
 # ─────────────────────────────────────────────────────────────────────────────────
@@ -10,7 +10,7 @@
 # ─────────────────────────────────────────────────────────────────────────────────
 fastapi>=0.128.0                   # Web framework
 uvicorn[standard]>=0.40.0          # ASGI server with extras
-starlette>=0.40.0                  # ASGI toolkit (FastAPI dependency)
+# starlette is managed by FastAPI - do not pin separately
 python-multipart>=0.0.22           # Form data handling
 
 # ─────────────────────────────────────────────────────────────────────────────────

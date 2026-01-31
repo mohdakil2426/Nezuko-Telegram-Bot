@@ -275,7 +275,7 @@ async def run_all_benchmarks() -> dict[str, Any]:
         print("BENCHMARK RESULTS")
         print("=" * 70)
 
-        for _, result in results.items():
+        for result in results.values():
             print(result)
             if not result.passed:
                 all_passed = False
@@ -292,7 +292,7 @@ async def run_all_benchmarks() -> dict[str, Any]:
         print("-" * 70)
         print(f"{'Benchmark':<40} {'Avg (ms)':<12} {'Target':<12} {'Status':<8}")
         print("-" * 70)
-        for _, result in results.items():
+        for result in results.values():
             status = "PASS" if result.passed else "FAIL"
             print(f"{result.name:<40} {result.avg:<12.2f} <{result.target_ms:<11.2f} {status}")
         print("-" * 70)

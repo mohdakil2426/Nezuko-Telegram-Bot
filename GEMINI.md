@@ -1,10 +1,153 @@
 # Project: Nezuko Telegram Bot Platform
 
+<!-- NEXT-AGENTS-MD-START -->[Next.js Docs Index]|root: ./.next-docs|STOP. What you remember about Next.js is WRONG for this project. Always search docs and read before any task.|If docs missing, run this command first: npx @next/codemod agents-md --output AGENTS.md<!-- NEXT-AGENTS-MD-END -->
+
 ## Project Overview
 
 Nezuko is a production-ready, multi-tenant Telegram bot platform for automated channel membership enforcement. Built with Python 3.13+ and async-first architecture using python-telegram-bot v22.6+.
 
 **Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read these files for deep project understanding.
+
+---
+
+## ⚠️ AI Agent Rules (MUST FOLLOW)
+
+### 🏗️ Architecture Rules
+
+1. **Respect Project Structure**
+   - Apps go in `apps/` (web, api, bot)
+   - Tests go in `tests/` (NOT in app directories)
+   - Shared packages in `packages/`
+   - Runtime files in `storage/` (gitignored)
+   - Docker configs in `config/docker/`
+
+2. **Never Create Files In Wrong Locations**
+   - ❌ Don't create `apps/api/tests/` - use `tests/api/`
+   - ❌ Don't create `apps/bot/tests/` - use `tests/bot/`
+   - ❌ Don't put .db files in app dirs - use `storage/data/`
+   - ❌ Don't put logs in app dirs - use `storage/logs/`
+
+3. **Import Patterns**
+   - Bot: Run from root with `python -m apps.bot.main`
+   - API: Use relative imports within `src/`
+   - Tests: Import from `apps.api.src` or `apps.bot`
+
+### 🧪 Testing Rules
+
+1. **Test Location**: ALL tests go in `tests/` directory
+   ```
+   tests/
+   ├── conftest.py       # Shared fixtures
+   ├── api/              # API tests
+   │   ├── conftest.py   # API-specific fixtures
+   │   ├── unit/
+   │   └── integration/
+   └── bot/              # Bot tests
+       ├── conftest.py   # Bot-specific fixtures
+       ├── unit/
+       └── integration/
+   ```
+
+2. **Test Requirements**
+   - Use pytest with async support (`pytest-asyncio`)
+   - Use fixtures from `conftest.py`
+   - Mock external services (Telegram API, Supabase)
+   - Achieve meaningful coverage, not just line count
+
+3. **Run Tests Before Committing**
+   ```bash
+   pytest                    # All tests must pass
+   pytest tests/api/ -v      # API tests
+   pytest tests/bot/ -v      # Bot tests
+   ```
+
+### 📝 Code Quality Rules
+
+1. **Linting (ZERO TOLERANCE)**
+   - Ruff: `ruff check .` must pass with NO errors
+   - Pylint: Target 10.00/10 score
+   - Pyrefly: Target 0 errors
+   - Run linters BEFORE suggesting code is complete
+
+2. **Ruff Rules Enabled** (Do NOT violate):
+   - `RUF006`: Store `asyncio.create_task()` references
+   - `PERF401`: Use list comprehensions, not loop+append
+   - `RUF005`: Use `*iterable` unpacking, not `+` concatenation
+   - `ASYNC`: Proper async patterns
+
+3. **Type Hints Required**
+   ```python
+   # ✅ Correct
+   async def get_user(user_id: int) -> User | None:
+       ...
+   
+   # ❌ Wrong - missing types
+   async def get_user(user_id):
+       ...
+   ```
+
+4. **Docstrings Required** for all public functions/classes
+
+### 🔒 Security Rules
+
+1. **Never Commit Secrets**
+   - `.env` files are gitignored
+   - Use `.env.example` for templates
+   - Check `git status` before commits
+
+2. **Environment Files**
+   - Each app has its own `.env` file
+   - `apps/web/.env.local`
+   - `apps/api/.env`
+   - `apps/bot/.env`
+
+### 📦 Dependency Rules
+
+1. **Python Dependencies**
+   - Add to appropriate file in `requirements/`
+   - `base.txt` for shared deps
+   - `api.txt` for API-only
+   - `bot.txt` for Bot-only
+   - `dev.txt` for dev tools
+
+2. **Node Dependencies**
+   - Use `bun add` in `apps/web/`
+   - Shared types in `packages/types/`
+
+### 🔄 Async Patterns (CRITICAL)
+
+1. **Always Use Async** for I/O operations
+   ```python
+   # ✅ Correct
+   async with get_session() as session:
+       result = await session.execute(query)
+   
+   # ❌ Wrong - blocks event loop
+   result = session.execute(query)
+   ```
+
+2. **Store Task References** (RUF006)
+   ```python
+   # ✅ Correct
+   _background_tasks: set[asyncio.Task] = set()
+   task = asyncio.create_task(coro())
+   _background_tasks.add(task)
+   task.add_done_callback(_background_tasks.discard)
+   
+   # ❌ Wrong - task may be garbage collected
+   asyncio.create_task(coro())
+   ```
+
+### 📋 Before Completing Any Task
+
+1. ✅ Run `ruff check .` - must pass
+2. ✅ Run `pytest` - tests must pass
+3. ✅ Check imports work correctly
+4. ✅ Verify files are in correct locations
+5. ✅ Add/update tests for new code
+6. ✅ Update memory-bank if significant changes
+
+---
 
 ## General Instructions
 
