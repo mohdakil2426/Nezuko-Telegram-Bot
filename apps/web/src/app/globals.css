@@ -141,6 +141,11 @@
   --color-nezuko-border: var(--nezuko-border);
   --color-nezuko-border-hover: var(--nezuko-border-hover);
 
+  /* Text Colors */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
   --color-time-range-bg: rgba(var(--nezuko-surface-rgb), 0.5);
   --color-time-range-border: var(--nezuko-border);
 
@@ -450,12 +455,13 @@
   }
 
   /* Gradient Text - Uses accent color */
+  /* Gradient Text - Uses accent color */
   .gradient-text {
     background: linear-gradient(
       135deg,
-      hsl(var(--primary)),
-      hsl(var(--primary) / 0.8),
-      hsl(var(--primary) / 0.6)
+      var(--primary),
+      color-mix(in srgb, var(--primary), transparent 20%),
+      color-mix(in srgb, var(--primary), transparent 40%)
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -563,6 +569,10 @@
   }
 }
 
+/* ============================================
+   STEP 5: Utilities & Animations
+   ============================================ */
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -634,12 +644,94 @@
   }
 }
 
+/* Keyframes - Matching Reference Exact logic */
+
 @keyframes shimmer {
   0% {
     transform: translateX(-100%);
   }
   100% {
     transform: translateX(100%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-15px) rotate(-1deg);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 20px var(--glow-primary),
+      0 0 40px var(--glow-primary);
+  }
+  50% {
+    box-shadow:
+      0 0 40px var(--glow-primary),
+      0 0 80px var(--glow-primary);
   }
 }
 
@@ -660,5 +752,51 @@
   }
   100% {
     background-position: 60px 60px;
+  }
+}
+
+/* Custom Scrollbar - Matches Reference */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--nezuko-border);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--nezuko-border-hover);
+}
+
+/* Selection - Matches Reference */
+::selection {
+  background: hsl(var(--primary) / 0.3);
+  color: inherit;
+}
+
+/* Focus States - Matches Reference */
+*:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Responsive Typography - Matches Reference */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1536px) {
+  html {
+    font-size: 18px;
   }
 }

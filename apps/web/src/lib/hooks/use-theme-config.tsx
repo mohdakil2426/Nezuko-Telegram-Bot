@@ -284,14 +284,21 @@ export function ThemeConfigProvider({ children }: ThemeConfigProviderProps) {
 
     if (colorData) {
       // Set all CSS variables that use primary color
-      root.style.setProperty("--primary", colorData.hsl);
-      root.style.setProperty("--ring", colorData.hsl);
-      root.style.setProperty("--sidebar-primary", colorData.hsl);
-      root.style.setProperty("--sidebar-ring", colorData.hsl);
+      // NOTE: Tailwind v4 expects valid color strings for variables mapped in @theme
+      root.style.setProperty("--primary", `hsl(${colorData.hsl})`);
+      root.style.setProperty("--ring", `hsl(${colorData.hsl})`);
+      root.style.setProperty("--sidebar-primary", `hsl(${colorData.hsl})`);
+      root.style.setProperty("--sidebar-ring", `hsl(${colorData.hsl})`);
 
       // Set gradient and hex variables
       root.style.setProperty("--accent-gradient", colorData.gradient);
       root.style.setProperty("--accent-hex", colorData.hex);
+
+      // Dynamic Glow Colors
+      // --glow-primary: accent with 0.5 opacity
+      // --glow-secondary: accent with 0.3 opacity
+      root.style.setProperty("--glow-primary", `${colorData.hex}80`); // 0.5 * 255 = 128 -> 80 hex
+      root.style.setProperty("--glow-secondary", `${colorData.hex}4d`); // 0.3 * 255 = 76 -> 4d hex
     }
 
     localStorage.setItem("nezuko-accent-id", accentId);

@@ -15,12 +15,8 @@ import PageHeader from '@/components/layout/PageHeader';
 import TiltCard from '@/components/TiltCard';
 import StatCard from '@/components/StatCard';
 
-// Asset Card Component (unchanged)
+// Asset Card Component
 function AssetCard({ asset, index }: { asset: TelegramAsset; index: number }) {
-  // ... (implementation same as before, I won't repeat it here to save tokens if I can avoid full file replace, but replace_file_content requires context.
-  // Actually, I should use replace_file_content carefully.
-  // I will only touch imports and the component body.
-  const { accentHex: accentColor } = useThemeConfig();
   const { resolvedTheme } = useTheme();
   
   return (
@@ -28,16 +24,15 @@ function AssetCard({ asset, index }: { asset: TelegramAsset; index: number }) {
       <div className="p-6 h-full flex flex-col relative group">
         {/* Glow Effect */}
         <div 
-          className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-          style={{ background: `radial-gradient(circle at 50% 0%, ${accentColor}15, transparent 70%)` }}
+          className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-primary/5"
+          style={{ background: `radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.15), transparent 70%)` }}
         />
 
         <div className="flex justify-between items-start mb-4 relative z-10">
           <div className="flex items-center gap-4">
             <div className="relative">
               <div 
-                className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg"
-                style={{ backgroundColor: accentColor }}
+                className="w-12 h-12 rounded-xl flex items-center justify-center text-primary-foreground font-bold text-xl shadow-lg bg-primary transition-colors"
               >
                 {asset.name.charAt(0)}
               </div>
@@ -91,8 +86,7 @@ function AssetCard({ asset, index }: { asset: TelegramAsset; index: number }) {
             </div>
             <div className="w-full h-1.5 bg-(--nezuko-border) rounded-full overflow-hidden">
                <motion.div 
-                 className="h-full rounded-full"
-                 style={{ backgroundColor: accentColor }}
+                 className="h-full rounded-full bg-primary"
                  initial={{ width: 0 }}
                  animate={{ width: `${((asset.dailyGrowth || 0) / 100) * 100}%` }} 
                  transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
@@ -107,8 +101,7 @@ function AssetCard({ asset, index }: { asset: TelegramAsset; index: number }) {
              variant={asset.status === 'active' ? 'success' : 'error'} 
           />
           <motion.button
-            className="text-xs font-bold uppercase tracking-wider hover:underline"
-            style={{ color: accentColor }}
+            className="text-xs font-bold uppercase tracking-wider hover:underline text-primary"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -156,8 +149,8 @@ export default function Channels() {
   return (
     <div className="space-y-8">
       <PageHeader 
-        title="Channels & Groups" 
-        highlight="Management" 
+        title="Channels &" 
+        highlight="Groups"
         description="Configure protection settings and view growth stats for your communities."
       >
          <MagneticButton 
@@ -209,14 +202,13 @@ export default function Channels() {
                onClick={() => setFilter(f)}
                className={cn(
                  "px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 relative",
-                 filter === f ? "text-white" : "text-(--text-muted) hover:text-(--text-primary)"
+                 filter === f ? "text-primary-foreground" : "text-(--text-muted) hover:text-(--text-primary)"
                )}
              >
                {filter === f && (
                  <motion.div 
                    layoutId="activeFilter"
-                   className="absolute inset-0 rounded-lg shadow-sm"
-                   style={{ backgroundColor: accentColor }}
+                   className="absolute inset-0 rounded-lg shadow-sm bg-primary"
                  />
                )}
                <span className="relative z-10">{f}S</span>
