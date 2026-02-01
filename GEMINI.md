@@ -288,11 +288,9 @@ The following MCP servers are available for use:
 | MCP Server | Purpose |
 |------------|---------|
 | **context7** | Query up-to-date documentation for any library/framework |
-| **playwright** | Browser automation, testing, screenshots, form filling |
 | **supabase-mcp-server** | Database operations, migrations, edge functions |
 
 ### Usage Examples
 
 - **Context7**: Use `resolve-library-id` then `query-docs` to get current library documentation
-- **Playwright**: Use `browser_navigate`, `browser_click`, `browser_type` for browser automation
 - **Supabase**: Use `execute_sql`, `apply_migration`, `list_tables` for database operations

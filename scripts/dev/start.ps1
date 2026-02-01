@@ -87,7 +87,15 @@ Start-Sleep -Seconds 2
 Write-Host "  [2/3] Starting API Server..." -ForegroundColor Green
 Write-Log -Message "Starting API Server (uvicorn)" -Category "DEV"
 $venvActivate = Join-Path $ProjectRoot ".venv\Scripts\Activate.ps1"
-if (Test-Path $venvActivate) {
+$venvPython = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
+$venvUvicorn = Join-Path $ProjectRoot ".venv\Scripts\uvicorn.exe"
+
+if (Test-Path $venvUvicorn) {
+    # Use venv uvicorn directly (most reliable)
+    $apiCmd = "Set-Location '$ProjectRoot\apps\api'; Write-Host '  🔌 API Server - http://localhost:8080' -ForegroundColor Green; Write-Host ''; & '$venvUvicorn' src.main:app --reload --port 8080"
+}
+elseif (Test-Path $venvActivate) {
+    # Fallback: activate venv then run uvicorn
     $apiCmd = "Set-Location '$ProjectRoot\apps\api'; Write-Host '  🔌 API Server - http://localhost:8080' -ForegroundColor Green; Write-Host ''; & '$venvActivate'; uvicorn src.main:app --reload --port 8080"
 }
 else {
@@ -100,7 +108,13 @@ Start-Sleep -Seconds 2
 # Start Telegram Bot
 Write-Host "  [3/3] Starting Telegram Bot..." -ForegroundColor Yellow
 Write-Log -Message "Starting Telegram Bot (python -m apps.bot.main)" -Category "DEV"
-if (Test-Path $venvActivate) {
+
+if (Test-Path $venvPython) {
+    # Use venv python directly (most reliable)
+    $botCmd = "Set-Location '$ProjectRoot'; Write-Host '  🤖 Telegram Bot - Polling Mode' -ForegroundColor Yellow; Write-Host ''; & '$venvPython' -m apps.bot.main"
+}
+elseif (Test-Path $venvActivate) {
+    # Fallback: activate venv then run python
     $botCmd = "Set-Location '$ProjectRoot'; Write-Host '  🤖 Telegram Bot - Polling Mode' -ForegroundColor Yellow; Write-Host ''; & '$venvActivate'; python -m apps.bot.main"
 }
 else {

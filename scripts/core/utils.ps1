@@ -227,23 +227,67 @@ function Test-Prerequisites {
     
     $allGood = $true
     
-    # Check Python
+    # Check Python (try multiple methods)
+    # Windows has "App execution aliases" that can intercept 'python' command
+    # Use 'py' launcher first (most reliable on Windows), then fallback to direct detection
     $pythonVersion = $null
+    
+    # Method 1: Try py launcher (Windows Python Launcher - most reliable)
     try {
-        $pythonVersion = (python --version 2>&1).ToString()
+        $result = py -3 --version 2>&1 | Out-String
+        if ($result -match "Python\s+(3\.\d+\.\d+)") {
+            $pythonVersion = $result.Trim()
+        }
     }
-    catch {
-        $pythonVersion = $null
+    catch { }
+    
+    # Method 2: Try finding Python in common locations
+    if (-not $pythonVersion) {
+        $commonPaths = @(
+            "C:\Program Files\Python314\python.exe",
+            "C:\Program Files\Python313\python.exe",
+            "C:\Program Files\Python312\python.exe",
+            "C:\Program Files\Python311\python.exe",
+            "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe",
+            "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe",
+            "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe"
+        )
+        
+        foreach ($pythonPath in $commonPaths) {
+            if (Test-Path $pythonPath) {
+                try {
+                    $result = & $pythonPath --version 2>&1 | Out-String
+                    if ($result -match "Python\s+(3\.\d+\.\d+)") {
+                        $pythonVersion = $result.Trim()
+                        break
+                    }
+                }
+                catch { }
+            }
+        }
     }
     
-    if ($pythonVersion -and $pythonVersion -match "Python 3\.") {
+    # Method 3: Try 'python' command (may trigger Windows Store alias)
+    if (-not $pythonVersion) {
+        try {
+            $result = python --version 2>&1 | Out-String
+            if ($result -match "Python\s+(3\.\d+\.\d+)") {
+                $pythonVersion = $result.Trim()
+            }
+        }
+        catch { }
+    }
+    
+    if ($pythonVersion) {
         if (-not $Quiet) {
-            Write-Host "  ✅ Python: $pythonVersion" -ForegroundColor Green
+            Write-Host "  ✅ $pythonVersion" -ForegroundColor Green
         }
     }
     else {
         if (-not $Quiet) {
             Write-Host "  ❌ Python 3.x not found" -ForegroundColor Red
+            Write-Host "     Install from: https://www.python.org/downloads/" -ForegroundColor Gray
+            Write-Host "     Or disable App execution aliases in Windows Settings" -ForegroundColor Gray
         }
         $allGood = $false
     }

@@ -69,24 +69,32 @@ if (-not $SkipPython) {
     Write-Log -Message "Step 2/6: Creating Python virtual environment" -Category "PYTHON"
     
     $venvPath = Get-VenvPath
+    $pyvenvCfg = Join-Path $venvPath "pyvenv.cfg"
     
-    if ((Test-Path $venvPath) -and -not $Force) {
+    # Check if venv exists AND is valid (has pyvenv.cfg)
+    $venvIsValid = (Test-Path $venvPath) -and (Test-Path $pyvenvCfg)
+    
+    if ($venvIsValid -and -not $Force) {
         Write-Info "Virtual environment already exists. Use -Force to recreate."
         Write-Log -Message "Venv already exists, skipping creation" -Category "PYTHON"
     }
     else {
+        # Remove corrupted or existing venv if present
         if (Test-Path $venvPath) {
-            Remove-Item -Path $venvPath -Recurse -Force
+            Write-Host "        Removing corrupted/existing .venv..." -ForegroundColor Gray
+            Remove-Item -Path $venvPath -Recurse -Force -ErrorAction SilentlyContinue
             Write-Log -Message "Removed existing .venv" -Category "PYTHON"
         }
         
         Push-Location $ProjectRoot
-        Write-Log -Message "COMMAND: python -m venv .venv" -Category "PYTHON"
-        $venvOutput = python -m venv .venv 2>&1
+        # Use py -3 which is more reliable on Windows than python command
+        Write-Log -Message "COMMAND: py -3 -m venv .venv" -Category "PYTHON"
+        $venvOutput = py -3 -m venv .venv 2>&1
         Write-Log -Message "OUTPUT: $venvOutput" -Category "PYTHON"
         Pop-Location
         
-        if (Test-Path $venvPath) {
+        # Verify venv was created properly
+        if ((Test-Path $venvPath) -and (Test-Path $pyvenvCfg)) {
             Write-Success "Virtual environment created at .venv"
             Write-Log -Message "Virtual environment created successfully" -Level "SUCCESS" -Category "PYTHON"
         }
@@ -106,6 +114,13 @@ if (-not $SkipPython) {
     
     $venvPython = Get-VenvPython
     
+    # Verify venv python exists
+    if (-not (Test-Path $venvPython)) {
+        Write-Failure "Virtual environment Python not found at $venvPython"
+        Write-Log -Message "Venv Python not found" -Level "ERROR" -Category "PYTHON"
+        exit 1
+    }
+    
     # Upgrade pip first
     Write-Host ""
     Write-Host "        Upgrading pip..." -ForegroundColor Gray
@@ -119,17 +134,23 @@ if (-not $SkipPython) {
     }
     
     # Install requirements (root requirements.txt includes all dependencies)
+    # Use --prefer-binary to avoid needing C++ build tools for packages like pyroaring
     $requirementsFile = Join-Path $ProjectRoot "requirements.txt"
     
     if (Test-Path $requirementsFile) {
         Write-Host ""
         Write-Host "        Installing requirements.txt (all dependencies)..." -ForegroundColor Cyan
-        Write-Log -Message "COMMAND: pip install -r requirements.txt" -Category "PYTHON"
+        Write-Host "        Using --prefer-binary to avoid build issues..." -ForegroundColor Gray
+        Write-Log -Message "COMMAND: pip install --prefer-binary -r requirements.txt" -Category "PYTHON"
         
-        & $venvPython -m pip install -r $requirementsFile 2>&1 | ForEach-Object {
+        # Capture pip output to check for pyroaring error
+        $pipOutput = & $venvPython -m pip install --prefer-binary -r $requirementsFile 2>&1
+        $pipExitCode = $LASTEXITCODE
+        
+        # Display output
+        $pipOutput | ForEach-Object {
             $line = [string]$_
-            # Show only important lines (not every package)
-            if ($line -match "^(Installing|Collecting|Requirement|Successfully|WARNING|ERROR)" -or $line -match "already satisfied") {
+            if ($line -match "^(Installing|Collecting|Requirement|Successfully|WARNING|ERROR|Failed)" -or $line -match "already satisfied") {
                 Write-Host "        $line" -ForegroundColor DarkGray
             }
             if ($line -and $line.Trim()) {
@@ -137,8 +158,86 @@ if (-not $SkipPython) {
             }
         }
         
-        Write-Success "All Python dependencies installed"
-        Write-Log -Message "Installed from requirements.txt" -Level "SUCCESS" -Category "PYTHON"
+        # Check if pyroaring failed - if so, use the standalone supabase installer
+        $pyroaringFailed = ($pipOutput | Out-String) -match "pyroaring|Failed building wheel"
+        
+        if ($pipExitCode -ne 0 -and $pyroaringFailed) {
+            Write-Host ""
+            Write-Host "        ⚠️  pyroaring build failed (requires C++ build tools)" -ForegroundColor Yellow
+            Write-Host "        Running standalone Supabase installer..." -ForegroundColor Cyan
+            Write-Log -Message "Running standalone Supabase installer" -Category "PYTHON"
+            
+            # Call the standalone supabase installer script
+            $supabaseInstaller = Join-Path $ScriptRoot "install-supabase.ps1"
+            if (Test-Path $supabaseInstaller) {
+                & $supabaseInstaller -VenvPath $venvPath -Force
+                $supabaseExitCode = $LASTEXITCODE
+                
+                if ($supabaseExitCode -eq 0) {
+                    Write-Log -Message "Supabase installed via standalone installer" -Level "SUCCESS" -Category "PYTHON"
+                    
+                    # Now install remaining packages from individual requirement files (skip base.txt which has supabase)
+                    Write-Host ""
+                    Write-Host "        Installing remaining packages (skipping supabase)..." -ForegroundColor Gray
+                    
+                    $reqFiles = @(
+                        (Join-Path $ProjectRoot "requirements\api.txt"),
+                        (Join-Path $ProjectRoot "requirements\bot.txt"),
+                        (Join-Path $ProjectRoot "requirements\dev.txt")
+                    )
+                    
+                    foreach ($reqFile in $reqFiles) {
+                        if (Test-Path $reqFile) {
+                            $fileName = Split-Path $reqFile -Leaf
+                            Write-Host "        Installing $fileName..." -ForegroundColor DarkGray
+                            & $venvPython -m pip install --prefer-binary -r $reqFile 2>&1 | Out-Null
+                        }
+                    }
+                    
+                    # Install base.txt packages individually (excluding supabase)
+                    Write-Host "        Installing base packages (excluding supabase)..." -ForegroundColor DarkGray
+                    $basePackages = @(
+                        "sqlalchemy[asyncio]>=2.0.46",
+                        "asyncpg>=0.31.0",
+                        "aiosqlite>=0.22.1",
+                        "alembic>=1.18.3",
+                        "redis>=7.1.0",
+                        "pyjwt>=2.11.0",
+                        "aiohttp>=3.13.3",
+                        "pydantic>=2.12.5",
+                        "pydantic-settings>=2.12.0",
+                        "python-dotenv>=1.2.1",
+                        "structlog>=25.5.0",
+                        "prometheus-client>=0.24.1",
+                        "sentry-sdk>=2.51.0"
+                    )
+                    foreach ($pkg in $basePackages) {
+                        & $venvPython -m pip install --prefer-binary $pkg 2>&1 | Out-Null
+                    }
+                    
+                    Write-Success "All Python dependencies installed (with supabase workaround)"
+                    Write-Log -Message "Installed with supabase workaround" -Level "SUCCESS" -Category "PYTHON"
+                }
+                else {
+                    Write-Failure "Supabase installation failed"
+                    Write-Log -Message "Supabase installer failed" -Level "ERROR" -Category "PYTHON"
+                }
+            }
+            else {
+                Write-Failure "Supabase installer not found at: $supabaseInstaller"
+                Write-Log -Message "install-supabase.ps1 not found" -Level "ERROR" -Category "PYTHON"
+            }
+        }
+        elseif ($pipExitCode -eq 0) {
+            Write-Success "All Python dependencies installed"
+            Write-Log -Message "Installed from requirements.txt" -Level "SUCCESS" -Category "PYTHON"
+        }
+        else {
+            Write-Failure "Some dependencies failed to install (exit code: $pipExitCode)"
+            Write-Log -Message "pip install failed with exit code: $pipExitCode" -Level "ERROR" -Category "PYTHON"
+            Write-Host "        You may need to install Microsoft C++ Build Tools" -ForegroundColor Yellow
+            Write-Host "        https://visualstudio.microsoft.com/visual-cpp-build-tools/" -ForegroundColor Gray
+        }
     }
     else {
         Write-Failure "requirements.txt not found"

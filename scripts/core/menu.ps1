@@ -259,7 +259,11 @@ function Invoke-CleanMenu {
 function Invoke-TotalReset {
     Write-Host ""
     Write-Host "  ♻️  Performing total reset (clean + reinstall)..." -ForegroundColor Red
-    Invoke-Clean
+    
+    # Call the clean script with -IncludeVenv flag
+    $cleanScript = Join-Path $ScriptRoot "..\utils\clean.ps1"
+    & $cleanScript -IncludeVenv
+    
     Start-Sleep -Seconds 1
     Invoke-Setup
 }
@@ -269,15 +273,19 @@ function Invoke-RunTests {
     Write-Host "  🧪 Running test suite..." -ForegroundColor Magenta
     $projectRoot = Split-Path -Parent (Split-Path -Parent $ScriptRoot)
     
-    # Activate venv if exists
-    $venvActivate = Join-Path $projectRoot ".venv\Scripts\Activate.ps1"
-    if (Test-Path $venvActivate) {
-        & $venvActivate
-    }
+    # Use venv python directly if available
+    $venvPython = Join-Path $projectRoot ".venv\Scripts\python.exe"
     
-    # Run pytest
     Push-Location $projectRoot
-    python -m pytest tests/ -v
+    if (Test-Path $venvPython) {
+        # Use venv python directly (most reliable)
+        & $venvPython -m pytest tests/ -v
+    }
+    else {
+        # Fallback to system python
+        Write-Host "  ⚠️  .venv not found, using system Python" -ForegroundColor Yellow
+        python -m pytest tests/ -v
+    }
     Pop-Location
 }
 
