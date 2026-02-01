@@ -801,6 +801,81 @@ python -m pyrefly check # Python types (0 errors)
 
 ---
 
+# 🎨 UI Component Library (Phase 27)
+
+## Theme System
+
+The dashboard uses a dynamic theming system with 11 preset accents + custom color picker:
+
+```typescript
+// apps/web/src/lib/hooks/use-theme-config.tsx
+const accents = [
+  { name: 'cyberpunk', hex: '#d946ef' },
+  { name: 'matrix', hex: '#22c55e' },
+  { name: 'volcano', hex: '#f97316' },
+  // ... 8 more presets + custom
+];
+
+// CSS variables set dynamically
+document.documentElement.style.setProperty('--accent-hex', hex);
+document.documentElement.style.setProperty('--accent-gradient', gradient);
+```
+
+## Premium UI Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `TiltCard` | `components/ui/tilt-card.tsx` | 3D tilt effect with glow |
+| `MagneticButton` | `components/ui/magnetic-button.tsx` | Cursor-following button |
+| `AnimatedCounter` | `components/ui/animated-counter.tsx` | Smooth number transitions |
+| `StatusBadge` | `components/ui/status-badge.tsx` | Colored status indicators |
+| `DashboardCard` | `components/ui/dashboard-card.tsx` | Glass-effect card wrapper |
+| `PageTransition` | `components/ui/page-transition.tsx` | FadeIn, SlideIn, Stagger animations |
+| `ParticleBackground` | `components/ui/particle-background.tsx` | Floating particles canvas |
+
+## Dashboard-Specific Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `StatCardV2` | `components/dashboard/stat-card-v2.tsx` | Premium stat cards with tilt |
+| `ActivityItem` | `components/dashboard/activity-item.tsx` | Timeline activity entries |
+| `CustomTooltip` | `components/charts/custom-tooltip.tsx` | Glass-effect Recharts tooltip |
+
+## Layout Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `PageHeader` | `components/layout/page-header.tsx` | Unified page header with gradient text |
+| `Sidebar` | `components/layout/sidebar.tsx` | Full sidebar with mobile, themes, profile |
+
+## CSS Utilities
+
+```css
+/* Glass effect */
+.glass {
+  background: oklch(0.15 0.02 285 / 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--nezuko-border);
+}
+
+/* Gradient text using accent */
+.gradient-text {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+```
+
+## Effect Toggle Classes
+
+```css
+.reduce-motion * { animation-duration: 0.01ms !important; }
+.no-glass .glass { backdrop-filter: none; }
+.no-animations * { animation: none !important; }
+```
+
+---
+
 **This document is the authoritative guide for all system implementations.**
 
-*Last Updated: 2026-01-28*
+*Last Updated: 2026-02-01*

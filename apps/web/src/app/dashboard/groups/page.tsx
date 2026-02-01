@@ -11,7 +11,9 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useDebounce } from "@/lib/hooks/use-debounce";
-import { Users, Search } from "lucide-react";
+import { Search, Shield } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
+import { FadeIn } from "@/components/ui/page-transition";
 
 export default function GroupsPage() {
     const [searchTerm, setSearchTerm] = useState("");
@@ -21,53 +23,60 @@ export default function GroupsPage() {
     return (
         <div className="space-y-8">
             {/* Header */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-text-primary flex items-center gap-2">
-                        <Users className="h-8 w-8 text-primary-500" />
-                        Protected Groups
-                    </h1>
-                    <p className="text-text-secondary mt-1">
-                        Manage Telegram groups protected by Nezuko Bot.
-                    </p>
+            <PageHeader
+                title="Protected"
+                highlight="Groups"
+                description="Manage Telegram groups protected by Nezuko Bot."
+            >
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass text-sm">
+                    <Shield className="h-4 w-4 text-[var(--accent-hex)]" />
+                    <span className="text-[var(--text-secondary)]">
+                        Bot Protection Active
+                    </span>
                 </div>
-            </div>
+            </PageHeader>
 
             {/* Filters */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between rounded-lg border border-border bg-surface p-4">
-                <div className="relative flex-1 md:max-w-sm">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-text-tertiary" />
-                    <Input
-                        placeholder="Search groups..."
-                        className="pl-9 bg-background"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+            <FadeIn delay={0.1}>
+                <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between rounded-2xl glass p-5">
+                    <div className="relative flex-1 md:max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-muted)]" />
+                        <Input
+                            placeholder="Search groups..."
+                            className="pl-10 bg-[var(--nezuko-surface)] border-[var(--nezuko-border)] focus:border-[var(--accent-hex)] transition-colors"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-[var(--text-secondary)] whitespace-nowrap">
+                            Status:
+                        </span>
+                        <Select
+                            value={statusFilter}
+                            onValueChange={(value) =>
+                                setStatusFilter(value as "all" | "active" | "inactive")
+                            }
+                        >
+                            <SelectTrigger className="w-[140px] bg-[var(--nezuko-surface)] border-[var(--nezuko-border)]">
+                                <SelectValue placeholder="Filter by status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Groups</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="inactive">Paused</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-text-secondary whitespace-nowrap">
-                        Status:
-                    </span>
-                    <Select
-                        value={statusFilter}
-                        onValueChange={(value) =>
-                            setStatusFilter(value as "all" | "active" | "inactive")
-                        }
-                    >
-                        <SelectTrigger className="w-[140px] bg-background">
-                            <SelectValue placeholder="Filter by status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Groups</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Paused</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
+            </FadeIn>
 
             {/* Table */}
-            <GroupsTable search={debouncedSearch} status={statusFilter} />
+            <FadeIn delay={0.2}>
+                <div className="rounded-2xl glass overflow-hidden">
+                    <GroupsTable search={debouncedSearch} status={statusFilter} />
+                </div>
+            </FadeIn>
         </div>
     );
 }

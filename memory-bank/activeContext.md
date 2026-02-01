@@ -1,105 +1,83 @@
-# Active Context: Phase 26 - Linting & Dependencies Update
+# Active Context: Phase 27 - Dashboard UI Migration
 
 ## 🎯 Current Status
 
-**Phase 26 COMPLETE** - All linters passing, dependencies updated to latest stable versions.
+**Phase 27 COMPLETE** ✅ - Dashboard UI Migration finished successfully!
 
-### Test Results (2026-01-31)
+### Current Focus (2026-02-01)
 
-| Status | Count |
-|--------|-------|
-| ✅ Passed | 85 |
-| ⏭️ Skipped | 2 (auth mocking required) |
-| ❌ Failed | 0 |
-
-### Lint Results (2026-01-31)
-
-| Tool | Status |
+| Item | Status |
 |------|--------|
-| Ruff | ✅ All checks passed (RUF, PERF, ASYNC rules enabled) |
-| Pylint | ✅ 10.00/10 |
-| Pyrefly | ✅ 0 errors (2 suppressed) |
+| OpenSpec Change | `port-dashboard-ui-design` |
+| Implementation | **All Phases Complete** (30/30 tasks) |
+| Status | ✅ Ready for Archive |
 
 ---
 
-## ✅ Completed Tasks (2026-01-31)
+## 📋 Phase 27: Dashboard UI Migration
 
-### Phase 26.1: Ruff Linting Fixes ✅
+### Implementation Progress
 
-Fixed all Ruff linting issues with RUF, PERF, and ASYNC rules enabled:
+| Phase | Tasks | Status |
+|-------|-------|--------|
+| Phase 1 | 5/5 | ✅ CSS foundation & theme system |
+| Phase 2 | 7/7 | ✅ Base UI components |
+| Phase 3 | 3/3 | ✅ Dashboard components |
+| Phase 4 | 3/3 | ✅ Layout components |
+| Phase 5 | 4/4 | ✅ Page redesigns |
+| Phase 6 | 4/4 | ✅ Polish existing pages |
+| Phase 7 | 4/4 | ✅ Testing & documentation |
 
-| Rule | Issue | Fix Applied | Files |
-|------|-------|-------------|-------|
-| **RUF006** | Untracked `asyncio.create_task` | Store task reference + done callback | 4 files |
-| **RUF005** | List concatenation instead of unpacking | Use `*iterable` unpacking | 1 file |
-| **PERF401** | Loop+append instead of list comprehension | Convert to list comprehension | 4 files |
-| **RUF001** | Ambiguous unicode characters | Added to ignore list (intentional emoji) | Config |
+### Components Created (Phase 1-5)
 
-#### Files Modified:
-- `apps/api/src/api/v1/endpoints/groups.py` - PERF401 fix
-- `apps/api/src/core/logging.py` - RUF005 fix
-- `apps/api/src/core/websocket.py` - RUF006 fix
-- `apps/api/src/services/channel_service.py` - PERF401 fix
-- `apps/api/src/services/db_service.py` - PERF401 fix
-- `apps/bot/services/verification.py` - RUF006 fix
-- `apps/bot/utils/auto_delete.py` - RUF006 fix
-- `apps/bot/utils/postgres_logging.py` - RUF006 fix
+**Theme System:**
+- `lib/hooks/use-theme-config.tsx` - 11 accent themes + custom color picker
+- `providers/theme-config-provider.tsx` - Re-export wrapper
 
-#### Pattern for RUF006 Fix:
-```python
-# Module-level task storage to prevent garbage collection
-_background_tasks: set[asyncio.Task[None]] = set()
+**Base UI Components:**
+- `components/ui/tilt-card.tsx` - 3D tilt with glow effects
+- `components/ui/magnetic-button.tsx` - Cursor-following button
+- `components/ui/animated-counter.tsx` - Smooth number animation
+- `components/ui/status-badge.tsx` - Colored status indicators
+- `components/ui/dashboard-card.tsx` - Glass-effect card wrapper
+- `components/ui/page-transition.tsx` - Framer Motion transitions (FadeIn, SlideIn, StaggerContainer)
+- `components/ui/particle-background.tsx` - Floating particles canvas
+- `components/ui/slider.tsx` - shadcn/ui slider for density
 
-# Usage
-task = asyncio.create_task(some_coroutine())
-_background_tasks.add(task)
-task.add_done_callback(_background_tasks.discard)
-```
+**Dashboard Components:**
+- `components/dashboard/stat-card-v2.tsx` - Premium stat cards with tilt & animated counter
+- `components/dashboard/activity-item.tsx` - Timeline activity log entries
+- `components/charts/custom-tooltip.tsx` - Glass-effect Recharts tooltip
 
-### Phase 26.2: Dependencies Update ✅
+**Layout Components:**
+- `components/layout/page-header.tsx` - Unified page header with gradient text
+- `components/layout/sidebar.tsx` - Complete rewrite with mobile, themes, profile
 
-Updated all Python dependencies to latest stable versions:
+### Pages Redesigned (Phase 5)
 
-#### Dev Tools (requirements/dev.txt)
+| Page | Features Added |
+|------|----------------|
+| `/dashboard` | StatCardV2, ActivityItem timeline, DashboardCard |
+| `/dashboard/analytics` | Time range selector, filterable logs table |
+| `/dashboard/channels` | Search, tabs, Connect New Asset card |
+| `/dashboard/settings` | Theme modes, 11 accents, effects toggles, preview |
 
-| Package | Old Version | New Version |
-|---------|-------------|-------------|
-| pytest | >=8.3.4 | >=9.0.2 |
-| pytest-asyncio | >=0.25.2 | >=1.3.0 |
-| pytest-cov | >=6.0.0 | >=7.0.0 |
-| pytest-mock | >=3.14.0 | >=3.15.1 |
-| ruff | >=0.14.0 | >=0.14.14 |
-| pylint | >=4.0.0 | >=4.0.4 |
-| pyrefly | >=0.50.0 | >=0.50.1 |
-| mypy | >=1.14.0 | >=1.19.1 |
+### Pages Polished (Phase 6)
 
-#### Base Dependencies (requirements/base.txt)
+| Page | Changes |
+|------|---------|
+| `/dashboard/groups` | PageHeader, glass filters, entry animations |
+| `/dashboard/config` | PageHeader, glass cards, stagger animations |
+| `/dashboard/database` | PageHeader, stats overview cards, styled table |
+| `/dashboard/logs` | PageHeader, streaming indicator, glass container |
 
-| Package | Old Version | New Version |
-|---------|-------------|-------------|
-| alembic | >=1.18.1 | >=1.18.3 |
-| pyjwt | >=2.10.1 | >=2.11.0 |
-| sentry-sdk | >=2.50.0 | >=2.51.0 |
+### CSS Enhancements
 
-#### API Dependencies (requirements/api.txt)
-
-| Change | Reason |
-|--------|--------|
-| Removed explicit starlette | FastAPI manages this dependency |
-
-#### Known Limitation:
-- **Supabase**: Installed at 2.25.1 (binary wheel) instead of 2.27.2 because the latest requires pyroaring which needs C++ build tools
-
-### Phase 26.3: OpenSpec Archive ✅
-
-Archived the completed `refactor-folder-structure` change:
-
-| Field | Value |
-|-------|-------|
-| Change | `refactor-folder-structure` |
-| Schema | `spec-driven` |
-| Archived to | `openspec/changes/archive/2026-01-31-refactor-folder-structure/` |
-| Artifacts | All 4 complete (proposal, design, specs, tasks) |
+**Design Tokens Added to `globals.css`:**
+- `--nezuko-*` surface, border, text variables
+- `--accent-gradient`, `--accent-hex` dynamic values
+- Glass effect utility classes
+- Custom keyframe animations (float, pulse-glow, shimmer)
 
 ---
 
@@ -111,42 +89,33 @@ nezuko-monorepo/
 │   ├── api/                   # FastAPI REST Backend
 │   ├── bot/                   # Telegram Bot (PTB v22)
 │   └── web/                   # Next.js 16 Admin Dashboard
+│       └── src/
+│           ├── app/dashboard/
+│           │   ├── page.tsx           # ✅ Redesigned
+│           │   ├── layout.tsx         # ✅ Updated (particles, transitions)
+│           │   ├── analytics/page.tsx # ✅ Redesigned
+│           │   ├── channels/page.tsx  # ✅ Redesigned
+│           │   └── settings/page.tsx  # ✅ New (appearance)
+│           ├── components/
+│           │   ├── ui/                # ✅ 8 new components
+│           │   ├── dashboard/         # ✅ 2 new components
+│           │   ├── charts/            # ✅ CustomTooltip
+│           │   └── layout/            # ✅ PageHeader, Sidebar
+│           └── lib/hooks/
+│               └── use-theme-config.tsx # ✅ Theme system
 ├── packages/                  # Shared TypeScript packages
-├── requirements/              # Modular Python deps (updated 2026-01-31)
-├── tests/                     # Centralized tests
-│   ├── api/                   # API tests (85 tests)
-│   └── bot/                   # Bot tests
-├── storage/                   # Runtime files (.gitkeep preserved)
-├── config/docker/             # Docker configuration
-├── scripts/                   # CLI utilities
-├── docs/                      # Documentation
-├── openspec/                  # OpenSpec workflow
-│   ├── changes/archive/       # Archived changes
-│   └── schemas/               # Workflow schemas
+├── openspec/
+│   └── changes/
+│       └── port-dashboard-ui-design/  # ACTIVE CHANGE
 └── memory-bank/               # Project context
 ```
 
 ---
 
-## 🚀 Quick Start Commands
+## 🚀 Next Steps
 
-### Development
-```bash
-# Install all dependencies (with latest versions)
-pip install -r requirements.txt
-
-# Run services
-./nezuko.bat  # Interactive menu
-
-# Run tests
-pytest                    # All tests
-pytest tests/api/         # API tests only
-pytest tests/bot/         # Bot tests only
-
-# Linting
-ruff check .              # Fast linting
-pylint apps/bot apps/api/src  # Full analysis
-```
+1. **Archive** - Run `/opsx-archive` to complete the change
+2. **Celebrate** - Phase 27 Dashboard UI Migration is complete! 🎉
 
 ---
 
@@ -154,10 +123,10 @@ pylint apps/bot apps/api/src  # Full analysis
 
 | Phase | Description | Date |
 |-------|-------------|------|
-| Phase 26 | Linting Fixes & Dependencies Update | 2026-01-31 |
-| Phase 25 | GitHub Push Readiness & Cleanup | 2026-01-30 |
-| Phase 24 | Code Quality Improvements (Skills Audit) | 2026-01-30 |
-| Phase 23 | SQLite Migration & Dashboard Fixes | 2026-01-28 |
+| Phase 27 | Dashboard UI Migration | 2026-02-01 (In Progress - Phases 1-5 Done) |
+| Phase 26 | Linting Fixes & Dependencies Update | 2026-01-31 ✅ |
+| Phase 25 | GitHub Push Readiness & Cleanup | 2026-01-30 ✅ |
+| Phase 24 | Code Quality Improvements | 2026-01-30 ✅ |
 
 ---
 
@@ -169,4 +138,4 @@ pylint apps/bot apps/api/src  # Full analysis
 
 ---
 
-*Last Updated: 2026-01-31 05:13 IST*
+*Last Updated: 2026-02-01 18:15 IST*

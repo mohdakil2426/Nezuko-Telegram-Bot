@@ -3,9 +3,35 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
 import { useAuthStore } from "@/stores/auth-store";
 import { Toaster } from "@/components/ui/toaster";
+import { ThemeConfigProvider, useThemeConfig } from "@/lib/hooks/use-theme-config";
+import { ParticleBackground } from "@/components/ui/particle-background";
+import { PageTransition } from "@/components/ui/page-transition";
+
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
+    const { particles } = useThemeConfig();
+
+    return (
+        <div className="flex min-h-screen bg-background relative">
+            {/* Particle Background (conditional) */}
+            {particles && <ParticleBackground />}
+
+            {/* Sidebar */}
+            <Sidebar />
+
+            {/* Main Content */}
+            <div className="flex flex-1 flex-col lg:ml-64">
+                {/* Mobile top padding for fixed header */}
+                <main className="flex-1 overflow-y-auto bg-background p-6 pt-20 lg:pt-6 relative z-10">
+                    <PageTransition>{children}</PageTransition>
+                </main>
+            </div>
+
+            <Toaster />
+        </div>
+    );
+}
 
 export default function DashboardLayout({
     children,
@@ -32,15 +58,9 @@ export default function DashboardLayout({
     }
 
     return (
-        <div className="flex h-screen bg-background">
-            <Sidebar />
-            <div className="flex flex-1 flex-col overflow-hidden">
-                <Header />
-                <main className="flex-1 overflow-y-auto bg-background p-6">
-                    {children}
-                </main>
-            </div>
-            <Toaster />
-        </div>
+        <ThemeConfigProvider>
+            <DashboardLayoutContent>{children}</DashboardLayoutContent>
+        </ThemeConfigProvider>
     );
 }
+
