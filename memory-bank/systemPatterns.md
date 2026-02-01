@@ -234,6 +234,16 @@ export default function RootLayout({ children }) {
 }
 ```
 
+## Component Reusability Patterns
+
+### StatCard Pattern
+The `StatCard` component is designed for high reusability across the dashboard. It is now used in:
+- **Dashboard Home**: System-wide metrics
+- **Analytics Page**: Performance metrics
+- **Assets Page**: Audience and health overview
+
+This ensures visual consistency for all "big number" displays.
+
 ## Theme System (Dual-Hook Pattern)
 
 Nezuko uses a split-hook architecture for theming to separate "Mode" (Light/Dark) from "Configuration" (Accents/Effects):

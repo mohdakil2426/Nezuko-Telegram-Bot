@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Search, Filter, Plus, Hash, Users, Shield, Zap, MoreVertical, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Search, Filter, Plus, Hash, Users, Shield, Zap, MoreVertical, CheckCircle2, AlertCircle, Activity, Globe } from 'lucide-react';
 import { mockApi } from '@/lib/data/mock-data';
-import type { TelegramAsset } from '@/lib/data/types';
+import type { TelegramAsset, AssetsOverviewStats } from '@/lib/data/types';
 import { useThemeConfig } from '@/lib/hooks/use-theme-config';
 import { useTheme } from 'next-themes';
 import { MagneticButton } from '@/components/ui/magnetic-button';
@@ -13,9 +13,13 @@ import StatusBadge from '@/components/StatusBadge';
 import PageLoader from '@/components/PageLoader';
 import PageHeader from '@/components/layout/PageHeader';
 import TiltCard from '@/components/TiltCard';
+import StatCard from '@/components/StatCard';
 
-// Asset Card Component
+// Asset Card Component (unchanged)
 function AssetCard({ asset, index }: { asset: TelegramAsset; index: number }) {
+  // ... (implementation same as before, I won't repeat it here to save tokens if I can avoid full file replace, but replace_file_content requires context.
+  // Actually, I should use replace_file_content carefully.
+  // I will only touch imports and the component body.
   const { accentHex: accentColor } = useThemeConfig();
   const { resolvedTheme } = useTheme();
   
@@ -90,7 +94,7 @@ function AssetCard({ asset, index }: { asset: TelegramAsset; index: number }) {
                  className="h-full rounded-full"
                  style={{ backgroundColor: accentColor }}
                  initial={{ width: 0 }}
-                 animate={{ width: `${((asset.dailyGrowth || 0) / 100) * 100}%` }} // Simplified visual logic
+                 animate={{ width: `${((asset.dailyGrowth || 0) / 100) * 100}%` }} 
                  transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
                />
             </div>
@@ -118,6 +122,7 @@ function AssetCard({ asset, index }: { asset: TelegramAsset; index: number }) {
 
 export default function Channels() {
   const [assets, setAssets] = useState<TelegramAsset[]>([]);
+  const [overview, setOverview] = useState<AssetsOverviewStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'ALL' | 'CHANNEL' | 'GROUP'>('ALL');
   const [search, setSearch] = useState('');
@@ -126,8 +131,12 @@ export default function Channels() {
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
-      const data = await mockApi.getTelegramAssets();
-      setAssets(data);
+      const [assetsData, overviewData] = await Promise.all([
+        mockApi.getTelegramAssets(),
+        mockApi.getAssetsOverview()
+      ]);
+      setAssets(assetsData);
+      setOverview(overviewData);
       setIsLoading(false);
     };
     loadData();
@@ -142,7 +151,7 @@ export default function Channels() {
     return matchesFilter && matchesSearch;
   });
 
-  if (isLoading) return <PageLoader />;
+  if (isLoading || !overview) return <PageLoader />;
 
   return (
     <div className="space-y-8">
@@ -159,6 +168,36 @@ export default function Channels() {
           Add Asset
         </MagneticButton>
       </PageHeader>
+
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard
+          title="Total Audience"
+          value={overview.totalAudience / 1000}
+          suffix="k"
+          change={overview.totalAudienceChange}
+          icon={Users}
+          gradientColor={accentColor}
+          index={0}
+        />
+        <StatCard
+          title="Active Assets"
+          value={overview.activeAssets}
+          change={2} // Mock change for assets
+          icon={Globe}
+          gradientColor={accentColor}
+          index={1}
+        />
+        <StatCard
+          title="System Health"
+          value={overview.systemHealth}
+          suffix="%"
+          change={0}
+          icon={Activity}
+          gradientColor={accentColor}
+          index={2}
+        />
+      </div>
 
       {/* Toolbar */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-(--nezuko-card) p-4 rounded-2xl border border-(--nezuko-border) shadow-sm">

@@ -19,6 +19,8 @@ export default function ParticleBackground() {
   const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
   const animationRef = useRef<number | null>(null);
+  
+  // Hook usage: get state from theme config
   const { accentHex: accentColor, particleDensity, animations } = useThemeConfig();
   const { resolvedTheme } = useTheme();
 

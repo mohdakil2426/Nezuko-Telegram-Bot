@@ -39,6 +39,7 @@
 | **Pre-filled Credentials** | Email/password auto-filled in dev mode                        | `apps/web/src/app/(auth)/login/page.tsx` |
 | **Dev Mode Banner**        | Amber warning "🚧 Development Mode - Auth Disabled"           | `apps/web/src/app/(auth)/login/page.tsx` |
 | **Premium 404 Page**       | Glassmorphism 404 with gradient text, floating ghost, orbs   | `apps/web/src/app/not-found.tsx`        |
+| **Assets Overview Cards**  | 3-card summary grid (Total Audience, Active Assets, Health)  | `apps/web/src/app/dashboard/assets/page.tsx` |
 
 ### Files Modified (Post-Phase)
 
@@ -50,6 +51,8 @@ apps/web/src/app/(auth)/login/page.tsx       # Dev bypass button, pre-filled cre
 apps/web/src/app/not-found.tsx               # Complete premium redesign
 apps/web/src/hooks/use-auth.tsx              # Rewritten as bridge to useAuthStore
 apps/web/src/components/**/*.tsx             # Replaced useTheme with useThemeConfig
+apps/web/src/app/dashboard/assets/page.tsx     # Added Overview Cards grid
+apps/web/src/lib/data/mock-data.ts             # Added getAssetsOverview & AssetsOverviewStats
 apps/web/src/hooks/use-theme.tsx             # DELETED (Legacy)
 ```
 

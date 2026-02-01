@@ -119,4 +119,5 @@ export function MagneticButton({
     </motion.button>
   );
 }
+
 export default MagneticButton;

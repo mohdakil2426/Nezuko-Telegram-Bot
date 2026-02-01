@@ -9,6 +9,7 @@ import type {
   AnalyticsMetrics,
   CommandUsage,
   EngagementData,
+  AssetsOverviewStats,
 } from './types';
 
 // Current User
@@ -349,6 +350,18 @@ export const mockApi = {
     return {
       success: true,
       url: 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({ exported: true, timestamp: Date.now() })),
+    };
+  },
+
+  // Get Assets Overview
+  getAssetsOverview: async (): Promise<AssetsOverviewStats> => {
+    await mockApi.delay(300);
+    // Adapting groupsOverviewStats to match AssetsOverviewStats
+    return {
+      totalAudience: groupsOverviewStats.totalAudience,
+      totalAudienceChange: groupsOverviewStats.totalAudienceChange,
+      activeAssets: groupsOverviewStats.activeChannels, // Mapping activeChannels to activeAssets
+      systemHealth: groupsOverviewStats.systemHealth,
     };
   },
 };
