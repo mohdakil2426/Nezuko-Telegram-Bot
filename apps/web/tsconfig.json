@@ -33,6 +33,7 @@
         "./src/lib/*"
       ],
       "@/hooks/*": [
+        "./src/hooks/*",
         "./src/lib/hooks/*"
       ],
       "@/stores/*": [

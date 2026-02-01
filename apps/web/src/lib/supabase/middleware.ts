@@ -36,6 +36,16 @@ export async function updateSession(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user ?? null;
 
+  // OVERRIDE: Disable auth for local development
+  if (process.env.NEXT_PUBLIC_DISABLE_AUTH === "true") {
+    // Allow access to login page for testing the UI
+    if (request.nextUrl.pathname === "/login") {
+      return supabaseResponse;
+    }
+    // Skip all other auth checks and allow access
+    return supabaseResponse;
+  }
+
   // Protected routes - redirect to login if not authenticated
   if (
     !user &&

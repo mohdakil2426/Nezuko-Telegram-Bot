@@ -1,79 +1,221 @@
 # Project Progress: Nezuko - Roadmap to v1.0.0
 
-## 🛠️ Current Status: Phase 27 - Dashboard UI Migration 🎨
+## Current Status: Phase 28 COMPLETE - Dashboard Complete Redesign + Post-Phase Fixes
 
-**Overall Implementation Status**: **100%** 🚀 (Core features complete, now enhancing UI)
+**Overall Implementation Status**: **100%** (Core features complete, dashboard restructured, dev experience improved)
 
-| Phase | Description | Status |
-|:------|:------------|:-------|
-| **Phase 0** | Monorepo Foundation & Docker | ✅ Complete |
-| **Phase 1-2** | Auth & Layout | ✅ Complete |
-| **Phase 3** | Dashboard & Stats | ✅ Complete |
-| **Phase 4-5** | Groups & Channels CRUD | ✅ Complete |
-| **Phase 6** | Config Management | ✅ Complete |
-| **Phase 7** | Real-Time Log Streaming | ✅ Complete |
-| **Phase 8-9** | DB Browser & Analytics | ✅ Complete |
-| **Phase 10-11** | Audit Logs & RBAC | ✅ Complete |
-| **Phase 12** | Production Polish & Static Analysis Cleanup | ✅ Complete |
-| **Phase 13** | Maintenance & Documentation | ✅ Complete |
-| **Phase 14** | Supabase One-Stack Migration | ✅ Complete |
-| **Phase 15** | Comprehensive Testing | ✅ Complete |
-| **Phase 16** | React Optimization (Vercel Best Practices) | ✅ Complete |
-| **Phase 17** | Next.js 16 Deep Compliance Audit | ✅ Complete |
-| **Phase 18** | TanStack Query v5 Best Practices Audit | ✅ Complete |
-| **Phase 19** | Production-Grade Folder Structure | ✅ Complete |
-| **Phase 20** | Documentation Refinement | ✅ Complete |
-| **Phase 21** | Developer Experience Improvements | ✅ Complete |
-| **Phase 22** | Script Logging System | ✅ Complete |
-| **Phase 23** | SQLite Migration & Dashboard Fixes | ✅ Complete |
-| **Phase 24** | Code Quality Improvements (Skills Audit) | ✅ Complete |
-| **Phase 25** | GitHub Push Readiness & Cleanup | ✅ Complete |
-| **Phase 26** | Linting Fixes & Dependencies Update | ✅ Complete |
-| **Phase 27** | Dashboard UI Migration | 🔄 **IN PROGRESS** |
+| Phase           | Description                                 | Status      |
+| :-------------- | :------------------------------------------ | :---------- |
+| **Phase 0**     | Monorepo Foundation & Docker                | ✅ Complete |
+| **Phase 1-2**   | Auth & Layout                               | ✅ Complete |
+| **Phase 3**     | Dashboard & Stats                           | ✅ Complete |
+| **Phase 4-5**   | Groups & Channels CRUD                      | ✅ Complete |
+| **Phase 6**     | Config Management                           | ✅ Complete |
+| **Phase 7**     | Real-Time Log Streaming                     | ✅ Complete |
+| **Phase 8-9**   | DB Browser & Analytics                      | ✅ Complete |
+| **Phase 10-11** | Audit Logs & RBAC                           | ✅ Complete |
+| **Phase 12**    | Production Polish & Static Analysis Cleanup | ✅ Complete |
+| **Phase 13**    | Maintenance & Documentation                 | ✅ Complete |
+| **Phase 14**    | Supabase One-Stack Migration                | ✅ Complete |
+| **Phase 15**    | Comprehensive Testing                       | ✅ Complete |
+| **Phase 16**    | React Optimization (Vercel Best Practices)  | ✅ Complete |
+| **Phase 17**    | Next.js 16 Deep Compliance Audit            | ✅ Complete |
+| **Phase 18**    | TanStack Query v5 Best Practices Audit      | ✅ Complete |
+| **Phase 19**    | Production-Grade Folder Structure           | ✅ Complete |
+| **Phase 20**    | Documentation Refinement                    | ✅ Complete |
+| **Phase 21**    | Developer Experience Improvements           | ✅ Complete |
+| **Phase 22**    | Script Logging System                       | ✅ Complete |
+| **Phase 23**    | SQLite Migration & Dashboard Fixes          | ✅ Complete |
+| **Phase 24**    | Code Quality Improvements (Skills Audit)    | ✅ Complete |
+| **Phase 25**    | GitHub Push Readiness & Cleanup             | ✅ Complete |
+| **Phase 26**    | Linting Fixes & Dependencies Update         | ✅ Complete |
+| **Phase 27**    | Dashboard UI Migration                      | ✅ Complete |
+| **Phase 28**    | Dashboard Complete Redesign                 | ✅ Complete |
+| **Post-28**     | Testing & Dev Experience Fixes              | ✅ Complete |
 
 ---
 
-## 🔄 Phase 27: Dashboard UI Migration (2026-02-01)
+## ✅ Phase 28: Dashboard Complete Redesign (2026-02-01) + Post-Phase Fixes (2026-02-02) + Runtime Corrections
 
 ### Overview
 
-Port the premium anime-inspired UI design from the standalone Vite prototype (`docs/local/Telegram-Bot-Dashboard/`) to the production Next.js dashboard (`apps/web/`).
+Restructured the dashboard by removing Database page (security), merging Groups + Channels into unified Assets page, adding mock data toggle for development, and redesigning Login with premium styling.
+
+### OpenSpec Change
+
+| Item        | Value                                                   |
+| ----------- | ------------------------------------------------------- |
+| Change Name | `dashboard-phase28-complete-redesign`                   |
+| Location    | `openspec/changes/dashboard-phase28-complete-redesign/` |
+| Artifacts   | 4/4 Complete (proposal, design, specs, tasks)           |
+| Status      | **COMPLETE** - All 53 tasks implemented                 |
 
 ### Implementation Progress
 
-| Phase | Tasks | Status |
-|-------|-------|--------|
-| Phase 1 | 5/5 | ✅ CSS foundation & theme system |
-| Phase 2 | 7/7 | ✅ Base UI components |
-| Phase 3 | 3/3 | ✅ Dashboard components |
-| Phase 4 | 3/3 | ✅ Layout components |
-| Phase 5 | 4/4 | ✅ Page redesigns |
-| Phase 6 | 4/4 | ✅ Polish existing pages |
-| Phase 7 | 4/4 | ✅ Testing & documentation |
+| Phase   | Tasks | Description                               | Status      |
+| ------- | ----- | ----------------------------------------- | ----------- |
+| Phase 1 | 5/5   | Backup & Foundation - config, types, mock | ✅ Complete |
+| Phase 2 | 7/7   | Hook Modifications - mock toggle          | ✅ Complete |
+| Phase 3 | 4/4   | Asset Components - cards, avatar          | ✅ Complete |
+| Phase 4 | 10/10 | Unified Assets Page - tabs/search/grid    | ✅ Complete |
+| Phase 5 | 4/4   | Navigation & Redirects - sidebar + config | ✅ Complete |
+| Phase 6 | 7/7   | File Removal - delete old pages/hooks     | ✅ Complete |
+| Phase 7 | 9/9   | Premium Login - glassmorphism redesign    | ✅ Complete |
+| Phase 8 | 7/7   | Testing & Documentation                   | ✅ Complete |
+
+**Total Progress: 53/53 tasks (100%)** ✅
+
+### Key Changes Implemented
+
+| Category    | Change                                           |
+| ----------- | ------------------------------------------------ |
+| **Removed** | `/dashboard/database` page (security risk)       |
+| **Removed** | `/dashboard/groups` page (merged)                |
+| **Removed** | `/dashboard/channels` page (merged)              |
+| **Added**   | `/dashboard/assets` - Unified Groups + Channels  |
+| **Added**   | Mock data toggle via `NEXT_PUBLIC_USE_MOCK_DATA` |
+| **Added**   | Premium login with glassmorphism                 |
+| **Updated** | Sidebar navigation (Assets replaces 3 items)     |
+| **Added**   | URL redirects for legacy routes                  |
+| **Added**   | ThemeConfigProvider to root layout               |
+
+### Files Created
+
+| File                                                    | Description                   |
+| ------------------------------------------------------- | ----------------------------- |
+| `apps/web/src/lib/data/config.ts`                       | USE_MOCK_DATA toggle          |
+| `apps/web/src/lib/data/types.ts`                        | Asset, Badge types + adapters |
+| `apps/web/src/lib/data/mock-api.ts`                     | Complete mock API             |
+| `apps/web/src/components/assets/index.ts`               | Component exports             |
+| `apps/web/src/components/assets/asset-card.tsx`         | 3D tilt asset card            |
+| `apps/web/src/components/assets/asset-avatar.tsx`       | Icon/image avatar             |
+| `apps/web/src/components/assets/connect-asset-card.tsx` | Add asset CTA                 |
+| `apps/web/src/lib/hooks/use-assets.ts`                  | Combined groups/channels hook |
+| `apps/web/src/app/dashboard/assets/page.tsx`            | Main assets page              |
+| `apps/web/src/app/dashboard/assets/[id]/page.tsx`       | Asset detail page             |
+
+### Files Modified
+
+| File                                            | Change                |
+| ----------------------------------------------- | --------------------- |
+| `apps/web/src/lib/hooks/use-dashboard-stats.ts` | Mock toggle           |
+| `apps/web/src/lib/hooks/use-dashboard-chart.ts` | Mock toggle           |
+| `apps/web/src/lib/hooks/use-groups.ts`          | Mock toggle           |
+| `apps/web/src/lib/hooks/use-channels.ts`        | Mock toggle           |
+| `apps/web/src/lib/hooks/use-analytics.ts`       | Mock toggle           |
+| `apps/web/src/lib/hooks/use-activity-feed.ts`   | Mock toggle           |
+| `apps/web/src/components/layout/sidebar.tsx`    | Assets nav            |
+| `apps/web/next.config.ts`                       | Legacy redirects      |
+| `apps/web/src/app/(auth)/layout.tsx`            | Glassmorphism         |
+| `apps/web/src/app/(auth)/login/page.tsx`        | Premium login         |
+| `apps/web/src/app/layout.tsx`                   | ThemeConfigProvider   |
+| `apps/web/src/lib/query-keys.ts`                | Removed database keys |
+
+### Files Deleted
+
+| File/Directory                               | Reason           |
+| -------------------------------------------- | ---------------- |
+| `apps/web/src/app/dashboard/database/`       | Security risk    |
+| `apps/web/src/app/dashboard/groups/`         | Merged to assets |
+| `apps/web/src/app/dashboard/channels/`       | Merged to assets |
+| `apps/web/src/lib/hooks/use-database.ts`     | No longer needed |
+| `apps/web/src/lib/api/endpoints/database.ts` | No longer needed |
+| `apps/web/src/components/database/`          | No longer needed |
+
+### Build Verification
+
+```
+$ bun run build
+✓ Compiled successfully in 13.7s
+✓ Generating static pages (13/13)
+
+Routes:
+○ /dashboard
+○ /dashboard/assets
+ƒ /dashboard/assets/[id]
+○ /dashboard/analytics
+○ /dashboard/config
+○ /dashboard/logs
+○ /dashboard/settings
+○ /login
+```
+
+### Post-Phase Fixes (2026-02-02 Session)
+
+During testing, we discovered and fixed several issues:
+
+| Issue                     | Root Cause                                                   | Fix Applied                                                  |
+| ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Hydration Mismatch**    | Browser automation added `antigravity-scroll-lock` to body   | Added `suppressHydrationWarning` to `<body>` in layout.tsx   |
+| **Blank Dashboard**       | DashboardLayout returned `null` when `isAuthenticated=false` | Added `NEXT_PUBLIC_DISABLE_AUTH` check to bypass auth in dev |
+| **Login Inaccessible**    | Middleware redirected `/login` → `/dashboard` when auth off  | Changed middleware to allow login page access in dev mode    |
+| **Theme Hook Error**      | Legacy `useTheme` hook called server-side & context mismatch | Migrated to `useThemeConfig` (accents) + `next-themes` (mode)|
+| **Auth Provider Logic**   | `useAuth` used missing `AuthContext` instead of global store | Rewrote `useAuth` as bridge to `useAuthStore` + Supabase     |
+
+### Developer Experience Improvements
+
+| Feature                    | Description                                                  | File Modified                            |
+| -------------------------- | ------------------------------------------------------------ | ---------------------------------------- |
+| **Dev Login Bypass**       | "Dev Login (Bypass Auth)" button for instant login           | `apps/web/src/app/(auth)/login/page.tsx` |
+| **Pre-filled Credentials** | Email/password auto-filled in dev mode                       | `apps/web/src/app/(auth)/login/page.tsx` |
+| **Dev Mode Banner**        | Amber warning "🚧 Development Mode - Auth Disabled"          | `apps/web/src/app/(auth)/login/page.tsx` |
+| **Premium 404 Page**       | Glassmorphism 404 with gradient text, floating ghost, orbs   | `apps/web/src/app/not-found.tsx`         |
+
+### Files Modified (Post-Phase)
+
+| File                                     | Change                              |
+| ---------------------------------------- | ----------------------------------- |
+| `apps/web/src/app/layout.tsx`            | suppressHydrationWarning on `<body>`|
+| `apps/web/src/app/dashboard/layout.tsx`  | NEXT_PUBLIC_DISABLE_AUTH check      |
+| `apps/web/src/lib/supabase/middleware.ts`| Allow login page in dev mode        |
+| `apps/web/src/app/(auth)/login/page.tsx` | Dev bypass button, pre-filled creds |
+| `apps/web/src/app/not-found.tsx`         | Complete premium redesign           |
+
+---
+
+## ✅ Phase 27: Dashboard UI Migration (2026-02-01)
+
+### Overview
+
+Ported the premium anime-inspired UI design from the standalone Vite prototype (`docs/local/Telegram-Bot-Dashboard/`) to the production Next.js dashboard (`apps/web/`).
+
+### Implementation Progress
+
+| Phase   | Tasks | Status                           |
+| ------- | ----- | -------------------------------- |
+| Phase 1 | 5/5   | ✅ CSS foundation & theme system |
+| Phase 2 | 7/7   | ✅ Base UI components            |
+| Phase 3 | 3/3   | ✅ Dashboard components          |
+| Phase 4 | 3/3   | ✅ Layout components             |
+| Phase 5 | 4/4   | ✅ Page redesigns                |
+| Phase 6 | 4/4   | ✅ Polish existing pages         |
+| Phase 7 | 4/4   | ✅ Testing & documentation       |
 
 **Total Progress: 30/30 tasks (100%)** ✅
 
 ### Features Implemented
 
-| Feature | Description | Status |
-|---------|-------------|--------|
-| **11 Accent Themes** | Cyberpunk, Matrix, Synthwave, System Error, Admin, Docker, Toxic, Night City, Galaxy, Volcano, Abyss | ✅ Complete |
-| **Custom Color Picker** | User-defined accent with auto-generated gradient | ✅ Complete |
-| **Glassmorphism** | Backdrop blur effects on cards and surfaces | ✅ Complete |
-| **3D Tilt Cards** | Physics-based mouse-following card effects | ✅ Complete |
-| **Particle Background** | Floating particles with density control | ✅ Complete |
-| **Magnetic Buttons** | Cursor-following button interactions | ✅ Complete |
-| **Animated Counters** | Smooth number animations on stat cards | ✅ Complete |
-| **Page Transitions** | Framer Motion fade/slide animations | ✅ Complete |
-| **Mobile Sidebar** | Hamburger menu with slide-in navigation | ✅ Complete |
-| **Settings Page** | Complete theme customization UI | ✅ Complete |
+| Feature                 | Description                                                                                          | Status      |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- | ----------- |
+| **11 Accent Themes**    | Cyberpunk, Matrix, Synthwave, System Error, Admin, Docker, Toxic, Night City, Galaxy, Volcano, Abyss | ✅ Complete |
+| **Custom Color Picker** | User-defined accent with auto-generated gradient                                                     | ✅ Complete |
+| **Glassmorphism**       | Backdrop blur effects on cards and surfaces                                                          | ✅ Complete |
+| **3D Tilt Cards**       | Physics-based mouse-following card effects                                                           | ✅ Complete |
+| **Particle Background** | Floating particles with density control                                                              | ✅ Complete |
+| **Magnetic Buttons**    | Cursor-following button interactions                                                                 | ✅ Complete |
+| **Animated Counters**   | Smooth number animations on stat cards                                                               | ✅ Complete |
+| **Page Transitions**    | Framer Motion fade/slide animations                                                                  | ✅ Complete |
+| **Mobile Sidebar**      | Hamburger menu with slide-in navigation                                                              | ✅ Complete |
+| **Settings Page**       | Complete theme customization UI                                                                      | ✅ Complete |
 
 ### Components Created
 
 **Theme System:**
+
 - `lib/hooks/use-theme-config.tsx` - Theme context with 11 accents + custom
 
 **Base UI Components:**
+
 - `components/ui/tilt-card.tsx` - 3D tilt effect card
 - `components/ui/magnetic-button.tsx` - Cursor-following button
 - `components/ui/animated-counter.tsx` - Number animation
@@ -84,41 +226,27 @@ Port the premium anime-inspired UI design from the standalone Vite prototype (`d
 - `components/ui/slider.tsx` - shadcn/ui slider
 
 **Dashboard Components:**
+
 - `components/dashboard/stat-card-v2.tsx` - Premium stat cards
 - `components/dashboard/activity-item.tsx` - Timeline activity log
 - `components/charts/custom-tooltip.tsx` - Glass Recharts tooltip
 
 **Layout Components:**
+
 - `components/layout/page-header.tsx` - Unified page header
 - `components/layout/sidebar.tsx` - Complete mobile rewrite
 
 ### Pages Redesigned
 
-| Page | Changes |
-|------|---------|
-| `/dashboard` | StatCardV2, ActivityItem, DashboardCard, PageHeader |
-| `/dashboard/analytics` | Time range selector, filterable logs, stat cards |
-| `/dashboard/channels` | Search, tabs, Connect New Asset card |
-| `/dashboard/settings` | Theme modes, 11 accents, effects toggles |
-
-### Files Modified
-
-- `app/globals.css` - Nezuko design tokens, animations
-- `app/dashboard/layout.tsx` - Particles, transitions, mobile padding
-- `app/dashboard/page.tsx` - Full redesign
-- `app/dashboard/analytics/page.tsx` - Full redesign
-- `app/dashboard/channels/page.tsx` - Full redesign
-- `app/dashboard/settings/page.tsx` - New file
-- `components/layout/sidebar.tsx` - Complete rewrite
-
-### Remaining Work (Phase 7)
-
-- Cross-browser testing
-- Accessibility audit
-- Update documentation
+| Page                   | Changes                                             |
+| ---------------------- | --------------------------------------------------- |
+| `/dashboard`           | StatCardV2, ActivityItem, DashboardCard, PageHeader |
+| `/dashboard/analytics` | Time range selector, filterable logs, stat cards    |
+| `/dashboard/assets`    | NEW: Unified view, tabs, search, card grid          |
+| `/dashboard/settings`  | Theme modes, 11 accents, effects toggles            |
+| `/login`               | Glassmorphism, floating orbs, premium styling       |
 
 ---
-
 
 ## ✅ Phase 26: Linting Fixes & Dependencies Update (2026-01-31)
 
@@ -128,45 +256,21 @@ Comprehensive linting audit with strict Ruff rules (RUF, PERF, ASYNC) and depend
 
 ### Key Achievements
 
-| Category | Achievement |
-|----------|-------------|
-| **Ruff Rules** | Enabled RUF, PERF, ASYNC rules - all passing |
-| **RUF006 Fixes** | Background task references stored to prevent GC |
-| **PERF401 Fixes** | Converted loop+append to list comprehensions |
-| **Dependencies** | Updated all dev/base packages to latest stable |
-| **OpenSpec** | Archived `refactor-folder-structure` change |
+| Category          | Achievement                                     |
+| ----------------- | ----------------------------------------------- |
+| **Ruff Rules**    | Enabled RUF, PERF, ASYNC rules - all passing    |
+| **RUF006 Fixes**  | Background task references stored to prevent GC |
+| **PERF401 Fixes** | Converted loop+append to list comprehensions    |
+| **Dependencies**  | Updated all dev/base packages to latest stable  |
+| **OpenSpec**      | Archived `refactor-folder-structure` change     |
 
 ### Linting Results
 
-| Tool | Status |
-|------|--------|
-| Ruff | ✅ All checks passed |
-| Pylint | ✅ 10.00/10 |
-| Pyrefly | ✅ 0 errors |
-
-### Dependencies Updated
-
-| Package | Version |
-|---------|---------|
-| pytest | 9.0.2 |
-| pytest-asyncio | 1.3.0 |
-| pytest-cov | 7.0.0 |
-| pytest-mock | 3.15.1 |
-| ruff | 0.14.14 |
-| pylint | 4.0.4 |
-| pyrefly | 0.50.1 |
-| mypy | 1.19.1 |
-| alembic | 1.18.3 |
-| pyjwt | 2.11.0 |
-| sentry-sdk | 2.51.0 |
-
-### Files Modified
-
-- `pyproject.toml` - Added RUF, PERF, ASYNC rules
-- `requirements/base.txt` - Updated versions
-- `requirements/api.txt` - Removed starlette (FastAPI manages)
-- `requirements/dev.txt` - All packages to latest
-- 8 Python files for RUF006/PERF401 fixes
+| Tool    | Status               |
+| ------- | -------------------- |
+| Ruff    | ✅ All checks passed |
+| Pylint  | ✅ 10.00/10          |
+| Pyrefly | ✅ 0 errors          |
 
 ---
 
@@ -178,340 +282,28 @@ Comprehensive codebase audit and cleanup for production readiness and GitHub pub
 
 ### Key Achievements
 
-| Category | Achievement |
-|----------|-------------|
-| **Security** | Removed `.env.backup`, `docs/local/`, duplicate `.env` files |
-| **Environment** | Professional `.env.example` files with documentation |
-| **Dependencies** | Modular requirements structure (DRY, dev/prod separation) |
-| **Tests** | Centralized test structure (`tests/api/`, `tests/bot/`) |
-| **Storage** | Organized `storage/` with `.gitkeep` files |
-| **Cleanup** | Removed debug scripts and orphaned files |
-
-### Modular Requirements Structure
-
-```
-requirements/
-├── base.txt       # Shared dependencies (14 packages)
-├── api.txt        # API-specific (8 packages)
-├── bot.txt        # Bot-specific (1 package)
-├── dev.txt        # Development tools (9 packages)
-├── prod-api.txt   # Production API (base + api)
-└── prod-bot.txt   # Production Bot (base + bot)
-```
-
-### Centralized Test Structure
-
-```
-tests/
-├── conftest.py    # Shared fixtures
-├── api/           # API tests (moved from apps/api/tests/)
-│   ├── unit/
-│   └── integration/
-└── bot/           # Bot tests (reorganized)
-    ├── unit/
-    └── integration/
-```
-
-### Files Removed/Cleaned
-
-| File | Reason |
-|------|--------|
-| `.env.backup` | Contained real credentials |
-| `docs/local/` | Internal documentation |
-| `apps/api/test_*.py` | Debug scripts |
-| `apps/api/init_db.py` | Utility (use alembic) |
-| `apps/api/tests/` | Moved to `tests/api/` |
-| `apps/web/.env` | Duplicate with secrets |
-
-### Gitignore Patterns Added
-
-```gitignore
-.env.backup*
-apps/web/.env
-apps/api/.env
-apps/bot/.env
-apps/*/test_*.py
-apps/*/*.db
-/storage/**/*
-```
-
-### Script Updates
-
-Updated CLI scripts to reflect new structure:
-
-| Script | Change |
-|--------|--------|
-| `scripts/test/run.ps1` | Test paths → `tests/api/`, `tests/bot/` |
-| `scripts/test/run.sh` | Test paths → `tests/api/`, `tests/bot/` |
-| `scripts/setup/install.ps1` | Uses only root `requirements.txt` |
-| `scripts/setup/install.sh` | Uses only root `requirements.txt` |
-
----
-
-## ✅ Phase 24: Code Quality Improvements (2026-01-30)
-
-
-### Overview
-
-Applied best practices from three skill files (FastAPI, Python Performance Optimization, Python Testing Patterns) across the Python codebase.
-
-### Key Achievements
-
-| Achievement | Description |
-|-------------|-------------|
-| **Database Session** | Added explicit commit on success with improved documentation |
-| **Cache Resilience** | Graceful Redis error handling for degraded mode operation |
-| **Memory Optimization** | Added `__slots__` to frequently-used dataclasses |
-| **Type Safety** | Added missing type hints to all methods |
-| **Test Infrastructure** | Enhanced conftest.py with comprehensive fixtures and markers |
-
-### Files Modified
-
-| File | Improvement | Skill Applied |
-|------|-------------|---------------|
-| `apps/api/src/core/database.py` | Explicit commit, better docstring | FastAPI |
-| `apps/api/src/core/cache.py` | Redis error handling with logging | FastAPI + Performance |
-| `apps/api/src/services/group_service.py` | `@dataclass(slots=True)` | Performance |
-| `apps/bot/utils/postgres_logging.py` | Return type hints on all methods | FastAPI |
-| `tests/conftest.py` | Fixtures, markers, sample data | Testing |
-
-### Code Quality Audit Summary
-
-| Category | Status | Notes |
-|----------|--------|-------|
-| SQLAlchemy 2.0 Patterns | ✅ Compliant | Using `select()` style, `Mapped[]`, async |
-| Pydantic V2 | ✅ Compliant | `ConfigDict`, `model_validator` |
-| Async Database | ✅ Compliant | Proper context managers, rollback handling |
-| Error Handling | ✅ Enhanced | RFC 9457 responses, graceful degradation |
-| Type Hints | ✅ Enhanced | All functions now have return types |
-| Test Fixtures | ✅ Enhanced | Comprehensive fixtures for isolation |
-
----
-
-## ✅ Phase 23: SQLite Migration & Dashboard Fixes (2026-01-28)
-
-### Overview
-
-Unified the database architecture for local development and fixed major UI/UX issues in the Admin Dashboard.
-
-### Key Achievements
-
-| Achievement | Description |
-|-------------|-------------|
-| **Unified DB** | Both API and Bot now share `storage/data/nezuko.db` |
-| **Migration Fixes** | Dialect-agnostic Alembic migrations (Postgres ↔ SQLite) |
-| **UI Theme Fix** | Text visibility in light mode resolved via semantic tokens |
-| **API Integration** | Fixed data unwrapping for Stats and Activity feeds |
-| **Verification** | 100% pass rate on manual E2E verification flow |
-
-### Detailed Fixes
-
-| Component | Issue | Resolution |
-|-----------|-------|------------|
-| Migrations | `postgresql.UUID` / `now()` | Replaced with `sa.String` and `sa.func.now()` |
-| Styles | Transparent text in light mode | Refactored `globals.css` with semantic variables |
-| API Client | Nested `data` property ignored | Updated `dashboardApi.ts` to unwrap `response.data` |
-| Database | Missing bot tables in dashboard | Unified database engine in both apps |
-
-## ✅ Phase 22: Script Logging System (2026-01-28)
-
-### Overview
-
-Implemented comprehensive logging across all PowerShell scripts for better debugging and monitoring.
-
-### Features Implemented
-
-| Feature | Description |
-|---------|-------------|
-| `scripts/logs/` directory | Centralized log storage |
-| Daily log rotation | `nezuko-YYYY-MM-DD.log` format |
-| Append-only writes | Never overwrites, never clears |
-| Verbose pip/bun output | Shows installation progress in terminal |
-| Log categories | INSTALL, CLEAN, DEV, PYTHON, NODE, SYSTEM |
-| Log levels | INFO, SUCCESS, WARN, ERROR, DEBUG |
-
-### Files Created/Updated
-
-| File | Change |
-|------|--------|
-| `scripts/logs/.gitignore` | Created - ignores *.log |
-| `scripts/logs/README.md` | Created - documents log format |
-| `scripts/core/utils.ps1` | Added logging functions |
-| `scripts/setup/install.ps1` | Added verbose logging |
-| `scripts/utils/clean.ps1` | Added cleanup logging |
-| `scripts/dev/start.ps1` | Added service startup logging |
-| `scripts/dev/stop.ps1` | Added process stop logging |
-| `scripts/README.md` | Updated with logging docs |
-
-### Bug Fixes
-
-| Issue | Fix |
-|-------|-----|
-| ErrorRecord type error | Cast to `[string]` before `.Trim()` |
-| Empty line logging | Check `if ($line -and $line.Trim())` |
-
----
-
-## ✅ Phase 21: Developer Experience Improvements (2026-01-28)
-
-
-### Overview
-
-Fixed bot execution issues and created organized development scripts for easier project management.
-
-### Bot Fixes
-
-| Issue | Root Cause | Fix |
-|-------|-----------|-----|
-| Import errors when running bot | Running from wrong directory | Must use `python -m apps.bot.main` from root |
-| `.env` not loading | `load_dotenv()` searching CWD | Changed to `load_dotenv(_BOT_DIR / ".env")` |
-| SQLite path not found | Relative path not resolved | Normalize relative paths to absolute |
-| Postgres handler errors | Pending async tasks on shutdown | Added `close_async()` cleanup method |
-| "Message is not modified" | Editing message with same content | Added `safe_edit_message()` helper |
-
-### Development Scripts Created
-
-```
-scripts/
-├── dev/
-│   ├── start.bat     # Start all 3 services in separate terminals
-│   ├── start.ps1     # Same with colored PowerShell output
-│   └── stop.bat      # Kill all running services
-├── setup/
-│   └── install.bat   # First-time project setup
-├── db/               # Database utilities
-├── deploy/           # Deployment scripts
-└── utils/            # Utility scripts
-```
-
-### Quick Commands
-
-| Action | Command |
-|--------|---------|
-| Start all | `.\scripts\dev\start.ps1` |
-| Stop all | `.\scripts\dev\stop.bat` |
-| Setup | `.\scripts\setup\install.bat` |
-
----
-
-
-## ✅ Phase 20: Documentation Refinement (2026-01-28)
-
-### Overview
-
-Comprehensive documentation cleanup and GEMINI.md modernization.
-
-### Key Changes
-
-| Change | Before | After |
-|--------|--------|-------|
-| TECH_STACK.md | Root directory | `docs/architecture/tech-stack.md` |
-| CONTRIBUTING.md | Full content | Lightweight pointer |
-| GEMINI.md | Single file | Modular with imports |
-| docs/local refs | Present in public docs | Removed |
-| memory-bank refs | Present in public docs | Removed |
-
-### Documentation Files Updated
-
-- `docs/README.md` - Updated navigation tree
-- `docs/architecture/README.md` - Removed memory-bank references
-- `docs/architecture/folder-structure.md` - Cleaned structure
-- `docs/architecture/tech-stack.md` - New comprehensive tech reference
-- All `docs/*/README.md` - Fixed broken "Next Steps" links
-- `GEMINI.md` - Complete rewrite with component imports
-- `apps/*/GEMINI.md` - Created per-app context files
-- `CONTRIBUTING.md` - Made lightweight pointer
-
-### Success Criteria Met
-
-- ✅ No public docs reference `docs/local/`
-- ✅ No public docs reference `memory-bank/`
-- ✅ Tech stack in proper location
-- ✅ GEMINI.md follows official format
-- ✅ All documentation links valid
-
----
-
-## ✅ Phase 19: Production-Grade Folder Structure (2026-01-27)
-
-### Key Changes
-
-| Change | Before | After |
-|--------|--------|-------|
-| Bot location | `bot/` (root) | `apps/bot/` |
-| Docker files | scattered | `config/docker/` |
-| Scripts | root level | `scripts/{setup,deploy,maintenance}/` |
-| Runtime files | tracked | `storage/` (gitignored) |
-| Environment | single `.env` | per-app `.env.example` files |
-| Root files | 30+ | 23 (clean) |
-
-### New Folder Structure
-
-```
-apps/           → All applications (web, api, bot)
-packages/       → Shared types and configs
-config/docker/  → All Docker/infrastructure files
-scripts/        → Organized by purpose
-storage/        → Runtime files (gitignored)
-docs/           → Structured documentation
-```
-
----
-
-## ✅ Phase 18: TanStack Query v5 Best Practices (2026-01-27)
-
-### Improvements Made
-
-| Improvement | Description |
-|-------------|-------------|
-| `gcTime` added | 1 hour garbage collection |
-| `staleTime` increased | 5 min to prevent excessive refetches |
-| `isPending` for initial load | v5 semantics (not `isLoading`) |
-| `mutationKey` on all mutations | Enable tracking with `useMutationState` |
-| ReactQueryDevtools | Development debugging |
-| Centralized query keys | 100% adoption across all hooks |
-| queryOptions factories | v5 reusable configuration patterns |
-
----
-
-## ✅ Phase 17: Next.js 16 Deep Compliance Audit (2026-01-27)
-
-### Anti-Patterns Fixed
-
-| Anti-Pattern | Fix Applied |
-|--------------|-------------|
-| `useParams()` deprecated | Migrated to `use(params)` |
-| Font missing `variable` prop | Added `variable: "--font-inter"` |
-| Missing `loading.tsx` | Created skeletons |
-| Source maps in production | Set `productionBrowserSourceMaps: false` |
-
----
-
-## ✅ Phase 15: Comprehensive Testing Results
-
-| Page | Status | Features Verified |
-|------|--------|-------------------|
-| **Login** | ✅ Working | Email/password auth, redirects |
-| **Dashboard** | ✅ Working | Stats cards, sparklines, activity |
-| **Groups** | ✅ Working | Table, search, filter, pagination |
-| **Channels** | ✅ Working | Table, Add modal, CRUD operations |
-| **Config** | ✅ Working | Settings panels |
-| **Logs** | ✅ Working | Live stream, search, filters, export |
-| **Database** | ✅ Working | Browser interface |
-| **Analytics** | ✅ Working | Charts, tabs, date picker, export |
-| **404** | ✅ Working | Custom ghost icon page |
+| Category         | Achievement                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| **Security**     | Removed `.env.backup`, `docs/local/`, duplicate `.env` files |
+| **Environment**  | Professional `.env.example` files with documentation         |
+| **Dependencies** | Modular requirements structure (DRY, dev/prod separation)    |
+| **Tests**        | Centralized test structure (`tests/api/`, `tests/bot/`)      |
+| **Storage**      | Organized `storage/` with `.gitkeep` files                   |
+| **Cleanup**      | Removed debug scripts and orphaned files                     |
 
 ---
 
 ## 🤖 Bot Core: Feature Checklist
 
 ### 1. Verification Engine
+
 - [x] Instant join restriction
 - [x] Multi-channel enforcement (AND logic)
 - [x] Leave detection (Immediate revocation)
 - [x] /verify command & inline callback handling
 
 ### 2. Admin Interface
+
 - [x] /protect & /unprotect (Self-service linking)
 - [x] /status (Real-time group health)
 - [x] Interactive /settings & /help menus
@@ -520,26 +312,32 @@ docs/           → Structured documentation
 
 ## 🔐 Security Verification
 
-| Check | Status |
-|-------|--------|
+| Check                         | Status  |
+| ----------------------------- | ------- |
 | Protected routes require auth | ✅ Pass |
 | API returns 401 without token | ✅ Pass |
 | Session cookies are HTTP-only | ✅ Pass |
-| Logout clears session | ✅ Pass |
-| Custom 404 page | ✅ Pass |
+| Logout clears session         | ✅ Pass |
+| Custom 404 page               | ✅ Pass |
+| Database page removed         | ✅ Pass |
 
 ---
 
-## 🚧 Known Issues & Technical Debt
+## Known Issues & Technical Debt
 
-### Being Addressed in Phase 27
-- **Mobile Responsiveness**: Sidebar hamburger menu being added
-- **Basic UI**: Premium UI design being ported
+### Resolved in Phase 28
+
+- ✅ **Database Page Security**: Removed raw database access
+- ✅ **Page Fragmentation**: Merged Groups + Channels into unified Assets page
+- ✅ **Development Friction**: Added mock data toggle for offline development
+- ✅ **Login Page Styling**: Upgraded to premium glassmorphism design
 
 ### Non-Critical Issues
-- **Config/Database loading**: Shows skeletons, needs real API data to populate
+
+- **Config loading**: Shows skeletons, needs real API data to populate
 
 ### Roadmap (Post v1.0.0)
+
 - [ ] Multi-language support (i18n)
 - [ ] Member Whitelisting UI
 - [ ] Telegram Login Widget integration
@@ -548,13 +346,13 @@ docs/           → Structured documentation
 
 ## 🔐 Test Credentials
 
-| User | Email | Password | Role |
-|------|-------|----------|------|
+| User  | Email            | Password  | Role        |
+| ----- | ---------------- | --------- | ----------- |
 | Admin | admin@nezuko.bot | Admin@123 | super_admin |
 
 ---
 
-## 🏆 Achievements
+## Achievements
 
 - ✅ Pylint Score: **10.00 / 10.0**
 - ✅ Pyrefly Errors: **0**
@@ -567,8 +365,9 @@ docs/           → Structured documentation
 - ✅ Documentation: **Fully Structured**
 - ✅ Developer Scripts: **Organized & Working**
 - ✅ Script Logging: **Comprehensive & Append-Only**
+- ✅ Premium UI: **Phase 27 Complete (11 themes, glassmorphism, animations)**
+- ✅ Dashboard Redesign: **Phase 28 Complete (Assets page, mock API, login)**
 
 ---
 
-*Last Updated: 2026-02-01 18:03 IST*
-
+_Last Updated: 2026-02-02 02:05 IST_

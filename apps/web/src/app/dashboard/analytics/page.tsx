@@ -1,285 +1,387 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { useUserGrowth, useVerificationTrends } from "@/lib/hooks/use-analytics";
-import { UserGrowthChart } from "@/components/charts/user-growth-chart";
-import { VerificationTrendChart } from "@/components/charts/verification-trend-chart";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PageHeader } from "@/components/layout/page-header";
-import { StatCardV2 } from "@/components/dashboard/stat-card-v2";
-import { DashboardCard } from "@/components/ui/dashboard-card";
-import { MagneticButton } from "@/components/ui/magnetic-button";
-import { StaggerContainer, StaggerItem } from "@/components/ui/page-transition";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useThemeConfig } from "@/lib/hooks/use-theme-config";
-import { Users, TrendingUp, Activity, AlertTriangle, Download, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from 'react';
+import { Download, Users, Terminal, AlertTriangle } from 'lucide-react';
+import { mockApi } from '@/lib/data/mock-data';
+import type { AnalyticsMetrics, SystemLog, EngagementData, CommandUsage } from '@/lib/data/types';
+import { cn } from '@/lib/utils';
+import { useThemeConfig } from '@/lib/hooks/use-theme-config';
+import { useTheme } from 'next-themes';
+import { MagneticButton } from '@/components/ui/magnetic-button';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts';
 
-// Time range options
-const TIME_RANGES = [
-  { id: "24h", label: "24H" },
-  { id: "7d", label: "7D" },
-  { id: "30d", label: "30D" },
-  { id: "90d", label: "90D" },
-] as const;
+// New Components
+import PageLoader from '@/components/PageLoader';
+import StatCard from '@/components/StatCard';
+import DashboardCard from '@/components/DashboardCard';
+import PageHeader from '@/components/layout/PageHeader';
+import CustomTooltip from '@/components/charts/CustomTooltip';
+import StatusBadge from '@/components/StatusBadge';
 
-type TimeRange = typeof TIME_RANGES[number]["id"];
+export default function Analytics() {
+  const [metrics, setMetrics] = useState<AnalyticsMetrics | null>(null);
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [engagement, setEngagement] = useState<EngagementData | null>(null);
+  const [commandUsage, setCommandUsage] = useState<CommandUsage[]>([]);
+  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
+  const [logFilter, setLogFilter] = useState<'ALL' | 'INFO' | 'WARN' | 'ERROR'>('ALL');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const { accentHex: accentColor } = useThemeConfig();
+  const { resolvedTheme } = useTheme();
 
-// Mock system logs
-const MOCK_LOGS = [
-  { id: "1", timestamp: "10:23:45", level: "info", message: "User verification completed successfully", source: "verifier" },
-  { id: "2", timestamp: "10:23:44", level: "warn", message: "Rate limit approaching (80% capacity)", source: "rate-limiter" },
-  { id: "3", timestamp: "10:23:42", level: "error", message: "Database timeout on shard_02", source: "database" },
-  { id: "4", timestamp: "10:23:40", level: "info", message: "Cache refreshed for 125 groups", source: "cache" },
-  { id: "5", timestamp: "10:23:38", level: "info", message: "New channel protected: @tech_news", source: "protection" },
-  { id: "6", timestamp: "10:23:35", level: "warn", message: "Retrying failed webhook delivery", source: "webhook" },
-  { id: "7", timestamp: "10:23:30", level: "info", message: "Batch verification processed: 45 users", source: "verifier" },
-];
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      const [metricsData, logsData, engagementData] = await Promise.all([
+        mockApi.getAnalyticsMetrics(),
+        mockApi.getSystemLogs(),
+        mockApi.getEngagementData(),
+      ]);
+      setMetrics(metricsData);
+      setLogs(logsData);
+      setEngagement(engagementData);
+      setCommandUsage([
+        { category: 'Music', percentage: 40, color: accentColor },
+        { category: 'Mod', percentage: 30, color: `${accentColor}cc` },
+        { category: 'Fun', percentage: 20, color: `${accentColor}99` },
+        { category: 'Eco', percentage: 10, color: `${accentColor}66` },
+      ]);
+      setIsLoading(false);
+    };
+    loadData();
+  }, [accentColor]);
 
-type LogLevel = "all" | "info" | "warn" | "error";
-
-const LOG_LEVEL_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-  info: { bg: "bg-blue-500/10", text: "text-blue-400", dot: "bg-blue-500" },
-  warn: { bg: "bg-yellow-500/10", text: "text-yellow-400", dot: "bg-yellow-500" },
-  error: { bg: "bg-red-500/10", text: "text-red-400", dot: "bg-red-500" },
-};
-
-export default function AnalyticsPage() {
-  const [period, setPeriod] = useState<TimeRange>("30d");
-  const [logFilter, setLogFilter] = useState<LogLevel>("all");
-  const { reducedMotion, accentHex } = useThemeConfig();
-
-  const granularity = period === "24h" ? "hour" : "day";
-  const verificationPeriod = period === "90d" ? "30d" : (period === "24h" ? "24h" : "7d");
-
-  const { data: userGrowth, isLoading: usersLoading } = useUserGrowth(period, "day");
-  const { data: verifyTrends, isLoading: verifyLoading } = useVerificationTrends(verificationPeriod, granularity);
-
-  const filteredLogs = logFilter === "all" 
-    ? MOCK_LOGS 
-    : MOCK_LOGS.filter(log => log.level === logFilter);
-
-  const handleExport = () => {
-    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
-      JSON.stringify({ userGrowth, verifyTrends, timestamp: new Date().toISOString() }, null, 2)
-    )}`;
-    const link = document.createElement("a");
-    link.href = jsonString;
-    link.download = `analytics_export_${new Date().toISOString()}.json`;
-    link.click();
+  const handleExport = async () => {
+    setIsExporting(true);
+    await mockApi.exportReport();
+    setTimeout(() => setIsExporting(false), 1500);
   };
+
+  const filteredLogs = logFilter === 'ALL' 
+    ? logs 
+    : logs.filter(log => log.level === logFilter || (logFilter === 'INFO' && log.level === 'DEBUG'));
+
+  const pieData = commandUsage.map(cmd => ({
+    name: cmd.category,
+    value: cmd.percentage,
+    color: cmd.color,
+  }));
+
+  // Combine engagement data for chart
+  const combinedData = engagement ? engagement.events.map((e, i) => ({
+    time: e.time,
+    events: e.value,
+    users: engagement.users[i]?.value || 0,
+  })) : [];
+
+  if (isLoading || !metrics || !engagement) {
+    return <PageLoader />;
+  }
 
   return (
     <div className="space-y-8">
-      {/* Page Header with Time Range Selector */}
-      <PageHeader
-        title="Analytics"
-        highlight="Overview"
-        description="Real-time system performance and insights."
+      {/* Header */}
+      <PageHeader 
+        title="Analytics" 
+        highlight="Overview" 
+        description="Real-time system performance and engagement metrics."
       >
-        <div className="flex items-center gap-3">
-          {/* Time Range Selector */}
-          <div className="flex items-center gap-1 p-1 glass rounded-lg border border-[var(--nezuko-border)]">
-            {TIME_RANGES.map((range) => (
-              <motion.button
-                key={range.id}
-                onClick={() => setPeriod(range.id)}
-                className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
-                  period === range.id
-                    ? "bg-primary text-white"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5"
-                )}
-                whileHover={!reducedMotion ? { scale: 1.05 } : undefined}
-                whileTap={!reducedMotion ? { scale: 0.95 } : undefined}
-              >
-                {range.label}
-              </motion.button>
-            ))}
-          </div>
-
-          {/* Export Button */}
-          <MagneticButton variant="outline" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </MagneticButton>
+        {/* Time Range */}
+        <div className="glass p-1 rounded-xl flex text-xs font-medium">
+          {(['24h', '7d', '30d'] as const).map((range, idx) => (
+            <motion.button
+              key={range}
+              onClick={() => setTimeRange(range)}
+              className={cn(
+                "px-4 py-2 rounded-lg transition-all duration-300",
+                timeRange === range 
+                  ? 'bg-primary text-white' 
+                  : 'text-(--text-muted) hover:text-(--text-primary) hover:bg-(--nezuko-surface-hover)'
+              )}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.05 }}
+            >
+              {range}
+            </motion.button>
+          ))}
         </div>
+        <MagneticButton 
+          variant="primary"
+          onClick={handleExport}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <motion.div 
+              className="w-4 h-4 border-2 border-current border-t-transparent rounded-full"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          Export Report
+        </MagneticButton>
       </PageHeader>
 
       {/* Stats Grid */}
-      <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StaggerItem>
-          <StatCardV2
-            title="Total Users"
-            value={usersLoading ? 0 : (userGrowth?.summary.current_total || 0)}
-            icon={Users}
-            change={userGrowth?.summary.growth_rate}
-            index={0}
-          />
-        </StaggerItem>
-        <StaggerItem>
-          <StatCardV2
-            title="Growth Rate"
-            value={usersLoading ? 0 : (userGrowth?.summary.growth_rate || 0)}
-            suffix="%"
-            icon={TrendingUp}
-            index={1}
-          />
-        </StaggerItem>
-        <StaggerItem>
-          <StatCardV2
-            title="Verifications"
-            value={verifyLoading ? 0 : (verifyTrends?.summary.total_verifications || 0)}
-            icon={Activity}
-            index={2}
-          />
-        </StaggerItem>
-        <StaggerItem>
-          <StatCardV2
-            title="Error Rate"
-            value={verifyLoading ? 0 : Math.round(100 - (verifyTrends?.summary.success_rate || 100))}
-            suffix="%"
-            icon={AlertTriangle}
-            gradientColor="#ef4444"
-            index={3}
-          />
-        </StaggerItem>
-      </StaggerContainer>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StatCard
+          title="Total Active Users"
+          value={metrics.totalActiveUsers}
+          change={metrics.activeUsersChange}
+          changeLabel="vs last period"
+          icon={Users}
+          gradientColor={accentColor}
+          index={0}
+        />
+        <StatCard
+          title="Commands Executed"
+          value={metrics.commandsExecuted}
+          change={metrics.commandsChange}
+          changeLabel="vs last period"
+          icon={Terminal}
+          gradientColor={accentColor}
+          index={1}
+        />
+        <StatCard
+          title="System Error Rate"
+          value={metrics.errorRate}
+          change={metrics.errorRateChange}
+          changeLabel="Improvement"
+          icon={AlertTriangle}
+          gradientColor={accentColor}
+          index={2}
+          suffix="%"
+        />
+      </div>
 
-      {/* Tabs for Charts */}
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="glass border border-[var(--nezuko-border)]">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">User Growth</TabsTrigger>
-          <TabsTrigger value="verifications">Verifications</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <DashboardCard
-              title="User Growth"
-              subtitle="Cumulative user base growth over time"
-              index={4}
-            >
-              {usersLoading ? (
-                <Skeleton className="h-[300px] w-full" />
-              ) : (
-                <div className="h-[300px]">
-                  <UserGrowthChart data={userGrowth?.series || []} />
-                </div>
-              )}
-            </DashboardCard>
-
-            <DashboardCard
-              title="Verification Activity"
-              subtitle={`Daily verification volume (${verificationPeriod})`}
-              index={5}
-            >
-              {verifyLoading ? (
-                <Skeleton className="h-[300px] w-full" />
-              ) : (
-                <div className="h-[300px]">
-                  <VerificationTrendChart data={verifyTrends?.series || []} />
-                </div>
-              )}
-            </DashboardCard>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Engagement Trends */}
+        <DashboardCard 
+          title="Engagement Trends" 
+          subtitle="Events volume over time"
+          className="lg:col-span-2"
+          index={0}
+        >
+          <div className="flex items-center gap-3 text-xs mb-4">
+            <div className="flex items-center gap-1.5">
+              <motion.span 
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: accentColor, boxShadow: `0 0 8px ${accentColor}` }}
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <span className="text-(--text-muted)">Events</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <motion.span 
+                className="w-2.5 h-2.5 rounded-full bg-white/50"
+                style={{ boxShadow: '0 0 8px rgba(255, 255, 255, 0.4)' }}
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+              />
+              <span className="text-(--text-muted)">Users</span>
+            </div>
           </div>
-        </TabsContent>
+          <div className="h-56 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={combinedData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="purpleGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={accentColor} stopOpacity={resolvedTheme === 'dark' ? 0.4 : 0.25} />
+                    <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="cyanGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ffffff" stopOpacity={resolvedTheme === 'dark' ? 0.3 : 0.2} />
+                    <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Tooltip content={<CustomTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="events"
+                  name="Events"
+                  stroke={accentColor}
+                  strokeWidth={3}
+                  fill="url(#purpleGrad)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="users"
+                  name="Users"
+                  stroke="#ffffff"
+                  strokeOpacity={0.6}
+                  strokeWidth={2}
+                  fill="url(#cyanGrad)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex justify-between mt-3 text-xs text-(--text-muted) font-mono">
+            {['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59'].map((time) => (
+              <motion.span 
+                key={time} 
+                className="hover:text-primary transition-colors cursor-default"
+                whileHover={{ scale: 1.1 }}
+              >
+                {time}
+              </motion.span>
+            ))}
+          </div>
+        </DashboardCard>
 
-        <TabsContent value="users">
-          <DashboardCard
-            title="Detailed User Analysis"
-            subtitle="Historical user base growth data"
-            index={4}
-          >
-            {usersLoading ? (
-              <Skeleton className="h-[400px] w-full" />
-            ) : (
-              <div className="h-[400px]">
-                <UserGrowthChart data={userGrowth?.series || []} />
+        {/* Command Usage */}
+        <DashboardCard 
+          title="Command Usage" 
+          subtitle="Distribution by category"
+          index={1}
+        >
+          <div className="flex-1 flex flex-col items-center justify-center relative py-4">
+            <div className="relative w-44 h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={65}
+                    startAngle={90}
+                    endAngle={-270}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {pieData.map((entry) => (
+                      <Cell 
+                        key={`cell-${entry.name}`} 
+                        fill={entry.color} 
+                        className="transition-all duration-300 hover:opacity-80"
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Top</span>
+                <span className="text-xs text-(--text-muted)">Categories</span>
               </div>
-            )}
-          </DashboardCard>
-        </TabsContent>
-
-        <TabsContent value="verifications">
-          <DashboardCard
-            title="Verification Performance"
-            subtitle="Success vs Failure rates over time"
-            index={4}
-          >
-            {verifyLoading ? (
-              <Skeleton className="h-[400px] w-full" />
-            ) : (
-              <div className="h-[400px]">
-                <VerificationTrendChart data={verifyTrends?.series || []} />
-              </div>
-            )}
-          </DashboardCard>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {commandUsage.map((cmd) => (
+              <motion.div 
+                key={cmd.category} 
+                className="flex items-start gap-2 group cursor-default"
+                whileHover={{ x: 5 }}
+              >
+                <motion.span 
+                  className="w-3 h-3 mt-1 rounded-full" 
+                  style={{ backgroundColor: cmd.color, boxShadow: `0 0 6px ${cmd.color}` }}
+                  whileHover={{ scale: 1.25 }}
+                />
+                <div>
+                  <p className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{cmd.category}</p>
+                  <p className="text-[10px] text-(--text-muted)">{cmd.percentage}%</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </DashboardCard>
+      </div>
 
       {/* System Logs */}
-      <DashboardCard
-        title="System Logs"
-        subtitle="Real-time system events and notifications"
-        index={6}
+      <DashboardCard 
+        title="System Logs" 
+        index={3}
         action={
-          <div className="flex items-center gap-1 p-1 glass rounded-lg border border-[var(--nezuko-border)]">
-            {(["all", "info", "warn", "error"] as const).map((level) => (
+          <div className="flex glass rounded-lg p-1">
+            {(['ALL', 'INFO', 'WARN', 'ERROR'] as const).map((filter, idx) => (
               <motion.button
-                key={level}
-                onClick={() => setLogFilter(level)}
+                key={filter}
+                onClick={() => setLogFilter(filter)}
                 className={cn(
-                  "px-3 py-1 rounded-md text-xs font-medium uppercase transition-all",
-                  logFilter === level
-                    ? level === "all"
-                      ? "bg-primary text-white"
-                      : `${LOG_LEVEL_COLORS[level]?.bg} ${LOG_LEVEL_COLORS[level]?.text}`
-                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5"
+                  "px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-300",
+                  logFilter === filter
+                    ? 'text-white bg-primary'
+                    : 'text-(--text-muted) hover:text-(--text-primary) hover:bg-(--nezuko-surface-hover)'
                 )}
-                whileHover={!reducedMotion ? { scale: 1.05 } : undefined}
-                whileTap={!reducedMotion ? { scale: 0.95 } : undefined}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
               >
-                {level}
+                {filter}
               </motion.button>
             ))}
           </div>
         }
       >
-        <div className="space-y-2 mt-4 max-h-[400px] overflow-y-auto">
-          {filteredLogs.map((log, idx) => {
-            const colors = LOG_LEVEL_COLORS[log.level] || LOG_LEVEL_COLORS.info;
-            return (
-              <motion.div
-                key={log.id}
-                className={cn(
-                  "flex items-start gap-3 p-3 rounded-lg transition-colors",
-                  colors.bg,
-                  "hover:bg-opacity-20"
-                )}
-                initial={!reducedMotion ? { opacity: 0, x: -20 } : undefined}
-                animate={!reducedMotion ? { opacity: 1, x: 0 } : undefined}
-                transition={{ delay: idx * 0.05 }}
-              >
-                <div className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", colors.dot)} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={cn("text-xs font-bold uppercase", colors.text)}>
-                      [{log.level}]
-                    </span>
-                    <span className="text-xs text-[var(--text-muted)]">{log.source}</span>
-                  </div>
-                  <p className="text-sm text-[var(--text-primary)] truncate">{log.message}</p>
-                </div>
-                <div className="flex items-center gap-1 text-xs text-[var(--text-muted)] shrink-0">
-                  <Clock className="w-3 h-3" />
-                  {log.timestamp}
-                </div>
-              </motion.div>
-            );
-          })}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <tbody className="font-mono text-sm">
+              <AnimatePresence>
+                {filteredLogs.map((log, idx) => (
+                  <motion.tr 
+                    key={log.id} 
+                    className="border-b border-(--nezuko-border)/50 hover:bg-(--nezuko-surface-hover) transition-all duration-200 group"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ delay: idx * 0.05 }}
+                  >
+                    <td className="py-3.5 px-3 text-(--text-muted) w-32 group-hover:text-(--text-secondary) transition-colors">{log.timestamp}</td>
+                    <td className="py-3.5 px-3 w-24">
+                      <StatusBadge 
+                        label={log.level} 
+                        variant={
+                          log.level === 'INFO' ? 'success' : 
+                          log.level === 'DEBUG' ? 'info' : 
+                          log.level === 'WARN' ? 'warning' : 
+                          'error'
+                        } 
+                      />
+                    </td>
+                    <td className="py-3.5 px-3" style={{ color: 'var(--text-primary)' }}>
+                      {log.message.includes('shard_02') ? (
+                        <>
+                          <span className="text-red-500">Database connection timeout:</span>
+                          {' '}shard_02 failed to respond in 5000ms. Retrying...
+                        </>
+                      ) : log.message.includes('guild_settings') ? (
+                        <>
+                          Cache refresh triggered for key:{' '}
+                          <span className="text-blue-500">guild_settings_8492</span>
+                        </>
+                      ) : log.message.includes('/v1/guilds') ? (
+                        <>
+                          API rate limit approaching on endpoint{' '}
+                          <span className="text-yellow-600">/v1/guilds</span> (85% capacity).
+                        </>
+                      ) : (
+                        log.message
+                      )}
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </tbody>
+          </table>
         </div>
       </DashboardCard>
     </div>

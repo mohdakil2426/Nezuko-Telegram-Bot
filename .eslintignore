@@ -1,0 +1,16 @@
+# Build outputs
+.next/
+.turbo/
+dist/
+node_modules/
+coverage/
+
+# Local docs (backups, designs, etc.)
+docs/local/
+
+# Storage
+storage/
+
+# Generated files
+*.tsbuildinfo
+next-env.d.ts

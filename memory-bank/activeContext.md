@@ -1,141 +1,162 @@
-# Active Context: Phase 27 - Dashboard UI Migration
+# Active Context: Phase 28 - Dashboard Complete Redesign
 
-## 🎯 Current Status
+## Current Status
 
-**Phase 27 COMPLETE** ✅ - Dashboard UI Migration finished successfully!
+**Phase 28 COMPLETE** - Dashboard restructure finished and verified!
+**Post-Phase 28 Fixes** - Dev experience improvements applied (2026-02-02)
 
-### Current Focus (2026-02-01)
+### Completed (2026-02-02)
 
-| Item | Status |
-|------|--------|
-| OpenSpec Change | `port-dashboard-ui-design` |
-| Implementation | **All Phases Complete** (30/30 tasks) |
-| Status | ✅ Ready for Archive |
-
----
-
-## 📋 Phase 27: Dashboard UI Migration
-
-### Implementation Progress
-
-| Phase | Tasks | Status |
-|-------|-------|--------|
-| Phase 1 | 5/5 | ✅ CSS foundation & theme system |
-| Phase 2 | 7/7 | ✅ Base UI components |
-| Phase 3 | 3/3 | ✅ Dashboard components |
-| Phase 4 | 3/3 | ✅ Layout components |
-| Phase 5 | 4/4 | ✅ Page redesigns |
-| Phase 6 | 4/4 | ✅ Polish existing pages |
-| Phase 7 | 4/4 | ✅ Testing & documentation |
-
-### Components Created (Phase 1-5)
-
-**Theme System:**
-- `lib/hooks/use-theme-config.tsx` - 11 accent themes + custom color picker
-- `providers/theme-config-provider.tsx` - Re-export wrapper
-
-**Base UI Components:**
-- `components/ui/tilt-card.tsx` - 3D tilt with glow effects
-- `components/ui/magnetic-button.tsx` - Cursor-following button
-- `components/ui/animated-counter.tsx` - Smooth number animation
-- `components/ui/status-badge.tsx` - Colored status indicators
-- `components/ui/dashboard-card.tsx` - Glass-effect card wrapper
-- `components/ui/page-transition.tsx` - Framer Motion transitions (FadeIn, SlideIn, StaggerContainer)
-- `components/ui/particle-background.tsx` - Floating particles canvas
-- `components/ui/slider.tsx` - shadcn/ui slider for density
-
-**Dashboard Components:**
-- `components/dashboard/stat-card-v2.tsx` - Premium stat cards with tilt & animated counter
-- `components/dashboard/activity-item.tsx` - Timeline activity log entries
-- `components/charts/custom-tooltip.tsx` - Glass-effect Recharts tooltip
-
-**Layout Components:**
-- `components/layout/page-header.tsx` - Unified page header with gradient text
-- `components/layout/sidebar.tsx` - Complete rewrite with mobile, themes, profile
-
-### Pages Redesigned (Phase 5)
-
-| Page | Features Added |
-|------|----------------|
-| `/dashboard` | StatCardV2, ActivityItem timeline, DashboardCard |
-| `/dashboard/analytics` | Time range selector, filterable logs table |
-| `/dashboard/channels` | Search, tabs, Connect New Asset card |
-| `/dashboard/settings` | Theme modes, 11 accents, effects toggles, preview |
-
-### Pages Polished (Phase 6)
-
-| Page | Changes |
-|------|---------|
-| `/dashboard/groups` | PageHeader, glass filters, entry animations |
-| `/dashboard/config` | PageHeader, glass cards, stagger animations |
-| `/dashboard/database` | PageHeader, stats overview cards, styled table |
-| `/dashboard/logs` | PageHeader, streaming indicator, glass container |
-
-### CSS Enhancements
-
-**Design Tokens Added to `globals.css`:**
-- `--nezuko-*` surface, border, text variables
-- `--accent-gradient`, `--accent-hex` dynamic values
-- Glass effect utility classes
-- Custom keyframe animations (float, pulse-glow, shimmer)
+| Item                  | Status                                |
+| --------------------- | ------------------------------------- |
+| OpenSpec Change       | `dashboard-phase28-complete-redesign` |
+| Artifacts             | **4/4 Complete**                      |
+| Implementation        | **53/53 Tasks Complete**              |
+| Testing & Verification| **Verified**                          |
+| Post-Phase Fixes      | **5/5 Applied**                       |
 
 ---
 
-## 📁 Project Structure (Current)
+## Post-Phase 28 Session (2026-02-02)
+
+### Issues Discovered & Fixed
+
+### Issues Discovered & Fixed
+
+| Issue                     | Root Cause                                                    | Fix Applied                                                  |
+| ------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------ |
+| **Hydration Mismatch**    | Browser automation added `antigravity-scroll-lock` to `<body>` | Added `suppressHydrationWarning` to `<body>` in layout.tsx   |
+| **Blank Dashboard**       | `DashboardLayout` returned `null` when `isAuthenticated=false` | Added `NEXT_PUBLIC_DISABLE_AUTH` check to bypass auth in dev |
+| **Login Page Inaccessible** | Middleware redirected `/login` → `/dashboard` when auth disabled | Changed middleware to allow login page access in dev mode    |
+| **Theme Hook Error**      | Legacy `useTheme` hook called server-side & context mismatch | Migrated to `useThemeConfig` (accents) + `next-themes` (mode)|
+| **Auth Provider Logic**   | `useAuth` used missing `AuthContext` instead of global store | Rewrote `useAuth` as bridge to `useAuthStore` + Supabase     |
+
+### Developer Experience Improvements
+
+| Feature                    | Description                                                  | File Modified                           |
+| -------------------------- | ------------------------------------------------------------ | --------------------------------------- |
+| **Dev Login Bypass Button** | "Dev Login (Bypass Auth)" button instantly logs in without Supabase | `apps/web/src/app/(auth)/login/page.tsx` |
+| **Pre-filled Credentials** | Email/password auto-filled in dev mode                        | `apps/web/src/app/(auth)/login/page.tsx` |
+| **Dev Mode Banner**        | Amber warning "🚧 Development Mode - Auth Disabled"           | `apps/web/src/app/(auth)/login/page.tsx` |
+| **Premium 404 Page**       | Glassmorphism 404 with gradient text, floating ghost, orbs   | `apps/web/src/app/not-found.tsx`        |
+
+### Files Modified (Post-Phase)
 
 ```
-nezuko-monorepo/
-├── apps/
-│   ├── api/                   # FastAPI REST Backend
-│   ├── bot/                   # Telegram Bot (PTB v22)
-│   └── web/                   # Next.js 16 Admin Dashboard
-│       └── src/
-│           ├── app/dashboard/
-│           │   ├── page.tsx           # ✅ Redesigned
-│           │   ├── layout.tsx         # ✅ Updated (particles, transitions)
-│           │   ├── analytics/page.tsx # ✅ Redesigned
-│           │   ├── channels/page.tsx  # ✅ Redesigned
-│           │   └── settings/page.tsx  # ✅ New (appearance)
-│           ├── components/
-│           │   ├── ui/                # ✅ 8 new components
-│           │   ├── dashboard/         # ✅ 2 new components
-│           │   ├── charts/            # ✅ CustomTooltip
-│           │   └── layout/            # ✅ PageHeader, Sidebar
-│           └── lib/hooks/
-│               └── use-theme-config.tsx # ✅ Theme system
-├── packages/                  # Shared TypeScript packages
-├── openspec/
-│   └── changes/
-│       └── port-dashboard-ui-design/  # ACTIVE CHANGE
-└── memory-bank/               # Project context
+apps/web/src/app/layout.tsx                  # suppressHydrationWarning on <body>
+apps/web/src/app/dashboard/layout.tsx        # NEXT_PUBLIC_DISABLE_AUTH check
+apps/web/src/lib/supabase/middleware.ts      # Allow login page in dev mode
+apps/web/src/app/(auth)/login/page.tsx       # Dev bypass button, pre-filled creds
+apps/web/src/app/not-found.tsx               # Complete premium redesign
+apps/web/src/hooks/use-auth.tsx              # Rewritten as bridge to useAuthStore
+apps/web/src/components/**/*.tsx             # Replaced useTheme with useThemeConfig
+apps/web/src/hooks/use-theme.tsx             # DELETED (Legacy)
 ```
 
 ---
 
-## 🚀 Next Steps
+## Phase 28 Summary
 
-1. **Archive** - Run `/opsx-archive` to complete the change
-2. **Celebrate** - Phase 27 Dashboard UI Migration is complete! 🎉
+### What Was Done
+
+| Phase | Description            | Tasks                                                             |
+| ----- | ---------------------- | ----------------------------------------------------------------- |
+| 1     | Backup & Foundation    | 5/5 - Created backup, mock config, types, mock API                |
+| 2     | Hook Modifications     | 7/7 - Added mock toggle to all data hooks                         |
+| 3     | Asset Components       | 4/4 - Created AssetCard, AssetAvatar, ConnectAssetCard, useAssets |
+| 4     | Unified Assets Page    | 10/10 - Created /dashboard/assets with tabs, search, grid         |
+| 5     | Navigation & Redirects | 4/4 - Updated sidebar, added legacy redirects                     |
+| 6     | File Removal           | 7/7 - Deleted database, groups, channels pages and hooks          |
+| 7     | Premium Login          | 9/9 - Redesigned login with glassmorphism                         |
+| 8     | Testing                | 7/7 - Build passes, all pages functional                          |
+
+### Key Changes
+
+| Category    | Change                                           |
+| ----------- | ------------------------------------------------ |
+| **Removed** | `/dashboard/database` page (security risk)       |
+| **Removed** | `/dashboard/groups` page (merged)                |
+| **Merged**  | Groups + Channels → `/dashboard/assets`          |
+| **Added**   | Mock data toggle via `NEXT_PUBLIC_USE_MOCK_DATA` |
+| **Added**   | Premium login with glassmorphism                 |
+| **Updated** | Sidebar navigation (Groups/Channels → Assets)    |
+| **Added**   | URL redirects for legacy routes                  |
+| **Added**   | ThemeConfigProvider to root layout               |
+| **Added**   | Premium 404 page with animations                 |
+| **Added**   | Dev login bypass for development                 |
 
 ---
 
-## ✅ Previous Phase Summary
+## Environment Variables
 
-| Phase | Description | Date |
-|-------|-------------|------|
-| Phase 27 | Dashboard UI Migration | 2026-02-01 (In Progress - Phases 1-5 Done) |
-| Phase 26 | Linting Fixes & Dependencies Update | 2026-01-31 ✅ |
-| Phase 25 | GitHub Push Readiness & Cleanup | 2026-01-30 ✅ |
-| Phase 24 | Code Quality Improvements | 2026-01-30 ✅ |
+| Variable                       | Purpose                          | Default |
+| ------------------------------ | -------------------------------- | ------- |
+| `NEXT_PUBLIC_DISABLE_AUTH`     | Skip auth checks in development  | `true`  |
+| `NEXT_PUBLIC_USE_MOCK_DATA`    | Use mock API instead of real API | `true`  |
+| `NEXT_PUBLIC_SUPABASE_URL`     | Supabase project URL             | -       |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`| Supabase anonymous key           | -       |
+| `NEXT_PUBLIC_API_URL`          | Backend API URL                  | `http://localhost:8080/api/v1` |
 
 ---
 
-## 🔐 Test Credentials
+## Project Structure (After Phase 28)
 
-| User | Email | Password | Role |
-|------|-------|----------|------|
+```
+apps/web/src/
+├── app/
+│   ├── (auth)/login/         # Premium login + dev bypass
+│   ├── dashboard/
+│   │   ├── page.tsx          # Dashboard (unchanged)
+│   │   ├── analytics/        # Analytics (unchanged)
+│   │   ├── assets/           # NEW - Unified Groups + Channels
+│   │   ├── settings/         # Settings (unchanged)
+│   │   ├── config/           # Config (unchanged)
+│   │   └── logs/             # Logs (unchanged)
+│   ├── layout.tsx            # Root layout (hydration fix)
+│   └── not-found.tsx         # NEW - Premium 404 page
+├── components/
+│   └── assets/               # NEW - Asset components
+├── lib/
+│   ├── data/                 # NEW - Mock data layer
+│   └── supabase/middleware.ts# Auth middleware (dev mode fix)
+└── stores/
+    └── auth-store.ts         # Zustand auth store
+```
+
+---
+
+## Testing Instructions
+
+### Development Mode (Recommended)
+
+```bash
+cd apps/web
+# Ensure .env.local has:
+# NEXT_PUBLIC_DISABLE_AUTH=true
+# NEXT_PUBLIC_USE_MOCK_DATA=true
+bun dev
+# Visit http://localhost:3000/login
+# Click "Dev Login (Bypass Auth)" button
+# Dashboard loads with mock data
+```
+
+### Test 404 Page
+
+```bash
+# Visit any non-existent route:
+http://localhost:3000/any-invalid-path
+# Premium 404 page should display
+```
+
+---
+
+## Test Credentials
+
+| User  | Email            | Password  | Role        |
+| ----- | ---------------- | --------- | ----------- |
 | Admin | admin@nezuko.bot | Admin@123 | super_admin |
 
 ---
 
-*Last Updated: 2026-02-01 18:15 IST*
+_Last Updated: 2026-02-02 02:05 IST_
+

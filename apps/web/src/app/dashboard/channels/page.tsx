@@ -1,229 +1,230 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChannelsTable } from "@/components/tables/channels-table";
-import { Input } from "@/components/ui/input";
-import { PageHeader } from "@/components/layout/page-header";
-import { StatCardV2 } from "@/components/dashboard/stat-card-v2";
-import { DashboardCard } from "@/components/ui/dashboard-card";
-import { MagneticButton } from "@/components/ui/magnetic-button";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { StaggerContainer, StaggerItem } from "@/components/ui/page-transition";
-import { useDebounce } from "@/lib/hooks/use-debounce";
-import { useThemeConfig } from "@/lib/hooks/use-theme-config";
-import { Plus, Search, RefreshCw, Users, Radio, Activity, X, Tv, Shield } from "lucide-react";
-import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ChannelForm } from "@/components/forms/channel-form";
+import { useEffect, useState } from 'react';
+import { Search, Filter, Plus, Hash, Users, Shield, Zap, MoreVertical, CheckCircle2, AlertCircle } from 'lucide-react';
+import { mockApi } from '@/lib/data/mock-data';
+import type { TelegramAsset } from '@/lib/data/types';
+import { useThemeConfig } from '@/lib/hooks/use-theme-config';
+import { useTheme } from 'next-themes';
+import { MagneticButton } from '@/components/ui/magnetic-button';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import StatusBadge from '@/components/StatusBadge';
+import PageLoader from '@/components/PageLoader';
+import PageHeader from '@/components/layout/PageHeader';
+import TiltCard from '@/components/TiltCard';
 
-// Tab options
-const TABS = [
-  { id: "all", label: "All" },
-  { id: "supervising", label: "Supervising" },
-  { id: "channels", label: "Channels" },
-  { id: "archived", label: "Archived" },
-] as const;
+// Asset Card Component
+function AssetCard({ asset, index }: { asset: TelegramAsset; index: number }) {
+  const { accentHex: accentColor } = useThemeConfig();
+  const { resolvedTheme } = useTheme();
+  
+  return (
+    <TiltCard className="h-full">
+      <div className="p-6 h-full flex flex-col relative group">
+        {/* Glow Effect */}
+        <div 
+          className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          style={{ background: `radial-gradient(circle at 50% 0%, ${accentColor}15, transparent 70%)` }}
+        />
 
-type TabId = typeof TABS[number]["id"];
+        <div className="flex justify-between items-start mb-4 relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg"
+                style={{ backgroundColor: accentColor }}
+              >
+                {asset.name.charAt(0)}
+              </div>
+              <div className="absolute -bottom-1 -right-1 bg-(--nezuko-bg) rounded-full p-0.5">
+                {asset.type === 'channel' ? (
+                  <Hash className="w-4 h-4 text-(--text-muted)" />
+                ) : (
+                  <Users className="w-4 h-4 text-(--text-muted)" />
+                )}
+              </div>
+            </div>
+            <div>
+              <h3 className="font-bold text-lg text-(--text-primary) group-hover:text-primary transition-colors">
+                {asset.name}
+              </h3>
+              <p className="text-xs text-(--text-muted) font-mono">ID: {asset.id}</p>
+            </div>
+          </div>
+          <button className="text-(--text-muted) hover:text-(--text-primary) transition-colors">
+            <MoreVertical className="w-5 h-5" />
+          </button>
+        </div>
 
-// Mock data for demonstration
-const MOCK_STATS = {
-  totalAudience: 125400,
-  activeAssets: 28,
-  healthScore: 99.2,
-};
+        <div className="flex-1 space-y-4 relative z-10">
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="glass p-2 rounded-lg">
+              <span className="text-(--text-muted) text-xs block mb-1">Members</span>
+              <span className="font-mono font-bold text-(--text-primary)">
+                {(asset.members / 1000).toFixed(1)}k
+              </span>
+            </div>
+            <div className="glass p-2 rounded-lg">
+              <span className="text-(--text-muted) text-xs block mb-1">Protection</span>
+              <span className={cn(
+                "font-bold flex items-center gap-1",
+                asset.protectionEnabled ? "text-green-500" : "text-red-500"
+              )}>
+                {asset.protectionEnabled ? (
+                  <><Shield className="w-3 h-3" /> ON</>
+                ) : (
+                  <><AlertCircle className="w-3 h-3" /> OFF</>
+                )}
+              </span>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-(--text-muted)">Daily Growth</span>
+              <span className="text-green-500 font-mono">+{asset.dailyGrowth || 0}</span>
+            </div>
+            <div className="w-full h-1.5 bg-(--nezuko-border) rounded-full overflow-hidden">
+               <motion.div 
+                 className="h-full rounded-full"
+                 style={{ backgroundColor: accentColor }}
+                 initial={{ width: 0 }}
+                 animate={{ width: `${((asset.dailyGrowth || 0) / 100) * 100}%` }} // Simplified visual logic
+                 transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
+               />
+            </div>
+          </div>
+        </div>
 
-export default function ChannelsPage() {
-  const searchParams = useSearchParams();
-  const [search, setSearch] = useState(searchParams.get("search") || "");
-  const debouncedSearch = useDebounce(search, 500);
-  const [activeTab, setActiveTab] = useState<TabId>("all");
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const { reducedMotion, accentHex } = useThemeConfig();
+        <div className="mt-6 pt-4 border-t border-(--nezuko-border) flex justify-between items-center relative z-10">
+          <StatusBadge 
+             label={asset.status} 
+             variant={asset.status === 'active' ? 'success' : 'error'} 
+          />
+          <motion.button
+            className="text-xs font-bold uppercase tracking-wider hover:underline"
+            style={{ color: accentColor }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Manage
+          </motion.button>
+        </div>
+      </div>
+    </TiltCard>
+  );
+}
 
-  const handleSync = async () => {
-    setIsSyncing(true);
-    // Simulate sync
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsSyncing(false);
-  };
+export default function Channels() {
+  const [assets, setAssets] = useState<TelegramAsset[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<'ALL' | 'CHANNEL' | 'GROUP'>('ALL');
+  const [search, setSearch] = useState('');
+  const { accentHex: accentColor } = useThemeConfig();
 
-  const clearSearch = () => {
-    setSearch("");
-  };
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      const data = await mockApi.getTelegramAssets();
+      setAssets(data);
+      setIsLoading(false);
+    };
+    loadData();
+  }, []);
+
+  const filteredAssets = assets.filter(asset => {
+    let matchesFilter = true;
+    if (filter === 'CHANNEL' && asset.type !== 'channel') return false;
+    if (filter === 'GROUP' && asset.type !== 'supergroup') return false;
+    const matchesSearch = asset.name.toLowerCase().includes(search.toLowerCase()) || 
+                          asset.id.toString().includes(search);
+    return matchesFilter && matchesSearch;
+  });
+
+  if (isLoading) return <PageLoader />;
 
   return (
     <div className="space-y-8">
-      {/* Page Header */}
-      <PageHeader
-        title="Channels & Groups"
-        highlight="Management"
-        description="Manage your connected assets and enforcement settings."
+      <PageHeader 
+        title="Channels & Groups" 
+        highlight="Management" 
+        description="Configure protection settings and view growth stats for your communities."
       >
-        <div className="flex items-center gap-3">
-          <MagneticButton
-            variant="outline"
-            onClick={handleSync}
-            disabled={isSyncing}
-          >
-            <motion.div
-              animate={isSyncing ? { rotate: 360 } : { rotate: 0 }}
-              transition={{ duration: 1, repeat: isSyncing ? Infinity : 0, ease: "linear" }}
-            >
-              <RefreshCw className={cn("w-4 h-4 mr-2", isSyncing && "text-primary")} />
-            </motion.div>
-            {isSyncing ? "Syncing..." : "Sync"}
-          </MagneticButton>
-          <MagneticButton variant="primary" onClick={() => setIsAddOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Channel
-          </MagneticButton>
-        </div>
+         <MagneticButton 
+          variant="primary"
+          className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
+        >
+          <Plus className="w-4 h-4" />
+          Add Asset
+        </MagneticButton>
       </PageHeader>
 
-      {/* Stats Grid */}
-      <StaggerContainer className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <StaggerItem>
-          <StatCardV2
-            title="Total Audience"
-            value={MOCK_STATS.totalAudience}
-            icon={Users}
-            change={12.5}
-            index={0}
-          />
-        </StaggerItem>
-        <StaggerItem>
-          <StatCardV2
-            title="Active Assets"
-            value={MOCK_STATS.activeAssets}
-            icon={Radio}
-            index={1}
-          />
-        </StaggerItem>
-        <StaggerItem>
-          <StatCardV2
-            title="Health Score"
-            value={MOCK_STATS.healthScore}
-            suffix="%"
-            icon={Activity}
-            index={2}
-          />
-        </StaggerItem>
-      </StaggerContainer>
-
-      {/* Search and Tabs */}
-      <div className="space-y-4">
-        {/* Search Input */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]" />
-          <Input
-            placeholder="Search assets..."
-            className="pl-12 pr-10 h-12 glass border-[var(--nezuko-border)] rounded-xl"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <AnimatePresence>
-            {search && (
-              <motion.button
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-white/10 transition-colors"
-                onClick={clearSearch}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <X className="w-4 h-4 text-[var(--text-muted)]" />
-              </motion.button>
-            )}
-          </AnimatePresence>
+      {/* Toolbar */}
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-(--nezuko-card) p-4 rounded-2xl border border-(--nezuko-border) shadow-sm">
+        {/* Filter Pills */}
+        <div className="flex gap-2 p-1 bg-(--nezuko-bg) rounded-xl">
+          {(['ALL', 'CHANNEL', 'GROUP'] as const).map((f) => (
+             <button
+               key={f}
+               onClick={() => setFilter(f)}
+               className={cn(
+                 "px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 relative",
+                 filter === f ? "text-white" : "text-(--text-muted) hover:text-(--text-primary)"
+               )}
+             >
+               {filter === f && (
+                 <motion.div 
+                   layoutId="activeFilter"
+                   className="absolute inset-0 rounded-lg shadow-sm"
+                   style={{ backgroundColor: accentColor }}
+                 />
+               )}
+               <span className="relative z-10">{f}S</span>
+             </button>
+          ))}
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-1 p-1 glass rounded-xl border border-[var(--nezuko-border)] w-fit">
-          {TABS.map((tab) => (
-            <motion.button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all uppercase tracking-wider",
-                activeTab === tab.id
-                  ? "bg-primary text-white shadow-lg"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5"
-              )}
-              whileHover={!reducedMotion ? { scale: 1.02 } : undefined}
-              whileTap={!reducedMotion ? { scale: 0.98 } : undefined}
-            >
-              {tab.label}
-            </motion.button>
-          ))}
+        {/* Search */}
+        <div className="relative w-full md:w-64 group">
+           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--text-muted) group-focus-within:text-primary transition-colors" />
+           <input 
+             type="text" 
+             placeholder="Search by name or ID..." 
+             value={search}
+             onChange={(e) => setSearch(e.target.value)}
+             className="w-full pl-10 pr-4 py-2 bg-(--nezuko-bg) rounded-xl border border-(--nezuko-border) focus:border-primary/50 text-sm text-(--text-primary) placeholder-(--text-muted) outline-none transition-all"
+           />
         </div>
       </div>
 
-      {/* Assets Table/Grid */}
-      <DashboardCard
-        title={`${activeTab === "all" ? "All Assets" : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`}
-        subtitle={`${debouncedSearch ? `Showing results for "${debouncedSearch}"` : "Manage your connected channels and groups"}`}
-        index={3}
-      >
-        <div className="mt-4">
-          <ChannelsTable search={debouncedSearch} />
-        </div>
-      </DashboardCard>
-
-      {/* Connect New Asset Card */}
-      <motion.div
-        className="mt-8"
-        initial={!reducedMotion ? { opacity: 0, y: 20 } : undefined}
-        animate={!reducedMotion ? { opacity: 1, y: 0 } : undefined}
-        transition={{ delay: 0.5 }}
-      >
-        <TiltCard
-          className="p-8 border-dashed border-2 border-[var(--nezuko-border)] cursor-pointer group"
-          onClick={() => setIsAddOpen(true)}
-          glowColor={accentHex}
-        >
-          <div className="flex flex-col items-center justify-center text-center">
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <AnimatePresence mode='popLayout'>
+          {filteredAssets.map((asset, index) => (
             <motion.div
-              className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 border border-primary/20"
-              whileHover={!reducedMotion ? { scale: 1.1, rotate: 5 } : undefined}
+              key={asset.id}
+              layout
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2, delay: index * 0.05 }}
             >
-              <Plus className="w-8 h-8 text-primary" />
+              <AssetCard asset={asset} index={index} />
             </motion.div>
-            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 group-hover:text-primary transition-colors">
-              Connect New Asset
-            </h3>
-            <p className="text-sm text-[var(--text-muted)] max-w-sm">
-              Add a new channel or group to your monitoring network. Ensure the bot has admin privileges.
-            </p>
-          </div>
-        </TiltCard>
-      </motion.div>
-
-      {/* Add Channel Dialog */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="glass border-[var(--nezuko-border)]">
-          <DialogHeader>
-            <DialogTitle className="text-[var(--text-primary)]">Add New Channel</DialogTitle>
-            <DialogDescription className="text-[var(--text-muted)]">
-              Enter the channel details manually. Ensure the bot is an admin in the channel.
-            </DialogDescription>
-          </DialogHeader>
-          <ChannelForm
-            onSuccess={() => setIsAddOpen(false)}
-            onCancel={() => setIsAddOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+          ))}
+        </AnimatePresence>
+      </div>
+      
+      {filteredAssets.length === 0 && (
+         <div className="text-center py-20">
+           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-(--nezuko-surface) flex items-center justify-center">
+             <Filter className="w-8 h-8 text-(--text-muted)" />
+           </div>
+           <h3 className="text-xl font-bold text-(--text-primary)">No assets found</h3>
+           <p className="text-(--text-muted)">Try adjusting your search or filters.</p>
+         </div>
+      )}
     </div>
   );
 }

@@ -11,63 +11,54 @@
  */
 
 export const queryKeys = {
-    // Dashboard
-    dashboard: {
-        all: ["dashboard"] as const,
-        stats: () => [...queryKeys.dashboard.all, "stats"] as const,
-        chartData: () => [...queryKeys.dashboard.all, "chart-data"] as const,
-        activity: (limit: number) => [...queryKeys.dashboard.all, "activity", limit] as const,
-    },
+  // Dashboard
+  dashboard: {
+    all: ["dashboard"] as const,
+    stats: () => [...queryKeys.dashboard.all, "stats"] as const,
+    chartData: () => [...queryKeys.dashboard.all, "chart-data"] as const,
+    activity: (limit: number) => [...queryKeys.dashboard.all, "activity", limit] as const,
+  },
 
-    // Groups
-    groups: {
-        all: ["groups"] as const,
-        list: (params: { page?: number; per_page?: number; search?: string }) =>
-            [...queryKeys.groups.all, params] as const,
-        detail: (id: number) => [...queryKeys.groups.all, id] as const,
-    },
+  // Groups
+  groups: {
+    all: ["groups"] as const,
+    list: (params: { page?: number; per_page?: number; search?: string }) =>
+      [...queryKeys.groups.all, params] as const,
+    detail: (id: number) => [...queryKeys.groups.all, id] as const,
+  },
 
-    // Channels
-    channels: {
-        all: ["channels"] as const,
-        list: (params: { page: number; per_page: number; search?: string }) =>
-            [...queryKeys.channels.all, params] as const,
-        detail: (id: number) => ["channel", id] as const,
-    },
+  // Channels
+  channels: {
+    all: ["channels"] as const,
+    list: (params: { page: number; per_page: number; search?: string }) =>
+      [...queryKeys.channels.all, params] as const,
+    detail: (id: number) => ["channel", id] as const,
+  },
 
-    // Config
-    config: {
-        all: ["config"] as const,
-    },
+  // Config
+  config: {
+    all: ["config"] as const,
+  },
 
-    // Database
-    database: {
-        all: ["database"] as const,
-        tables: () => [...queryKeys.database.all, "tables"] as const,
-        tableData: (tableName: string, page: number, perPage: number) =>
-            [...queryKeys.database.all, "table", tableName, page, perPage] as const,
-        migrations: () => [...queryKeys.database.all, "migrations"] as const,
-    },
+  // Analytics
+  analytics: {
+    all: ["analytics"] as const,
+    userGrowth: (period: string, granularity: string) =>
+      [...queryKeys.analytics.all, "users", period, granularity] as const,
+    verificationTrends: (period: string, granularity: string) =>
+      [...queryKeys.analytics.all, "verifications", period, granularity] as const,
+  },
 
-    // Analytics
-    analytics: {
-        all: ["analytics"] as const,
-        userGrowth: (period: string, granularity: string) =>
-            [...queryKeys.analytics.all, "users", period, granularity] as const,
-        verificationTrends: (period: string, granularity: string) =>
-            [...queryKeys.analytics.all, "verifications", period, granularity] as const,
-    },
+  // Audit Logs
+  audit: {
+    all: ["audit-logs"] as const,
+    list: <T extends object>(filters: T) => [...queryKeys.audit.all, filters] as const,
+  },
 
-    // Audit Logs
-    audit: {
-        all: ["audit-logs"] as const,
-        list: <T extends object>(filters: T) => [...queryKeys.audit.all, filters] as const,
-    },
-
-    // Admins
-    admins: {
-        all: ["admins"] as const,
-    },
+  // Admins
+  admins: {
+    all: ["admins"] as const,
+  },
 } as const;
 
 /**
@@ -79,35 +70,30 @@ export const queryKeys = {
  * - Easy debugging in React Query DevTools
  */
 export const mutationKeys = {
-    // Groups
-    groups: {
-        update: ["groups", "update"] as const,
-        linkChannel: ["groups", "linkChannel"] as const,
-        unlinkChannel: ["groups", "unlinkChannel"] as const,
-    },
+  // Groups
+  groups: {
+    update: ["groups", "update"] as const,
+    linkChannel: ["groups", "linkChannel"] as const,
+    unlinkChannel: ["groups", "unlinkChannel"] as const,
+  },
 
-    // Channels
-    channels: {
-        create: ["channels", "create"] as const,
-    },
+  // Channels
+  channels: {
+    create: ["channels", "create"] as const,
+  },
 
-    // Config
-    config: {
-        update: ["config", "update"] as const,
-        testWebhook: ["config", "testWebhook"] as const,
-    },
+  // Config
+  config: {
+    update: ["config", "update"] as const,
+    testWebhook: ["config", "testWebhook"] as const,
+  },
 
-    // Admins
-    admins: {
-        create: ["admins", "create"] as const,
-        delete: ["admins", "delete"] as const,
-    },
-
-    // Database
-    database: {
-        update: (tableName: string) => ["database", tableName, "update"] as const,
-        delete: (tableName: string) => ["database", tableName, "delete"] as const,
-    },
+  // Admins
+  admins: {
+    create: ["admins", "create"] as const,
+    delete: ["admins", "delete"] as const,
+  },
+  // Database keys removed for security
 } as const;
 
 /**
@@ -126,25 +112,25 @@ import type { DashboardStatsResponse, ActivityResponse } from "@nezuko/types";
 
 // Dashboard query options (reusable across hooks and prefetching)
 export const dashboardQueryOptions = {
-    stats: () =>
-        queryOptions<DashboardStatsResponse>({
-            queryKey: queryKeys.dashboard.stats(),
-            queryFn: dashboardApi.getStats,
-            staleTime: 60 * 1000, // 1 minute
-        }),
+  stats: () =>
+    queryOptions<DashboardStatsResponse>({
+      queryKey: queryKeys.dashboard.stats(),
+      queryFn: dashboardApi.getStats,
+      staleTime: 60 * 1000, // 1 minute
+    }),
 
-    chartData: () =>
-        queryOptions<ChartDataResponse>({
-            queryKey: queryKeys.dashboard.chartData(),
-            queryFn: dashboardApi.getChartData,
-            staleTime: 5 * 60 * 1000, // 5 minutes
-        }),
+  chartData: () =>
+    queryOptions<ChartDataResponse>({
+      queryKey: queryKeys.dashboard.chartData(),
+      queryFn: dashboardApi.getChartData,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }),
 
-    activity: (limit: number = 20) =>
-        queryOptions<ActivityResponse>({
-            queryKey: queryKeys.dashboard.activity(limit),
-            queryFn: () => dashboardApi.getActivity(limit),
-            staleTime: 30 * 1000, // 30 seconds
-            refetchInterval: 60 * 1000, // Auto-refresh every minute
-        }),
+  activity: (limit: number = 20) =>
+    queryOptions<ActivityResponse>({
+      queryKey: queryKeys.dashboard.activity(limit),
+      queryFn: () => dashboardApi.getActivity(limit),
+      staleTime: 30 * 1000, // 30 seconds
+      refetchInterval: 60 * 1000, // Auto-refresh every minute
+    }),
 };

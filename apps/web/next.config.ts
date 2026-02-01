@@ -9,20 +9,19 @@ const nextConfig: NextConfig = {
 
   // Experimental optimizations
   experimental: {
-
     // CRITICAL: Optimize barrel file imports for faster dev boot (15-70%) and cold starts (40%)
     // Rule: bundle-barrel-imports - Avoid loading entire libraries when only a few exports are needed
     optimizePackageImports: [
-      "lucide-react",              // 1,583 modules → only used icons
-      "recharts",                   // Heavy charting library
-      "@radix-ui/react-icons",      // Icon library
-      "motion/react",               // Animation library (formerly framer-motion)
-      "date-fns",                   // Date utilities - loads many unnecessary locales
-      "@tanstack/react-query",      // Data fetching
-      "@tanstack/react-table",      // Table utilities
-      "react-hook-form",            // Form library
-      "zod",                        // Schema validation
-      "react-sparklines",           // Sparkline charts
+      "lucide-react", // 1,583 modules → only used icons
+      "recharts", // Heavy charting library
+      "@radix-ui/react-icons", // Icon library
+      "motion/react", // Animation library (formerly framer-motion)
+      "date-fns", // Date utilities - loads many unnecessary locales
+      "@tanstack/react-query", // Data fetching
+      "@tanstack/react-table", // Table utilities
+      "react-hook-form", // Form library
+      "zod", // Schema validation
+      "react-sparklines", // Sparkline charts
     ],
   },
 
@@ -53,6 +52,28 @@ const nextConfig: NextConfig = {
         destination: "/dashboard",
         permanent: false,
       },
+      // Legacy route redirects - Groups/Channels merged into Assets
+      {
+        source: "/dashboard/groups",
+        destination: "/dashboard/assets?type=groups",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/groups/:id",
+        destination: "/dashboard/assets/:id",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/channels",
+        destination: "/dashboard/assets?type=channels",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/channels/:id",
+        destination: "/dashboard/assets/:id",
+        permanent: true,
+      },
+      // Database page removed for security - no redirect (will 404)
     ];
   },
 };

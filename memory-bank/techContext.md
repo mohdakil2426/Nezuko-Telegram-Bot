@@ -68,6 +68,10 @@ const { data, isPending } = useQuery({
   queryKey: ['groups'],
   queryFn: fetchGroups,
 });
+
+// ✅ Theme System (See System Patterns)
+const { resolvedTheme } = useTheme(); // Mode
+const { accentHex } = useThemeConfig(); // Config
 ```
 
 ---
@@ -333,4 +337,4 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 
 ---
 
-*Last Updated: 2026-01-31*
+_Last Updated: 2026-02-02_

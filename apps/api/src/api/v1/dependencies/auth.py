@@ -14,11 +14,14 @@ from src.models.admin_user import AdminUser
 
 settings = get_settings()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_BASE_URL}/api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_BASE_URL}/api/v1/auth/login",
+    auto_error=False,
+)
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    token: str | None = Depends(oauth2_scheme),
     session: AsyncSession = Depends(get_session),
 ) -> AdminUser:
     """
@@ -50,6 +53,9 @@ async def get_current_user(
         )
 
     try:
+        if not token:
+            raise credentials_exception
+
         # 1. Verify token with Supabase
         auth_user = verify_jwt(token)
         uid = auth_user["uid"]

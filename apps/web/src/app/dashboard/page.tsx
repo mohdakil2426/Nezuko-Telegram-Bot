@@ -1,198 +1,321 @@
 "use client";
 
-import { useMemo } from "react";
-import { useDashboardStats } from "@/lib/hooks/use-dashboard-stats";
-import { useDashboardChartData } from "@/lib/hooks/use-dashboard-chart";
-import { StatCardV2 } from "@/components/dashboard/stat-card-v2";
-import { ActivityItem, getActivityTypeFromLevel } from "@/components/dashboard/activity-item";
-import { DashboardCard } from "@/components/ui/dashboard-card";
-import { PageHeader } from "@/components/layout/page-header";
-import { DashboardChart } from "@/components/charts/dashboard-chart";
-import { StaggerContainer, StaggerItem } from "@/components/ui/page-transition";
-import { useThemeConfig } from "@/lib/hooks/use-theme-config";
-import { Users, Shield, Radio, Activity, TrendingUp, TrendingDown } from "lucide-react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from 'react';
+import { Search, Bell, Plus, Users, Tag, Verified, Zap, Activity } from 'lucide-react';
+import { mockApi } from '@/lib/data/mock-data';
+import type { DashboardStats, ChartDataPoint, ActivityLog } from '@/lib/data/types';
+import { useThemeConfig } from '@/lib/hooks/use-theme-config';
+import { MagneticButton } from '@/components/ui/magnetic-button';
+import { Floating } from '@/components/PageTransition';
+import { motion } from 'framer-motion';
+import {
+  AreaChart,
+  Area,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+} from 'recharts';
 
-// Mock activity data - in real app this would come from API
-const MOCK_ACTIVITIES = [
-    { id: "1", type: "success" as const, title: "User <strong>@john_doe</strong> verified", description: "Joined via Channel 1", timestamp: "2m ago" },
-    { id: "2", type: "info" as const, title: "New group <strong>Tech Hub</strong> protected", description: "Added by admin", timestamp: "5m ago" },
-    { id: "3", type: "warning" as const, title: "Rate limit approaching for Channel 2", description: "80% of daily limit used", timestamp: "12m ago" },
-    { id: "4", type: "success" as const, title: "User <strong>@alice</strong> verified", description: "Joined via Channel 1", timestamp: "15m ago" },
-    { id: "5", type: "error" as const, title: "Verification failed for <strong>@spammer</strong>", description: "Suspicious activity detected", timestamp: "22m ago" },
-];
+// New Components
+import AnimatedCounter from '@/components/AnimatedCounter';
+import PageLoader from '@/components/PageLoader';
+import StatCard from '@/components/StatCard';
+import DashboardCard from '@/components/DashboardCard';
+import PageHeader from '@/components/layout/PageHeader';
+import CustomTooltip from '@/components/charts/CustomTooltip';
 
-export default function DashboardPage() {
-    const { data: stats, isLoading } = useDashboardStats();
-    const { data: chartData, summary, isLoading: chartLoading } = useDashboardChartData();
-    const { accentHex } = useThemeConfig();
+// Activity Item with Animation
+interface ActivityItemProps {
+  activity: ActivityLog;
+  index: number;
+}
 
-    // Default values for loading state
-    const data = stats || {
-        total_groups: 0,
-        total_channels: 0,
-        verifications_today: 0,
-        verifications_week: 0,
-        success_rate: 0,
-        bot_uptime_seconds: 0,
-        cache_hit_rate: 0,
-    };
+function ActivityItem({ activity, index }: ActivityItemProps) {
+  const colors = {
+    success: { bg: 'bg-green-500', glow: 'shadow-green-500/50' },
+    info: { bg: 'bg-primary', glow: 'shadow-primary/50' },
+    warning: { bg: 'bg-yellow-500', glow: 'shadow-yellow-500/50' },
+    error: { bg: 'bg-red-500', glow: 'shadow-red-500/50' },
+  };
 
-    // Rule: rerender-derived-state - Compute change from previous period
-    const verificationChange = useMemo(() => {
-        if (!chartData || chartData.length < 2) return undefined;
-        const today = chartData[chartData.length - 1];
-        const yesterday = chartData[chartData.length - 2];
-        const todayTotal = today.verified + today.restricted;
-        const yesterdayTotal = yesterday.verified + yesterday.restricted;
-        if (yesterdayTotal === 0) return undefined;
-        return Math.round(((todayTotal - yesterdayTotal) / yesterdayTotal) * 100 * 10) / 10;
-    }, [chartData]);
+  const color = colors[activity.type] || colors.info;
 
-    // Hide change if no data
-    const hasData = data.verifications_week > 0;
-
-    return (
-        <div className="space-y-8">
-            {/* Page Header */}
-            <PageHeader
-                title="Dashboard"
-                highlight="Overview"
-                description="Real-time monitoring and analytics for your Telegram bot infrastructure."
-            >
-                <div className="hidden md:flex items-center gap-3">
-                    <div className="relative">
-                        <Activity className="w-5 h-5 text-green-500" />
-                        <motion.span
-                            className="absolute inset-0 w-5 h-5 bg-green-500 rounded-full"
-                            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                        />
-                    </div>
-                    <span className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-widest">
-                        System Online
-                    </span>
-                </div>
-            </PageHeader>
-
-            {/* Stats Grid with 3D Cards */}
-            <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-                <StaggerItem>
-                    <StatCardV2
-                        title="Protected Groups"
-                        value={isLoading ? 0 : data.total_groups}
-                        icon={Users}
-                        index={0}
-                    />
-                </StaggerItem>
-                <StaggerItem>
-                    <StatCardV2
-                        title="Enforced Channels"
-                        value={isLoading ? 0 : data.total_channels}
-                        icon={Radio}
-                        index={1}
-                    />
-                </StaggerItem>
-                <StaggerItem>
-                    <StatCardV2
-                        title="Verifications Today"
-                        value={isLoading ? 0 : data.verifications_today}
-                        icon={Shield}
-                        change={hasData ? verificationChange : undefined}
-                        index={2}
-                    />
-                </StaggerItem>
-                <StaggerItem>
-                    <StatCardV2
-                        title="Success Rate"
-                        value={isLoading ? 0 : data.success_rate}
-                        suffix="%"
-                        icon={Activity}
-                        index={3}
-                    />
-                </StaggerItem>
-            </StaggerContainer>
-
-            {/* Main Content Area */}
-            <div className="grid gap-6 lg:grid-cols-3">
-                {/* Chart Area */}
-                <DashboardCard
-                    title="Verification Trends"
-                    subtitle="Volume over last 30 days"
-                    className="lg:col-span-2"
-                    index={4}
-                    action={
-                        <div className="flex gap-2">
-                            {["1H", "24H", "7D", "30D"].map((period, idx) => (
-                                <motion.button
-                                    key={period}
-                                    className="px-3 py-1.5 rounded-lg text-xs font-medium glass text-[var(--text-primary)] hover:bg-primary/10 hover:text-primary transition-all"
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.5 + idx * 0.05 }}
-                                >
-                                    {period}
-                                </motion.button>
-                            ))}
-                        </div>
-                    }
-                >
-                    <div className="mb-4 flex items-center gap-4 text-sm">
-                        {summary && (
-                            <>
-                                <div className="flex items-center gap-1">
-                                    <TrendingUp className="h-4 w-4 text-green-500" />
-                                    <span className="text-[var(--text-muted)]">Verified:</span>
-                                    <span className="font-bold text-[var(--text-primary)]">
-                                        {summary.total_verified.toLocaleString()}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <TrendingDown className="h-4 w-4 text-red-500" />
-                                    <span className="text-[var(--text-muted)]">Restricted:</span>
-                                    <span className="font-bold text-[var(--text-primary)]">
-                                        {summary.total_restricted.toLocaleString()}
-                                    </span>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                    <div className="h-64">
-                        <DashboardChart data={chartData} isLoading={chartLoading} />
-                    </div>
-                </DashboardCard>
-
-                {/* Activity Feed */}
-                <DashboardCard
-                    title="Recent Activity"
-                    subtitle="Latest events from your bot"
-                    index={5}
-                    action={
-                        <motion.button
-                            className="text-sm font-medium text-primary hover:opacity-80 transition-all"
-                            whileHover={{ scale: 1.05, x: 5 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            View All →
-                        </motion.button>
-                    }
-                >
-                    <div className="space-y-1 -mx-2">
-                        {MOCK_ACTIVITIES.map((activity, idx) => (
-                            <ActivityItem
-                                key={activity.id}
-                                type={activity.type}
-                                title={activity.title}
-                                description={activity.description}
-                                timestamp={activity.timestamp}
-                                index={idx}
-                            />
-                        ))}
-                    </div>
-                </DashboardCard>
-            </div>
+  return (
+    <motion.div 
+      className="relative pl-10 py-4 group hover:bg-(--nezuko-surface-hover) rounded-xl transition-colors cursor-pointer"
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.3 + index * 0.08, type: 'spring', stiffness: 300, damping: 25 }}
+      whileHover={{ x: 5 }}
+    >
+      {/* Timeline Line */}
+      <div className="absolute left-4 top-0 bottom-0 w-px bg-linear-to-b from-transparent via-(--nezuko-border) to-transparent" />
+      
+      {/* Dot with Pulse */}
+      <div className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ${color.bg} ${color.glow} shadow-lg`}>
+        <span className={`absolute inset-0 rounded-full ${color.bg} animate-ping opacity-75`} />
+      </div>
+      
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-(--text-primary) group-hover:text-primary transition-colors" 
+             dangerouslySetInnerHTML={{ __html: activity.title }} />
+          <p className="text-xs text-(--text-muted) mt-1" dangerouslySetInnerHTML={{ __html: activity.description }} />
         </div>
-    );
+        <span className="text-xs font-mono text-(--text-muted) ml-4">{activity.timestamp}</span>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function Dashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [trends, setTrends] = useState<ChartDataPoint[]>([]);
+  const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notificationCount, setNotificationCount] = useState(3);
+  const { accentHex: accentColor } = useThemeConfig();
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      const [statsData, trendsData, activityData] = await Promise.all([
+        mockApi.getDashboardStats(),
+        mockApi.getVerificationTrends(),
+        mockApi.getRecentActivity(),
+      ]);
+      setStats(statsData);
+      setTrends(trendsData);
+      setActivities(activityData);
+      setIsLoading(false);
+    };
+    loadData();
+  }, []);
+
+  const pieData = [
+    { name: 'Verified', value: 76, color: accentColor },
+    { name: 'Pending', value: 18, color: '#f59e0b' },
+    { name: 'Failed', value: 6, color: '#ef4444' },
+  ];
+
+  if (isLoading || !stats) {
+    return <PageLoader />;
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Epic Header */}
+      <PageHeader 
+        title="Dashboard" 
+        highlight="Overview" 
+        description="Real-time monitoring and analytics for your Telegram bot infrastructure."
+      >
+        <div className="hidden md:flex items-center gap-3 mb-1 mr-4">
+             <Floating amplitude={3} duration={3}>
+                <div className="relative">
+                  <Activity className="w-5 h-5 text-green-500" />
+                  <motion.span 
+                    className="absolute inset-0 w-5 h-5 bg-green-500 rounded-full"
+                    animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                </div>
+              </Floating>
+              <span className="text-xs font-mono text-(--text-muted) uppercase tracking-widest">System Online</span>
+        </div>
+
+        <motion.button 
+          className="w-12 h-12 flex items-center justify-center rounded-xl glass text-(--text-muted) hover:text-(--text-primary) transition-colors group"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Search className="w-5 h-5 transition-transform group-hover:rotate-12" />
+        </motion.button>
+        <motion.button 
+          className="relative w-12 h-12 flex items-center justify-center rounded-xl glass text-(--text-muted) hover:text-(--text-primary) transition-colors group"
+          onClick={() => setNotificationCount(0)}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Bell className="w-5 h-5 transition-transform group-hover:rotate-12" />
+          {notificationCount > 0 && (
+            <motion.span 
+              className="absolute -top-1 -right-1 w-5 h-5 bg-linear-to-br from-red-500 to-pink-500 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-(--nezuko-bg)"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+            >
+              {notificationCount}
+            </motion.span>
+          )}
+        </motion.button>
+        <MagneticButton 
+          variant="primary"
+          className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
+        >
+          <Plus className="w-4 h-4" />
+          New Bot
+        </MagneticButton>
+      </PageHeader>
+
+      {/* Stats Grid with 3D Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Groups"
+          value={stats.totalGroups}
+          change={stats.totalGroupsChange}
+          icon={Users}
+          gradientColor={accentColor}
+          index={0}
+        />
+        <StatCard
+          title="Active Channels"
+          value={stats.activeChannels}
+          change={stats.activeChannelsChange}
+          icon={Tag}
+          gradientColor={accentColor}
+          index={1}
+        />
+        <StatCard
+          title="Verifications"
+          value={Math.round(stats.verifications / 1000)}
+          suffix="k"
+          change={stats.verificationsChange}
+          icon={Verified}
+          gradientColor={accentColor}
+          index={2}
+        />
+        <StatCard
+          title="Success Rate"
+          value={stats.successRate}
+          suffix="%"
+          change={stats.successRateChange}
+          icon={Zap}
+          gradientColor={accentColor}
+          index={3}
+        />
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Verification Trends */}
+        <DashboardCard 
+          title="Verification Trends" 
+          subtitle="Volume over last 24 hours"
+          className="lg:col-span-2"
+          index={4}
+          action={
+            <div className="flex gap-2">
+              {['1H', '24H', '7D', '30D'].map((period, idx) => (
+                <motion.button 
+                  key={period}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium glass text-(--text-primary) hover:bg-primary/10 hover:text-primary transition-all"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 + idx * 0.05 }}
+                >
+                  {period}
+                </motion.button>
+              ))}
+            </div>
+          }
+        >
+           <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={accentColor} stopOpacity="0.4" />
+                    <stop offset="100%" stopColor={accentColor} stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <Tooltip content={<CustomTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke={accentColor}
+                  strokeWidth={3}
+                  fill="url(#trendGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </DashboardCard>
+
+        {/* Status Breakdown */}
+        <DashboardCard 
+          title="Status Breakdown" 
+          subtitle="Real-time gateway status"
+          index={5}
+          glowColor={`${accentColor}10`}
+        >
+          <div className="flex flex-col items-center">
+            <div className="relative w-48 h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={75}
+                    startAngle={90}
+                    endAngle={-270}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {pieData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} className="hover:opacity-80 transition-opacity" />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-4xl font-black text-(--text-primary)">
+                    <AnimatedCounter value={98} suffix="%" />
+                </span>
+                <span className="text-xs text-(--text-muted) uppercase tracking-wider">Active</span>
+              </div>
+            </div>
+            <div className="w-full space-y-3 mt-4">
+              {pieData.map((item) => (
+                <motion.div 
+                  key={item.name} 
+                  className="flex items-center justify-between group cursor-pointer"
+                  whileHover={{ x: 5 }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color, boxShadow: `0 0 10px ${item.color}` }} />
+                    <span className="text-sm text-(--text-secondary) group-hover:text-(--text-primary) transition-colors">{item.name}</span>
+                  </div>
+                  <span className="font-bold text-(--text-primary)">{item.value}%</span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </DashboardCard>
+      </div>
+
+      {/* Recent Activity */}
+      <DashboardCard className="p-8" index={6} title="Recent Activity" subtitle="Latest events from your bot" action={
+             <motion.button 
+             className="text-sm font-medium text-primary hover:opacity-80 transition-all"
+             whileHover={{ scale: 1.05, x: 5 }}
+             whileTap={{ scale: 0.95 }}
+           >
+             View All Logs →
+           </motion.button>
+      }>
+        <div className="space-y-2">
+          {activities.map((activity, idx) => (
+            <ActivityItem key={activity.id} activity={activity} index={idx} />
+          ))}
+        </div>
+      </DashboardCard>
+    </div>
+  );
 }

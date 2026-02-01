@@ -1,6 +1,4 @@
-# System Patterns: Nezuko - Architectural Standards
-
-> **Last Updated**: 2026-01-28 | **Version**: 2.5.0 (SQLite Unified)
+> **Last Updated**: 2026-02-02 | **Version**: 2.6.0 (Dashboard Redesign & Runtime Fixes)
 
 ---
 
@@ -234,6 +232,35 @@ export default function RootLayout({ children }) {
         </html>
     );
 }
+```
+
+## Theme System (Dual-Hook Pattern)
+
+Nezuko uses a split-hook architecture for theming to separate "Mode" (Light/Dark) from "Configuration" (Accents/Effects):
+
+| Hook | Source | Purpose |
+|------|--------|---------|
+| `useTheme()` | `next-themes` | Dark/Light mode toggling |
+| `useThemeConfig()` | `@/lib/hooks/use-theme-config` | Accent colors, 3D effects, particles |
+
+```tsx
+// ✅ CORRECT - Use both hooks where needed
+const { resolvedTheme, setTheme } = useTheme();
+const { accentHex, animations } = useThemeConfig();
+```
+
+## Auth Bridge Pattern (Hybrid Store)
+
+To bridge the gap between legacy Context-based auth and modern Zustand+Supabase architecture:
+
+1. **Store**: `useAuthStore` (Zustand) holds the global user state.
+2. **Provider**: `AuthProvider` (Client Component) listens to Supabase auth events and syncs to Zustand.
+3. **Hook**: `useAuth` acts as an adapter, exposing a unified API that internally calls Supabase and Zustand.
+
+```tsx
+// ✅ CORRECT - useAuth provides unified interface
+const { user, login } = useAuth(); 
+// Internally: user comes from Zustand, login calls Supabase
 ```
 
 ## Loading States
