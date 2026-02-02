@@ -8,7 +8,7 @@ interface MagneticButtonProps {
   className?: string;
   onClick?: () => void;
   disabled?: boolean;
-  variant?: 'primary' | 'secondary' | 'ghost' | 'outline';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'glass';
   size?: 'sm' | 'md' | 'lg';
   magneticStrength?: number;
 }
@@ -57,6 +57,7 @@ export function MagneticButton({
     secondary: 'bg-[var(--nezuko-surface-hover)] text-[var(--text-primary)] border-[var(--nezuko-border)] hover:border-[var(--nezuko-border-hover)]',
     ghost: 'bg-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5 border-transparent',
     outline: 'bg-transparent text-[var(--text-primary)] border-[var(--nezuko-border)] hover:border-primary hover:bg-primary/5',
+    glass: 'glass text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-primary/50',
   };
 
   const sizes = {

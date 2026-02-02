@@ -358,11 +358,7 @@ export default function Settings() {
     setParticleDensity
   } = useThemeConfig();
 
-  const handleSave = () => {
-    toast.success('Appearance settings saved', {
-      description: 'Your preferences have been updated.',
-    });
-  };
+
 
   // Get current accent details for preview
   const currentAccent = ACCENT_THEMES[accentId];
@@ -378,16 +374,7 @@ export default function Settings() {
             </h1>
             <p className="text-(--text-muted)">Customize how Nezuko looks and feels.</p>
           </div>
-          <motion.button
-            onClick={handleSave}
-            className="flex items-center gap-2 bg-primary hover:opacity-90 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300"
-            style={{ boxShadow: `0 4px 20px -5px ${accentColor}50` }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Sparkles className="w-4 h-4" />
-            Save Changes
-          </motion.button>
+
         </div>
       </FadeIn>
 

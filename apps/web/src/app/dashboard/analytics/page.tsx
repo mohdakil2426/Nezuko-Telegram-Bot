@@ -25,6 +25,7 @@ import StatCard from '@/components/StatCard';
 import DashboardCard from '@/components/DashboardCard';
 import PageHeader from '@/components/layout/PageHeader';
 import CustomTooltip from '@/components/charts/CustomTooltip';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import StatusBadge from '@/components/StatusBadge';
 
 export default function Analytics() {
@@ -97,29 +98,14 @@ export default function Analytics() {
         description="Real-time system performance and engagement metrics."
       >
         {/* Time Range */}
-        <div className="glass p-1 rounded-xl flex text-xs font-medium">
-          {(['24h', '7d', '30d'] as const).map((range, idx) => (
-            <motion.button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={cn(
-                "px-4 py-2 rounded-lg transition-all duration-300",
-                timeRange === range 
-                  ? 'bg-primary text-white' 
-                  : 'text-(--text-muted) hover:text-(--text-primary) hover:bg-(--nezuko-surface-hover)'
-              )}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-            >
-              {range}
-            </motion.button>
-          ))}
-        </div>
+        {/* Time Range */}
+        <SegmentedControl 
+          options={['24h', '7d', '30d']}
+          value={timeRange}
+          onChange={setTimeRange}
+        />
         <MagneticButton 
-          variant="primary"
+          variant="glass"
           onClick={handleExport}
           disabled={isExporting}
         >
@@ -309,27 +295,12 @@ export default function Analytics() {
         title="System Logs" 
         index={3}
         action={
-          <div className="flex glass rounded-lg p-1">
-            {(['ALL', 'INFO', 'WARN', 'ERROR'] as const).map((filter, idx) => (
-              <motion.button
-                key={filter}
-                onClick={() => setLogFilter(filter)}
-                className={cn(
-                  "px-4 py-1.5 text-xs font-bold rounded-lg transition-all duration-300",
-                  logFilter === filter
-                    ? 'text-white bg-primary'
-                    : 'text-(--text-muted) hover:text-(--text-primary) hover:bg-(--nezuko-surface-hover)'
-                )}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-              >
-                {filter}
-              </motion.button>
-            ))}
-          </div>
+          <SegmentedControl 
+            options={['ALL', 'INFO', 'WARN', 'ERROR']} 
+            value={logFilter}
+            onChange={setLogFilter}
+            size="sm"
+          />
         }
       >
         <div className="overflow-x-auto">

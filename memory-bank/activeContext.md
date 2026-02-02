@@ -30,6 +30,12 @@
 | **Login Page Inaccessible** | Middleware redirected `/login` → `/dashboard` when auth disabled | Changed middleware to allow login page access in dev mode    |
 | **Theme Hook Error**      | Legacy `useTheme` hook called server-side & context mismatch | Migrated to `useThemeConfig` (accents) + `next-themes` (mode)|
 | **Auth Provider Logic**   | `useAuth` used missing `AuthContext` instead of global store | Rewrote `useAuth` as bridge to `useAuthStore` + Supabase     |
+| **Sidebar Active State**  | `startsWith` logic caused Dashboard to be active on all sub-routes | Updated `isActive` to require exact match for `/dashboard`   |
+| **Button Styling**        | Users preferred "filled" glass look over outline               | Added `glass` variant to MagneticButton & applied to actions |
+| **Settings UI**           | "Save Changes" button was redundant with auto-save             | Removed "Save Changes" button from Settings page             |
+| **Asset Page Layout**     | User requested Search on left, Filter on right                 | Swapped toolbar items & applied glass effect                 |
+| **UI Components**         | Tab/Filter switchers were inconsistent across pages            | Created `SegmentedControl` component & unified UI            |
+
 
 ### Developer Experience Improvements
 
@@ -40,6 +46,7 @@
 | **Dev Mode Banner**        | Amber warning "🚧 Development Mode - Auth Disabled"           | `apps/web/src/app/(auth)/login/page.tsx` |
 | **Premium 404 Page**       | Glassmorphism 404 with gradient text, floating ghost, orbs   | `apps/web/src/app/not-found.tsx`        |
 | **Assets Overview Cards**  | 3-card summary grid (Total Audience, Active Assets, Health)  | `apps/web/src/app/dashboard/assets/page.tsx` |
+| **Segmented Control**      | Reusable tab switcher component with premium styling         | `apps/web/src/components/ui/segmented-control.tsx` |
 
 ### Files Modified (Post-Phase)
 
@@ -50,6 +57,8 @@ apps/web/src/lib/supabase/middleware.ts      # Allow login page in dev mode
 apps/web/src/app/(auth)/login/page.tsx       # Dev bypass button, pre-filled creds
 apps/web/src/app/not-found.tsx               # Complete premium redesign
 apps/web/src/hooks/use-auth.tsx              # Rewritten as bridge to useAuthStore
+apps/web/src/components/layout/Sidebar.tsx   # Fixed active state logic
+apps/web/src/app/dashboard/**/*.tsx          # Updated buttons to outline variant
 apps/web/src/components/**/*.tsx             # Replaced useTheme with useThemeConfig
 apps/web/src/app/dashboard/assets/page.tsx     # Added Overview Cards grid
 apps/web/src/lib/data/mock-data.ts             # Added getAssetsOverview & AssetsOverviewStats

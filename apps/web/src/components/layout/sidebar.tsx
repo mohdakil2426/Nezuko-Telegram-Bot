@@ -134,6 +134,10 @@ export default function Sidebar() {
 
   // Simple active check
   const isActive = (path: string) => {
+    // Dashboard home should be exact match
+    if (path === "/dashboard") {
+      return pathname === path;
+    }
     return pathname === path || pathname.startsWith(path + "/");
   };
 

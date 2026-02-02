@@ -152,7 +152,7 @@ export default function Dashboard() {
           )}
         </motion.button>
         <MagneticButton 
-          variant="primary"
+          variant="glass"
           className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
         >
           <Plus className="w-4 h-4" />

@@ -14,6 +14,7 @@ import PageLoader from '@/components/PageLoader';
 import PageHeader from '@/components/layout/PageHeader';
 import TiltCard from '@/components/TiltCard';
 import StatCard from '@/components/StatCard';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 
 // Asset Card Component
 function AssetCard({ asset, index }: { asset: TelegramAsset; index: number }) {
@@ -154,7 +155,7 @@ export default function Channels() {
         description="Configure protection settings and view growth stats for your communities."
       >
          <MagneticButton 
-          variant="primary"
+          variant="glass"
           className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
         >
           <Plus className="w-4 h-4" />
@@ -193,29 +194,7 @@ export default function Channels() {
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-(--nezuko-card) p-4 rounded-2xl border border-(--nezuko-border) shadow-sm">
-        {/* Filter Pills */}
-        <div className="flex gap-2 p-1 bg-(--nezuko-bg) rounded-xl">
-          {(['ALL', 'CHANNEL', 'GROUP'] as const).map((f) => (
-             <button
-               key={f}
-               onClick={() => setFilter(f)}
-               className={cn(
-                 "px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 relative",
-                 filter === f ? "text-primary-foreground" : "text-(--text-muted) hover:text-(--text-primary)"
-               )}
-             >
-               {filter === f && (
-                 <motion.div 
-                   layoutId="activeFilter"
-                   className="absolute inset-0 rounded-lg shadow-sm bg-primary"
-                 />
-               )}
-               <span className="relative z-10">{f}S</span>
-             </button>
-          ))}
-        </div>
-
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-center glass p-4 rounded-2xl border border-(--nezuko-border) shadow-sm">
         {/* Search */}
         <div className="relative w-full md:w-64 group">
            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--text-muted) group-focus-within:text-primary transition-colors" />
@@ -224,9 +203,20 @@ export default function Channels() {
              placeholder="Search by name or ID..." 
              value={search}
              onChange={(e) => setSearch(e.target.value)}
-             className="w-full pl-10 pr-4 py-2 bg-(--nezuko-bg) rounded-xl border border-(--nezuko-border) focus:border-primary/50 text-sm text-(--text-primary) placeholder-(--text-muted) outline-none transition-all"
+             className="w-full pl-10 pr-4 py-2 bg-(--nezuko-bg)/50 rounded-xl border border-(--nezuko-border) focus:border-primary/50 text-sm text-(--text-primary) placeholder-(--text-muted) outline-none transition-all"
            />
         </div>
+
+        {/* Filter Pills */}
+        <SegmentedControl
+          options={[
+            { label: 'All', value: 'ALL' },
+            { label: 'Channels', value: 'CHANNEL' },
+            { label: 'Groups', value: 'GROUP' }
+          ]}
+          value={filter}
+          onChange={(val) => setFilter(val as 'ALL' | 'CHANNEL' | 'GROUP')}
+        />
       </div>
 
       {/* Grid */}
