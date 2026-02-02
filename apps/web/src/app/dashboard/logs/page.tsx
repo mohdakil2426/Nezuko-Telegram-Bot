@@ -152,14 +152,14 @@ export default function LogsPage() {
                 <SegmentedControl 
                     options={['ALL', 'INFO', 'WARN', 'ERROR']} 
                     value={levelFilter}
-                    onChange={(val) => setLevelFilter(val as any)}
+                    onChange={(val) => setLevelFilter(val as 'ALL' | 'INFO' | 'WARN' | 'ERROR')}
                     size="sm"
                 />
             ) : (
                 <SegmentedControl 
                     options={['ALL', 'SUCCESS', 'FAILED']} 
                     value={statusFilter}
-                    onChange={(val) => setStatusFilter(val as any)}
+                    onChange={(val) => setStatusFilter(val as 'ALL' | 'SUCCESS' | 'FAILED' | 'PENDING')}
                     size="sm"
                 />
             )}

@@ -1,19 +1,36 @@
-# Active Context: Phase 28 - Dashboard Complete Redesign
+# Active Context: Phase 29 - Codebase Optimization & Final Polish
 
 ## Current Status
 
-**Phase 28 COMPLETE** - Dashboard restructure finished and verified!
-**Post-Phase 28 Fixes** - Dev experience improvements applied (2026-02-02)
+**Phase 29 IN PROGRESS** - Logs Page polished, Codebase scanned for optimization.
+**Focus**: Cleaning up unused components and preparing for Real API integration.
 
-### Completed (2026-02-02)
+### Recent Achievements (2026-02-02)
 
-| Item                  | Status                                |
-| --------------------- | ------------------------------------- |
-| OpenSpec Change       | `dashboard-phase28-complete-redesign` |
-| Artifacts             | **4/4 Complete**                      |
-| Implementation        | **53/53 Tasks Complete**              |
-| Testing & Verification| **Verified**                          |
-| Post-Phase Fixes      | **5/5 Applied**                       |
+| Item | Status | Description |
+| :--- | :--- | :--- |
+| **Logs Page** | ✅ Complete | Added 3 Overview Cards (Total, Error %, Success %) + SegmentedControl. |
+| **Codebase Scan** | ✅ Complete | Identified ~40 unused shadcn components & 100% Tailwind usage. |
+| **Type Safety** | ✅ Fixed | Removed `any` types from Logs page filters. |
+| **Report** | ✅ Generated | `codebase_analysis_report.md` created with cleanup roadmap. |
+
+---
+
+## Active Decisions
+
+### 1. Component Strategy: "Hybrid Premium"
+We have confirmed a hybrid approach:
+- **Base**: `shadcn/ui` (Radix + Tailwind) for primitives (Inputs, Buttons).
+- **Premium**: Custom wrappers (`TiltCard`, `MagneticButton`) + `framer-motion` for the "Wow" factor.
+- **Action**: We will remove unused "website-like" components (Carousel, Menubar) to keep the bundle lean.
+
+### 2. Mock Data Abstraction
+We are strictly using `use-assets.ts` and `mock-api.ts` to abstract data fetching.
+- **Current**: `NEXT_PUBLIC_USE_MOCK_DATA=true`
+- **Goal**: Swap `mockApi` calls with `fetchClient` calls without changing the UI components.
+
+### 3. Destruction Safety
+We decided to **implement `alert-dialog`** for all destructive actions (Ban, Delete) instead of simple browser confirms.
 
 ---
 

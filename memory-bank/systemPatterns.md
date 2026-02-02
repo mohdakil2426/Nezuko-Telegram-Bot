@@ -244,7 +244,26 @@ The `StatCard` component is designed for high reusability across the dashboard. 
 
 This ensures visual consistency for all "big number" displays.
 
+
+### Premium UI Components (Custom)
+The dashboard leverages custom wrappers to enhance the standard shadcn/ui atoms:
+
+1.  **`TiltCard`**:
+    -   Physical 3D tilt effect on hover using `framer-motion`.
+    -   Used for: Stat Cards, Asset Cards.
+
+2.  **`MagneticButton`**:
+    -   Cursor-following spring physics.
+    -   Used for: Primary CTAs, Header actions.
+
+3.  **`SegmentedControl`**:
+    -   Sliding "pill" background for tab switching.
+    -   Used for: Logs filters, Asset type toggles.
+
+These components ensure a consistent "High-End App" feel compared to a standard admin panel.
+
 ## Theme System (Dual-Hook Pattern)
+
 
 Nezuko uses a split-hook architecture for theming to separate "Mode" (Light/Dark) from "Configuration" (Accents/Effects):
 

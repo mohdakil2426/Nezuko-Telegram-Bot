@@ -42,6 +42,16 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 | Recharts | 3.7+ | Charting library |
 | Sonner | 2.0+ | Toast notifications |
 
+### Technology Usage Estimates (as of 2026-02-02)
+
+| Technology | Usage % | Notes |
+| :--- | :---: | :--- |
+| **Tailwind CSS** | **100%** | Exclusive styling engine. |
+| **Lucide React** | **100%** | Exclusive icon system. |
+| **Framer Motion** | **~65%** | Primary animation engine. |
+| **shadcn/ui** | **~40%** | Foundation primitives. |
+| **Custom Premium UI** | **~60%** | Custom interactive wrappers. |
+
 ### State & Data Management
 
 | Technology | Version | Purpose |
