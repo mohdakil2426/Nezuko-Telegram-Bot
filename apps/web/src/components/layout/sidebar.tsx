@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
-import { useThemeConfig } from '@/lib/hooks/use-theme-config';
+// import { useThemeConfig } from '@/lib/hooks/use-theme-config'; // Removed unused import
 import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
@@ -31,9 +31,7 @@ const navItems: NavItem[] = [
   { path: "/dashboard/assets", label: "Channels & Groups", icon: Layers },
 ];
 
-const systemItems: NavItem[] = [
-  { path: "/dashboard/settings", label: "Settings", icon: Settings },
-];
+const systemItems: NavItem[] = [{ path: "/dashboard/settings", label: "Settings", icon: Settings }];
 
 // Magnetic Nav Item
 function MagneticNavItem({
@@ -52,12 +50,12 @@ function MagneticNavItem({
     const rect = e.currentTarget.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    
+
     // Use requestAnimationFrame to avoid layout thrashing
     requestAnimationFrame(() => {
-        const distanceX = (e.clientX - centerX) * 0.15;
-        const distanceY = (e.clientY - centerY) * 0.15;
-        setPosition({ x: distanceX, y: distanceY });
+      const distanceX = (e.clientX - centerX) * 0.15;
+      const distanceY = (e.clientY - centerY) * 0.15;
+      setPosition({ x: distanceX, y: distanceY });
     });
   };
 
@@ -79,7 +77,7 @@ function MagneticNavItem({
           "flex items-center px-3 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden",
           isActive
             ? "bg-primary/10 text-primary border border-primary/20"
-            : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5",
+            : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5"
         )}
       >
         {/* Active indicator line */}
@@ -111,9 +109,7 @@ function MagneticNavItem({
           <Icon
             className={cn(
               "w-5 h-5 transition-all duration-300 flex-shrink-0",
-              isActive
-                ? "text-primary"
-                : "group-hover:text-[var(--text-primary)]",
+              isActive ? "text-primary" : "group-hover:text-[var(--text-primary)]"
             )}
           />
         </motion.div>
@@ -127,11 +123,11 @@ function MagneticNavItem({
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
-  const { accentHex: accentColor } = useThemeConfig();
+  // removed accentColor as it is unused
   const { resolvedTheme, setTheme } = useTheme();
-  
+
   const toggleTheme = () => {
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
   };
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -145,7 +141,7 @@ export default function Sidebar() {
     <>
       {/* Mobile Header */}
       <motion.div
-        className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[var(--nezuko-surface)]/90 backdrop-blur-xl border-b border-[var(--nezuko-border)] z-30 flex items-center justify-between px-4"
+        className="lg:hidden fixed top-0 left-0 right-0 h-16 glass-header z-30 flex items-center justify-between px-4"
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -158,10 +154,7 @@ export default function Sidebar() {
           >
             <Zap className="w-4 h-4" />
           </motion.div>
-          <span
-            className="font-extrabold text-lg"
-            style={{ color: "var(--text-primary)" }}
-          >
+          <span className="font-extrabold text-lg" style={{ color: "var(--text-primary)" }}>
             NEZUKO
           </span>
         </div>
@@ -213,11 +206,11 @@ export default function Sidebar() {
       {/* Sidebar */}
       <motion.aside
         className={cn(
-          "fixed h-full bg-[var(--nezuko-surface)]/95 backdrop-blur-xl border-r border-[var(--nezuko-border)] flex flex-col justify-between z-20 transition-transform duration-300 ease-in-out",
+          "fixed h-full glass-sidebar flex flex-col justify-between z-20 transition-transform duration-300 ease-in-out",
           "w-64 left-0",
           "top-16 lg:top-0 h-[calc(100vh-64px)] lg:h-screen",
           // Mobile: show/hide based on state, Desktop: always visible
-          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
         initial={false}
       >
@@ -300,7 +293,7 @@ export default function Sidebar() {
           {/* Theme Toggle */}
           <motion.button
             onClick={toggleTheme}
-            className="w-full flex items-center px-3 py-2.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5 transition-all duration-300 group"
+            className="w-full flex items-center px-3 py-2.5 rounded-xl text-text-muted hover:text-text-primary hover:bg-white/5 transition-all duration-300 group"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -345,10 +338,7 @@ export default function Sidebar() {
           >
             <div className="relative flex-shrink-0">
               <img
-                src={
-                  user?.avatar ||
-                  "https://api.dicebear.com/7.x/avataaars/svg?seed=default"
-                }
+                src={user?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=default"}
                 alt={user?.name || "User"}
                 className="w-10 h-10 rounded-full border border-primary/30 p-0.5 transition-transform duration-300 hover:scale-110"
               />
@@ -358,10 +348,7 @@ export default function Sidebar() {
               />
             </div>
             <div className="ml-3 flex-1 min-w-0">
-              <p
-                className="text-sm font-bold truncate"
-                style={{ color: "var(--text-primary)" }}
-              >
+              <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>
                 {user?.name || "User"}
               </p>
               <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/20 text-primary border border-primary/20">
@@ -370,7 +357,7 @@ export default function Sidebar() {
             </div>
             <motion.button
               onClick={logout}
-              className="ml-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 rounded-lg hover:bg-white/5"
+              className="ml-2 text-text-muted hover:text-text-primary transition-colors p-1 rounded-lg hover:bg-white/5"
               whileHover={{ scale: 1.1, rotate: 90 }}
               whileTap={{ scale: 0.9 }}
             >

@@ -49,7 +49,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-(--nezuko-bg) bg-grid-pattern bg-size-[40px_40px] transition-colors duration-300 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-nezuko-bg bg-grid-pattern bg-size-[40px_40px] transition-colors duration-300 relative overflow-hidden">
       {/* Animated Background */}
       <ParticleBackground />
       <FloatingOrbs />
@@ -57,7 +57,7 @@ export default function Login() {
       {/* Theme Toggle */}
       <button
         onClick={toggleTheme}
-        className="absolute top-6 right-6 w-12 h-12 flex items-center justify-center rounded-2xl glass text-(--text-muted) hover:text-(--text-primary) transition-all duration-300 hover:scale-110 z-20 group"
+        className="absolute top-6 right-6 w-12 h-12 flex items-center justify-center rounded-2xl glass text-text-muted hover:text-text-primary transition-all duration-300 hover:scale-110 z-20 group"
       >
         {resolvedTheme === 'dark' ? (
           <Sun className="w-5 h-5 transition-transform group-hover:rotate-180 duration-500" />
@@ -90,7 +90,7 @@ export default function Login() {
                   alt="Abstract crystal"
                   className="object-cover w-full h-full"
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-(--nezuko-bg) to-transparent opacity-60 z-10" />
+                <div className="absolute inset-0 bg-linear-to-t from-nezuko-bg to-transparent opacity-60 z-10" />
               </div>
             </div>
             
@@ -208,7 +208,7 @@ export default function Login() {
                   disabled={isLoading}
                   className="w-full flex items-center justify-center py-3.5 px-4 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold transition-all duration-300 transform active:scale-[0.98] h-12 relative overflow-hidden group"
                 >
-                  <div className="absolute inset-0 bg-(--nezuko-bg) bg-grid-pattern bg-size-[40px_40px] opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-nezuko-bg bg-grid-pattern bg-size-[40px_40px] opacity-90 group-hover:opacity-100 transition-opacity" />
                   {isLoading ? (
                     <div className="relative w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
