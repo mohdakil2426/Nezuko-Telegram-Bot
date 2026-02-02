@@ -5,11 +5,13 @@ import type {
   StatusBreakdown,
   ActivityLog,
   SystemLog,
+  BotLog,
   TelegramAsset,
   AnalyticsMetrics,
   CommandUsage,
   EngagementData,
   AssetsOverviewStats,
+  LogsOverviewStats,
 } from './types';
 
 // Current User
@@ -136,6 +138,60 @@ export const systemLogs: SystemLog[] = [
   },
 ];
 
+// Bot Logs
+export const botLogs: BotLog[] = [
+  {
+    id: '1',
+    user: 'Tanjiro Kamado',
+    userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=tanjiro',
+    command: '/protect',
+    status: 'success',
+    latency: 145,
+    timestamp: '14:05:22',
+    details: 'Enabled protection for @DemonSlayerCorps',
+  },
+  {
+    id: '2',
+    user: 'Zenitsu Agatsuma',
+    userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=zenitsu',
+    command: '/verify',
+    status: 'failed',
+    latency: 80,
+    timestamp: '14:04:10',
+    details: 'User verification timeout',
+  },
+  {
+    id: '3',
+    user: 'Inosuke Hashibira',
+    userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=inosuke',
+    command: '/fight',
+    status: 'success',
+    latency: 210,
+    timestamp: '14:03:45',
+    details: 'Command executed successfully',
+  },
+  {
+    id: '4',
+    user: 'Nezuko-Chan',
+    userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=nezuko',
+    command: '/status',
+    status: 'success',
+    latency: 45,
+    timestamp: '14:02:15',
+    details: 'System status checked',
+  },
+  {
+    id: '5',
+    user: 'Giyu Tomioka',
+    userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=giyu',
+    command: '/ban',
+    status: 'pending',
+    latency: 0,
+    timestamp: '14:01:05',
+    details: 'Awaiting confirmation for user ban',
+  },
+];
+
 // Telegram Assets (Groups & Channels)
 export const telegramAssets: TelegramAsset[] = [
   {
@@ -232,6 +288,16 @@ export const groupsOverviewStats = {
   systemHealth: 99.9,
 };
 
+// Logs Overview Stats
+export const logsOverviewStats: LogsOverviewStats = {
+  totalLogs: 8432,
+  totalLogsChange: 15.4,
+  errorRate: 0.12,
+  errorRateChange: -5.2,
+  successRate: 98.8,
+  successRateChange: 0.4,
+};
+
 // Analytics Metrics
 export const analyticsMetrics: AnalyticsMetrics = {
   totalActiveUsers: 14203,
@@ -317,6 +383,12 @@ export const mockApi = {
     return systemLogs;
   },
 
+  // Get Bot Logs
+  getBotLogs: async (): Promise<BotLog[]> => {
+    await mockApi.delay(350);
+    return botLogs;
+  },
+
   // Get Telegram Assets
   getTelegramAssets: async (): Promise<TelegramAsset[]> => {
     await mockApi.delay(500);
@@ -363,6 +435,12 @@ export const mockApi = {
       activeAssets: groupsOverviewStats.activeChannels, // Mapping activeChannels to activeAssets
       systemHealth: groupsOverviewStats.systemHealth,
     };
+  },
+
+  // Get Logs Overview
+  getLogsOverview: async (): Promise<LogsOverviewStats> => {
+    await mockApi.delay(300);
+    return logsOverviewStats;
   },
 };
 

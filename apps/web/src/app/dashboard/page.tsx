@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Search, Bell, Plus, Users, Tag, Verified, Zap, Activity } from 'lucide-react';
 import { mockApi } from '@/lib/data/mock-data';
 import type { DashboardStats, ChartDataPoint, ActivityLog } from '@/lib/data/types';
@@ -300,15 +301,16 @@ export default function Dashboard() {
         </DashboardCard>
       </div>
 
-      {/* Recent Activity */}
       <DashboardCard className="p-8" index={6} title="Recent Activity" subtitle="Latest events from your bot" action={
-             <motion.button 
-             className="text-sm font-medium text-primary hover:opacity-80 transition-all"
-             whileHover={{ scale: 1.05, x: 5 }}
-             whileTap={{ scale: 0.95 }}
-           >
-             View All Logs →
-           </motion.button>
+             <Link href="/dashboard/logs">
+               <motion.button 
+                 className="text-sm font-medium text-primary hover:opacity-80 transition-all"
+                 whileHover={{ scale: 1.05, x: 5 }}
+                 whileTap={{ scale: 0.95 }}
+               >
+                 View All Logs →
+               </motion.button>
+             </Link>
       }>
         <div className="space-y-2">
           {activities.map((activity, idx) => (

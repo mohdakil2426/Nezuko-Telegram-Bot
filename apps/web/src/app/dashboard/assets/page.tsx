@@ -221,15 +221,19 @@ export default function Channels() {
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <AnimatePresence mode='popLayout'>
+        <AnimatePresence mode="popLayout">
           {filteredAssets.map((asset, index) => (
             <motion.div
-              key={asset.id}
               layout
+              key={asset.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.2, delay: index * 0.05 }}
+              transition={{ 
+                opacity: { duration: 0.2 },
+                scale: { duration: 0.2 },
+                layout: { duration: 0.3 }
+              }}
             >
               <AssetCard asset={asset} index={index} />
             </motion.div>

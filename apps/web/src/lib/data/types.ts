@@ -38,6 +38,15 @@ export interface AssetsOverviewStats {
   systemHealth: number;
 }
 
+export interface LogsOverviewStats {
+  totalLogs: number;
+  totalLogsChange: number;
+  errorRate: number;
+  errorRateChange: number;
+  successRate: number;
+  successRateChange: number;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -86,6 +95,18 @@ export interface SystemLog {
   id: string;
   level: 'INFO' | 'DEBUG' | 'WARN' | 'ERROR';
   message: string;
+  timestamp: string;
+  details?: string;
+}
+
+// Bot Log
+export interface BotLog {
+  id: string;
+  user: string;
+  userAvatar?: string;
+  command: string;
+  status: 'success' | 'failed' | 'pending';
+  latency: number;
   timestamp: string;
   details?: string;
 }

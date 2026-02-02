@@ -33,8 +33,13 @@
 | **Sidebar Active State**  | `startsWith` logic caused Dashboard to be active on all sub-routes | Updated `isActive` to require exact match for `/dashboard`   |
 | **Button Styling**        | Users preferred "filled" glass look over outline               | Added `glass` variant to MagneticButton & applied to actions |
 | **Settings UI**           | "Save Changes" button was redundant with auto-save             | Removed "Save Changes" button from Settings page             |
+| **App** | **Feature** | **Description** |
+| :--- | :--- | :--- |
 | **Asset Page Layout**     | User requested Search on left, Filter on right                 | Swapped toolbar items & applied glass effect                 |
 | **UI Components**         | Tab/Filter switchers were inconsistent across pages            | Created `SegmentedControl` component & unified UI            |
+| **Animation Performance** | System Logs table jittered on filter change                    | Optimized table animations (removed `AnimatePresence` on rows) |
+| **Asset Grid Animations** | Grid items snapped abruptly on filter changes                  | Added `popLayout` & `layout` props for fluid reordering      |
+| **Logs Page**             | Dedicated Logs page lacking summary stats                      | Added 3 StatCards for Total Logs, Error Rate, and Success Rate |
 
 
 ### Developer Experience Improvements

@@ -16,6 +16,7 @@ import {
   Moon,
   Menu,
   X,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,7 @@ const navItems: NavItem[] = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { path: "/dashboard/assets", label: "Channels & Groups", icon: Layers },
+  { path: "/dashboard/logs", label: "Logs & Activity", icon: FileText },
 ];
 
 const systemItems: NavItem[] = [{ path: "/dashboard/settings", label: "Settings", icon: Settings }];

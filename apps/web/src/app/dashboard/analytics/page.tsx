@@ -305,16 +305,19 @@ export default function Analytics() {
       >
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <tbody className="font-mono text-sm">
-              <AnimatePresence>
+            <AnimatePresence mode="wait">
+              <motion.tbody 
+                key={logFilter}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.15, ease: "easeInOut" }}
+                className="font-mono text-sm"
+              >
                 {filteredLogs.map((log, idx) => (
                   <motion.tr 
                     key={log.id} 
                     className="border-b border-(--nezuko-border)/50 hover:bg-(--nezuko-surface-hover) transition-all duration-200 group"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ delay: idx * 0.05 }}
                   >
                     <td className="py-3.5 px-3 text-(--text-muted) w-32 group-hover:text-(--text-secondary) transition-colors">{log.timestamp}</td>
                     <td className="py-3.5 px-3 w-24">
@@ -350,8 +353,8 @@ export default function Analytics() {
                     </td>
                   </motion.tr>
                 ))}
-              </AnimatePresence>
-            </tbody>
+              </motion.tbody>
+            </AnimatePresence>
           </table>
         </div>
       </DashboardCard>
