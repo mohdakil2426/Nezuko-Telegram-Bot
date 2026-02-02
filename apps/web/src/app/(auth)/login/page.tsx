@@ -67,9 +67,12 @@ export default function Login() {
         aria-label="Toggle theme"
       >
         {resolvedTheme === "dark" ? (
-          <Sun className="w-5 h-5 transition-transform group-hover:rotate-180 duration-500" />
+          <Sun
+            className="w-5 h-5 transition-transform group-hover:rotate-180 duration-500"
+            aria-hidden="true"
+          />
         ) : (
-          <Moon className="w-5 h-5 transition-transform group-hover:rotate-12" />
+          <Moon className="w-5 h-5 transition-transform group-hover:rotate-12" aria-hidden="true" />
         )}
       </button>
 
@@ -95,6 +98,8 @@ export default function Login() {
                 <img
                   src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80"
                   alt="Abstract crystal"
+                  width={450}
+                  height={450}
                   className="object-cover w-full h-full"
                 />
                 <div className="absolute inset-0 bg-linear-to-t from-nezuko-bg to-transparent opacity-60 z-10" />
@@ -102,7 +107,7 @@ export default function Login() {
             </div>
 
             <div className="mt-12 text-center">
-              <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-4">
+              <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-4 text-balance">
                 <span className="text-white">The Silent</span>{" "}
                 <span className="gradient-text">Guardian</span>
               </h1>
@@ -145,12 +150,16 @@ export default function Login() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Email */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-white/40 uppercase tracking-wider">
+                  <Label
+                    htmlFor="email"
+                    className="text-xs font-bold text-white/40 uppercase tracking-wider"
+                  >
                     Email Address
                   </Label>
                   <div className="relative group">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-primary transition-colors" />
                     <Input
+                      id="email"
                       type="email"
                       name="email"
                       value={email}
@@ -160,6 +169,7 @@ export default function Login() {
                       required
                       autoComplete="email"
                       spellCheck={false}
+                      aria-describedby={error ? "login-error" : undefined}
                     />
                   </div>
                 </div>
@@ -167,7 +177,10 @@ export default function Login() {
                 {/* Password */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-white/40 uppercase tracking-wider">
+                    <Label
+                      htmlFor="password"
+                      className="text-xs font-bold text-white/40 uppercase tracking-wider"
+                    >
                       Password
                     </Label>
                     <button
@@ -180,6 +193,7 @@ export default function Login() {
                   <div className="relative group">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-primary transition-colors" />
                     <Input
+                      id="password"
                       type={showPassword ? "text" : "password"}
                       name="password"
                       value={password}
@@ -188,6 +202,7 @@ export default function Login() {
                       className="pl-12 pr-12 py-3.5 bg-white/5 border-white/10 focus:border-primary/50 rounded-xl text-white placeholder-white/20 h-12 transition-all focus:bg-white/10"
                       required
                       autoComplete="current-password"
+                      aria-describedby={error ? "login-error" : undefined}
                     />
                     <button
                       type="button"
@@ -195,7 +210,11 @@ export default function Login() {
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" aria-hidden="true" />
+                      ) : (
+                        <Eye className="w-5 h-5" aria-hidden="true" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -213,7 +232,11 @@ export default function Login() {
                 </div>
 
                 {error && (
-                  <div className="text-sm text-red-400 text-center bg-red-500/10 py-2 rounded-lg">
+                  <div
+                    id="login-error"
+                    role="alert"
+                    className="text-sm text-red-400 text-center bg-red-500/10 py-2 rounded-lg"
+                  >
                     {error}
                   </div>
                 )}
@@ -229,7 +252,7 @@ export default function Login() {
                     <div className="relative w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <>
-                      <LogIn className="w-5 h-5 mr-2 relative" />
+                      <LogIn className="w-5 h-5 mr-2 relative" aria-hidden="true" />
                       <span className="relative">Access Dashboard</span>
                     </>
                   )}
@@ -280,9 +303,19 @@ export default function Login() {
 
               {/* Footer */}
               <div className="mt-8 flex justify-center space-x-6 text-xs text-white/30">
-                <button className="hover:text-white/60 transition-colors">Privacy Policy</button>
-                <span>•</span>
-                <button className="hover:text-white/60 transition-colors">Terms of Service</button>
+                <a
+                  href="/privacy"
+                  className="hover:text-white/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded"
+                >
+                  Privacy Policy
+                </a>
+                <span aria-hidden="true">•</span>
+                <a
+                  href="/terms"
+                  className="hover:text-white/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded"
+                >
+                  Terms of Service
+                </a>
               </div>
             </div>
           </div>

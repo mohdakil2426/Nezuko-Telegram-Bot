@@ -62,7 +62,7 @@ export default function NotFound() {
           transition={{ delay: 0.2, type: "spring" }}
           className="mb-4"
         >
-          <h1 className="text-8xl md:text-9xl font-black bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <h1 className="text-8xl md:text-9xl font-black bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent text-balance">
             404
           </h1>
         </m.div>

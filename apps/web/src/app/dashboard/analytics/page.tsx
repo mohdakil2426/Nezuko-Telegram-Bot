@@ -13,8 +13,8 @@ import { AreaChart, Area, PieChart, Pie, Cell, Tooltip, ResponsiveContainer } fr
 
 // New Components
 import PageLoader from "@/components/PageLoader";
-import StatCard from "@/components/StatCard";
-import DashboardCard from "@/components/DashboardCard";
+import StatCard from "@/components/ui/stat-card";
+import DashboardCard from "@/components/ui/dashboard-card";
 import PageHeader from "@/components/layout/PageHeader";
 import CustomTooltip from "@/components/charts/CustomTooltip";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -218,7 +218,7 @@ export default function Analytics() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex justify-between mt-3 text-xs text-(--text-muted) font-mono">
+          <div className="flex justify-between mt-3 text-xs text-(--text-muted) font-mono tabular-nums">
             {["00:00", "04:00", "08:00", "12:00", "16:00", "20:00", "23:59"].map((time) => (
               <m.span
                 key={time}
@@ -320,7 +320,7 @@ export default function Analytics() {
                     key={log.id}
                     className="border-b border-(--nezuko-border)/50 hover:bg-(--nezuko-surface-hover) transition-all duration-200 group"
                   >
-                    <td className="py-3.5 px-3 text-(--text-muted) w-32 group-hover:text-(--text-secondary) transition-colors">
+                    <td className="py-3.5 px-3 text-(--text-muted) w-32 group-hover:text-(--text-secondary) transition-colors tabular-nums">
                       {log.timestamp}
                     </td>
                     <td className="py-3.5 px-3 w-24">
@@ -341,7 +341,7 @@ export default function Analytics() {
                       {log.message.includes("shard_02") ? (
                         <>
                           <span className="text-red-500">Database connection timeout:</span>{" "}
-                          shard_02 failed to respond in 5000ms. Retrying...
+                          shard_02 failed to respond in 5000ms. Retrying…
                         </>
                       ) : log.message.includes("guild_settings") ? (
                         <>

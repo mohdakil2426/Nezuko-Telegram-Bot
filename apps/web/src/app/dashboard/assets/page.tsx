@@ -25,8 +25,8 @@ import { cn } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
 import PageLoader from "@/components/PageLoader";
 import PageHeader from "@/components/layout/PageHeader";
-import TiltCard from "@/components/TiltCard";
-import StatCard from "@/components/StatCard";
+import TiltCard from "@/components/ui/tilt-card";
+import StatCard from "@/components/ui/stat-card";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
   DropdownMenu,
@@ -72,7 +72,7 @@ function AssetCard({ asset, index, onDelete }: AssetCardProps) {
               </div>
             </div>
             <div>
-              <h3 className="font-bold text-lg text-(--text-primary) group-hover:text-primary transition-colors">
+              <h3 className="font-bold text-lg text-(--text-primary) group-hover:text-primary transition-colors truncate">
                 {asset.name}
               </h3>
               <p className="text-xs text-(--text-muted) font-mono">ID: {asset.id}</p>
@@ -275,7 +275,7 @@ export default function AssetsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--text-muted) group-focus-within:text-primary transition-colors" />
           <input
             type="text"
-            placeholder="Search by name or ID..."
+            placeholder="Search by name or ID…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-(--nezuko-bg)/50 rounded-xl border border-(--nezuko-border) focus:border-primary/50 text-sm text-(--text-primary) placeholder-(--text-muted) outline-none transition-all"
@@ -295,7 +295,10 @@ export default function AssetsPage() {
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div
+        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+        style={{ contentVisibility: "auto", containIntrinsicSize: "0 600px" }}
+      >
         <AnimatePresence mode="popLayout">
           {filteredAssets.map((asset, index) => (
             <m.div

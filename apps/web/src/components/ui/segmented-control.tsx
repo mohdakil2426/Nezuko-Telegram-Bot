@@ -40,7 +40,8 @@ export function SegmentedControl<T extends string>({
             key={itemValue}
             onClick={() => onChange(itemValue as T)}
             className={cn(
-              "rounded-lg font-bold transition-all duration-300 relative",
+              "rounded-lg font-bold transition-colors duration-300 relative",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
               sizeClasses[size],
               isActive
                 ? "bg-primary text-white shadow-md shadow-primary/25"

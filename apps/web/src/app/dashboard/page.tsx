@@ -12,10 +12,10 @@ import { m } from "motion/react";
 import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 
 // New Components
-import AnimatedCounter from "@/components/AnimatedCounter";
+import AnimatedCounter from "@/components/ui/animated-counter";
 import PageLoader from "@/components/PageLoader";
-import StatCard from "@/components/StatCard";
-import DashboardCard from "@/components/DashboardCard";
+import StatCard from "@/components/ui/stat-card";
+import DashboardCard from "@/components/ui/dashboard-card";
 import PageHeader from "@/components/layout/PageHeader";
 import CustomTooltip from "@/components/charts/CustomTooltip";
 

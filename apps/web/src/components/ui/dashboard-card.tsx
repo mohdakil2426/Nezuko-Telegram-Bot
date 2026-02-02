@@ -47,8 +47,8 @@ export default function DashboardCard({
 
         <div className="relative z-10 flex justify-between items-start mb-6 shrink-0">
           <div>
-            <h3 className="text-xl font-bold text-text-primary">{title}</h3>
-            {subtitle && <p className="text-sm text-text-muted mt-0.5">{subtitle}</p>}
+            <h3 className="text-xl font-bold text-[var(--text-primary)]">{title}</h3>
+            {subtitle && <p className="text-sm text-[var(--text-muted)] mt-0.5">{subtitle}</p>}
           </div>
           {action && <div className="flex gap-2">{action}</div>}
         </div>

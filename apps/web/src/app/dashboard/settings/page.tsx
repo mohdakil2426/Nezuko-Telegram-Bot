@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { useThemeConfig, ACCENT_THEMES, type AccentId } from "@/lib/hooks/use-theme-config";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
-import TiltCard, { SelectionIndicator } from "@/components/TiltCard";
+import TiltCard, { SelectionIndicator } from "@/components/ui/tilt-card";
 import PageHeader from "@/components/layout/PageHeader";
 import { FadeIn } from "@/components/PageTransition";
 import { SettingRow } from "@/components/ui/setting-row";

@@ -51,7 +51,9 @@ export default function StatCard({
 
         <div className="flex justify-between items-start mb-4 relative">
           <div>
-            <p className="text-xs font-bold tracking-wider text-text-muted uppercase">{title}</p>
+            <p className="text-xs font-bold tracking-wider text-[var(--text-muted)] uppercase">
+              {title}
+            </p>
           </div>
           <m.div
             className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -68,7 +70,8 @@ export default function StatCard({
         </div>
 
         <m.h2
-          className="text-4xl font-extrabold mb-3 origin-left text-text-primary"
+          className="text-4xl font-extrabold mb-3 origin-left tabular-nums"
+          style={{ color: "var(--text-primary)" }}
           whileHover={{ scale: 1.05 }}
           transition={{ type: "spring", stiffness: 400, damping: 15 }}
         >
@@ -84,7 +87,7 @@ export default function StatCard({
                   ? "bg-green-500/10 text-green-500 border-green-500/20"
                   : derivedChangeType === "negative"
                     ? "bg-red-500/10 text-red-500 border-red-500/20"
-                    : "bg-gray-500/10 text-text-muted border-gray-500/20"
+                    : "bg-gray-500/10 text-[var(--text-muted)] border-gray-500/20"
               )}
               style={
                 derivedChangeType === "neutral"
@@ -101,9 +104,9 @@ export default function StatCard({
               {typeof change === "number" && change > 0 ? "+" : ""}
               {typeof change === "number" ? `${Math.abs(change)}%` : change}
             </m.span>
-            {changeLabel && <span className="text-xs text-text-muted">{changeLabel}</span>}
+            {changeLabel && <span className="text-xs text-[var(--text-muted)]">{changeLabel}</span>}
             {!changeLabel && typeof change === "number" && (
-              <span className="text-xs text-text-muted">vs last month</span>
+              <span className="text-xs text-[var(--text-muted)]">vs last month</span>
             )}
           </div>
         )}

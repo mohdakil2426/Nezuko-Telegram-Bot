@@ -47,6 +47,8 @@ interface SettingRowProps {
   animateIcon?: "rotate" | "scale" | "pulse" | "none";
   /** Custom icon element instead of LucideIcon */
   customIcon?: React.ReactNode;
+  /** Unique id for the switch (auto-generated from title if not provided) */
+  id?: string;
 }
 
 const colorVariants = {
@@ -86,10 +88,15 @@ function SettingRow({
   activeColor = "primary",
   animateIcon = "none",
   customIcon,
+  id,
 }: SettingRowProps) {
   const colors = colorVariants[activeColor];
   const animation = iconAnimations[animateIcon];
   const shouldAnimate = checked && animateIcon !== "none";
+
+  // Generate a stable id from the title if not provided
+  const switchId = id || `setting-${title.toLowerCase().replace(/\s+/g, "-")}`;
+  const descriptionId = `${switchId}-description`;
 
   return (
     <m.div
@@ -127,11 +134,21 @@ function SettingRow({
           )}
         </m.div>
         <div>
-          <p className="font-medium text-(--text-primary)">{title}</p>
-          <p className="text-xs text-(--text-muted)">{description}</p>
+          <label htmlFor={switchId} className="font-medium text-(--text-primary) cursor-pointer">
+            {title}
+          </label>
+          <p id={descriptionId} className="text-xs text-(--text-muted)">
+            {description}
+          </p>
         </div>
       </div>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} className={colors.switch} />
+      <Switch
+        id={switchId}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        className={colors.switch}
+        aria-describedby={descriptionId}
+      />
     </m.div>
   );
 }

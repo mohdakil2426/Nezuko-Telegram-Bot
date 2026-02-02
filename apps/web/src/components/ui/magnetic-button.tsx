@@ -80,8 +80,9 @@ export function MagneticButton({
       ref={buttonRef}
       className={cn(
         "relative inline-flex items-center justify-center gap-2 rounded-xl font-medium",
-        "transition-all duration-300 overflow-hidden",
+        "transition-colors duration-300 overflow-hidden",
         "border disabled:opacity-50 disabled:cursor-not-allowed",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
         variants[variant],
         sizes[size],
         className
@@ -103,6 +104,7 @@ export function MagneticButton({
         mass: 0.5,
       }}
       whileTap={{ scale: 0.95 }}
+      style={{ willChange: "transform" }}
     >
       {/* Ripple Effect */}
       {isHovered && (

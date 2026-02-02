@@ -190,7 +190,7 @@ export default function Sidebar() {
                   exit={{ rotate: 90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Moon className="w-5 h-5" />
+                  <Moon className="w-5 h-5" aria-hidden="true" />
                 </m.div>
               ) : mounted ? (
                 <m.div
@@ -200,7 +200,7 @@ export default function Sidebar() {
                   exit={{ rotate: -90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Sun className="w-5 h-5" />
+                  <Sun className="w-5 h-5" aria-hidden="true" />
                 </m.div>
               ) : (
                 <div className="w-5 h-5" />
@@ -224,7 +224,7 @@ export default function Sidebar() {
                   exit={{ rotate: 90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </m.div>
               ) : (
                 <m.div
@@ -234,7 +234,7 @@ export default function Sidebar() {
                   exit={{ rotate: -90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Menu className="w-5 h-5" />
+                  <Menu className="w-5 h-5" aria-hidden="true" />
                 </m.div>
               )}
             </AnimatePresence>
@@ -363,7 +363,10 @@ export default function Sidebar() {
                     exit={{ rotate: 90, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Moon className="w-4 h-4 group-hover:text-primary transition-colors" />
+                    <Moon
+                      className="w-4 h-4 group-hover:text-primary transition-colors"
+                      aria-hidden="true"
+                    />
                   </m.div>
                 ) : mounted ? (
                   <m.div
@@ -373,7 +376,10 @@ export default function Sidebar() {
                     exit={{ rotate: -90, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Sun className="w-4 h-4 group-hover:text-primary transition-colors" />
+                    <Sun
+                      className="w-4 h-4 group-hover:text-primary transition-colors"
+                      aria-hidden="true"
+                    />
                   </m.div>
                 ) : (
                   <div className="w-4 h-4" />
@@ -394,6 +400,8 @@ export default function Sidebar() {
               <img
                 src={user?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=default"}
                 alt={user?.name || "User"}
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-full border border-primary/30 p-0.5 transition-transform duration-300 hover:scale-110"
               />
               <span
@@ -416,7 +424,7 @@ export default function Sidebar() {
               whileTap={{ scale: 0.9 }}
               aria-label="User menu"
             >
-              <MoreVertical className="w-[18px] h-[18px]" />
+              <MoreVertical className="w-[18px] h-[18px]" aria-hidden="true" />
             </m.button>
           </m.div>
         </m.div>

@@ -7,6 +7,8 @@
 
 @layer base {
   :root {
+    color-scheme: light;
+
     /* Base Colors (Dark Default) */
     --background: hsl(0 0% 2%);
     --foreground: hsl(0 0% 98%);
@@ -54,6 +56,10 @@
 
     /* Dynamic Accent (Default) */
     --accent-gradient: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+  }
+
+  .dark {
+    color-scheme: dark;
   }
 
   .light {
@@ -861,4 +867,19 @@
   html {
     font-size: 18px;
   }
+}
+
+/* Touch optimization for faster touch response */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* Overscroll behavior for modal/dialog containers */
+[data-slot="dialog-content"],
+[data-slot="alert-dialog-content"],
+[data-radix-dialog-content],
+[data-radix-alert-dialog-content] {
+  overscroll-behavior: contain;
 }

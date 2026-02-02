@@ -26,8 +26,8 @@ import StatusBadge from "@/components/StatusBadge";
 import PageLoader from "@/components/PageLoader";
 import PageHeader from "@/components/layout/PageHeader";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import TiltCard from "@/components/TiltCard";
-import StatCard from "@/components/StatCard";
+import TiltCard from "@/components/ui/tilt-card";
+import StatCard from "@/components/ui/stat-card";
 
 export default function LogsPage() {
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
@@ -139,7 +139,7 @@ export default function LogsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--text-muted) group-focus-within:text-primary transition-colors" />
           <input
             type="text"
-            placeholder={activeTab === "SYSTEM" ? "Search logs..." : "Search user or command..."}
+            placeholder={activeTab === "SYSTEM" ? "Search logs…" : "Search user or command…"}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-(--nezuko-bg)/50 rounded-xl border border-(--nezuko-border) focus:border-primary/50 text-sm text-(--text-primary) placeholder-(--text-muted) outline-none transition-all"
@@ -183,7 +183,7 @@ export default function LogsPage() {
 
       {/* Content Area */}
       <TiltCard className="min-h-[500px]">
-        <div className="p-6">
+        <div className="p-6" style={{ contentVisibility: "auto", containIntrinsicSize: "0 500px" }}>
           <AnimatePresence mode="wait">
             {activeTab === "SYSTEM" ? (
               <m.div
@@ -217,7 +217,7 @@ export default function LogsPage() {
                             key={log.id}
                             className="border-b border-(--nezuko-border)/50 hover:bg-(--nezuko-surface-hover) transition-colors group"
                           >
-                            <td className="py-3.5 px-3 text-(--text-muted) w-36 whitespace-nowrap">
+                            <td className="py-3.5 px-3 text-(--text-muted) w-36 whitespace-nowrap tabular-nums">
                               {log.timestamp}
                             </td>
                             <td className="py-3.5 px-3 w-24">
@@ -321,7 +321,7 @@ export default function LogsPage() {
                             <td className="py-3.5 px-3">
                               <span
                                 className={cn(
-                                  "font-mono text-xs",
+                                  "font-mono text-xs tabular-nums",
                                   log.latency < 100
                                     ? "text-green-500"
                                     : log.latency < 300
@@ -332,7 +332,7 @@ export default function LogsPage() {
                                 {log.latency}ms
                               </span>
                             </td>
-                            <td className="py-3.5 px-3 text-(--text-muted) font-mono">
+                            <td className="py-3.5 px-3 text-(--text-muted) font-mono tabular-nums">
                               {log.timestamp}
                             </td>
                           </tr>
