@@ -1,39 +1,188 @@
 # Project Progress: Nezuko - Roadmap to v1.0.0
 
-## Current Status: Phase 31 COMPLETE - useConfirm Integration & Assets Page Cleanup
+## Current Status: Phase 35 COMPLETE - TiltCard Consolidation
 
-**Overall Implementation Status**: **100%** (Core features complete, services layer implemented, useConfirm integrated)
+**Overall Implementation Status**: **100%** (Core features complete, premium UI polished, unified card component)
 
-| Phase           | Description                                 | Status      |
-| :-------------- | :------------------------------------------ | :---------- |
-| **Phase 0**     | Monorepo Foundation & Docker                | ✅ Complete |
-| **Phase 1-2**   | Auth & Layout                               | ✅ Complete |
-| **Phase 3**     | Dashboard & Stats                           | ✅ Complete |
-| **Phase 4-5**   | Groups & Channels CRUD                      | ✅ Complete |
-| **Phase 6**     | Config Management                           | ✅ Complete |
-| **Phase 7**     | Real-Time Log Streaming                     | ✅ Complete |
-| **Phase 8-9**   | DB Browser & Analytics                      | ✅ Complete |
-| **Phase 10-11** | Audit Logs & RBAC                           | ✅ Complete |
-| **Phase 12**    | Production Polish & Static Analysis Cleanup | ✅ Complete |
-| **Phase 13**    | Maintenance & Documentation                 | ✅ Complete |
-| **Phase 14**    | Supabase One-Stack Migration                | ✅ Complete |
-| **Phase 15**    | Comprehensive Testing                       | ✅ Complete |
-| **Phase 16**    | React Optimization (Vercel Best Practices)  | ✅ Complete |
-| **Phase 17**    | Next.js 16 Deep Compliance Audit            | ✅ Complete |
-| **Phase 18**    | TanStack Query v5 Best Practices Audit      | ✅ Complete |
-| **Phase 19**    | Production-Grade Folder Structure           | ✅ Complete |
-| **Phase 20**    | Documentation Refinement                    | ✅ Complete |
-| **Phase 21**    | Developer Experience Improvements           | ✅ Complete |
-| **Phase 22**    | Script Logging System                       | ✅ Complete |
-| **Phase 23**    | SQLite Migration & Dashboard Fixes          | ✅ Complete |
-| **Phase 24**    | Code Quality Improvements (Skills Audit)    | ✅ Complete |
-| **Phase 25**    | GitHub Push Readiness & Cleanup             | ✅ Complete |
-| **Phase 26**    | Linting Fixes & Dependencies Update         | ✅ Complete |
-| **Phase 27**    | Dashboard UI Migration                      | ✅ Complete |
-| **Phase 28**    | Dashboard Complete Redesign                 | ✅ Complete |
-| **Phase 29**    | Codebase Optimization & Polish              | ✅ Complete |
-| **Phase 30**    | Production-Grade Services Layer             | ✅ Complete |
-| **Phase 31**    | useConfirm Integration & Assets Cleanup     | ✅ Complete |
+| Phase           | Description                                  | Status      |
+| :-------------- | :------------------------------------------- | :---------- |
+| **Phase 0**     | Monorepo Foundation & Docker                 | ✅ Complete |
+| **Phase 1-2**   | Auth & Layout                                | ✅ Complete |
+| **Phase 3**     | Dashboard & Stats                            | ✅ Complete |
+| **Phase 4-5**   | Groups & Channels CRUD                       | ✅ Complete |
+| **Phase 6**     | Config Management                            | ✅ Complete |
+| **Phase 7**     | Real-Time Log Streaming                      | ✅ Complete |
+| **Phase 8-9**   | DB Browser & Analytics                       | ✅ Complete |
+| **Phase 10-11** | Audit Logs & RBAC                            | ✅ Complete |
+| **Phase 12**    | Production Polish & Static Analysis Cleanup  | ✅ Complete |
+| **Phase 13**    | Maintenance & Documentation                  | ✅ Complete |
+| **Phase 14**    | Supabase One-Stack Migration                 | ✅ Complete |
+| **Phase 15**    | Comprehensive Testing                        | ✅ Complete |
+| **Phase 16**    | React Optimization (Vercel Best Practices)   | ✅ Complete |
+| **Phase 17**    | Next.js 16 Deep Compliance Audit             | ✅ Complete |
+| **Phase 18**    | TanStack Query v5 Best Practices Audit       | ✅ Complete |
+| **Phase 19**    | Production-Grade Folder Structure            | ✅ Complete |
+| **Phase 20**    | Documentation Refinement                     | ✅ Complete |
+| **Phase 21**    | Developer Experience Improvements            | ✅ Complete |
+| **Phase 22**    | Script Logging System                        | ✅ Complete |
+| **Phase 23**    | SQLite Migration & Dashboard Fixes           | ✅ Complete |
+| **Phase 24**    | Code Quality Improvements (Skills Audit)     | ✅ Complete |
+| **Phase 25**    | GitHub Push Readiness & Cleanup              | ✅ Complete |
+| **Phase 26**    | Linting Fixes & Dependencies Update          | ✅ Complete |
+| **Phase 27**    | Dashboard UI Migration                       | ✅ Complete |
+| **Phase 28**    | Dashboard Complete Redesign                  | ✅ Complete |
+| **Phase 29**    | Codebase Optimization & Polish               | ✅ Complete |
+| **Phase 30**    | Production-Grade Services Layer              | ✅ Complete |
+| **Phase 31**    | useConfirm Integration & Assets Cleanup      | ✅ Complete |
+| **Phase 32**    | Settings Page Refactor & Reusable Components | ✅ Complete |
+| **Phase 33**    | Hydration Fix                                | ✅ Complete |
+| **Phase 34**    | TiltCard Enhancement (Lift Effect)           | ✅ Complete |
+| **Phase 35**    | TiltCard Consolidation                       | ✅ Complete |
+
+---
+
+## ✅ Phase 35: TiltCard Consolidation (2026-02-02)
+
+### Overview
+
+Consolidated HoverLiftCard functionality into TiltCard, creating a single unified premium card component.
+
+### Changes
+
+1. **Added to TiltCard:**
+   - `onClick` prop - Makes card interactive (button role, keyboard support, whileTap)
+   - `isSelected` prop - Selection styling with primary border
+   - Exported `SelectionIndicator` component
+
+2. **Updated Settings page:**
+   - Theme option cards now use TiltCard with `onClick` and `isSelected`
+   - Imports SelectionIndicator from TiltCard
+
+3. **Deleted:**
+   - `src/components/ui/hover-lift-card.tsx` (redundant)
+
+### Files Modified
+
+| File                                    | Change                                        |
+| :-------------------------------------- | :-------------------------------------------- |
+| `src/components/TiltCard.tsx`           | Added onClick, isSelected, SelectionIndicator |
+| `src/app/dashboard/settings/page.tsx`   | Updated to use TiltCard                       |
+| `src/components/ui/hover-lift-card.tsx` | **DELETED**                                   |
+
+---
+
+## ✅ Phase 34: TiltCard Enhancement (2026-02-02)
+
+### Overview
+
+Enhanced TiltCard to include a satisfying lift effect on hover, combining premium 3D tilt with vertical lift animation.
+
+### Implementation
+
+Added new props to TiltCard:
+
+- `enableLift` (default: `true`) - Enable/disable lift effect
+- `liftAmount` (default: `2`) - Lift amount in pixels
+
+### Transform Update
+
+```tsx
+// Before: scale only
+transform: `perspective(1000px) rotateX(...) rotateY(...) scale(1.02)`;
+
+// After: scale + lift
+transform: `perspective(1000px) rotateX(...) rotateY(...) scale(1.02) translateY(-2px)`;
+```
+
+### Components Enhanced
+
+All components using TiltCard now have the lift effect:
+
+| Component       | Location                           |
+| :-------------- | :--------------------------------- |
+| StatCard        | Dashboard, Analytics, Assets, Logs |
+| DashboardCard   | Dashboard, Analytics               |
+| TiltCard direct | Assets (asset cards), Logs (table) |
+
+### Files Modified
+
+| File                          | Change                                       |
+| :---------------------------- | :------------------------------------------- |
+| `src/components/TiltCard.tsx` | Added `enableLift`, `liftAmount`, translateY |
+
+---
+
+## ✅ Phase 33: Hydration Fix (2026-02-02)
+
+### Overview
+
+Fixed SSR/client hydration mismatch in the Sidebar theme toggle component.
+
+### Problem
+
+The theme toggle rendered different icons on server vs client:
+
+- Server: `resolvedTheme` is `undefined` → renders Sun icon
+- Client: `resolvedTheme` is `'dark'` → expects Moon icon
+
+### Solution
+
+Applied the `mounted` state pattern to defer theme-dependent rendering until after hydration:
+
+```tsx
+const [mounted, setMounted] = useState(false);
+useEffect(() => setMounted(true), []);
+
+// Render placeholder during SSR, actual icon after hydration
+{
+  mounted && resolvedTheme === "dark" ? <Moon /> : mounted ? <Sun /> : <div className="w-4 h-4" />;
+}
+```
+
+### Files Modified
+
+| File                                | Change                                  |
+| :---------------------------------- | :-------------------------------------- |
+| `src/components/layout/Sidebar.tsx` | Added mounted state, fixed theme toggle |
+
+---
+
+## ✅ Phase 32: Settings Page Refactor & Reusable Components (2026-02-02)
+
+### Overview
+
+Extracted reusable components from the settings page, replaced inline styles with CSS classes, and improved code organization.
+
+### Implementation Progress
+
+| Task                           | Status      | Description                                   |
+| :----------------------------- | :---------- | :-------------------------------------------- |
+| Create HoverLiftCard component | ✅ Complete | Lift-up animation card, reusable across pages |
+| Create SettingRow component    | ✅ Complete | Toggle row with icon, title, switch           |
+| Refactor Settings page         | ✅ Complete | Uses PageHeader, HoverLiftCard, SettingRow    |
+| Remove inline styles           | ✅ Complete | Replaced with Tailwind CSS variable syntax    |
+| Update theme previews          | ✅ Complete | Consistent Slate color palette                |
+| Verify build                   | ✅ Complete | All 9 pages generated successfully            |
+
+### Files Created
+
+| File                                    | Purpose                          |
+| :-------------------------------------- | :------------------------------- |
+| `src/components/ui/hover-lift-card.tsx` | Reusable lift-up animation card  |
+| `src/components/ui/setting-row.tsx`     | Reusable toggle row for settings |
+
+### Files Modified
+
+| File                                  | Change                             |
+| :------------------------------------ | :--------------------------------- |
+| `src/app/dashboard/settings/page.tsx` | Full refactor using new components |
+
+### Code Reduction
+
+| Metric              | Before | After     | Change |
+| :------------------ | :----- | :-------- | :----- |
+| Settings page lines | 690    | 445       | -35%   |
+| Reusable components | 0      | 280 lines | +reuse |
 
 ---
 

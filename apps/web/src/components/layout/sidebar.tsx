@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -127,6 +127,12 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
   // removed accentColor as it is unused
   const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch - theme is undefined on server
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
@@ -164,36 +170,74 @@ export default function Sidebar() {
             NEZUKO
           </span>
         </div>
-        <motion.button
-          onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="w-10 h-10 flex items-center justify-center rounded-xl glass text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <AnimatePresence mode="wait">
-            {isMobileOpen ? (
-              <motion.div
-                key="close"
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: 90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <X className="w-5 h-5" />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="menu"
-                initial={{ rotate: 90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: -90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Menu className="w-5 h-5" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.button>
+        <div className="flex items-center gap-2">
+          {/* Mobile Theme Toggle */}
+          <motion.button
+            onClick={toggleTheme}
+            className="w-10 h-10 flex items-center justify-center rounded-xl glass text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            aria-label="Toggle theme"
+          >
+            <AnimatePresence mode="wait">
+              {mounted && resolvedTheme === "dark" ? (
+                <motion.div
+                  key="moon-mobile"
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Moon className="w-5 h-5" />
+                </motion.div>
+              ) : mounted ? (
+                <motion.div
+                  key="sun-mobile"
+                  initial={{ rotate: 90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Sun className="w-5 h-5" />
+                </motion.div>
+              ) : (
+                <div className="w-5 h-5" />
+              )}
+            </AnimatePresence>
+          </motion.button>
+          {/* Mobile Menu Toggle */}
+          <motion.button
+            onClick={() => setIsMobileOpen(!isMobileOpen)}
+            className="w-10 h-10 flex items-center justify-center rounded-xl glass text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            aria-label="Toggle menu"
+          >
+            <AnimatePresence mode="wait">
+              {isMobileOpen ? (
+                <motion.div
+                  key="close"
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <X className="w-5 h-5" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="menu"
+                  initial={{ rotate: 90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Menu className="w-5 h-5" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </div>
       </motion.div>
 
       {/* Mobile Overlay */}
@@ -309,7 +353,7 @@ export default function Sidebar() {
               transition={{ duration: 0.3 }}
             >
               <AnimatePresence mode="wait">
-                {resolvedTheme === "dark" ? (
+                {mounted && resolvedTheme === "dark" ? (
                   <motion.div
                     key="moon"
                     initial={{ rotate: -90, opacity: 0 }}
@@ -319,7 +363,7 @@ export default function Sidebar() {
                   >
                     <Moon className="w-4 h-4 group-hover:text-primary transition-colors" />
                   </motion.div>
-                ) : (
+                ) : mounted ? (
                   <motion.div
                     key="sun"
                     initial={{ rotate: 90, opacity: 0 }}
@@ -329,11 +373,13 @@ export default function Sidebar() {
                   >
                     <Sun className="w-4 h-4 group-hover:text-primary transition-colors" />
                   </motion.div>
+                ) : (
+                  <div className="w-4 h-4" />
                 )}
               </AnimatePresence>
             </motion.div>
             <span className="ml-3 text-sm font-medium whitespace-nowrap">
-              {resolvedTheme === "dark" ? "Dark Mode" : "Light Mode"}
+              {mounted ? (resolvedTheme === "dark" ? "Dark Mode" : "Light Mode") : "Theme"}
             </span>
           </motion.button>
 
