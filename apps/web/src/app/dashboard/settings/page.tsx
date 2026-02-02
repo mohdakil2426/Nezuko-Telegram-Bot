@@ -22,7 +22,7 @@ import TiltCard, { SelectionIndicator } from "@/components/TiltCard";
 import PageHeader from "@/components/layout/PageHeader";
 import { FadeIn } from "@/components/PageTransition";
 import { SettingRow } from "@/components/ui/setting-row";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "motion/react";
 import { useState } from "react";
 
 // ============================================================================
@@ -62,7 +62,7 @@ function ThemeOption({
       </div>
 
       <div className="flex items-start gap-4">
-        <motion.div
+        <m.div
           className={cn(
             "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
             isSelected
@@ -72,7 +72,7 @@ function ThemeOption({
           whileHover={{ scale: 1.1, rotate: 5 }}
         >
           <Icon className="w-6 h-6" />
-        </motion.div>
+        </m.div>
         <div className="flex-1">
           <h4
             className={cn(
@@ -117,7 +117,7 @@ function AccentColorOption({
   index,
 }: AccentColorProps) {
   return (
-    <motion.button
+    <m.button
       onClick={onClick}
       className={cn(
         "flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all duration-300 group hover:bg-(--nezuko-surface-hover) border border-transparent",
@@ -129,7 +129,7 @@ function AccentColorOption({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.03, type: "spring", stiffness: 400, damping: 15 }}
     >
-      <motion.div
+      <m.div
         className={cn(
           "w-10 h-10 rounded-full transition-all duration-300 flex items-center justify-center border",
           isSelected
@@ -151,17 +151,17 @@ function AccentColorOption({
       >
         <AnimatePresence>
           {isSelected && (
-            <motion.div
+            <m.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 15 }}
             >
               <Check className="w-4 h-4 text-white" />
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </m.div>
       <span
         className={cn(
           "text-[10px] font-medium transition-colors text-center w-full truncate px-1",
@@ -170,7 +170,7 @@ function AccentColorOption({
       >
         {name}
       </span>
-    </motion.button>
+    </m.button>
   );
 }
 
@@ -184,7 +184,7 @@ function CustomAccentOption({ isSelected, color }: { isSelected: boolean; color:
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <motion.button
+        <m.button
           className={cn(
             "flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all duration-300 group hover:bg-(--nezuko-surface-hover) border border-transparent",
             isSelected && "bg-(--nezuko-surface) border-(--nezuko-border)"
@@ -217,7 +217,7 @@ function CustomAccentOption({ isSelected, color }: { isSelected: boolean; color:
           >
             Custom
           </span>
-        </motion.button>
+        </m.button>
       </DialogTrigger>
       <CustomColorDialogContent onClose={() => setIsOpen(false)} />
     </Dialog>
@@ -330,12 +330,12 @@ function SettingSection({
     <TiltCard className="p-6">
       <FadeIn delay={delay}>
         <div className="flex items-start gap-4 mb-6">
-          <motion.div
+          <m.div
             className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary"
             whileHover={{ scale: 1.1, rotate: 5 }}
           >
             <Icon className="w-5 h-5" />
-          </motion.div>
+          </m.div>
           <div>
             <h3 className="text-lg font-bold text-(--text-primary)">{title}</h3>
             <p className="text-sm text-(--text-muted)">{description}</p>
@@ -539,7 +539,7 @@ export default function Settings() {
 
           {/* Particle Density Slider */}
           {particles && (
-            <motion.div
+            <m.div
               className="py-4 border-t border-(--nezuko-border)/50"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -547,12 +547,12 @@ export default function Settings() {
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <motion.div
+                  <m.div
                     className="w-10 h-10 rounded-lg flex items-center justify-center bg-primary/10 text-primary"
                     whileHover={{ scale: 1.1 }}
                   >
                     <Sparkles className="w-5 h-5" />
-                  </motion.div>
+                  </m.div>
                   <div>
                     <p className="font-medium text-(--text-primary)">Particle Density</p>
                     <p className="text-xs text-(--text-muted)">
@@ -575,7 +575,7 @@ export default function Settings() {
                   <span>More</span>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
       </SettingSection>
@@ -583,7 +583,7 @@ export default function Settings() {
       {/* Preview Card */}
       <TiltCard className="p-8 text-center" index={1} glowColor={`${accentColor}15`}>
         <FadeIn delay={0.4}>
-          <motion.div
+          <m.div
             className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
             style={{
               background: accentGradient,
@@ -599,19 +599,19 @@ export default function Settings() {
             transition={{ duration: 2, repeat: Infinity }}
           >
             <Sparkles className="w-8 h-8 text-white" />
-          </motion.div>
+          </m.div>
           <h3 className="text-xl font-bold mb-2 text-(--text-primary)">Preview Your Changes</h3>
           <p className="text-sm text-(--text-muted) mb-6 max-w-md mx-auto">
             Your appearance settings will be applied immediately. Toggle between light and dark mode
             to see the difference.
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            <motion.div
+            <m.div
               className="flex items-center gap-2 px-4 py-2 rounded-lg"
               style={{ background: `${accentColor}15` }}
               whileHover={{ scale: 1.05 }}
             >
-              <motion.div
+              <m.div
                 className="w-2 h-2 rounded-full"
                 style={{ backgroundColor: accentColor, boxShadow: `0 0 8px ${accentColor}` }}
                 animate={{ scale: [1, 1.2, 1] }}
@@ -620,8 +620,8 @@ export default function Settings() {
               <span className="text-xs text-(--text-muted)">
                 Current: {resolvedTheme === "dark" ? "Dark" : "Light"} Mode
               </span>
-            </motion.div>
-            <motion.div
+            </m.div>
+            <m.div
               className="flex items-center gap-2 px-4 py-2 rounded-lg"
               style={{ background: `${accentColor}15` }}
               whileHover={{ scale: 1.05 }}
@@ -630,7 +630,7 @@ export default function Settings() {
               <span className="text-xs text-(--text-muted)">
                 Accent: {currentAccent?.name || "Cyberpunk"}
               </span>
-            </motion.div>
+            </m.div>
           </div>
         </FadeIn>
       </TiltCard>

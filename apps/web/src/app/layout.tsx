@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ThemeConfigProvider } from "@/providers/theme-config-provider";
+import { MotionProvider } from "@/providers/motion-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
@@ -17,6 +18,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Nezuko Admin Panel",
   description: "Advanced Telegram Bot Management",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0f" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -30,14 +35,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           disableTransitionOnChange
         >
           <ThemeConfigProvider>
-            <QueryProvider>
-              <AuthProvider>
-                <ConfirmProvider>
-                  {children}
-                  <Toaster />
-                </ConfirmProvider>
-              </AuthProvider>
-            </QueryProvider>
+            <MotionProvider>
+              <QueryProvider>
+                <AuthProvider>
+                  <ConfirmProvider>
+                    {children}
+                    <Toaster />
+                  </ConfirmProvider>
+                </AuthProvider>
+              </QueryProvider>
+            </MotionProvider>
           </ThemeConfigProvider>
         </ThemeProvider>
       </body>

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import type { LucideIcon } from "lucide-react";
@@ -92,7 +92,7 @@ function SettingRow({
   const shouldAnimate = checked && animateIcon !== "none";
 
   return (
-    <motion.div
+    <m.div
       className={cn(
         "flex items-center justify-between py-3",
         showBorder && "border-t border-(--nezuko-border)/50"
@@ -101,7 +101,7 @@ function SettingRow({
       transition={{ type: "tween", ease: "easeOut", duration: 0.2 }}
     >
       <div className="flex items-center gap-3">
-        <motion.div
+        <m.div
           className={cn(
             "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
             checked ? colors.active : "bg-(--nezuko-surface-hover) text-(--text-muted)"
@@ -114,35 +114,25 @@ function SettingRow({
             customIcon
           ) : IconOff && !checked ? (
             <AnimatePresence mode="wait">
-              <motion.div
-                key="off"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0 }}
-              >
+              <m.div key="off" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
                 <IconOff className="w-5 h-5" />
-              </motion.div>
+              </m.div>
             </AnimatePresence>
           ) : (
             <AnimatePresence mode="wait">
-              <motion.div
-                key="on"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0 }}
-              >
+              <m.div key="on" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
                 <Icon className="w-5 h-5" />
-              </motion.div>
+              </m.div>
             </AnimatePresence>
           )}
-        </motion.div>
+        </m.div>
         <div>
           <p className="font-medium text-(--text-primary)">{title}</p>
           <p className="text-xs text-(--text-muted)">{description}</p>
         </div>
       </div>
       <Switch checked={checked} onCheckedChange={onCheckedChange} className={colors.switch} />
-    </motion.div>
+    </m.div>
   );
 }
 

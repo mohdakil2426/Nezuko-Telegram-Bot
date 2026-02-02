@@ -1,7 +1,9 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "motion/react";
 import { useAuth } from "@/hooks/use-auth";
 // import { useThemeConfig } from '@/lib/hooks/use-theme-config'; // Removed unused import
 import { useTheme } from "next-themes";
@@ -66,7 +68,7 @@ function MagneticNavItem({
   };
 
   return (
-    <motion.div
+    <m.div
       animate={{ x: position.x, y: position.y }}
       transition={{ type: "spring", stiffness: 400, damping: 20 }}
     >
@@ -85,7 +87,7 @@ function MagneticNavItem({
         {/* Active indicator line */}
         <AnimatePresence>
           {isActive && (
-            <motion.div
+            <m.div
               className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full"
               initial={{ scaleY: 0 }}
               animate={{ scaleY: 1 }}
@@ -104,7 +106,7 @@ function MagneticNavItem({
           }}
         />
 
-        <motion.div
+        <m.div
           whileHover={{ scale: 1.1, rotate: 5 }}
           transition={{ type: "spring", stiffness: 400, damping: 15 }}
         >
@@ -114,12 +116,12 @@ function MagneticNavItem({
               isActive ? "text-primary" : "group-hover:text-[var(--text-primary)]"
             )}
           />
-        </motion.div>
+        </m.div>
         <span className="ml-3 font-medium text-sm whitespace-nowrap overflow-hidden text-ellipsis relative z-10">
           {item.label}
         </span>
       </Link>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -152,27 +154,27 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Header */}
-      <motion.div
+      <m.div
         className="lg:hidden fixed top-0 left-0 right-0 h-16 glass-header z-30 flex items-center justify-between px-4"
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         <div className="flex items-center gap-3">
-          <motion.div
+          <m.div
             className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold shadow-lg"
             whileHover={{ scale: 1.1, rotate: 5 }}
             whileTap={{ scale: 0.95 }}
           >
             <Zap className="w-4 h-4" />
-          </motion.div>
+          </m.div>
           <span className="font-extrabold text-lg" style={{ color: "var(--text-primary)" }}>
             NEZUKO
           </span>
         </div>
         <div className="flex items-center gap-2">
           {/* Mobile Theme Toggle */}
-          <motion.button
+          <m.button
             onClick={toggleTheme}
             className="w-10 h-10 flex items-center justify-center rounded-xl glass text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             whileHover={{ scale: 1.1 }}
@@ -181,7 +183,7 @@ export default function Sidebar() {
           >
             <AnimatePresence mode="wait">
               {mounted && resolvedTheme === "dark" ? (
-                <motion.div
+                <m.div
                   key="moon-mobile"
                   initial={{ rotate: -90, opacity: 0 }}
                   animate={{ rotate: 0, opacity: 1 }}
@@ -189,9 +191,9 @@ export default function Sidebar() {
                   transition={{ duration: 0.2 }}
                 >
                   <Moon className="w-5 h-5" />
-                </motion.div>
+                </m.div>
               ) : mounted ? (
-                <motion.div
+                <m.div
                   key="sun-mobile"
                   initial={{ rotate: 90, opacity: 0 }}
                   animate={{ rotate: 0, opacity: 1 }}
@@ -199,14 +201,14 @@ export default function Sidebar() {
                   transition={{ duration: 0.2 }}
                 >
                   <Sun className="w-5 h-5" />
-                </motion.div>
+                </m.div>
               ) : (
                 <div className="w-5 h-5" />
               )}
             </AnimatePresence>
-          </motion.button>
+          </m.button>
           {/* Mobile Menu Toggle */}
-          <motion.button
+          <m.button
             onClick={() => setIsMobileOpen(!isMobileOpen)}
             className="w-10 h-10 flex items-center justify-center rounded-xl glass text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             whileHover={{ scale: 1.1 }}
@@ -215,7 +217,7 @@ export default function Sidebar() {
           >
             <AnimatePresence mode="wait">
               {isMobileOpen ? (
-                <motion.div
+                <m.div
                   key="close"
                   initial={{ rotate: -90, opacity: 0 }}
                   animate={{ rotate: 0, opacity: 1 }}
@@ -223,9 +225,9 @@ export default function Sidebar() {
                   transition={{ duration: 0.2 }}
                 >
                   <X className="w-5 h-5" />
-                </motion.div>
+                </m.div>
               ) : (
-                <motion.div
+                <m.div
                   key="menu"
                   initial={{ rotate: 90, opacity: 0 }}
                   animate={{ rotate: 0, opacity: 1 }}
@@ -233,17 +235,17 @@ export default function Sidebar() {
                   transition={{ duration: 0.2 }}
                 >
                   <Menu className="w-5 h-5" />
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
-          </motion.button>
+          </m.button>
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Mobile Overlay */}
       <AnimatePresence>
         {isMobileOpen && (
-          <motion.div
+          <m.div
             className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-20"
             onClick={() => setIsMobileOpen(false)}
             initial={{ opacity: 0 }}
@@ -254,7 +256,7 @@ export default function Sidebar() {
       </AnimatePresence>
 
       {/* Sidebar */}
-      <motion.aside
+      <m.aside
         className={cn(
           "fixed h-full glass-sidebar flex flex-col justify-between z-20 transition-transform duration-300 ease-in-out",
           "w-64 left-0",
@@ -265,32 +267,32 @@ export default function Sidebar() {
         initial={false}
       >
         {/* Logo - Desktop only */}
-        <motion.div
+        <m.div
           className="hidden lg:flex h-16 items-center px-6 mb-2"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <motion.div
+          <m.div
             className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white font-bold shadow-lg mr-3"
             whileHover={{ scale: 1.1, rotate: 5 }}
             whileTap={{ scale: 0.95 }}
           >
             <Zap className="w-5 h-5" />
-          </motion.div>
+          </m.div>
           <span
             className="font-extrabold text-xl tracking-wide"
             style={{ color: "var(--text-primary)" }}
           >
             NEZUKO
           </span>
-        </motion.div>
+        </m.div>
 
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto py-4">
           <nav className="px-3 space-y-1">
             {navItems.map((item, idx) => (
-              <motion.div
+              <m.div
                 key={item.path}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -301,11 +303,11 @@ export default function Sidebar() {
                   isActive={isActive(item.path)}
                   onClick={() => setIsMobileOpen(false)}
                 />
-              </motion.div>
+              </m.div>
             ))}
 
             {/* System Section */}
-            <motion.div
+            <m.div
               className="pt-6 pb-2"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -314,10 +316,10 @@ export default function Sidebar() {
               <p className="px-4 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
                 System
               </p>
-            </motion.div>
+            </m.div>
 
             {systemItems.map((item, idx) => (
-              <motion.div
+              <m.div
                 key={item.path}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -328,33 +330,33 @@ export default function Sidebar() {
                   isActive={isActive(item.path)}
                   onClick={() => setIsMobileOpen(false)}
                 />
-              </motion.div>
+              </m.div>
             ))}
           </nav>
         </div>
 
         {/* Bottom Section */}
-        <motion.div
+        <m.div
           className="p-4 space-y-3 border-t border-[var(--nezuko-border)]/50"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
           {/* Theme Toggle */}
-          <motion.button
+          <m.button
             onClick={toggleTheme}
             className="w-full flex items-center px-3 py-2.5 rounded-xl text-text-muted hover:text-text-primary hover:bg-white/5 transition-all duration-300 group"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <motion.div
+            <m.div
               className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors flex-shrink-0"
               whileHover={{ rotate: 180 }}
               transition={{ duration: 0.3 }}
             >
               <AnimatePresence mode="wait">
                 {mounted && resolvedTheme === "dark" ? (
-                  <motion.div
+                  <m.div
                     key="moon"
                     initial={{ rotate: -90, opacity: 0 }}
                     animate={{ rotate: 0, opacity: 1 }}
@@ -362,9 +364,9 @@ export default function Sidebar() {
                     transition={{ duration: 0.2 }}
                   >
                     <Moon className="w-4 h-4 group-hover:text-primary transition-colors" />
-                  </motion.div>
+                  </m.div>
                 ) : mounted ? (
-                  <motion.div
+                  <m.div
                     key="sun"
                     initial={{ rotate: 90, opacity: 0 }}
                     animate={{ rotate: 0, opacity: 1 }}
@@ -372,19 +374,19 @@ export default function Sidebar() {
                     transition={{ duration: 0.2 }}
                   >
                     <Sun className="w-4 h-4 group-hover:text-primary transition-colors" />
-                  </motion.div>
+                  </m.div>
                 ) : (
                   <div className="w-4 h-4" />
                 )}
               </AnimatePresence>
-            </motion.div>
+            </m.div>
             <span className="ml-3 text-sm font-medium whitespace-nowrap">
               {mounted ? (resolvedTheme === "dark" ? "Dark Mode" : "Light Mode") : "Theme"}
             </span>
-          </motion.button>
+          </m.button>
 
           {/* User Profile */}
-          <motion.div
+          <m.div
             className="bg-white/5 border border-white/5 rounded-xl p-3 flex items-center hover:border-primary/20 transition-all duration-300"
             whileHover={{ scale: 1.02 }}
           >
@@ -407,17 +409,18 @@ export default function Sidebar() {
                 {user?.role || "User"}
               </span>
             </div>
-            <motion.button
+            <m.button
               onClick={logout}
               className="ml-2 text-text-muted hover:text-text-primary transition-colors p-1 rounded-lg hover:bg-white/5"
               whileHover={{ scale: 1.1, rotate: 90 }}
               whileTap={{ scale: 0.9 }}
+              aria-label="User menu"
             >
               <MoreVertical className="w-[18px] h-[18px]" />
-            </motion.button>
-          </motion.div>
-        </motion.div>
-      </motion.aside>
+            </m.button>
+          </m.div>
+        </m.div>
+      </m.aside>
 
       {/* Mobile Spacer */}
       <div className="lg:hidden h-16" />

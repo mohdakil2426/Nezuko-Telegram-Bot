@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { motion } from "framer-motion";
+import { m } from "motion/react";
 import Sidebar from "./Sidebar";
 import ParticleBackground from "@/components/ParticleBackground";
 import { useThemeConfig } from "@/lib/hooks/use-theme-config";
@@ -21,7 +21,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       />
 
       {/* Gradient Orbs - Only animate when animations are enabled, uses accent color */}
-      <motion.div
+      <m.div
         className="fixed top-20 right-20 w-96 h-96 rounded-full pointer-events-none"
         style={{
           background: `radial-gradient(circle, ${accentColor}14 0%, transparent 70%)`,
@@ -45,7 +45,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             : { duration: 0 }
         }
       />
-      <motion.div
+      <m.div
         className="fixed bottom-20 left-1/3 w-80 h-80 rounded-full pointer-events-none"
         style={{
           background: `radial-gradient(circle, ${accentColor}0f 0%, transparent 70%)`,

@@ -1,4 +1,6 @@
-import { motion } from "framer-motion";
+"use client";
+
+import { m } from "motion/react";
 import { cn } from "@/lib/utils";
 
 export interface SegmentedControlOption<T extends string> {
@@ -11,7 +13,7 @@ interface SegmentedControlProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   className?: string;
-  size?: 'sm' | 'md';
+  size?: "sm" | "md";
 }
 
 export function SegmentedControl<T extends string>({
@@ -19,23 +21,22 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
   className,
-  size = 'md'
+  size = "md",
 }: SegmentedControlProps<T>) {
-  
   const sizeClasses = {
     sm: "px-3 py-1.5 text-[10px]",
-    md: "px-4 py-2 text-xs"
+    md: "px-4 py-2 text-xs",
   };
 
   return (
     <div className={cn("glass p-1 rounded-xl flex items-center gap-1 w-fit", className)}>
       {options.map((opt, idx) => {
-        const itemValue = typeof opt === 'string' ? opt : opt.value;
-        const itemLabel = typeof opt === 'string' ? opt : opt.label;
+        const itemValue = typeof opt === "string" ? opt : opt.value;
+        const itemLabel = typeof opt === "string" ? opt : opt.label;
         const isActive = value === itemValue;
 
         return (
-          <motion.button
+          <m.button
             key={itemValue}
             onClick={() => onChange(itemValue as T)}
             className={cn(
@@ -53,14 +54,14 @@ export function SegmentedControl<T extends string>({
           >
             {/* Active Indicator Pulse (Optional Polish) */}
             {isActive && (
-               <motion.div
-                 className="absolute inset-0 rounded-lg bg-primary z-[-1]"
-                 layoutId={`active-seg-${options.map(o => typeof o === 'string' ? o : o.value).join('')}`}
-                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-               />
+              <m.div
+                className="absolute inset-0 rounded-lg bg-primary z-[-1]"
+                layoutId={`active-seg-${options.map((o) => (typeof o === "string" ? o : o.value)).join("")}`}
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
             )}
             <span className="relative z-10 capitalize">{itemLabel}</span>
-          </motion.button>
+          </m.button>
         );
       })}
     </div>

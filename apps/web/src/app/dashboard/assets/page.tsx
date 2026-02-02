@@ -20,7 +20,7 @@ import { dataService } from "@/services";
 import type { Asset, AssetsOverviewStats } from "@/lib/data/types";
 import { useThemeConfig } from "@/lib/hooks/use-theme-config";
 import { MagneticButton } from "@/components/ui/magnetic-button";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
 import PageLoader from "@/components/PageLoader";
@@ -141,7 +141,7 @@ function AssetCard({ asset, index, onDelete }: AssetCardProps) {
               <span className="text-green-500 font-mono">+{asset.dailyGrowth || 0}</span>
             </div>
             <div className="w-full h-1.5 bg-(--nezuko-border) rounded-full overflow-hidden">
-              <motion.div
+              <m.div
                 className="h-full rounded-full bg-primary"
                 initial={{ width: 0 }}
                 animate={{ width: `${((asset.dailyGrowth || 0) / 100) * 100}%` }}
@@ -156,13 +156,13 @@ function AssetCard({ asset, index, onDelete }: AssetCardProps) {
             label={asset.status}
             variant={asset.status === "active" ? "success" : "error"}
           />
-          <motion.button
+          <m.button
             className="text-xs font-bold uppercase tracking-wider hover:underline text-primary"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             Manage
-          </motion.button>
+          </m.button>
         </div>
       </div>
     </TiltCard>
@@ -298,7 +298,7 @@ export default function AssetsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <AnimatePresence mode="popLayout">
           {filteredAssets.map((asset, index) => (
-            <motion.div
+            <m.div
               layout
               key={asset.id}
               initial={{ opacity: 0, scale: 0.9 }}
@@ -311,7 +311,7 @@ export default function AssetsPage() {
               }}
             >
               <AssetCard asset={asset} index={index} onDelete={handleDelete} />
-            </motion.div>
+            </m.div>
           ))}
         </AnimatePresence>
       </div>

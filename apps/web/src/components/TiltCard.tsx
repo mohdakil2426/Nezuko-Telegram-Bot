@@ -1,6 +1,8 @@
+"use client";
+
 import { useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { m } from "motion/react";
 import { useThemeConfig } from "@/lib/hooks/use-theme-config";
 
 interface TiltCardProps {
@@ -100,7 +102,7 @@ export default function TiltCard({
     : {};
 
   return (
-    <motion.div
+    <m.div
       ref={cardRef}
       className={cn(
         "relative overflow-hidden rounded-2xl border-2 transition-colors duration-300",
@@ -188,7 +190,7 @@ export default function TiltCard({
 
       {/* Content */}
       <div className="relative z-10 h-full">{children}</div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -202,7 +204,7 @@ interface SelectionIndicatorProps {
 
 export function SelectionIndicator({ isSelected, className }: SelectionIndicatorProps) {
   return (
-    <motion.div
+    <m.div
       className={cn("w-6 h-6 rounded-full bg-primary flex items-center justify-center", className)}
       initial={{ scale: 0 }}
       animate={{ scale: isSelected ? 1 : 0 }}
@@ -217,6 +219,6 @@ export function SelectionIndicator({ isSelected, className }: SelectionIndicator
       >
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
       </svg>
-    </motion.div>
+    </m.div>
   );
 }

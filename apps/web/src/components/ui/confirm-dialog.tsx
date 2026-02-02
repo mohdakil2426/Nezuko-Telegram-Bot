@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "motion/react";
 import { AlertTriangle, Trash2, Ban, XCircle, type LucideIcon } from "lucide-react";
 import {
   AlertDialog,
@@ -79,7 +79,7 @@ export function ConfirmDialog({
         <AlertDialogHeader>
           <div className="flex items-start gap-4">
             {/* Animated Icon */}
-            <motion.div
+            <m.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
@@ -89,7 +89,7 @@ export function ConfirmDialog({
               )}
             >
               <Icon className="h-6 w-6" style={{ color: config.color }} />
-            </motion.div>
+            </m.div>
 
             <div className="flex-1">
               <AlertDialogTitle className="text-lg font-bold text-[var(--text-primary)]">
@@ -120,7 +120,7 @@ export function ConfirmDialog({
             )}
           >
             {isLoading ? (
-              <motion.div
+              <m.div
                 animate={{ rotate: 360 }}
                 transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
                 className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full"

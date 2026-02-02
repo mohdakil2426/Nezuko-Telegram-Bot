@@ -1,8 +1,8 @@
 "use client";
 
-import { motion, AnimatePresence, type Transition } from 'framer-motion';
-import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { m, AnimatePresence, type Transition } from "motion/react";
+import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -27,7 +27,7 @@ const pageVariants = {
 };
 
 const pageTransition: Transition = {
-  type: 'spring',
+  type: "spring",
   stiffness: 300,
   damping: 30,
   mass: 0.8,
@@ -38,7 +38,7 @@ export default function PageTransition({ children }: PageTransitionProps) {
 
   return (
     <AnimatePresence mode="wait">
-      <motion.div
+      <m.div
         key={pathname}
         initial="initial"
         animate="animate"
@@ -48,7 +48,7 @@ export default function PageTransition({ children }: PageTransitionProps) {
         className="w-full"
       >
         {children}
-      </motion.div>
+      </m.div>
     </AnimatePresence>
   );
 }
@@ -62,7 +62,7 @@ interface StaggerContainerProps {
 
 export function StaggerContainer({ children, className, delay = 0 }: StaggerContainerProps) {
   return (
-    <motion.div
+    <m.div
       className={className}
       initial="hidden"
       animate="visible"
@@ -78,7 +78,7 @@ export function StaggerContainer({ children, className, delay = 0 }: StaggerCont
       }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -90,7 +90,7 @@ interface StaggerItemProps {
 
 export function StaggerItem({ children, className }: StaggerItemProps) {
   return (
-    <motion.div
+    <m.div
       className={className}
       variants={{
         hidden: { opacity: 0, y: 20 },
@@ -98,7 +98,7 @@ export function StaggerItem({ children, className }: StaggerItemProps) {
           opacity: 1,
           y: 0,
           transition: {
-            type: 'spring',
+            type: "spring",
             stiffness: 300,
             damping: 25,
           },
@@ -106,7 +106,7 @@ export function StaggerItem({ children, className }: StaggerItemProps) {
       }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -115,16 +115,16 @@ interface FadeInProps {
   children: ReactNode;
   className?: string;
   delay?: number;
-  direction?: 'up' | 'down' | 'left' | 'right' | 'none';
+  direction?: "up" | "down" | "left" | "right" | "none";
   duration?: number;
 }
 
-export function FadeIn({ 
-  children, 
-  className, 
-  delay = 0, 
-  direction = 'up',
-  duration = 0.6 
+export function FadeIn({
+  children,
+  className,
+  delay = 0,
+  direction = "up",
+  duration = 0.6,
 }: FadeInProps) {
   const directions = {
     up: { y: 30 },
@@ -135,7 +135,7 @@ export function FadeIn({
   };
 
   return (
-    <motion.div
+    <m.div
       className={className}
       initial={{ opacity: 0, ...directions[direction] }}
       animate={{ opacity: 1, x: 0, y: 0 }}
@@ -146,7 +146,7 @@ export function FadeIn({
       }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -159,19 +159,19 @@ interface ScaleInProps {
 
 export function ScaleIn({ children, className, delay = 0 }: ScaleInProps) {
   return (
-    <motion.div
+    <m.div
       className={className}
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{
-        type: 'spring',
+        type: "spring",
         stiffness: 300,
         damping: 20,
         delay,
       }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -185,7 +185,7 @@ interface FloatingProps {
 
 export function Floating({ children, className, amplitude = 10, duration = 4 }: FloatingProps) {
   return (
-    <motion.div
+    <m.div
       className={className}
       animate={{
         y: [-amplitude, amplitude, -amplitude],
@@ -193,11 +193,11 @@ export function Floating({ children, className, amplitude = 10, duration = 4 }: 
       transition={{
         duration,
         repeat: Infinity,
-        ease: 'easeInOut',
+        ease: "easeInOut",
       }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -208,24 +208,24 @@ interface GlowPulseProps {
   color?: string;
 }
 
-export function GlowPulse({ children, className, color = 'rgba(168, 85, 247, 0.5)' }: GlowPulseProps) {
+export function GlowPulse({
+  children,
+  className,
+  color = "rgba(168, 85, 247, 0.5)",
+}: GlowPulseProps) {
   return (
-    <motion.div
+    <m.div
       className={className}
       animate={{
-        boxShadow: [
-          `0 0 20px ${color}`,
-          `0 0 40px ${color}`,
-          `0 0 20px ${color}`,
-        ],
+        boxShadow: [`0 0 20px ${color}`, `0 0 40px ${color}`, `0 0 20px ${color}`],
       }}
       transition={{
         duration: 2,
         repeat: Infinity,
-        ease: 'easeInOut',
+        ease: "easeInOut",
       }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

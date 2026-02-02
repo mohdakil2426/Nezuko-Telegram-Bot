@@ -1,31 +1,23 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Search, Bell, Plus, Users, Tag, Verified, Zap, Activity } from 'lucide-react';
-import { mockApi } from '@/lib/data/mock-data';
-import type { DashboardStats, ChartDataPoint, ActivityLog } from '@/lib/data/types';
-import { useThemeConfig } from '@/lib/hooks/use-theme-config';
-import { MagneticButton } from '@/components/ui/magnetic-button';
-import { Floating } from '@/components/PageTransition';
-import { motion } from 'framer-motion';
-import {
-  AreaChart,
-  Area,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-} from 'recharts';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Search, Bell, Plus, Users, Tag, Verified, Zap, Activity } from "lucide-react";
+import { mockApi } from "@/lib/data/mock-data";
+import type { DashboardStats, ChartDataPoint, ActivityLog } from "@/lib/data/types";
+import { useThemeConfig } from "@/lib/hooks/use-theme-config";
+import { MagneticButton } from "@/components/ui/magnetic-button";
+import { Floating } from "@/components/PageTransition";
+import { m } from "motion/react";
+import { AreaChart, Area, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 
 // New Components
-import AnimatedCounter from '@/components/AnimatedCounter';
-import PageLoader from '@/components/PageLoader';
-import StatCard from '@/components/StatCard';
-import DashboardCard from '@/components/DashboardCard';
-import PageHeader from '@/components/layout/PageHeader';
-import CustomTooltip from '@/components/charts/CustomTooltip';
+import AnimatedCounter from "@/components/AnimatedCounter";
+import PageLoader from "@/components/PageLoader";
+import StatCard from "@/components/StatCard";
+import DashboardCard from "@/components/DashboardCard";
+import PageHeader from "@/components/layout/PageHeader";
+import CustomTooltip from "@/components/charts/CustomTooltip";
 
 // Activity Item with Animation
 interface ActivityItemProps {
@@ -35,39 +27,46 @@ interface ActivityItemProps {
 
 function ActivityItem({ activity, index }: ActivityItemProps) {
   const colors = {
-    success: { bg: 'bg-green-500', glow: 'shadow-green-500/50' },
-    info: { bg: 'bg-primary', glow: 'shadow-primary/50' },
-    warning: { bg: 'bg-yellow-500', glow: 'shadow-yellow-500/50' },
-    error: { bg: 'bg-red-500', glow: 'shadow-red-500/50' },
+    success: { bg: "bg-green-500", glow: "shadow-green-500/50" },
+    info: { bg: "bg-primary", glow: "shadow-primary/50" },
+    warning: { bg: "bg-yellow-500", glow: "shadow-yellow-500/50" },
+    error: { bg: "bg-red-500", glow: "shadow-red-500/50" },
   };
 
   const color = colors[activity.type] || colors.info;
 
   return (
-    <motion.div 
+    <m.div
       className="relative pl-10 py-4 group hover:bg-(--nezuko-surface-hover) rounded-xl transition-colors cursor-pointer"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.3 + index * 0.08, type: 'spring', stiffness: 300, damping: 25 }}
+      transition={{ delay: 0.3 + index * 0.08, type: "spring", stiffness: 300, damping: 25 }}
       whileHover={{ x: 5 }}
     >
       {/* Timeline Line */}
       <div className="absolute left-4 top-0 bottom-0 w-px bg-linear-to-b from-transparent via-(--nezuko-border) to-transparent" />
-      
+
       {/* Dot with Pulse */}
-      <div className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ${color.bg} ${color.glow} shadow-lg`}>
+      <div
+        className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ${color.bg} ${color.glow} shadow-lg`}
+      >
         <span className={`absolute inset-0 rounded-full ${color.bg} animate-ping opacity-75`} />
       </div>
-      
+
       <div className="flex justify-between items-start">
         <div className="flex-1">
-          <p className="text-sm font-medium text-(--text-primary) group-hover:text-primary transition-colors" 
-             dangerouslySetInnerHTML={{ __html: activity.title }} />
-          <p className="text-xs text-(--text-muted) mt-1" dangerouslySetInnerHTML={{ __html: activity.description }} />
+          <p
+            className="text-sm font-medium text-(--text-primary) group-hover:text-primary transition-colors"
+            dangerouslySetInnerHTML={{ __html: activity.title }}
+          />
+          <p
+            className="text-xs text-(--text-muted) mt-1"
+            dangerouslySetInnerHTML={{ __html: activity.description }}
+          />
         </div>
         <span className="text-xs font-mono text-(--text-muted) ml-4">{activity.timestamp}</span>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -96,9 +95,9 @@ export default function Dashboard() {
   }, []);
 
   const pieData = [
-    { name: 'Verified', value: 76, color: accentColor },
-    { name: 'Pending', value: 18, color: '#f59e0b' },
-    { name: 'Failed', value: 6, color: '#ef4444' },
+    { name: "Verified", value: 76, color: accentColor },
+    { name: "Pending", value: 18, color: "#f59e0b" },
+    { name: "Failed", value: 6, color: "#ef4444" },
   ];
 
   if (isLoading || !stats) {
@@ -108,33 +107,35 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Epic Header */}
-      <PageHeader 
-        title="Dashboard" 
-        highlight="Overview" 
+      <PageHeader
+        title="Dashboard"
+        highlight="Overview"
         description="Real-time monitoring and analytics for your Telegram bot infrastructure."
       >
         <div className="hidden md:flex items-center gap-3 mb-1 mr-4">
-             <Floating amplitude={3} duration={3}>
-                <div className="relative">
-                  <Activity className="w-5 h-5 text-green-500" />
-                  <motion.span 
-                    className="absolute inset-0 w-5 h-5 bg-green-500 rounded-full"
-                    animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                </div>
-              </Floating>
-              <span className="text-xs font-mono text-(--text-muted) uppercase tracking-widest">System Online</span>
+          <Floating amplitude={3} duration={3}>
+            <div className="relative">
+              <Activity className="w-5 h-5 text-green-500" />
+              <m.span
+                className="absolute inset-0 w-5 h-5 bg-green-500 rounded-full"
+                animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            </div>
+          </Floating>
+          <span className="text-xs font-mono text-(--text-muted) uppercase tracking-widest">
+            System Online
+          </span>
         </div>
 
-        <motion.button 
+        <m.button
           className="w-12 h-12 flex items-center justify-center rounded-xl glass text-(--text-muted) hover:text-(--text-primary) transition-colors group"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
         >
           <Search className="w-5 h-5 transition-transform group-hover:rotate-12" />
-        </motion.button>
-        <motion.button 
+        </m.button>
+        <m.button
           className="relative w-12 h-12 flex items-center justify-center rounded-xl glass text-(--text-muted) hover:text-(--text-primary) transition-colors group"
           onClick={() => setNotificationCount(0)}
           whileHover={{ scale: 1.1 }}
@@ -142,17 +143,17 @@ export default function Dashboard() {
         >
           <Bell className="w-5 h-5 transition-transform group-hover:rotate-12" />
           {notificationCount > 0 && (
-            <motion.span 
+            <m.span
               className="absolute -top-1 -right-1 w-5 h-5 bg-linear-to-br from-red-500 to-pink-500 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-(--nezuko-bg)"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+              transition={{ type: "spring", stiffness: 500, damping: 15 }}
             >
               {notificationCount}
-            </motion.span>
+            </m.span>
           )}
-        </motion.button>
-        <MagneticButton 
+        </m.button>
+        <MagneticButton
           variant="glass"
           className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
         >
@@ -202,15 +203,15 @@ export default function Dashboard() {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Verification Trends */}
-        <DashboardCard 
-          title="Verification Trends" 
+        <DashboardCard
+          title="Verification Trends"
           subtitle="Volume over last 24 hours"
           className="lg:col-span-2"
           index={4}
           action={
             <div className="flex gap-2">
-              {['1H', '24H', '7D', '30D'].map((period, idx) => (
-                <motion.button 
+              {["1H", "24H", "7D", "30D"].map((period, idx) => (
+                <m.button
                   key={period}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium glass text-(--text-primary) hover:bg-primary/10 hover:text-primary transition-all"
                   whileHover={{ scale: 1.05 }}
@@ -220,12 +221,12 @@ export default function Dashboard() {
                   transition={{ delay: 0.5 + idx * 0.05 }}
                 >
                   {period}
-                </motion.button>
+                </m.button>
               ))}
             </div>
           }
         >
-           <div className="h-64">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
@@ -248,8 +249,8 @@ export default function Dashboard() {
         </DashboardCard>
 
         {/* Status Breakdown */}
-        <DashboardCard 
-          title="Status Breakdown" 
+        <DashboardCard
+          title="Status Breakdown"
           subtitle="Real-time gateway status"
           index={5}
           glowColor={`${accentColor}10`}
@@ -270,48 +271,63 @@ export default function Dashboard() {
                     stroke="none"
                   >
                     {pieData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} className="hover:opacity-80 transition-opacity" />
+                      <Cell
+                        key={entry.name}
+                        fill={entry.color}
+                        className="hover:opacity-80 transition-opacity"
+                      />
                     ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-4xl font-black text-(--text-primary)">
-                    <AnimatedCounter value={98} suffix="%" />
+                  <AnimatedCounter value={98} suffix="%" />
                 </span>
                 <span className="text-xs text-(--text-muted) uppercase tracking-wider">Active</span>
               </div>
             </div>
             <div className="w-full space-y-3 mt-4">
               {pieData.map((item) => (
-                <motion.div 
-                  key={item.name} 
+                <m.div
+                  key={item.name}
                   className="flex items-center justify-between group cursor-pointer"
                   whileHover={{ x: 5 }}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color, boxShadow: `0 0 10px ${item.color}` }} />
-                    <span className="text-sm text-(--text-secondary) group-hover:text-(--text-primary) transition-colors">{item.name}</span>
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: item.color, boxShadow: `0 0 10px ${item.color}` }}
+                    />
+                    <span className="text-sm text-(--text-secondary) group-hover:text-(--text-primary) transition-colors">
+                      {item.name}
+                    </span>
                   </div>
                   <span className="font-bold text-(--text-primary)">{item.value}%</span>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </div>
         </DashboardCard>
       </div>
 
-      <DashboardCard className="p-8" index={6} title="Recent Activity" subtitle="Latest events from your bot" action={
-             <Link href="/dashboard/logs">
-               <motion.button 
-                 className="text-sm font-medium text-primary hover:opacity-80 transition-all"
-                 whileHover={{ scale: 1.05, x: 5 }}
-                 whileTap={{ scale: 0.95 }}
-               >
-                 View All Logs →
-               </motion.button>
-             </Link>
-      }>
+      <DashboardCard
+        className="p-8"
+        index={6}
+        title="Recent Activity"
+        subtitle="Latest events from your bot"
+        action={
+          <Link href="/dashboard/logs">
+            <m.button
+              className="text-sm font-medium text-primary hover:opacity-80 transition-all"
+              whileHover={{ scale: 1.05, x: 5 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              View All Logs →
+            </m.button>
+          </Link>
+        }
+      >
         <div className="space-y-2">
           {activities.map((activity, idx) => (
             <ActivityItem key={activity.id} activity={activity} index={idx} />
