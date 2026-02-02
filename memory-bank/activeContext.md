@@ -1,196 +1,197 @@
-# Active Context: Phase 29 - Codebase Optimization & Final Polish
+# Active Context: Phase 31 - useConfirm Integration & Assets Page Cleanup
 
 ## Current Status
 
-**Phase 29 IN PROGRESS** - Logs Page polished, Codebase scanned for optimization.
-**Focus**: Cleaning up unused components and preparing for Real API integration.
+**Phase 31 COMPLETE** - Assets page migrated to dataService, useConfirm integrated for destructive actions.
+**Focus**: Full services layer adoption across all pages.
 
 ### Recent Achievements (2026-02-02)
 
-| Item | Status | Description |
-| :--- | :--- | :--- |
-| **Logs Page** | ✅ Complete | Added 3 Overview Cards (Total, Error %, Success %) + SegmentedControl. |
-| **Codebase Scan** | ✅ Complete | Identified ~40 unused shadcn components & 100% Tailwind usage. |
-| **Type Safety** | ✅ Fixed | Removed `any` types from Logs page filters. |
-| **Report** | ✅ Generated | `codebase_analysis_report.md` created with cleanup roadmap. |
+| Item                       | Status      | Description                                                              |
+| :------------------------- | :---------- | :----------------------------------------------------------------------- |
+| **Assets Page Migration**  | ✅ Complete | Assets page now uses `dataService.getAssets()` instead of `mockApi`.     |
+| **Dropdown Menu Added**    | ✅ Complete | Asset cards now have dropdown with Settings, Open in Telegram, Delete.   |
+| **useConfirm Integration** | ✅ Complete | Delete action shows confirmation dialog before removing asset.           |
+| **Asset Type Extended**    | ✅ Complete | Added `protectionEnabled` and `dailyGrowth` fields to `Asset` interface. |
+| **Mock Data Updated**      | ✅ Complete | `mockAssets` now includes protection and growth data.                    |
+| **Build Verification**     | ✅ Complete | All 9 static pages generated successfully.                               |
 
 ---
 
 ## Active Decisions
 
-### 1. Component Strategy: "Hybrid Premium"
-We have confirmed a hybrid approach:
-- **Base**: `shadcn/ui` (Radix + Tailwind) for primitives (Inputs, Buttons).
-- **Premium**: Custom wrappers (`TiltCard`, `MagneticButton`) + `framer-motion` for the "Wow" factor.
-- **Action**: We will remove unused "website-like" components (Carousel, Menubar) to keep the bundle lean.
+### 1. Services Layer Architecture
 
-### 2. Mock Data Abstraction
-We are strictly using `use-assets.ts` and `mock-api.ts` to abstract data fetching.
-- **Current**: `NEXT_PUBLIC_USE_MOCK_DATA=true`
-- **Goal**: Swap `mockApi` calls with `fetchClient` calls without changing the UI components.
+Production-grade data abstraction with single toggle:
 
-### 3. Destruction Safety
-We decided to **implement `alert-dialog`** for all destructive actions (Ban, Delete) instead of simple browser confirms.
+- **Location**: `src/services/`
+- **Toggle**: `NEXT_PUBLIC_USE_MOCK_DATA=true|false`
+- **Interface**: `DataService` contract in `types.ts`
 
----
-
-## Post-Phase 28 Session (2026-02-02)
-
-### Issues Discovered & Fixed
-
-### Issues Discovered & Fixed
-
-| Issue                     | Root Cause                                                    | Fix Applied                                                  |
-| ------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------ |
-| **Hydration Mismatch**    | Browser automation added `antigravity-scroll-lock` to `<body>` | Added `suppressHydrationWarning` to `<body>` in layout.tsx   |
-| **Blank Dashboard**       | `DashboardLayout` returned `null` when `isAuthenticated=false` | Added `NEXT_PUBLIC_DISABLE_AUTH` check to bypass auth in dev |
-| **Login Page Inaccessible** | Middleware redirected `/login` → `/dashboard` when auth disabled | Changed middleware to allow login page access in dev mode    |
-| **Theme Hook Error**      | Legacy `useTheme` hook called server-side & context mismatch | Migrated to `useThemeConfig` (accents) + `next-themes` (mode)|
-| **Auth Provider Logic**   | `useAuth` used missing `AuthContext` instead of global store | Rewrote `useAuth` as bridge to `useAuthStore` + Supabase     |
-| **Sidebar Active State**  | `startsWith` logic caused Dashboard to be active on all sub-routes | Updated `isActive` to require exact match for `/dashboard`   |
-| **Button Styling**        | Users preferred "filled" glass look over outline               | Added `glass` variant to MagneticButton & applied to actions |
-| **Settings UI**           | "Save Changes" button was redundant with auto-save             | Removed "Save Changes" button from Settings page             |
-| **App** | **Feature** | **Description** |
-| :--- | :--- | :--- |
-| **Asset Page Layout**     | User requested Search on left, Filter on right                 | Swapped toolbar items & applied glass effect                 |
-| **UI Components**         | Tab/Filter switchers were inconsistent across pages            | Created `SegmentedControl` component & unified UI            |
-| **Animation Performance** | System Logs table jittered on filter change                    | Optimized table animations (removed `AnimatePresence` on rows) |
-| **Asset Grid Animations** | Grid items snapped abruptly on filter changes                  | Added `popLayout` & `layout` props for fluid reordering      |
-| **Logs Page**             | Dedicated Logs page lacking summary stats                      | Added 3 StatCards for Total Logs, Error Rate, and Success Rate |
-
-
-### Developer Experience Improvements
-
-| Feature                    | Description                                                  | File Modified                           |
-| -------------------------- | ------------------------------------------------------------ | --------------------------------------- |
-| **Dev Login Bypass Button** | "Dev Login (Bypass Auth)" button instantly logs in without Supabase | `apps/web/src/app/(auth)/login/page.tsx` |
-| **Pre-filled Credentials** | Email/password auto-filled in dev mode                        | `apps/web/src/app/(auth)/login/page.tsx` |
-| **Dev Mode Banner**        | Amber warning "🚧 Development Mode - Auth Disabled"           | `apps/web/src/app/(auth)/login/page.tsx` |
-| **Premium 404 Page**       | Glassmorphism 404 with gradient text, floating ghost, orbs   | `apps/web/src/app/not-found.tsx`        |
-| **Assets Overview Cards**  | 3-card summary grid (Total Audience, Active Assets, Health)  | `apps/web/src/app/dashboard/assets/page.tsx` |
-| **Segmented Control**      | Reusable tab switcher component with premium styling         | `apps/web/src/components/ui/segmented-control.tsx` |
-
-### Files Modified (Post-Phase)
-
+```typescript
+import { dataService } from "@/services";
+const stats = await dataService.getDashboardStats();
 ```
-apps/web/src/app/layout.tsx                  # suppressHydrationWarning on <body>
-apps/web/src/app/dashboard/layout.tsx        # NEXT_PUBLIC_DISABLE_AUTH check
-apps/web/src/lib/supabase/middleware.ts      # Allow login page in dev mode
-apps/web/src/app/(auth)/login/page.tsx       # Dev bypass button, pre-filled creds
-apps/web/src/app/not-found.tsx               # Complete premium redesign
-apps/web/src/hooks/use-auth.tsx              # Rewritten as bridge to useAuthStore
-apps/web/src/components/layout/Sidebar.tsx   # Fixed active state logic
-apps/web/src/app/dashboard/**/*.tsx          # Updated buttons to outline variant
-apps/web/src/components/**/*.tsx             # Replaced useTheme with useThemeConfig
-apps/web/src/app/dashboard/assets/page.tsx     # Added Overview Cards grid
-apps/web/src/lib/data/mock-data.ts             # Added getAssetsOverview & AssetsOverviewStats
-apps/web/src/hooks/use-theme.tsx             # DELETED (Legacy)
+
+### 2. Component Strategy: "Lean Premium"
+
+- **Removed**: 28 unused shadcn/ui components (carousel, menubar, tabs, etc.)
+- **Kept**: Essential primitives + custom premium wrappers
+- **New**: `ConfirmDialog` for destructive action safety
+
+### 3. Confirmation Dialog Pattern (NOW INTEGRATED)
+
+All destructive actions (Ban, Delete) use `useConfirm`:
+
+```tsx
+const confirm = useConfirm();
+const confirmed = await confirm({
+  title: "Delete Asset?",
+  description: "This action cannot be undone.",
+  confirmText: "Delete",
+  variant: "delete",
+});
+if (confirmed) {
+  // Perform deletion
+}
 ```
 
 ---
 
-## Phase 28 Summary
+## Phase 31 Implementation (2026-02-02)
 
-### What Was Done
+### 1. Assets Page Updates
 
-| Phase | Description            | Tasks                                                             |
-| ----- | ---------------------- | ----------------------------------------------------------------- |
-| 1     | Backup & Foundation    | 5/5 - Created backup, mock config, types, mock API                |
-| 2     | Hook Modifications     | 7/7 - Added mock toggle to all data hooks                         |
-| 3     | Asset Components       | 4/4 - Created AssetCard, AssetAvatar, ConnectAssetCard, useAssets |
-| 4     | Unified Assets Page    | 10/10 - Created /dashboard/assets with tabs, search, grid         |
-| 5     | Navigation & Redirects | 4/4 - Updated sidebar, added legacy redirects                     |
-| 6     | File Removal           | 7/7 - Deleted database, groups, channels pages and hooks          |
-| 7     | Premium Login          | 9/9 - Redesigned login with glassmorphism                         |
-| 8     | Testing                | 7/7 - Build passes, all pages functional                          |
+**File**: `apps/web/src/app/dashboard/assets/page.tsx`
 
-### Key Changes
+| Change                 | Description                                                    |
+| :--------------------- | :------------------------------------------------------------- |
+| Import `dataService`   | Replaced `mockApi` with unified services layer                 |
+| Use `Asset` type       | Switched from `TelegramAsset` to `Asset` for type consistency  |
+| Add `DropdownMenu`     | Three-dot menu with Settings, Open in Telegram, Delete actions |
+| Integrate `useConfirm` | Delete action shows confirmation dialog with "delete" variant  |
+| Remove on confirm      | Local state update removes asset (ready for API integration)   |
 
-| Category    | Change                                           |
-| ----------- | ------------------------------------------------ |
-| **Removed** | `/dashboard/database` page (security risk)       |
-| **Removed** | `/dashboard/groups` page (merged)                |
-| **Merged**  | Groups + Channels → `/dashboard/assets`          |
-| **Added**   | Mock data toggle via `NEXT_PUBLIC_USE_MOCK_DATA` |
-| **Added**   | Premium login with glassmorphism                 |
-| **Updated** | Sidebar navigation (Groups/Channels → Assets)    |
-| **Added**   | URL redirects for legacy routes                  |
-| **Added**   | ThemeConfigProvider to root layout               |
-| **Added**   | Premium 404 page with animations                 |
-| **Added**   | Dev login bypass for development                 |
+### 2. Type Definitions Extended
+
+**File**: `apps/web/src/lib/data/types.ts`
+
+```typescript
+export interface Asset {
+  // ... existing fields ...
+  // NEW optional fields for UI display
+  protectionEnabled?: boolean;
+  dailyGrowth?: number;
+}
+```
+
+### 3. Mock Data Updated
+
+**File**: `apps/web/src/lib/data/mock-api.ts`
+
+- All 7 mock assets now include `protectionEnabled` and `dailyGrowth` values
+- Values range from 0-100 for growth percentage
+
+---
+
+## Pages Using Services Layer
+
+| Page                   | Data Source                       | Status      |
+| :--------------------- | :-------------------------------- | :---------- |
+| `/dashboard`           | `dataService.getDashboardStats()` | ✅ Complete |
+| `/dashboard/assets`    | `dataService.getAssets()`         | ✅ Complete |
+| `/dashboard/analytics` | Uses direct mock + API            | Partial     |
+| `/dashboard/logs`      | Uses direct mock                  | Partial     |
+| `/dashboard/settings`  | Uses config stores                | N/A         |
+
+---
+
+## Hooks Status
+
+### Using Services Layer (Complete)
+
+| Hook                     | Method                                                                             |
+| :----------------------- | :--------------------------------------------------------------------------------- |
+| `use-dashboard-stats.ts` | `dataService.getDashboardStats()`                                                  |
+| `use-dashboard-chart.ts` | `dataService.getChartData()`                                                       |
+| `use-assets.ts`          | `dataService.getAssets()`, `getAssetsOverview()`, `getAssetById()`, `syncAssets()` |
+
+### Legacy Hooks (Still using old pattern)
+
+| Hook                   | Note                                                    |
+| :--------------------- | :------------------------------------------------------ |
+| `use-groups.ts`        | Legacy - Assets page now uses unified `dataService`     |
+| `use-channels.ts`      | Legacy - Assets page now uses unified `dataService`     |
+| `use-analytics.ts`     | Uses `@nezuko/types` response format, inline mock check |
+| `use-activity-feed.ts` | Uses `@nezuko/types` response format, inline mock check |
+
+---
+
+## Project Structure
+
+```
+apps/web/src/
+├── services/                   # Data abstraction layer
+│   ├── index.ts               # dataService (auto-selects mock or real)
+│   ├── config.ts              # Environment config
+│   ├── types.ts               # DataService interface
+│   ├── mock.service.ts        # Mock implementation
+│   └── api.service.ts         # Production API
+├── app/
+│   ├── (auth)/login/          # Premium login + dev bypass
+│   ├── dashboard/
+│   │   ├── page.tsx           # Dashboard
+│   │   ├── analytics/         # Analytics
+│   │   ├── assets/            # Unified Groups + Channels (UPDATED)
+│   │   ├── settings/          # Settings
+│   │   └── logs/              # Logs
+│   ├── layout.tsx             # Root layout (+ ConfirmProvider)
+│   └── not-found.tsx          # Premium 404 page
+├── components/
+│   ├── ui/
+│   │   ├── confirm-dialog.tsx # Confirmation system (NOW USED)
+│   │   ├── dropdown-menu.tsx  # Asset card actions
+│   │   └── ...
+│   └── assets/                # Asset components
+├── lib/
+│   ├── hooks/                 # Updated to use dataService
+│   ├── query-keys.ts          # Extended with assets/logs keys
+│   └── data/                  # Mock data (used by mock.service)
+└── stores/
+    └── auth-store.ts          # Zustand auth store
+```
 
 ---
 
 ## Environment Variables
 
-| Variable                       | Purpose                          | Default |
-| ------------------------------ | -------------------------------- | ------- |
-| `NEXT_PUBLIC_DISABLE_AUTH`     | Skip auth checks in development  | `true`  |
-| `NEXT_PUBLIC_USE_MOCK_DATA`    | Use mock API instead of real API | `true`  |
-| `NEXT_PUBLIC_SUPABASE_URL`     | Supabase project URL             | -       |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`| Supabase anonymous key           | -       |
-| `NEXT_PUBLIC_API_URL`          | Backend API URL                  | `http://localhost:8080/api/v1` |
+| Variable                        | Purpose                          | Default                        |
+| :------------------------------ | :------------------------------- | :----------------------------- |
+| `NEXT_PUBLIC_DISABLE_AUTH`      | Skip auth checks in development  | `true`                         |
+| `NEXT_PUBLIC_USE_MOCK_DATA`     | Use mock API instead of real API | `true`                         |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL             | -                              |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key           | -                              |
+| `NEXT_PUBLIC_API_URL`           | Backend API URL                  | `http://localhost:8080/api/v1` |
 
 ---
 
-## Project Structure (After Phase 28)
+## Testing the Delete Confirmation
 
-```
-apps/web/src/
-├── app/
-│   ├── (auth)/login/         # Premium login + dev bypass
-│   ├── dashboard/
-│   │   ├── page.tsx          # Dashboard (unchanged)
-│   │   ├── analytics/        # Analytics (unchanged)
-│   │   ├── assets/           # NEW - Unified Groups + Channels
-│   │   ├── settings/         # Settings (unchanged)
-│   │   ├── config/           # Config (unchanged)
-│   │   └── logs/             # Logs (unchanged)
-│   ├── layout.tsx            # Root layout (hydration fix)
-│   └── not-found.tsx         # NEW - Premium 404 page
-├── components/
-│   └── assets/               # NEW - Asset components
-├── lib/
-│   ├── data/                 # NEW - Mock data layer
-│   └── supabase/middleware.ts# Auth middleware (dev mode fix)
-└── stores/
-    └── auth-store.ts         # Zustand auth store
-```
-
----
-
-## Testing Instructions
-
-### Development Mode (Recommended)
-
-```bash
-cd apps/web
-# Ensure .env.local has:
-# NEXT_PUBLIC_DISABLE_AUTH=true
-# NEXT_PUBLIC_USE_MOCK_DATA=true
-bun dev
-# Visit http://localhost:3000/login
-# Click "Dev Login (Bypass Auth)" button
-# Dashboard loads with mock data
-```
-
-### Test 404 Page
-
-```bash
-# Visit any non-existent route:
-http://localhost:3000/any-invalid-path
-# Premium 404 page should display
-```
+1. Navigate to `/dashboard/assets`
+2. Click the three-dot menu on any asset card
+3. Click "Delete Asset"
+4. Confirmation dialog appears with red delete button
+5. Clicking "Delete" removes the asset from the list
+6. Clicking "Cancel" or closing the dialog preserves the asset
 
 ---
 
 ## Test Credentials
 
 | User  | Email            | Password  | Role        |
-| ----- | ---------------- | --------- | ----------- |
+| :---- | :--------------- | :-------- | :---------- |
 | Admin | admin@nezuko.bot | Admin@123 | super_admin |
 
 ---
 
-_Last Updated: 2026-02-02 02:05 IST_
-
+_Last Updated: 2026-02-02 04:00 IST_

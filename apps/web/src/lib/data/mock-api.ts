@@ -110,6 +110,8 @@ export const mockAssets: Asset[] = [
     ],
     extraAdmins: 5,
     created_at: new Date().toISOString(),
+    protectionEnabled: true,
+    dailyGrowth: 85,
   },
   {
     id: 2,
@@ -124,6 +126,8 @@ export const mockAssets: Asset[] = [
     badges: [{ label: "Supergroup", type: "info" }],
     status: "restricted",
     created_at: new Date().toISOString(),
+    protectionEnabled: false,
+    dailyGrowth: 12,
   },
   {
     id: 3,
@@ -139,6 +143,8 @@ export const mockAssets: Asset[] = [
     adminAvatars: ["https://api.dicebear.com/7.x/avataaars/svg?seed=admin3"],
     extraAdmins: 12,
     created_at: new Date().toISOString(),
+    protectionEnabled: true,
+    dailyGrowth: 92,
   },
   {
     id: 4,
@@ -154,6 +160,8 @@ export const mockAssets: Asset[] = [
     status: "active",
     isBotManaged: true,
     created_at: new Date().toISOString(),
+    protectionEnabled: true,
+    dailyGrowth: 45,
   },
   {
     id: 5,
@@ -169,6 +177,8 @@ export const mockAssets: Asset[] = [
     status: "archived",
     archivedDate: "2023",
     created_at: new Date().toISOString(),
+    protectionEnabled: false,
+    dailyGrowth: 0,
   },
   {
     id: 6,
@@ -185,6 +195,8 @@ export const mockAssets: Asset[] = [
     ],
     status: "active",
     created_at: new Date().toISOString(),
+    protectionEnabled: true,
+    dailyGrowth: 67,
   },
   {
     id: 7,
@@ -198,6 +210,8 @@ export const mockAssets: Asset[] = [
     badges: [{ label: "Channel", type: "info" }],
     status: "active",
     created_at: new Date().toISOString(),
+    protectionEnabled: true,
+    dailyGrowth: 78,
   },
 ];
 
@@ -280,7 +294,10 @@ export const mockApi = {
   },
 
   // Assets (Groups + Channels)
-  getAssets: async (params?: { type?: "all" | "groups" | "channels" | "archived" | string; search?: string }) => {
+  getAssets: async (params?: {
+    type?: "all" | "groups" | "channels" | "archived" | string;
+    search?: string;
+  }) => {
     await delay(MOCK_DELAYS.normal);
     let assets = [...mockAssets];
 

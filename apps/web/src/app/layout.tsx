@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { ThemeConfigProvider } from "@/providers/theme-config-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/providers/auth-provider";
+import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
@@ -31,8 +32,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ThemeConfigProvider>
             <QueryProvider>
               <AuthProvider>
-                {children}
-                <Toaster />
+                <ConfirmProvider>
+                  {children}
+                  <Toaster />
+                </ConfirmProvider>
               </AuthProvider>
             </QueryProvider>
           </ThemeConfigProvider>

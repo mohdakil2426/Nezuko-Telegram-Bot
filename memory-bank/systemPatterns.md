@@ -1,4 +1,4 @@
-> **Last Updated**: 2026-02-02 | **Version**: 2.6.0 (Dashboard Redesign & Runtime Fixes)
+> **Last Updated**: 2026-02-02 | **Version**: 2.7.0 (Production-Grade Services Layer)
 
 ---
 
@@ -52,9 +52,10 @@ Nezuko uses a **Turborepo** monorepo with three core domains:
 │   │   ├── .env.example        # Environment template
 │   │   ├── .env.local          # Local env (gitignored)
 │   │   ├── src/app/            # App Router pages
-│   │   ├── src/components/     # shadcn/ui components
+│   │   ├── src/components/     # shadcn/ui components (lean)
 │   │   ├── src/lib/            # API clients, hooks, utils
 │   │   ├── src/providers/      # Context providers
+│   │   ├── src/services/       # NEW - Data abstraction layer
 │   │   └── src/stores/         # Zustand state
 │   │
 │   ├── api/                    # FastAPI Backend
@@ -126,15 +127,16 @@ Nezuko uses a **Turborepo** monorepo with three core domains:
 
 ## Package Management
 
-| Domain | Manager | Command |
-|--------|---------|---------|
-| JavaScript/TypeScript | **Bun** | `bun install`, `bun run dev` |
-| Python | **UV** | `uv pip install`, `uv sync` |
-| Monorepo | **Turbo** | `turbo dev`, `turbo build` |
+| Domain                | Manager   | Command                      |
+| --------------------- | --------- | ---------------------------- |
+| JavaScript/TypeScript | **Bun**   | `bun install`, `bun run dev` |
+| Python                | **UV**    | `uv pip install`, `uv sync`  |
+| Monorepo              | **Turbo** | `turbo dev`, `turbo build`   |
 
 ## Folder Organization Principles
 
 ### 1. **Separation of Concerns**
+
 - **apps/**: All runnable applications live here
 - **packages/**: Shared code reused across apps (types, configs)
 - **config/**: Infrastructure and deployment configurations
@@ -142,29 +144,33 @@ Nezuko uses a **Turborepo** monorepo with three core domains:
 - **storage/**: Runtime files (logs, databases) - **ALWAYS GITIGNORED**
 
 ### 2. **Per-App Environment Isolation**
+
 Each app manages its own environment variables (Turborepo best practice):
 
-| App | Environment File | Template |
-|-----|-----------------|----------|
-| `apps/web` | `.env.local` | `.env.example` |
-| `apps/api` | `.env` | `.env.example` |
-| `apps/bot` | `.env` | `.env.example` |
+| App        | Environment File | Template       |
+| ---------- | ---------------- | -------------- |
+| `apps/web` | `.env.local`     | `.env.example` |
+| `apps/api` | `.env`           | `.env.example` |
+| `apps/bot` | `.env`           | `.env.example` |
 
 > **Root `.env.example`** is documentation only - lists all variables for reference.
 
 ### 3. **Infrastructure as Code**
+
 All Docker, Nginx, and deployment configs in `config/`:
+
 ```bash
 # Run from project root
 docker-compose -f config/docker/docker-compose.yml up -d
 ```
 
 ### 4. **Script Categories**
-| Folder | Purpose | Example |
-|--------|---------|---------|
-| `scripts/setup/` | One-time initialization | `setup-db.py` |
-| `scripts/deploy/` | Deployment automation | `docker-build.sh` |
-| `scripts/maintenance/` | Debugging, utilities | `generate-structure.ps1` |
+
+| Folder                 | Purpose                 | Example                  |
+| ---------------------- | ----------------------- | ------------------------ |
+| `scripts/setup/`       | One-time initialization | `setup-db.py`            |
+| `scripts/deploy/`      | Deployment automation   | `docker-build.sh`        |
+| `scripts/maintenance/` | Debugging, utilities    | `generate-structure.ps1` |
 
 ---
 
@@ -172,29 +178,29 @@ docker-compose -f config/docker/docker-compose.yml up -d
 
 ## Version Requirements
 
-| Package | Version | Notes |
-|---------|---------|-------|
-| `next` | `^16.1.4` | Uses `proxy.ts`, not `middleware.ts` |
-| `react` | `^19.2.3` | Supports `use()` hook |
-| `@supabase/ssr` | `^0.8.0+` | Cookie parsing bugs in <0.8.0 |
-| Node.js | `≥20.0.0` | Required for Next.js 16 |
+| Package         | Version   | Notes                                |
+| --------------- | --------- | ------------------------------------ |
+| `next`          | `^16.1.4` | Uses `proxy.ts`, not `middleware.ts` |
+| `react`         | `^19.2.3` | Supports `use()` hook                |
+| `@supabase/ssr` | `^0.8.0+` | Cookie parsing bugs in <0.8.0        |
+| Node.js         | `≥20.0.0` | Required for Next.js 16              |
 
 ## App Router Routes
 
 All authenticated routes use `/dashboard/*` prefix:
 
-| Route | Description |
-|-------|-------------|
-| `/login` | Public login page |
-| `/dashboard` | Main dashboard |
-| `/dashboard/groups` | Groups list |
-| `/dashboard/groups/[id]` | Group detail |
-| `/dashboard/channels` | Channels list |
-| `/dashboard/channels/[id]` | Channel detail |
-| `/dashboard/config` | Configuration |
-| `/dashboard/logs` | Real-time logs |
-| `/dashboard/database` | Database browser |
-| `/dashboard/analytics` | Analytics |
+| Route                      | Description       |
+| -------------------------- | ----------------- |
+| `/login`                   | Public login page |
+| `/dashboard`               | Main dashboard    |
+| `/dashboard/groups`        | Groups list       |
+| `/dashboard/groups/[id]`   | Group detail      |
+| `/dashboard/channels`      | Channels list     |
+| `/dashboard/channels/[id]` | Channel detail    |
+| `/dashboard/config`        | Configuration     |
+| `/dashboard/logs`          | Real-time logs    |
+| `/dashboard/database`      | Database browser  |
+| `/dashboard/analytics`     | Analytics         |
 
 ## Dynamic Route Parameters (Next.js 16)
 
@@ -204,12 +210,12 @@ All authenticated routes use `/dashboard/*` prefix:
 import { use } from "react";
 
 export default function Page({
-    params,
+  params,
 }: {
-    params: Promise<{ id: string }>;  // Promise type required
+  params: Promise<{ id: string }>; // Promise type required
 }) {
-    const { id } = use(params);  // Unwrap with use()
-    return <div>ID: {id}</div>;
+  const { id } = use(params); // Unwrap with use()
+  return <div>ID: {id}</div>;
 }
 ```
 
@@ -219,57 +225,140 @@ export default function Page({
 // ✅ CORRECT - Use variable prop for CSS access
 import { Inter } from "next/font/google";
 
-const inter = Inter({ 
-    subsets: ["latin"],
-    variable: "--font-inter",
-    display: "swap",
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
 });
 
 export default function RootLayout({ children }) {
-    return (
-        <html lang="en" className={inter.variable}>
-            <body>{children}</body>
-        </html>
-    );
+  return (
+    <html lang="en" className={inter.variable}>
+      <body>{children}</body>
+    </html>
+  );
 }
 ```
 
 ## Component Reusability Patterns
 
 ### StatCard Pattern
+
 The `StatCard` component is designed for high reusability across the dashboard. It is now used in:
+
 - **Dashboard Home**: System-wide metrics
 - **Analytics Page**: Performance metrics
 - **Assets Page**: Audience and health overview
 
 This ensures visual consistency for all "big number" displays.
 
-
 ### Premium UI Components (Custom)
+
 The dashboard leverages custom wrappers to enhance the standard shadcn/ui atoms:
 
 1.  **`TiltCard`**:
-    -   Physical 3D tilt effect on hover using `framer-motion`.
-    -   Used for: Stat Cards, Asset Cards.
+    - Physical 3D tilt effect on hover using `framer-motion`.
+    - Used for: Stat Cards, Asset Cards.
 
 2.  **`MagneticButton`**:
-    -   Cursor-following spring physics.
-    -   Used for: Primary CTAs, Header actions.
+    - Cursor-following spring physics.
+    - Used for: Primary CTAs, Header actions.
 
 3.  **`SegmentedControl`**:
-    -   Sliding "pill" background for tab switching.
-    -   Used for: Logs filters, Asset type toggles.
+    - Sliding "pill" background for tab switching.
+    - Used for: Logs filters, Asset type toggles.
 
 These components ensure a consistent "High-End App" feel compared to a standard admin panel.
 
-## Theme System (Dual-Hook Pattern)
+4.  **`ConfirmDialog`** (NEW):
+    - Glassmorphism confirmation modal with variants.
+    - Used for: All destructive actions (Delete, Ban).
+    - Variants: `danger`, `warning`, `ban`, `delete`.
 
+```tsx
+// ✅ CORRECT - Use useConfirm for destructive actions
+const confirm = useConfirm();
+const confirmed = await confirm({
+  title: "Delete Asset?",
+  description: "This action cannot be undone.",
+  variant: "delete",
+});
+if (confirmed) {
+  /* proceed */
+}
+```
+
+## Services Layer Pattern (Phase 30)
+
+Nezuko uses a production-grade data abstraction layer that cleanly separates mock and real API implementations:
+
+### Architecture
+
+```
+src/services/
+├── index.ts         # Entry point - exports dataService
+├── config.ts        # Environment config (mock vs prod)
+├── types.ts         # DataService interface contract
+├── mock.service.ts  # Mock implementation (uses lib/data)
+└── api.service.ts   # Real API implementation (uses lib/api)
+```
+
+### Usage
+
+```tsx
+// ✅ CORRECT - Import from services
+import { dataService } from "@/services";
+
+// Works with both mock and real API
+const stats = await dataService.getDashboardStats();
+const assets = await dataService.getAssets({ type: "groups" });
+```
+
+### Toggle
+
+```bash
+# Development - use mock data
+NEXT_PUBLIC_USE_MOCK_DATA=true
+
+# Production - use real API
+NEXT_PUBLIC_USE_MOCK_DATA=false
+```
+
+### DataService Interface
+
+```typescript
+interface DataService {
+  // Dashboard
+  getDashboardStats(): Promise<DashboardStats>;
+  getChartData(): Promise<ChartDataPoint[]>;
+  getActivity(limit?: number): Promise<ActivityLog[]>;
+
+  // Assets
+  getAssets(params?: GetAssetsParams): Promise<PaginatedResult<Asset>>;
+  getAssetsOverview(): Promise<AssetsOverviewStats>;
+  getAssetById(id: number): Promise<Asset>;
+
+  // Logs
+  getSystemLogs(params?: GetLogsParams): Promise<SystemLog[]>;
+  getBotLogs(params?: GetLogsParams): Promise<BotLog[]>;
+  getLogsOverview(): Promise<LogsOverviewStats>;
+
+  // Analytics
+  getAnalytics(params?: GetAnalyticsParams): Promise<AnalyticsMetrics>;
+  getVerificationTrends(params?: GetAnalyticsParams): Promise<ChartDataPoint[]>;
+
+  // Actions
+  syncAssets(): Promise<{ success: boolean; message: string }>;
+}
+```
+
+## Theme System (Dual-Hook Pattern)
 
 Nezuko uses a split-hook architecture for theming to separate "Mode" (Light/Dark) from "Configuration" (Accents/Effects):
 
-| Hook | Source | Purpose |
-|------|--------|---------|
-| `useTheme()` | `next-themes` | Dark/Light mode toggling |
+| Hook               | Source                         | Purpose                              |
+| ------------------ | ------------------------------ | ------------------------------------ |
+| `useTheme()`       | `next-themes`                  | Dark/Light mode toggling             |
 | `useThemeConfig()` | `@/lib/hooks/use-theme-config` | Accent colors, 3D effects, particles |
 
 ```tsx
@@ -288,7 +377,7 @@ To bridge the gap between legacy Context-based auth and modern Zustand+Supabase 
 
 ```tsx
 // ✅ CORRECT - useAuth provides unified interface
-const { user, login } = useAuth(); 
+const { user, login } = useAuth();
 // Internally: user comes from Zustand, login calls Supabase
 ```
 
@@ -302,7 +391,7 @@ Every route group should have a `loading.tsx`:
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {
-    return <Skeleton className="h-full w-full" />;
+  return <Skeleton className="h-full w-full" />;
 }
 ```
 
@@ -312,28 +401,26 @@ export default function Loading() {
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    compress: true,
-    productionBrowserSourceMaps: false,  // Security: CVE-2025-55183
-    
-    experimental: {
-        optimizePackageImports: [
-            "lucide-react",
-            "recharts",
-            "@radix-ui/react-icons",
-            "motion/react",
-            "date-fns",
-            "@tanstack/react-query",
-            "@tanstack/react-table",
-            "react-hook-form",
-            "zod",
-        ],
-    },
-    
-    images: {
-        remotePatterns: [
-            { protocol: "https", hostname: "*.supabase.co" },
-        ],
-    },
+  compress: true,
+  productionBrowserSourceMaps: false, // Security: CVE-2025-55183
+
+  experimental: {
+    optimizePackageImports: [
+      "lucide-react",
+      "recharts",
+      "@radix-ui/react-icons",
+      "motion/react",
+      "date-fns",
+      "@tanstack/react-query",
+      "@tanstack/react-table",
+      "react-hook-form",
+      "zod",
+    ],
+  },
+
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }],
+  },
 };
 
 export default nextConfig;
@@ -421,11 +508,11 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
-    return await updateSession(request);
+  return await updateSession(request);
 }
 
 export const config = {
-    matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };
 ```
 
@@ -434,24 +521,26 @@ export const config = {
 ```typescript
 // apps/web/src/lib/supabase/middleware.ts
 export async function updateSession(request: NextRequest) {
-    const supabase = createServerClient(URL, KEY, {
-        cookies: {
-            getAll() { return request.cookies.getAll(); },
-            setAll(cookiesToSet) {
-                cookiesToSet.forEach(({ name, value }) => 
-                    request.cookies.set(name, value)
-                );
-            },
-        },
-    });
-    
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session && !isPublicRoute(request.url)) {
-        return NextResponse.redirect(new URL("/login", request.url));
-    }
-    
-    return NextResponse.next();
+  const supabase = createServerClient(URL, KEY, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+      },
+    },
+  });
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session && !isPublicRoute(request.url)) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  return NextResponse.next();
 }
 ```
 
@@ -460,15 +549,15 @@ export async function updateSession(request: NextRequest) {
 ```typescript
 // ✅ CORRECT - Login with full page reload
 const handleLogin = async () => {
-    await supabase.auth.signInWithPassword({ email, password });
-    window.location.href = "/dashboard";  // Full reload required
+  await supabase.auth.signInWithPassword({ email, password });
+  window.location.href = "/dashboard"; // Full reload required
 };
 
 // ✅ CORRECT - Logout with state clear
 const handleLogout = async () => {
-    await supabase.auth.signOut();
-    logout();  // Clear Zustand store
-    window.location.href = "/login";
+  await supabase.auth.signOut();
+  logout(); // Clear Zustand store
+  window.location.href = "/login";
 };
 ```
 
@@ -479,7 +568,7 @@ const handleLogout = async () => {
 def verify_jwt(token: str) -> dict:
     if settings.MOCK_AUTH:
         return {"uid": "dev-user", "email": "admin@nezuko.bot"}
-    
+
     return jwt.decode(
         token,
         settings.SUPABASE_JWT_SECRET,
@@ -537,15 +626,19 @@ engine = create_async_engine(settings.DATABASE_URL, **_engine_kwargs)
 ```typescript
 // apps/web/src/lib/hooks/use-log-stream.ts
 const channel = supabase
-    .channel("admin_logs")
-    .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "admin_logs",
-    }, (payload) => {
-        addLog(payload.new);
-    })
-    .subscribe();
+  .channel("admin_logs")
+  .on(
+    "postgres_changes",
+    {
+      event: "INSERT",
+      schema: "public",
+      table: "admin_logs",
+    },
+    (payload) => {
+      addLog(payload.new);
+    }
+  )
+  .subscribe();
 ```
 
 ---
@@ -579,25 +672,25 @@ application = (
 
 ## Frontend Anti-Patterns
 
-| ❌ Wrong | ✅ Correct | Reason |
-|----------|-----------|--------|
-| `useParams()` | `use(params)` | Deprecated in Next.js 16 |
-| `middleware.ts` | `proxy.ts` | Deprecated in Next.js 16 |
-| `cookies()` sync | `await cookies()` | Now returns Promise |
-| `router.push("/dashboard")` | `window.location.href` | Auth requires reload |
-| Font without `variable` | Add `variable` prop | CSS variable access |
-| Missing `loading.tsx` | Add skeleton files | UX during transitions |
-| Source maps in prod | `productionBrowserSourceMaps: false` | Security (CVE-2025-55183) |
-| `any` type | `unknown` + guards | Type safety |
+| ❌ Wrong                    | ✅ Correct                           | Reason                    |
+| --------------------------- | ------------------------------------ | ------------------------- |
+| `useParams()`               | `use(params)`                        | Deprecated in Next.js 16  |
+| `middleware.ts`             | `proxy.ts`                           | Deprecated in Next.js 16  |
+| `cookies()` sync            | `await cookies()`                    | Now returns Promise       |
+| `router.push("/dashboard")` | `window.location.href`               | Auth requires reload      |
+| Font without `variable`     | Add `variable` prop                  | CSS variable access       |
+| Missing `loading.tsx`       | Add skeleton files                   | UX during transitions     |
+| Source maps in prod         | `productionBrowserSourceMaps: false` | Security (CVE-2025-55183) |
+| `any` type                  | `unknown` + guards                   | Type safety               |
 
 ## Backend Anti-Patterns
 
-| ❌ Wrong | ✅ Correct | Reason |
-|----------|-----------|--------|
-| `time.sleep()` | `await asyncio.sleep()` | Blocks event loop |
-| `requests.get()` | `httpx.AsyncClient` | Blocking in async |
-| `except:` bare | `except Exception as e:` | Catches SystemExit |
-| `print()` debug | `logger.debug()` | Structured logging |
+| ❌ Wrong         | ✅ Correct               | Reason             |
+| ---------------- | ------------------------ | ------------------ |
+| `time.sleep()`   | `await asyncio.sleep()`  | Blocks event loop  |
+| `requests.get()` | `httpx.AsyncClient`      | Blocking in async  |
+| `except:` bare   | `except Exception as e:` | Catches SystemExit |
+| `print()` debug  | `logger.debug()`         | Structured logging |
 
 ## TypeScript Anti-Patterns
 
@@ -622,7 +715,7 @@ value={`${data.rate ?? 0}%`}
 @import "tailwindcss";
 
 @theme {
-    --color-primary-500: oklch(0.55 0.25 265);
+  --color-primary-500: oklch(0.55 0.25 265);
 }
 
 /* ⚠️ VS Code shows false positives - add to settings.json: */
@@ -633,39 +726,43 @@ value={`${data.rate ?? 0}%`}
 
 ### ❌ Never Do
 
-| ❌ Wrong | ✅ Correct | Reason |
-|----------|-----------|--------|
-| `useQuery(['todos'], fetchTodos)` | `useQuery({ queryKey, queryFn })` | v5 removed array/function syntax |
-| `cacheTime: 60000` | `gcTime: 60000` | Renamed in v5 |
-| `isLoading` for initial load | `isPending` | v5 changed semantics |
-| `keepPreviousData: true` | `placeholderData: keepPreviousData` | Option removed, use helper |
-| `useErrorBoundary: true` | `throwOnError: true` | Renamed in v5 |
-| Missing `initialPageParam` | Required for infinite queries | v5 requires explicit value |
-| `onSuccess` in queries | Use `useEffect` instead | Removed from queries in v5 |
-| Missing `mutationKey` | Add for tracking | Enables `useMutationState` |
+| ❌ Wrong                          | ✅ Correct                          | Reason                           |
+| --------------------------------- | ----------------------------------- | -------------------------------- |
+| `useQuery(['todos'], fetchTodos)` | `useQuery({ queryKey, queryFn })`   | v5 removed array/function syntax |
+| `cacheTime: 60000`                | `gcTime: 60000`                     | Renamed in v5                    |
+| `isLoading` for initial load      | `isPending`                         | v5 changed semantics             |
+| `keepPreviousData: true`          | `placeholderData: keepPreviousData` | Option removed, use helper       |
+| `useErrorBoundary: true`          | `throwOnError: true`                | Renamed in v5                    |
+| Missing `initialPageParam`        | Required for infinite queries       | v5 requires explicit value       |
+| `onSuccess` in queries            | Use `useEffect` instead             | Removed from queries in v5       |
+| Missing `mutationKey`             | Add for tracking                    | Enables `useMutationState`       |
 
 ### Query Callbacks Removed (v5)
 
 ```tsx
 // ❌ REMOVED in v5 - Query callbacks
 useQuery({
-    queryKey: ['todos'],
-    queryFn: fetchTodos,
-    onSuccess: (data) => { },  // ❌ No longer works
-    onError: (error) => { },   // ❌ No longer works
+  queryKey: ["todos"],
+  queryFn: fetchTodos,
+  onSuccess: (data) => {}, // ❌ No longer works
+  onError: (error) => {}, // ❌ No longer works
 });
 
 // ✅ CORRECT - Use useEffect
-const { data, error } = useQuery({ queryKey: ['todos'], queryFn: fetchTodos });
+const { data, error } = useQuery({ queryKey: ["todos"], queryFn: fetchTodos });
 useEffect(() => {
-    if (data) { /* handle success */ }
-    if (error) { /* handle error */ }
+  if (data) {
+    /* handle success */
+  }
+  if (error) {
+    /* handle error */
+  }
 }, [data, error]);
 
 // ✅ Mutation callbacks STILL work
 useMutation({
-    mutationFn: addTodo,
-    onSuccess: () => { },  // ✅ Still works for mutations
+  mutationFn: addTodo,
+  onSuccess: () => {}, // ✅ Still works for mutations
 });
 ```
 
@@ -691,17 +788,17 @@ if (isPending) return <Loading />;  // ✅ Correct for initial load
 ```tsx
 // ❌ WRONG - Missing initialPageParam
 useInfiniteQuery({
-    queryKey: ['projects'],
-    queryFn: ({ pageParam = 0 }) => fetchProjects(pageParam),  // ❌ Default not allowed
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+  queryKey: ["projects"],
+  queryFn: ({ pageParam = 0 }) => fetchProjects(pageParam), // ❌ Default not allowed
+  getNextPageParam: (lastPage) => lastPage.nextCursor,
 });
 
 // ✅ CORRECT - Required initialPageParam
 useInfiniteQuery({
-    queryKey: ['projects'],
-    queryFn: ({ pageParam }) => fetchProjects(pageParam),
-    initialPageParam: 0,  // ✅ Required in v5
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+  queryKey: ["projects"],
+  queryFn: ({ pageParam }) => fetchProjects(pageParam),
+  initialPageParam: 0, // ✅ Required in v5
+  getNextPageParam: (lastPage) => lastPage.nextCursor,
 });
 ```
 
@@ -710,21 +807,23 @@ useInfiniteQuery({
 ```tsx
 // ❌ WRONG - enabled not available with Suspense
 useSuspenseQuery({
-    queryKey: ['todo', id],
-    queryFn: () => fetchTodo(id),
-    enabled: !!id,  // ❌ TypeScript error
+  queryKey: ["todo", id],
+  queryFn: () => fetchTodo(id),
+  enabled: !!id, // ❌ TypeScript error
 });
 
 // ✅ CORRECT - Use conditional rendering
-{id && <TodoComponent id={id} />}
+{
+  id && <TodoComponent id={id} />;
+}
 
 // Inside TodoComponent - no enabled needed
 function TodoComponent({ id }: { id: number }) {
-    const { data } = useSuspenseQuery({
-        queryKey: ['todo', id],
-        queryFn: () => fetchTodo(id),
-    });
-    return <div>{data.title}</div>;
+  const { data } = useSuspenseQuery({
+    queryKey: ["todo", id],
+    queryFn: () => fetchTodo(id),
+  });
+  return <div>{data.title}</div>;
 }
 ```
 
@@ -755,29 +854,29 @@ queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
 
 ## Frontend Security
 
-| Check | Implementation |
-|-------|----------------|
+| Check                | Implementation                       |
+| -------------------- | ------------------------------------ |
 | Source maps disabled | `productionBrowserSourceMaps: false` |
-| Protected routes | `proxy.ts` authentication |
-| CORS | Strict origin checking |
-| XSS prevention | React auto-escaping |
+| Protected routes     | `proxy.ts` authentication            |
+| CORS                 | Strict origin checking               |
+| XSS prevention       | React auto-escaping                  |
 
 ## Backend Security
 
-| Check | Implementation |
-|-------|----------------|
+| Check            | Implementation             |
+| ---------------- | -------------------------- |
 | JWT verification | Supabase secret validation |
-| Rate limiting | SlowAPI middleware |
-| SQL injection | SQLAlchemy ORM |
-| RBAC | Role-based access control |
+| Rate limiting    | SlowAPI middleware         |
+| SQL injection    | SQLAlchemy ORM             |
+| RBAC             | Role-based access control  |
 
 ## Bot Security
 
-| Check | Implementation |
-|-------|----------------|
-| DM filtering | Ignore unless `/start` |
+| Check               | Implementation              |
+| ------------------- | --------------------------- |
+| DM filtering        | Ignore unless `/start`      |
 | Callback validation | Cryptographic user_id check |
-| Flood control | PTB built-in handlers |
+| Flood control       | PTB built-in handlers       |
 
 ---
 
@@ -794,10 +893,10 @@ queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
 
 ## Deployment
 
-| Environment | Trigger |
-|-------------|---------|
-| Staging | Every merge to `main` |
-| Production | New GitHub Release tag |
+| Environment | Trigger                |
+| ----------- | ---------------------- |
+| Staging     | Every merge to `main`  |
+| Production  | New GitHub Release tag |
 
 ## Quality Gates
 
@@ -815,45 +914,45 @@ python -m pyrefly check # Python types (0 errors)
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `apps/web/src/proxy.ts` | Next.js 16 auth middleware |
-| `apps/web/src/lib/supabase/middleware.ts` | Session update logic |
-| `apps/api/src/core/security.py` | JWT verification |
-| `apps/api/src/core/database.py` | Database connection |
-| `apps/bot/main.py` | Bot entry point |
+| File                                      | Purpose                    |
+| ----------------------------------------- | -------------------------- |
+| `apps/web/src/proxy.ts`                   | Next.js 16 auth middleware |
+| `apps/web/src/lib/supabase/middleware.ts` | Session update logic       |
+| `apps/api/src/core/security.py`           | JWT verification           |
+| `apps/api/src/core/database.py`           | Database connection        |
+| `apps/bot/main.py`                        | Bot entry point            |
 
 ## Error Codes
 
-| Code | HTTP | Domain | Description |
-|------|------|--------|-------------|
-| `AUTH_001` | 401 | Auth | Invalid/expired token |
-| `AUTH_002` | 403 | Auth | User not in admin_users |
-| `DB_001` | 500 | Database | Pool exhaustion |
-| `DB_002` | 409 | Database | Duplicate Telegram ID |
-| `TG_001` | 502 | Bot | API timeout or flood |
-| `ENF_001` | 400 | Bot | Bot not admin in group |
+| Code       | HTTP | Domain   | Description             |
+| ---------- | ---- | -------- | ----------------------- |
+| `AUTH_001` | 401  | Auth     | Invalid/expired token   |
+| `AUTH_002` | 403  | Auth     | User not in admin_users |
+| `DB_001`   | 500  | Database | Pool exhaustion         |
+| `DB_002`   | 409  | Database | Duplicate Telegram ID   |
+| `TG_001`   | 502  | Bot      | API timeout or flood    |
+| `ENF_001`  | 400  | Bot      | Bot not admin in group  |
 
 ## Critical Versions
 
-| Package | Required | Reason |
-|---------|----------|--------|
-| `@supabase/ssr` | `≥0.8.0` | Cookie parsing bugs |
-| `next` | `≥16.x` | `proxy.ts` pattern |
-| `react` | `≥19.x` | `use()` hook support |
-| Node.js | `≥20.x` | Next.js 16 requirement |
+| Package         | Required | Reason                 |
+| --------------- | -------- | ---------------------- |
+| `@supabase/ssr` | `≥0.8.0` | Cookie parsing bugs    |
+| `next`          | `≥16.x`  | `proxy.ts` pattern     |
+| `react`         | `≥19.x`  | `use()` hook support   |
+| Node.js         | `≥20.x`  | Next.js 16 requirement |
 
 ---
 
 ## 📚 Documentation Reference
 
-| Topic | Location |
-|-------|----------|
-| Full Documentation | `docs/README.md` |
-| Tech Stack | `docs/architecture/tech-stack.md` |
-| Architecture | `docs/architecture/README.md` |
-| Folder Structure | `docs/architecture/folder-structure.md` |
-| AI Context | `GEMINI.md` (with imports) |
+| Topic              | Location                                |
+| ------------------ | --------------------------------------- |
+| Full Documentation | `docs/README.md`                        |
+| Tech Stack         | `docs/architecture/tech-stack.md`       |
+| Architecture       | `docs/architecture/README.md`           |
+| Folder Structure   | `docs/architecture/folder-structure.md` |
+| AI Context         | `GEMINI.md` (with imports)              |
 
 ---
 
@@ -866,43 +965,43 @@ The dashboard uses a dynamic theming system with 11 preset accents + custom colo
 ```typescript
 // apps/web/src/lib/hooks/use-theme-config.tsx
 const accents = [
-  { name: 'cyberpunk', hex: '#d946ef' },
-  { name: 'matrix', hex: '#22c55e' },
-  { name: 'volcano', hex: '#f97316' },
+  { name: "cyberpunk", hex: "#d946ef" },
+  { name: "matrix", hex: "#22c55e" },
+  { name: "volcano", hex: "#f97316" },
   // ... 8 more presets + custom
 ];
 
 // CSS variables set dynamically
-document.documentElement.style.setProperty('--accent-hex', hex);
-document.documentElement.style.setProperty('--accent-gradient', gradient);
+document.documentElement.style.setProperty("--accent-hex", hex);
+document.documentElement.style.setProperty("--accent-gradient", gradient);
 ```
 
 ## Premium UI Components
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `TiltCard` | `components/ui/tilt-card.tsx` | 3D tilt effect with glow |
-| `MagneticButton` | `components/ui/magnetic-button.tsx` | Cursor-following button |
-| `AnimatedCounter` | `components/ui/animated-counter.tsx` | Smooth number transitions |
-| `StatusBadge` | `components/ui/status-badge.tsx` | Colored status indicators |
-| `DashboardCard` | `components/ui/dashboard-card.tsx` | Glass-effect card wrapper |
-| `PageTransition` | `components/ui/page-transition.tsx` | FadeIn, SlideIn, Stagger animations |
-| `ParticleBackground` | `components/ui/particle-background.tsx` | Floating particles canvas |
+| Component            | Location                                | Purpose                             |
+| -------------------- | --------------------------------------- | ----------------------------------- |
+| `TiltCard`           | `components/ui/tilt-card.tsx`           | 3D tilt effect with glow            |
+| `MagneticButton`     | `components/ui/magnetic-button.tsx`     | Cursor-following button             |
+| `AnimatedCounter`    | `components/ui/animated-counter.tsx`    | Smooth number transitions           |
+| `StatusBadge`        | `components/ui/status-badge.tsx`        | Colored status indicators           |
+| `DashboardCard`      | `components/ui/dashboard-card.tsx`      | Glass-effect card wrapper           |
+| `PageTransition`     | `components/ui/page-transition.tsx`     | FadeIn, SlideIn, Stagger animations |
+| `ParticleBackground` | `components/ui/particle-background.tsx` | Floating particles canvas           |
 
 ## Dashboard-Specific Components
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `StatCardV2` | `components/dashboard/stat-card-v2.tsx` | Premium stat cards with tilt |
-| `ActivityItem` | `components/dashboard/activity-item.tsx` | Timeline activity entries |
-| `CustomTooltip` | `components/charts/custom-tooltip.tsx` | Glass-effect Recharts tooltip |
+| Component       | Location                                 | Purpose                       |
+| --------------- | ---------------------------------------- | ----------------------------- |
+| `StatCardV2`    | `components/dashboard/stat-card-v2.tsx`  | Premium stat cards with tilt  |
+| `ActivityItem`  | `components/dashboard/activity-item.tsx` | Timeline activity entries     |
+| `CustomTooltip` | `components/charts/custom-tooltip.tsx`   | Glass-effect Recharts tooltip |
 
 ## Layout Components
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `PageHeader` | `components/layout/page-header.tsx` | Unified page header with gradient text |
-| `Sidebar` | `components/layout/sidebar.tsx` | Full sidebar with mobile, themes, profile |
+| Component    | Location                            | Purpose                                   |
+| ------------ | ----------------------------------- | ----------------------------------------- |
+| `PageHeader` | `components/layout/page-header.tsx` | Unified page header with gradient text    |
+| `Sidebar`    | `components/layout/sidebar.tsx`     | Full sidebar with mobile, themes, profile |
 
 ## CSS Utilities
 
@@ -925,13 +1024,19 @@ document.documentElement.style.setProperty('--accent-gradient', gradient);
 ## Effect Toggle Classes
 
 ```css
-.reduce-motion * { animation-duration: 0.01ms !important; }
-.no-glass .glass { backdrop-filter: none; }
-.no-animations * { animation: none !important; }
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+}
+.no-glass .glass {
+  backdrop-filter: none;
+}
+.no-animations * {
+  animation: none !important;
+}
 ```
 
 ---
 
 **This document is the authoritative guide for all system implementations.**
 
-*Last Updated: 2026-02-01*
+_Last Updated: 2026-02-01_

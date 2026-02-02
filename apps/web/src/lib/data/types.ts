@@ -18,6 +18,9 @@ export interface Asset {
   isBotManaged?: boolean;
   archivedDate?: string;
   created_at: string;
+  // Optional fields for UI display
+  protectionEnabled?: boolean;
+  dailyGrowth?: number;
 }
 
 export interface MockDashboardStats {
@@ -47,13 +50,15 @@ export interface LogsOverviewStats {
   successRateChange: number;
 }
 
+export type UserRole = "Super Admin" | "Administrator" | "Moderator" | "User";
+
 export interface User {
   id: string;
   name: string;
   email: string;
   avatar: string;
-  role: 'Super Admin' | 'Administrator' | 'Moderator';
-  status: 'online' | 'offline' | 'away';
+  role: UserRole;
+  status: "online" | "offline" | "away";
 }
 
 // Dashboard Stats
@@ -84,7 +89,7 @@ export interface StatusBreakdown {
 // Activity Log
 export interface ActivityLog {
   id: string;
-  type: 'success' | 'info' | 'warning' | 'error';
+  type: "success" | "info" | "warning" | "error";
   title: string;
   description: string;
   timestamp: string;
@@ -93,7 +98,7 @@ export interface ActivityLog {
 // System Log
 export interface SystemLog {
   id: string;
-  level: 'INFO' | 'DEBUG' | 'WARN' | 'ERROR';
+  level: "INFO" | "DEBUG" | "WARN" | "ERROR";
   message: string;
   timestamp: string;
   details?: string;
@@ -105,7 +110,7 @@ export interface BotLog {
   user: string;
   userAvatar?: string;
   command: string;
-  status: 'success' | 'failed' | 'pending';
+  status: "success" | "failed" | "pending";
   latency: number;
   timestamp: string;
   details?: string;
@@ -115,15 +120,15 @@ export interface BotLog {
 export interface TelegramAsset {
   id: string;
   name: string;
-  type: 'channel' | 'supergroup';
+  type: "channel" | "supergroup";
   avatar?: string;
   icon?: string;
   iconColor?: string;
   members: number;
   membersChange: number;
-  membersChangeType: 'positive' | 'negative' | 'neutral';
+  membersChangeType: "positive" | "negative" | "neutral";
   badges: Badge[];
-  status: 'active' | 'restricted' | 'archived';
+  status: "active" | "restricted" | "archived";
   accessLevel?: string;
   adminAvatars?: string[];
   extraAdmins?: number;
@@ -135,7 +140,7 @@ export interface TelegramAsset {
 
 export interface Badge {
   label: string;
-  type: 'primary' | 'success' | 'warning' | 'error' | 'info' | 'neutral';
+  type: "primary" | "success" | "warning" | "error" | "info" | "neutral";
 }
 
 // Analytics

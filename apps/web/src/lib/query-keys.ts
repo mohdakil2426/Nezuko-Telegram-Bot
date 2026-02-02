@@ -35,6 +35,25 @@ export const queryKeys = {
     detail: (id: number) => ["channel", id] as const,
   },
 
+  // Assets (unified groups + channels)
+  assets: {
+    all: ["assets"] as const,
+    list: (params: { type?: string; search?: string; page?: number; perPage?: number }) =>
+      [...queryKeys.assets.all, "list", params] as const,
+    overview: () => [...queryKeys.assets.all, "overview"] as const,
+    detail: (id: number) => [...queryKeys.assets.all, id] as const,
+  },
+
+  // Logs
+  logs: {
+    all: ["logs"] as const,
+    system: (params?: { level?: string; search?: string }) =>
+      [...queryKeys.logs.all, "system", params] as const,
+    bot: (params?: { status?: string; search?: string }) =>
+      [...queryKeys.logs.all, "bot", params] as const,
+    overview: () => [...queryKeys.logs.all, "overview"] as const,
+  },
+
   // Config
   config: {
     all: ["config"] as const,

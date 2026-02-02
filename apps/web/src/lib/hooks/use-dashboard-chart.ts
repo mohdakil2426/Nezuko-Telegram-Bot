@@ -1,42 +1,37 @@
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
-import { dashboardApi, type ChartDataResponse } from "@/lib/api/endpoints/dashboard";
-import { USE_MOCK_DATA } from "@/lib/data/config";
-import { mockApi } from "@/lib/data/mock-api";
+import { dataService } from "@/services";
+import type { ChartDataPoint } from "@/lib/data/types";
 
 export function useDashboardChartData() {
-  const query = useQuery<ChartDataResponse>({
+  const query = useQuery<ChartDataPoint[]>({
     queryKey: queryKeys.dashboard.chartData(),
-    queryFn: USE_MOCK_DATA
-      ? async () => {
-          const data = await mockApi.getChartData();
-          // Transform mock data to match ChartDataResponse shape
-          return {
-            series: data.map((d) => ({
-              date: d.date,
-              verified: d.verified,
-              restricted: d.restricted,
-              total: d.verified + d.restricted,
-            })),
-            summary: {
-              total_verified: data.reduce((sum, d) => sum + d.verified, 0),
-              total_restricted: data.reduce((sum, d) => sum + d.restricted, 0),
-              average_daily: Math.round(
-                data.reduce((sum, d) => sum + d.verified + d.restricted, 0) / data.length
-              ),
-            },
-          };
-        }
-      : dashboardApi.getChartData,
+    queryFn: () => dataService.getChartData(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
   });
 
+  // Transform to expected format with summary
+  const series = query.data || [];
+  const summary = {
+    total_verified: series.reduce((sum, d) => sum + d.value, 0),
+    total_restricted: series.reduce((sum, d) => sum + (d.value2 || 0), 0),
+    average_daily:
+      series.length > 0
+        ? Math.round(series.reduce((sum, d) => sum + d.value + (d.value2 || 0), 0) / series.length)
+        : 0,
+  };
+
   return {
-    data: query.data?.series || [],
-    summary: query.data?.summary,
-    isPending: query.isPending, // v5: Use isPending for initial load state
-    isLoading: query.isLoading, // v5: isPending && isFetching (kept for backward compat)
+    data: series.map((d) => ({
+      date: d.time,
+      verified: d.value,
+      restricted: d.value2 || 0,
+      total: d.value + (d.value2 || 0),
+    })),
+    summary,
+    isPending: query.isPending,
+    isLoading: query.isLoading,
     error: query.error,
     refresh: query.refetch,
   };
