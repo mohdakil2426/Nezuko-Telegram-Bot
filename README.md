@@ -25,17 +25,17 @@
 
 <!-- BADGES - Row 2: Quality Metrics -->
 
-[![Pylint](https://img.shields.io/badge/pylint-10.00/10-brightgreen?style=flat-square&labelColor=1a1a2e)](https://pylint.org/)
-[![Type Check](https://img.shields.io/badge/pyrefly-0_errors-brightgreen?style=flat-square&labelColor=1a1a2e)](https://pyrefly.org/)
-[![Tests](https://img.shields.io/badge/tests-19_passing-brightgreen?style=flat-square&labelColor=1a1a2e)](tests/)
-[![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&labelColor=1a1a2e)](https://github.com/mohdakil2426/Nezuko-Telegram-Bot)
+[![Pylint](https://img.shields.io/badge/pylint-10.00/10-brightgreen?style=for-the-badge&labelColor=1a1a2e)](https://pylint.org/)
+[![Type Check](https://img.shields.io/badge/pyrefly-0_errors-brightgreen?style=for-the-badge&labelColor=1a1a2e)](https://pyrefly.org/)
+[![Tests](https://img.shields.io/badge/tests-19_passing-brightgreen?style=for-the-badge&labelColor=1a1a2e)](tests/)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge&labelColor=1a1a2e)](https://github.com/mohdakil2426/Nezuko-Telegram-Bot)
 
 <!-- BADGES - Row 3: Tech Stack -->
 
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=white&labelColor=1a1a2e)](https://react.dev/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.128+-009688?style=flat-square&logo=fastapi&logoColor=white&labelColor=1a1a2e)](https://fastapi.tiangolo.com/)
-[![Telegram Bot API](https://img.shields.io/badge/PTB-v22.6+-26A5E4?style=flat-square&logo=telegram&logoColor=white&labelColor=1a1a2e)](https://python-telegram-bot.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Auth-3FCF8E?style=flat-square&logo=supabase&logoColor=white&labelColor=1a1a2e)](https://supabase.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white&labelColor=1a1a2e)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.128+-009688?style=for-the-badge&logo=fastapi&logoColor=white&labelColor=1a1a2e)](https://fastapi.tiangolo.com/)
+[![Telegram Bot API](https://img.shields.io/badge/PTB-v22.6+-26A5E4?style=for-the-badge&logo=telegram&logoColor=white&labelColor=1a1a2e)](https://python-telegram-bot.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white&labelColor=1a1a2e)](https://supabase.com/)
 
 <br/>
 
