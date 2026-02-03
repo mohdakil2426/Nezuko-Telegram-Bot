@@ -1,63 +1,173 @@
-# Active Context: Phase 36 - Web Application Improvement Plan COMPLETE
+# Active Context: Phase 38 - Advanced Analytics Charts COMPLETE
 
 ## Current Status
 
-**Phase 36 COMPLETE** - Comprehensive web application improvements.
-**Focus**: All 10 phases of PLANNING.md implemented.
+**Phase 38 COMPLETE** - Added 10 new advanced charts to the Analytics page in `apps/web1`.
+**Focus**: Full analytics visualization with Donut, Bar, Line, and Radial charts.
 
 ### Recent Achievements (2026-02-03)
 
-| Item                        | Status      | Description                                            |
-| :-------------------------- | :---------- | :----------------------------------------------------- |
-| **Phase 1: Critical Fixes** | ✅ Complete | "use client" directives, MotionProvider                |
-| **Phase 2: LazyMotion**     | ✅ Complete | 86% bundle reduction (34KB → 4.6KB), 21 files migrated |
-| **Phase 3: Accessibility**  | ✅ Complete | aria-labels, focus-visible, aria-hidden                |
-| **Phase 4: Consolidation**  | ✅ Complete | 4 duplicate component pairs merged & deleted           |
-| **Phase 5: Animation**      | ✅ Complete | willChange, transition fixes, AnimatePresence verify   |
-| **Phase 6: Typography**     | ✅ Complete | ellipsis chars, tabular-nums, text-balance             |
-| **Phase 7: Forms**          | ✅ Complete | labels, ids, aria-describedby, proper connections      |
-| **Phase 8: Performance**    | ✅ Complete | image dimensions, content-visibility                   |
-| **Phase 9: Theming**        | ✅ Complete | color-scheme CSS, theme-color meta                     |
-| **Phase 10: Final Polish**  | ✅ Complete | touch-action, overscroll, preconnect links             |
-| **Build Verification**      | ✅ Complete | All 9 static pages generated successfully              |
+| Item                          | Status      | Description                                         |
+| :---------------------------- | :---------- | :-------------------------------------------------- |
+| **Phase 37: Web1 Dashboard**  | ✅ Complete | Pure shadcn/ui dashboard with 26 components         |
+| **Phase 38: Advanced Charts** | ✅ Complete | 10 new charts for analytics visualization           |
+| **Chart Type Definitions**    | ✅ Complete | 10 TypeScript interfaces for chart data             |
+| **Mock Data Generators**      | ✅ Complete | Realistic mock data for all chart types             |
+| **Chart Service Layer**       | ✅ Complete | Service with mock/API toggle                        |
+| **React Query Hooks**         | ✅ Complete | 10 custom hooks for fetching chart data             |
+| **Chart Components**          | ✅ Complete | Donut, Bar, Line, Radial chart components           |
+| **Analytics Tabbed Layout**   | ✅ Complete | 4 tabs: Overview, Performance, Distribution, Trends |
+| **Lint Fixes**                | ✅ Complete | Fixed React hooks rules, unused imports             |
 
 ---
 
 ## Key Changes Summary
 
-### Created Files
+### New Charts Directory: `apps/web1/src/components/charts/`
 
-- `apps/web/src/providers/motion-provider.tsx` - LazyMotion + MotionConfig provider
+10 new chart components using native shadcn/ui charts (Recharts).
 
-### Deleted Files (Duplicate Components)
+### Charts Structure
 
-- `apps/web/src/components/TiltCard.tsx` → merged into `ui/tilt-card.tsx`
-- `apps/web/src/components/StatCard.tsx` → merged into `ui/stat-card.tsx`
-- `apps/web/src/components/DashboardCard.tsx` → merged into `ui/dashboard-card.tsx`
-- `apps/web/src/components/AnimatedCounter.tsx` → merged into `ui/animated-counter.tsx`
+```
+apps/web1/src/components/charts/
+├── index.ts                              # Barrel exports
+├── verification-distribution-chart.tsx   # Donut: Verified/Restricted/Error
+├── cache-breakdown-chart.tsx             # Donut: Cache hits vs API calls
+├── groups-status-chart.tsx               # Donut: Active vs Inactive groups
+├── api-calls-chart.tsx                   # Donut: API method distribution
+├── hourly-activity-chart.tsx             # Bar: 24-hour activity
+├── latency-distribution-chart.tsx        # Bar: Latency buckets
+├── top-groups-chart.tsx                  # Bar: Top groups by verifications
+├── cache-hit-rate-trend-chart.tsx        # Line: Cache hit rate over time
+├── latency-trend-chart.tsx               # Line: Avg/P95 latency trend
+└── bot-health-chart.tsx                  # Radial: Bot health score gauge
+```
 
-### Major Modifications
+### Data Layer Files
 
-- `layout.tsx` - MotionProvider, themeColor, colorScheme, preconnect
-- `globals.css` - color-scheme, touch-action, overscroll-behavior
-- `login/page.tsx` - accessibility, form improvements
-- `Sidebar.tsx` - aria-labels, aria-hidden, image dimensions
-- `ui/tilt-card.tsx` - focus-visible, willChange
-- `ui/stat-card.tsx` - tabular-nums
-- All 5 dashboard pages - updated imports, tabular-nums, ellipsis fixes
+```
+apps/web1/src/lib/
+├── services/
+│   ├── types.ts              # +10 chart interfaces
+│   ├── charts.service.ts     # NEW: Chart service layer
+│   └── index.ts              # +chartsService export
+├── hooks/
+│   ├── use-charts.ts         # NEW: 10 React Query hooks
+│   └── index.ts              # +chart hooks export
+├── mock/
+│   ├── charts.mock.ts        # NEW: Mock data generators
+│   └── index.ts              # +mock generators export
+├── api/
+│   └── endpoints.ts          # +charts.* endpoints
+└── query-keys.ts             # +charts.* keys
+```
+
+### Analytics Page: 4-Tab Layout
+
+| Tab          | Charts Displayed                                  |
+| :----------- | :------------------------------------------------ |
+| Overview     | Overview Cards, Verification Trends, User Growth  |
+| Performance  | Bot Health, Latency Trend, Latency Distribution   |
+| Distribution | Verification, Cache, Groups Status, API Calls     |
+| Trends       | Cache Hit Rate Trend, Hourly Activity, Top Groups |
+
+### Component Structure (Existing)
+
+```
+apps/web1/src/components/
+├── ui/                      # 26 shadcn components
+├── dashboard/               # Dashboard-specific
+│   ├── stat-cards.tsx
+│   ├── verification-chart.tsx
+│   ├── activity-feed.tsx
+│   └── index.ts
+├── groups/                  # Groups page
+│   ├── groups-columns.tsx
+│   ├── groups-data-table.tsx
+│   ├── groups-page-content.tsx
+│   └── index.ts
+├── channels/                # Channels page
+│   ├── channels-columns.tsx
+│   ├── channels-data-table.tsx
+│   ├── channels-page-content.tsx
+│   └── index.ts
+├── analytics/               # Analytics page
+│   ├── overview-cards.tsx
+│   ├── verification-trends-chart.tsx
+│   ├── user-growth-chart.tsx
+│   ├── analytics-page-content.tsx
+│   └── index.ts
+├── settings/                # Settings page
+│   ├── appearance-card.tsx
+│   ├── account-info-card.tsx
+│   ├── settings-page-content.tsx
+│   └── index.ts
+├── login-form.tsx           # Login form component
+├── app-sidebar.tsx          # Main sidebar (sidebar-07)
+├── nav-main.tsx             # Navigation items
+├── nav-user.tsx             # User dropdown
+├── brand-logo.tsx           # Nezuko branding
+├── theme-toggle.tsx         # Light/Dark/System
+└── site-header.tsx          # Header with breadcrumbs
+```
+
+### App Routes
+
+```
+apps/web1/src/app/
+├── layout.tsx               # Root layout with providers
+├── page.tsx                 # Redirects to /dashboard
+├── not-found.tsx            # Custom 404 page
+├── login/
+│   └── page.tsx             # Login page
+└── dashboard/
+    ├── layout.tsx           # Dashboard layout (sidebar + header)
+    ├── page.tsx             # Main dashboard
+    ├── analytics/page.tsx
+    ├── channels/page.tsx
+    ├── groups/page.tsx
+    └── settings/page.tsx
+```
+
+### Data Architecture
+
+```
+Component → Hook → Service → (Mock or API) → Response
+```
+
+- **Mock mode**: `NEXT_PUBLIC_USE_MOCK=true` in `.env.local`
+- **API mode**: Set `NEXT_PUBLIC_USE_MOCK=false` and configure `NEXT_PUBLIC_API_URL`
+
+### Key Fixes Applied
+
+1. **Breadcrumb Hydration**: `BreadcrumbSeparator` moved to sibling position
+2. **React Compiler**: Added `"use no memo"` directive for TanStack Table components
+3. **ESLint**: Inline disable for `react-hooks/incompatible-library` rule
 
 ---
 
-## Metrics Achieved
+## Build Verification
 
-| Metric                | Before  | After   | Improvement   |
-| --------------------- | ------- | ------- | ------------- |
-| Motion Bundle         | ~34 KB  | ~4.6 KB | 86% reduction |
-| Missing "use client"  | 7 files | 0 files | 100% fixed    |
-| aria-label Coverage   | ~60%    | 100%    | +40%          |
-| Duplicate Components  | 4 pairs | 0 pairs | 100% merged   |
-| Form Accessibility    | ~50%    | 100%    | +50%          |
-| Typography Compliance | ~80%    | 100%    | +20%          |
+```
+$ bun run lint
+$ eslint
+(no output = 0 errors, 0 warnings)
+
+$ bun run build
+✓ Compiled successfully in 4.2s
+✓ Generating static pages (10/10)
+
+Routes:
+○ /
+○ /_not-found
+○ /dashboard
+○ /dashboard/analytics
+○ /dashboard/channels
+○ /dashboard/groups
+○ /dashboard/settings
+○ /login
+```
 
 ---
 
@@ -69,4 +179,22 @@
 
 ---
 
-_Last Updated: 2026-02-03 12:00 IST_
+## Commands Reference
+
+```bash
+# Development
+cd apps/web1 && bun dev
+
+# Lint check
+cd apps/web1 && bun run lint
+
+# Build verification
+cd apps/web1 && bun run build
+
+# Add shadcn component
+cd apps/web1 && bunx shadcn@latest add <component-name>
+```
+
+---
+
+_Last Updated: 2026-02-03 21:30 IST_

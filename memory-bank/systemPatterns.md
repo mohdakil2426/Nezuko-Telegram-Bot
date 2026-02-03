@@ -1,4 +1,4 @@
-> **Last Updated**: 2026-02-02 | **Version**: 2.7.0 (Production-Grade Services Layer)
+> **Last Updated**: 2026-02-03 | **Version**: 2.8.0 (Added apps/web1 Pure shadcn Dashboard)
 
 ---
 
@@ -29,9 +29,11 @@ Nezuko uses a **Turborepo** monorepo with three core domains:
 ├─────────────────┬─────────────────┬─────────────────────────────┤
 │   apps/web      │    apps/api     │       apps/bot/             │
 │   (Next.js 16)  │   (FastAPI)     │    (python-telegram-bot)    │
-│                 │                 │                             │
-│   Admin Panel   │   REST API      │   Enforcement Engine        │
-│   Dashboard     │   RBAC Layer    │   Verification Logic        │
+│   Premium UI    │                 │                             │
+│                 │   REST API      │   Enforcement Engine        │
+│   apps/web1     │   RBAC Layer    │   Verification Logic        │
+│   (shadcn/ui)   │                 │                             │
+│   Pure shadcn   │                 │                             │
 └────────┬────────┴────────┬────────┴────────────┬────────────────┘
          │                 │                     │
          └─────────────────┴─────────────────────┘
@@ -175,6 +177,8 @@ docker-compose -f config/docker/docker-compose.yml up -d
 ---
 
 # 🌐 Frontend Patterns (Next.js 16)
+
+> **Note**: This section applies to `apps/web` (Premium Dashboard). For `apps/web1` (Pure shadcn), see the [web1 Patterns](#-web1-pure-shadcn-patterns) section below.
 
 ## Version Requirements
 
@@ -424,6 +428,201 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+```
+
+---
+
+# 🆕 web1 Pure shadcn Patterns
+
+`apps/web1` is a pure shadcn/ui dashboard created to provide a maintainable, standard alternative to the custom premium dashboard.
+
+## Key Architecture Decisions
+
+| Decision   | Choice         | Rationale                   |
+| ---------- | -------------- | --------------------------- |
+| Style      | New York       | Clean, professional look    |
+| Base Color | Neutral        | Flexible theming            |
+| Sidebar    | sidebar-07     | Collapsible icon sidebar    |
+| Data Layer | Mock-first     | Development without backend |
+| State      | TanStack Query | Server state caching        |
+
+## Data Flow Pattern
+
+```
+Component → Hook → Service → (Mock or API) → Response
+```
+
+### Service Layer
+
+```typescript
+// src/lib/services/dashboard.service.ts
+import { getConfig } from "@/lib/api/config";
+import * as mockDashboard from "@/lib/mock/dashboard.mock";
+
+export const dashboardService = {
+  async getStats() {
+    if (getConfig().useMock) {
+      return mockDashboard.getDashboardStats();
+    }
+    // Real API call when ready
+    return apiClient.get("/dashboard/stats");
+  },
+};
+```
+
+### Hook Layer
+
+```typescript
+// src/lib/hooks/use-dashboard.ts
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
+import { dashboardService } from "@/lib/services/dashboard.service";
+
+export function useDashboardStats() {
+  return useQuery({
+    queryKey: queryKeys.dashboard.stats,
+    queryFn: dashboardService.getStats,
+  });
+}
+```
+
+### Component Usage
+
+```tsx
+// ✅ CORRECT - Data from hooks, never hardcoded
+export function StatCards() {
+  const { data, isPending } = useDashboardStats();
+
+  if (isPending) return <StatCardsSkeleton />;
+
+  return (
+    <div className="grid gap-4 md:grid-cols-4">
+      <StatCard title="Total Groups" value={data?.totalGroups ?? 0} />
+      {/* ... */}
+    </div>
+  );
+}
+```
+
+## Centralized Query Keys
+
+```typescript
+// src/lib/query-keys.ts
+export const queryKeys = {
+  dashboard: {
+    all: ["dashboard"] as const,
+    stats: ["dashboard", "stats"] as const,
+    chart: (days: number) => ["dashboard", "chart", days] as const,
+    activity: (limit: number) => ["dashboard", "activity", limit] as const,
+  },
+  groups: {
+    all: ["groups"] as const,
+    list: (params: GroupsParams) => ["groups", "list", params] as const,
+    detail: (id: number) => ["groups", id] as const,
+  },
+  // ... channels, analytics
+};
+```
+
+## shadcn Sidebar Pattern (sidebar-07)
+
+```tsx
+// src/components/app-sidebar.tsx
+export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
+  return (
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader>
+        <BrandLogo />
+      </SidebarHeader>
+      <SidebarContent>
+        <NavMain items={navItems} />
+      </SidebarContent>
+      <SidebarFooter>
+        <NavUser user={currentUser} />
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
+  );
+}
+```
+
+## TanStack Table Pattern
+
+```tsx
+// src/components/groups/groups-data-table.tsx
+"use no memo"; // Required for React Compiler compatibility
+
+export function GroupsDataTable({ data }: { data: Group[] }) {
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  // Render table...
+}
+```
+
+## Environment Configuration
+
+```bash
+# apps/web1/.env.local
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_USE_MOCK=true  # Toggle mock data
+```
+
+## Directory Structure
+
+```
+apps/web1/src/
+├── app/
+│   ├── layout.tsx           # Root with providers
+│   ├── page.tsx             # Redirects to /dashboard
+│   └── dashboard/
+│       ├── layout.tsx       # Sidebar + header
+│       ├── page.tsx         # Main dashboard
+│       ├── analytics/
+│       ├── groups/
+│       ├── channels/
+│       └── settings/
+├── components/
+│   ├── ui/                  # 26 shadcn components
+│   ├── dashboard/           # StatCards, Chart, Activity
+│   ├── groups/              # Table components
+│   ├── channels/            # Table components
+│   ├── analytics/           # Chart components
+│   ├── settings/            # Theme, preferences
+│   ├── app-sidebar.tsx
+│   ├── nav-main.tsx
+│   ├── nav-user.tsx
+│   ├── brand-logo.tsx
+│   ├── theme-toggle.tsx
+│   └── site-header.tsx
+├── lib/
+│   ├── api/                 # Typed fetch client
+│   ├── services/            # Mock/API abstraction
+│   ├── mock/                # Mock data generators
+│   ├── hooks/               # React Query hooks
+│   ├── query-keys.ts
+│   └── utils.ts             # cn() utility
+├── hooks/
+│   └── use-mobile.ts
+└── providers/
+    ├── query-provider.tsx
+    └── theme-provider.tsx
+```
+
+## Commands
+
+```bash
+cd apps/web1
+bun dev                    # Development (localhost:3001)
+bun run lint              # ESLint
+bun run build             # Production build
+bunx shadcn@latest add    # Add new components
 ```
 
 ---
@@ -1039,4 +1238,4 @@ document.documentElement.style.setProperty("--accent-gradient", gradient);
 
 **This document is the authoritative guide for all system implementations.**
 
-_Last Updated: 2026-02-01_
+_Last Updated: 2026-02-03_

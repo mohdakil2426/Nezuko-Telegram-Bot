@@ -10,72 +10,93 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 
 ## 📦 Core Stack Summary
 
-| Layer | Technologies |
-|-------|-------------|
-| **Frontend** | Next.js 16, React 19, TypeScript 5.9, Tailwind v4, shadcn/ui |
-| **Backend API** | FastAPI 0.128+, Python 3.13, SQLAlchemy 2.0, Pydantic V2 |
-| **Bot Engine** | python-telegram-bot v22.6, AsyncIO |
-| **Database** | PostgreSQL 15+ (Supabase), Unified SQLite (Local Dev) |
-| **Infrastructure** | Docker, Turborepo, Caddy |
+| Layer              | Technologies                                                               |
+| ------------------ | -------------------------------------------------------------------------- |
+| **Frontend**       | Next.js 16, React 19, TypeScript 5.8+, Tailwind v4, shadcn/ui (web + web1) |
+| **Backend API**    | FastAPI 0.128+, Python 3.13, SQLAlchemy 2.0, Pydantic V2                   |
+| **Bot Engine**     | python-telegram-bot v22.6, AsyncIO                                         |
+| **Database**       | PostgreSQL 15+ (Supabase), Unified SQLite (Local Dev)                      |
+| **Infrastructure** | Docker, Turborepo, Caddy                                                   |
 
 ---
 
-## 🟢 Frontend Stack (apps/web)
+## 🟢 Frontend Stack
 
-### Core Framework
+Nezuko has two frontend applications:
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Next.js | 16.1.4 | React meta-framework with App Router |
-| React | 19.2.3 | UI component library with Compiler |
-| TypeScript | 5.9.3 | Type-safe JavaScript |
-| Bun | 1.3.6+ | Package manager and runtime |
+### apps/web (Premium Custom Dashboard)
 
-### UI & Styling
+The original dashboard with custom premium UI components, animations, and effects.
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Tailwind CSS | 4.1.x | Utility-first CSS (`@theme` inline pattern) |
-| shadcn/ui | Latest | Accessible component library (Radix) |
-| Lucide React | 0.563+ | Icon library |
-| Motion | 12.29+ | Animation library (Framer Motion) |
-| Recharts | 3.7+ | Charting library |
-| Sonner | 2.0+ | Toast notifications |
+| Technology   | Version | Purpose                                     |
+| ------------ | ------- | ------------------------------------------- |
+| Next.js      | 16.1.4  | React meta-framework with App Router        |
+| React        | 19.2.3  | UI component library with Compiler          |
+| TypeScript   | 5.9.3   | Type-safe JavaScript                        |
+| Bun          | 1.3.6+  | Package manager and runtime                 |
+| Tailwind CSS | 4.1.x   | Utility-first CSS (`@theme` inline pattern) |
+| shadcn/ui    | Latest  | Base primitives (~40%)                      |
+| Motion       | 12.29+  | Animation library (Framer Motion ~65%)      |
+| Lucide React | 0.563+  | Icon library                                |
+| Recharts     | 3.7+    | Charting library                            |
+| Sonner       | 2.0+    | Toast notifications                         |
 
-### Technology Usage Estimates (as of 2026-02-02)
+### apps/web1 (Pure shadcn/ui Dashboard) ✨ NEW
 
-| Technology | Usage % | Notes |
-| :--- | :---: | :--- |
-| **Tailwind CSS** | **100%** | Exclusive styling engine. |
-| **Lucide React** | **100%** | Exclusive icon system. |
-| **Framer Motion** | **~65%** | Primary animation engine. |
-| **shadcn/ui** | **~40%** | Foundation primitives. |
-| **Custom Premium UI** | **~60%** | Custom interactive wrappers. |
+A pure shadcn/ui dashboard with minimal custom code. Uses standard shadcn patterns for maintainability.
 
-### State & Data Management
+| Technology     | Version | Purpose                                         |
+| -------------- | ------- | ----------------------------------------------- |
+| Next.js        | 16.1.6  | React meta-framework with App Router            |
+| React          | 19.2.3  | UI component library with Compiler              |
+| TypeScript     | 5.8.3   | Type-safe JavaScript                            |
+| Bun            | 1.3.6+  | Package manager and runtime                     |
+| Tailwind CSS   | 4.1.11  | Utility-first CSS                               |
+| shadcn/ui      | Latest  | **100% shadcn components** (New York style)     |
+| TanStack Query | 5.76.2  | Server state management                         |
+| TanStack Table | 8.21.3  | Data tables with sorting, filtering, pagination |
+| Recharts       | 2.15.3  | Charting (via shadcn chart component)           |
+| Lucide React   | 0.513.0 | Icon library                                    |
+| next-themes    | 0.4.6   | Dark/light mode                                 |
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| TanStack Query | 5.90+ | Server state management |
-| Zustand | 5.0+ | Client state management |
-| React Hook Form | 7.71+ | Form handling |
-| Zod | 4.3+ | Schema validation |
+**Key Differences from apps/web:**
+
+- 100% shadcn/ui components (no custom TiltCard, MagneticButton, etc.)
+- Uses shadcn sidebar-07 pattern (collapsible icon sidebar)
+- Mock data layer with service abstraction (`NEXT_PUBLIC_USE_MOCK=true`)
+- Centralized query keys pattern for React Query
+- No Supabase auth (standalone mock-first development)
+
+### Technology Usage Estimates (as of 2026-02-03)
+
+| Technology            | apps/web | apps/web1 |
+| :-------------------- | :------: | :-------: |
+| **Tailwind CSS**      |   100%   |   100%    |
+| **Lucide React**      |   100%   |   100%    |
+| **shadcn/ui**         |   ~40%   | **100%**  |
+| **Custom Premium UI** |   ~60%   |    0%     |
+| **Framer Motion**     |   ~65%   |    0%     |
+
+### State & Data Management (Both Dashboards)
+
+| Technology      | Version | Purpose                 |
+| --------------- | ------- | ----------------------- |
+| TanStack Query  | 5.90+   | Server state management |
+| Zustand         | 5.0+    | Client state management |
+| React Hook Form | 7.71+   | Form handling           |
+| Zod             | 4.3+    | Schema validation       |
 
 ### Key Patterns (Next.js 16)
 
 ```typescript
 // ✅ Async route params (Next.js 16)
-export default async function Page({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> 
-}) {
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 }
 
 // ✅ TanStack Query v5
 const { data, isPending } = useQuery({
-  queryKey: ['groups'],
+  queryKey: ["groups"],
   queryFn: fetchGroups,
 });
 
@@ -90,22 +111,22 @@ const { accentHex } = useThemeConfig(); // Config
 
 ### Core Framework
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Python | 3.13+ | Programming language |
-| FastAPI | 0.128+ | Modern async web framework |
-| Uvicorn | 0.40+ | ASGI server |
-| Pydantic | 2.12+ | Data validation and settings |
+| Technology | Version | Purpose                      |
+| ---------- | ------- | ---------------------------- |
+| Python     | 3.13+   | Programming language         |
+| FastAPI    | 0.128+  | Modern async web framework   |
+| Uvicorn    | 0.40+   | ASGI server                  |
+| Pydantic   | 2.12+   | Data validation and settings |
 
 ### Database & ORM
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| SQLAlchemy | 2.0+ | Async ORM |
-| AsyncPG | 0.31+ | PostgreSQL async driver |
-| AIOSQLite | 0.22+ | SQLite async driver (dev) |
-| Alembic | 1.18.3+ | Database migrations |
-| Redis | 7.1+ | Caching and pub/sub |
+| Technology | Version | Purpose                   |
+| ---------- | ------- | ------------------------- |
+| SQLAlchemy | 2.0+    | Async ORM                 |
+| AsyncPG    | 0.31+   | PostgreSQL async driver   |
+| AIOSQLite  | 0.22+   | SQLite async driver (dev) |
+| Alembic    | 1.18.3+ | Database migrations       |
+| Redis      | 7.1+    | Caching and pub/sub       |
 
 ### Key Patterns (SQLAlchemy 2.0)
 
@@ -131,14 +152,15 @@ def validate_channel(self) -> 'GroupCreate':
 
 ### Core
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Python | 3.13+ | Programming language |
-| python-telegram-bot | 22.6+ | Telegram Bot API wrapper |
-| AIOHTTP | 3.13+ | Async HTTP client |
-| HTTPX | 0.28+ | Modern HTTP client |
+| Technology          | Version | Purpose                  |
+| ------------------- | ------- | ------------------------ |
+| Python              | 3.13+   | Programming language     |
+| python-telegram-bot | 22.6+   | Telegram Bot API wrapper |
+| AIOHTTP             | 3.13+   | Async HTTP client        |
+| HTTPX               | 0.28+   | Modern HTTP client       |
 
 ### Infrastructure
+
 - Shared SQLAlchemy models with API
 - Shared Redis cache layer
 - Prometheus metrics integration
@@ -158,10 +180,10 @@ def validate_channel(self) -> 'GroupCreate':
 
 ### Critical Package Versions
 
-| Package | Required Version | Notes |
-|---------|------------------|-------|
-| `@supabase/ssr` | `^0.8.0` | ⚠️ v0.1.0 has cookie parsing bugs |
-| `@supabase/supabase-js` | `^2.93.1` | Latest stable |
+| Package                 | Required Version | Notes                             |
+| ----------------------- | ---------------- | --------------------------------- |
+| `@supabase/ssr`         | `^0.8.0`         | ⚠️ v0.1.0 has cookie parsing bugs |
+| `@supabase/supabase-js` | `^2.93.1`        | Latest stable                     |
 
 ---
 
@@ -169,35 +191,35 @@ def validate_channel(self) -> 'GroupCreate':
 
 ### Model: `AdminUser`
 
-| Column | Type | Notes |
-|:-------|:-----|:------|
-| `id` | `String(36)` | Primary Key, UUID |
-| `supabase_uid` | `String(36)` | Unique, Indexed (Auth ID) |
-| `email` | `String(255)` | Unique |
-| `role` | `String(20)` | Default: "viewer" |
-| `is_active` | `Boolean` | Default: True |
-| `telegram_id` | `BigInteger` | Nullable, Unique |
+| Column         | Type          | Notes                     |
+| :------------- | :------------ | :------------------------ |
+| `id`           | `String(36)`  | Primary Key, UUID         |
+| `supabase_uid` | `String(36)`  | Unique, Indexed (Auth ID) |
+| `email`        | `String(255)` | Unique                    |
+| `role`         | `String(20)`  | Default: "viewer"         |
+| `is_active`    | `Boolean`     | Default: True             |
+| `telegram_id`  | `BigInteger`  | Nullable, Unique          |
 
 ### Model: `AdminAuditLog`
 
-| Column | Type | Notes |
-|:-------|:-----|:------|
-| `id` | `String(36)` | Primary Key |
-| `user_id` | `String(36)` | FK, Nullable |
-| `action` | `String(50)` | Required |
-| `resource_type` | `String(50)` | Required |
-| `old_value` | `JSON` | Nullable |
-| `new_value` | `JSON` | Nullable |
+| Column          | Type         | Notes        |
+| :-------------- | :----------- | :----------- |
+| `id`            | `String(36)` | Primary Key  |
+| `user_id`       | `String(36)` | FK, Nullable |
+| `action`        | `String(50)` | Required     |
+| `resource_type` | `String(50)` | Required     |
+| `old_value`     | `JSON`       | Nullable     |
+| `new_value`     | `JSON`       | Nullable     |
 
 ### Real-time Logging: `admin_logs`
 
-| Column | Type | Notes |
-|:-------|:-----|:------|
-| `id` | `UUID` | PK |
-| `level` | `VARCHAR` | INFO, ERROR, WARN |
-| `message` | `TEXT` | Log content |
-| `metadata` | `JSONB` | Context data |
-| `timestamp` | `TIMESTAMP` | Event time |
+| Column      | Type        | Notes             |
+| :---------- | :---------- | :---------------- |
+| `id`        | `UUID`      | PK                |
+| `level`     | `VARCHAR`   | INFO, ERROR, WARN |
+| `message`   | `TEXT`      | Log content       |
+| `metadata`  | `JSONB`     | Context data      |
+| `timestamp` | `TIMESTAMP` | Event time        |
 
 ---
 
@@ -229,11 +251,11 @@ Get-Content scripts/logs/nezuko-*.log -Tail 50
 [2026-01-28 17:49:26] [SUCCESS] [PYTHON] Installed from requirements.txt
 ```
 
-| Feature | Behavior |
-|---------|----------|
-| **Rotation** | Daily (new file each day) |
-| **Mode** | Append-only (never overwrites) |
-| **Retention** | Logs never auto-deleted |
+| Feature        | Behavior                                  |
+| -------------- | ----------------------------------------- |
+| **Rotation**   | Daily (new file each day)                 |
+| **Mode**       | Append-only (never overwrites)            |
+| **Retention**  | Logs never auto-deleted                   |
 | **Categories** | INSTALL, CLEAN, DEV, PYTHON, NODE, SYSTEM |
 
 ### Manual Commands (if needed)
@@ -270,11 +292,11 @@ requirements/
 └── prod-bot.txt   # Production Bot (base + bot)
 ```
 
-| Command | Purpose |
-|---------|---------|
-| `pip install -r requirements.txt` | Development (all deps) |
-| `pip install -r requirements/prod-api.txt` | Production API |
-| `pip install -r requirements/prod-bot.txt` | Production Bot |
+| Command                                    | Purpose                |
+| ------------------------------------------ | ---------------------- |
+| `pip install -r requirements.txt`          | Development (all deps) |
+| `pip install -r requirements/prod-api.txt` | Production API         |
+| `pip install -r requirements/prod-bot.txt` | Production Bot         |
 
 ### Storage Directory
 
@@ -301,15 +323,18 @@ MOCK_AUTH=true  # Enable mock auth for local dev
 NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<public-anon-key>
 NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
-```
 
+# apps/web1/.env.local
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_USE_MOCK=true  # Enable mock data layer
+```
 
 ---
 
 ## 🔐 Test Credentials (Development)
 
-| User | Email | Password | Role |
-|------|-------|----------|------|
+| User  | Email            | Password  | Role        |
+| ----- | ---------------- | --------- | ----------- |
 | Admin | admin@nezuko.bot | Admin@123 | super_admin |
 
 ---
@@ -318,33 +343,33 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 
 ### Python
 
-| Tool | Purpose |
-|------|---------|
-| Ruff 0.14.14+ | Fast linter and formatter (RUF, PERF, ASYNC rules) |
-| Pylint 4.0.4+ | Static code analysis (target: 10.00/10) |
-| Pyrefly 0.50.1+ | Type checking (target: 0 errors) |
-| Pytest 9.0.2+ | Testing framework |
+| Tool            | Purpose                                            |
+| --------------- | -------------------------------------------------- |
+| Ruff 0.14.14+   | Fast linter and formatter (RUF, PERF, ASYNC rules) |
+| Pylint 4.0.4+   | Static code analysis (target: 10.00/10)            |
+| Pyrefly 0.50.1+ | Type checking (target: 0 errors)                   |
+| Pytest 9.0.2+   | Testing framework                                  |
 
 ### TypeScript
 
-| Tool | Purpose |
-|------|---------|
-| ESLint 9.18+ | Linting |
-| Prettier 3.4+ | Code formatting |
-| TypeScript 5.9+ | Type checking |
+| Tool            | Purpose         |
+| --------------- | --------------- |
+| ESLint 9.18+    | Linting         |
+| Prettier 3.4+   | Code formatting |
+| TypeScript 5.9+ | Type checking   |
 
 ---
 
 ## 📚 Documentation Reference
 
-| Topic | Location |
-|-------|----------|
+| Topic             | Location                          |
+| ----------------- | --------------------------------- |
 | Tech Stack (Full) | `docs/architecture/tech-stack.md` |
-| Architecture | `docs/architecture/README.md` |
-| API Reference | `docs/api/README.md` |
-| Bot Reference | `docs/bot/README.md` |
-| Deployment | `docs/deployment/README.md` |
+| Architecture      | `docs/architecture/README.md`     |
+| API Reference     | `docs/api/README.md`              |
+| Bot Reference     | `docs/bot/README.md`              |
+| Deployment        | `docs/deployment/README.md`       |
 
 ---
 
-_Last Updated: 2026-02-02_
+_Last Updated: 2026-02-03_
