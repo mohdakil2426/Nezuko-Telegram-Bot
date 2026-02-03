@@ -309,3 +309,117 @@ export interface TrendsParams {
   period?: "7d" | "30d" | "90d";
   granularity?: "hour" | "day" | "week";
 }
+
+// =============================================================================
+// Advanced Chart Types
+// =============================================================================
+
+/**
+ * Verification outcome distribution for donut chart
+ */
+export interface VerificationDistribution {
+  verified: number;
+  restricted: number;
+  error: number;
+  total: number;
+}
+
+/**
+ * Cache vs API breakdown for donut chart
+ */
+export interface CacheBreakdown {
+  cached: number;
+  api: number;
+  total: number;
+  hit_rate: number;
+}
+
+/**
+ * Groups status distribution for donut chart
+ */
+export interface GroupsStatusDistribution {
+  active: number;
+  inactive: number;
+  total: number;
+}
+
+/**
+ * API calls distribution by method for donut chart
+ */
+export interface ApiCallsDistribution {
+  method: string;
+  count: number;
+  percentage: number;
+}
+
+/**
+ * Hourly activity for bar chart
+ */
+export interface HourlyActivity {
+  hour: number;
+  label: string;
+  verifications: number;
+  restrictions: number;
+}
+
+/**
+ * Latency distribution bucket for bar chart
+ */
+export interface LatencyBucket {
+  bucket: string;
+  count: number;
+  percentage: number;
+}
+
+/**
+ * Top group by performance for bar chart
+ */
+export interface TopGroupPerformance {
+  group_id: number;
+  title: string;
+  verifications: number;
+  success_rate: number;
+}
+
+/**
+ * Time series data point for line charts
+ */
+export interface TimeSeriesPoint {
+  date: string;
+  value: number;
+}
+
+/**
+ * Cache hit rate trend response
+ */
+export interface CacheHitRateTrend {
+  period: string;
+  series: TimeSeriesPoint[];
+  current_rate: number;
+  average_rate: number;
+}
+
+/**
+ * Latency trend response
+ */
+export interface LatencyTrend {
+  period: string;
+  series: Array<{
+    date: string;
+    avg_latency: number;
+    p95_latency: number;
+  }>;
+  current_avg: number;
+}
+
+/**
+ * Bot health metrics for radial chart
+ */
+export interface BotHealthMetrics {
+  uptime_percent: number;
+  cache_efficiency: number;
+  success_rate: number;
+  avg_latency_score: number;
+  error_rate: number;
+  overall_score: number;
+}

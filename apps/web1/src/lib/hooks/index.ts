@@ -19,3 +19,17 @@ export { useChannels, useChannel, useCreateChannel, useDeleteChannel } from "./u
 
 // Analytics hooks
 export { useVerificationTrends, useUserGrowth, useAnalyticsOverview } from "./use-analytics";
+
+// Charts hooks (Advanced Analytics)
+export {
+  useVerificationDistribution,
+  useCacheBreakdown,
+  useGroupsStatusDistribution,
+  useApiCallsDistribution,
+  useHourlyActivity,
+  useLatencyDistribution,
+  useTopGroups,
+  useCacheHitRateTrend,
+  useLatencyTrend,
+  useBotHealthMetrics,
+} from "./use-charts";

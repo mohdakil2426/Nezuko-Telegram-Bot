@@ -35,6 +35,20 @@ export const ENDPOINTS = {
     overview: "/api/v1/analytics/overview",
   },
 
+  // Charts (Advanced Analytics)
+  charts: {
+    verificationDistribution: "/api/v1/charts/verification-distribution",
+    cacheBreakdown: "/api/v1/charts/cache-breakdown",
+    groupsStatus: "/api/v1/charts/groups-status",
+    apiCalls: "/api/v1/charts/api-calls",
+    hourlyActivity: "/api/v1/charts/hourly-activity",
+    latencyDistribution: "/api/v1/charts/latency-distribution",
+    topGroups: "/api/v1/charts/top-groups",
+    cacheHitRateTrend: "/api/v1/charts/cache-hit-rate-trend",
+    latencyTrend: "/api/v1/charts/latency-trend",
+    botHealth: "/api/v1/charts/bot-health",
+  },
+
   // Auth
   auth: {
     login: "/api/v1/auth/login",

@@ -21,3 +21,17 @@ export {
   getAnalyticsOverview,
   type AnalyticsOverview,
 } from "./analytics.mock";
+
+// Charts (Advanced)
+export {
+  getVerificationDistribution,
+  getCacheBreakdown,
+  getGroupsStatusDistribution,
+  getApiCallsDistribution,
+  getHourlyActivity,
+  getLatencyDistribution,
+  getTopGroups,
+  getCacheHitRateTrend,
+  getLatencyTrend,
+  getBotHealthMetrics,
+} from "./charts.mock";

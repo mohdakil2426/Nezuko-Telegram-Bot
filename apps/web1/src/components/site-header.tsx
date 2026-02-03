@@ -5,6 +5,7 @@
  * Contains sidebar trigger and breadcrumbs
  */
 
+import * as React from "react";
 import { usePathname } from "next/navigation";
 import {
   Breadcrumb,
@@ -49,16 +50,18 @@ export function SiteHeader() {
         <Breadcrumb>
           <BreadcrumbList>
             {breadcrumbs.map((crumb, index) => (
-              <BreadcrumbItem key={crumb.href}>
+              <React.Fragment key={crumb.href}>
                 {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
-                {crumb.isLast ? (
-                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink href={crumb.href} className="hidden md:block">
-                    {crumb.label}
-                  </BreadcrumbLink>
-                )}
-              </BreadcrumbItem>
+                <BreadcrumbItem>
+                  {crumb.isLast ? (
+                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink href={crumb.href} className="hidden md:block">
+                      {crumb.label}
+                    </BreadcrumbLink>
+                  )}
+                </BreadcrumbItem>
+              </React.Fragment>
             ))}
           </BreadcrumbList>
         </Breadcrumb>
