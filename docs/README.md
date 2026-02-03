@@ -8,17 +8,17 @@ Welcome to the Nezuko documentation. This guide covers everything you need to ge
 
 ## 📖 Documentation
 
-| Section                                        | Description                                      |
-| ---------------------------------------------- | ------------------------------------------------ |
+| Section                                            | Description                                      |
+| -------------------------------------------------- | ------------------------------------------------ |
 | [**Getting Started**](./getting-started/README.md) | Quick setup guides for all components            |
-| [**Architecture**](./architecture/README.md)   | System design, data flow, and component diagrams |
-| [**Tech Stack**](./architecture/tech-stack.md) | Complete technology reference                    |
-| [**API Reference**](./api/README.md)           | FastAPI endpoints, schemas, and authentication   |
-| [**Bot Reference**](./bot/README.md)           | Telegram bot commands, handlers, and events      |
-| [**Web Dashboard**](./web/README.md)           | Admin panel components, routing, and state       |
-| [**Database**](./database/README.md)           | Schema, models, migrations, and queries          |
-| [**Deployment**](./deployment/README.md)       | Docker, production setup, and CI/CD              |
-| [**Contributing**](./contributing/README.md)   | Development workflow and coding standards        |
+| [**Architecture**](./architecture/README.md)       | System design, data flow, and component diagrams |
+| [**Tech Stack**](./architecture/tech-stack.md)     | Complete technology reference                    |
+| [**API Reference**](./api/README.md)               | FastAPI endpoints, schemas, and authentication   |
+| [**Bot Reference**](./bot/README.md)               | Telegram bot commands, handlers, and events      |
+| [**Web Dashboard**](./web/README.md)               | Admin panel components, routing, and state       |
+| [**Database**](./database/README.md)               | Schema, models, migrations, and queries          |
+| [**Deployment**](./deployment/README.md)           | Docker, production setup, and CI/CD              |
+| [**Contributing**](./contributing/README.md)       | Development workflow and coding standards        |
 
 ---
 
@@ -128,4 +128,4 @@ bun install
 
 ---
 
-_Last Updated: 2026-02-04_
+_Last Updated: 2026-02-05_
