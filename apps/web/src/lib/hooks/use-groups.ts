@@ -1,67 +1,79 @@
+/**
+ * Groups React Query Hooks
+ */
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { groupsApi, GetGroupsParams } from "@/lib/api/endpoints/groups";
-import { GroupUpdateRequest, PaginatedResponse, Group } from "@nezuko/types";
-import { queryKeys, mutationKeys } from "@/lib/query-keys";
-import { USE_MOCK_DATA } from "@/lib/data/config";
-import { mockApi } from "@/lib/data/mock-api";
+import { queryKeys } from "@/lib/query-keys";
+import * as groupsService from "@/lib/services/groups.service";
+import type { GroupsParams, GroupUpdateRequest } from "@/lib/services/types";
 
-export function useGroups(params: GetGroupsParams) {
+/**
+ * Hook to fetch paginated groups list
+ */
+export function useGroups(params?: GroupsParams) {
   return useQuery({
-    queryKey: queryKeys.groups.list(params),
-    queryFn: async (): Promise<PaginatedResponse<Group>> => {
-      if (USE_MOCK_DATA) {
-        return mockApi.getGroups(params);
-      }
-      return groupsApi.getGroups(params);
-    },
-    placeholderData: (previousData: PaginatedResponse<Group> | undefined) => previousData,
+    queryKey: queryKeys.groups.list(params as Record<string, unknown>),
+    queryFn: () => groupsService.getGroups(params),
+    staleTime: 30 * 1000, // 30 seconds
   });
 }
 
-export function useGroup(id: number) {
+/**
+ * Hook to fetch single group details
+ */
+export function useGroup(id: number | null) {
   return useQuery({
-    queryKey: queryKeys.groups.detail(id),
-    queryFn: () => groupsApi.getGroup(id),
-    enabled: !!id,
+    queryKey: queryKeys.groups.detail(id ?? 0),
+    queryFn: () => groupsService.getGroup(id!),
+    enabled: id !== null,
+    staleTime: 60 * 1000, // 1 minute
   });
 }
 
+/**
+ * Hook to update a group
+ */
 export function useUpdateGroup() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationKey: mutationKeys.groups.update,
     mutationFn: ({ id, data }: { id: number; data: GroupUpdateRequest }) =>
-      groupsApi.updateGroup(id, data),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.groups.detail(data.group_id) });
+      groupsService.updateGroup(id, data),
+    onSuccess: (_, { id }) => {
+      // Invalidate both the list and detail queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.groups.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.groups.detail(id) });
     },
   });
 }
 
-export function useLinkChannel() {
+/**
+ * Hook to delete a group
+ */
+export function useDeleteGroup() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationKey: mutationKeys.groups.linkChannel,
-    mutationFn: ({ groupId, channelId }: { groupId: number; channelId: number }) =>
-      groupsApi.linkChannel(groupId, channelId),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.groups.detail(variables.groupId) });
+    mutationFn: (id: number) => groupsService.deleteGroup(id),
+    onSuccess: () => {
+      // Invalidate the list query
+      queryClient.invalidateQueries({ queryKey: queryKeys.groups.lists() });
     },
   });
 }
 
-export function useUnlinkChannel() {
+/**
+ * Hook to toggle group protection
+ */
+export function useToggleGroupProtection() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationKey: mutationKeys.groups.unlinkChannel,
-    mutationFn: ({ groupId, channelId }: { groupId: number; channelId: number }) =>
-      groupsApi.unlinkChannel(groupId, channelId),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.groups.detail(variables.groupId) });
+    mutationFn: ({ id, enabled }: { id: number; enabled: boolean }) =>
+      groupsService.toggleGroupProtection(id, enabled),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.groups.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.groups.detail(id) });
     },
   });
 }

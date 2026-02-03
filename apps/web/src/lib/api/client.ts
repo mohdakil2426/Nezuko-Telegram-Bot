@@ -1,92 +1,155 @@
+/**
+ * Typed API Client
+ * Fetch wrapper with error handling and type safety
+ */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { API_URL, REQUEST_TIMEOUT } from "./config";
 
-type RequestMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-
-interface RequestOptions {
-    method?: RequestMethod;
-    headers?: Record<string, string>;
-    body?: unknown;
-    params?: Record<string, string | number | boolean | undefined | null>;
-    credentials?: RequestCredentials;
+/**
+ * API Error class for structured error handling
+ */
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public statusText: string,
+    public data?: unknown
+  ) {
+    super(`API Error: ${status} ${statusText}`);
+    this.name = "ApiError";
+  }
 }
 
-import { supabase } from "@/lib/supabase/client";
-
-// ... (rest of imports)
-
-// ...
-
-async function fetchClient<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const { headers = {}, body, params, ...rest } = options;
-    
-    // Get token from Supabase
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-
-    const config: RequestInit = {
-        ...rest,
-        headers: {
-            "Content-Type": "application/json",
-            ...(token && { Authorization: `Bearer ${token}` }),
-            ...headers,
-        },
-        body: body ? JSON.stringify(body) : undefined,
-    };
-
-    let queryString = "";
-    if (params) {
-        const searchParams = new URLSearchParams();
-        Object.entries(params).forEach(([key, value]) => {
-            if (value !== undefined && value !== null && value !== "") {
-                searchParams.append(key, String(value));
-            }
-        });
-        const qs = searchParams.toString();
-        if (qs) {
-            queryString = `?${qs}`;
-        }
-    }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}${queryString}`, config);
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.detail || "An error occurred";
-
-        // Handle 401 Unauthorized (Token expired)
-        if (response.status === 401) {
-            // Ideally trigger refresh token flow here or logout
-            // useAuthStore.getState().logout(); 
-            // For now, we'll let the caller handle it or implement interceptor logic later
-        }
-
-        throw new Error(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
-    }
-
-    // Handle 204 No Content
-    if (response.status === 204) {
-        return {} as T;
-    }
-
-    return response.json();
+/**
+ * Request options extending fetch RequestInit
+ */
+interface RequestOptions extends RequestInit {
+  params?: Record<string, string | number | boolean | undefined>;
+  timeout?: number;
 }
 
-export const client = Object.assign(
-    <T>(endpoint: string, options: RequestOptions = {}) =>
-        fetchClient<T>(endpoint, options),
+/**
+ * Build URL with query parameters
+ */
+function buildUrl(
+  endpoint: string,
+  params?: Record<string, string | number | boolean | undefined>
+): string {
+  const url = new URL(endpoint, API_URL);
+
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        url.searchParams.set(key, String(value));
+      }
+    });
+  }
+
+  return url.toString();
+}
+
+/**
+ * Execute fetch with timeout
+ */
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeout: number
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Core request function
+ */
+async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const { params, timeout = REQUEST_TIMEOUT, ...fetchOptions } = options;
+
+  const url = buildUrl(endpoint, params);
+
+  const response = await fetchWithTimeout(
+    url,
     {
-        get: <T>(endpoint: string, options?: RequestOptions) =>
-            fetchClient<T>(endpoint, { ...options, method: "GET" }),
-        post: <T>(endpoint: string, body: unknown, options?: RequestOptions) =>
-            fetchClient<T>(endpoint, { ...options, method: "POST", body }),
-        put: <T>(endpoint: string, body: unknown, options?: RequestOptions) =>
-            fetchClient<T>(endpoint, { ...options, method: "PUT", body }),
-        delete: <T>(endpoint: string, options?: RequestOptions) =>
-            fetchClient<T>(endpoint, { ...options, method: "DELETE" }),
-        patch: <T>(endpoint: string, body: unknown, options?: RequestOptions) =>
-            fetchClient<T>(endpoint, { ...options, method: "PATCH", body }),
-    }
-);
+      ...fetchOptions,
+      headers: {
+        "Content-Type": "application/json",
+        ...fetchOptions.headers,
+      },
+    },
+    timeout
+  );
 
-export const api = client;
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new ApiError(response.status, response.statusText, errorData);
+  }
+
+  // Handle 204 No Content
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json() as Promise<T>;
+}
+
+/**
+ * API Client with typed methods
+ */
+export const apiClient = {
+  /**
+   * GET request
+   */
+  get<T>(endpoint: string, options?: RequestOptions): Promise<T> {
+    return request<T>(endpoint, { ...options, method: "GET" });
+  },
+
+  /**
+   * POST request
+   */
+  post<T>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return request<T>(endpoint, {
+      ...options,
+      method: "POST",
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  },
+
+  /**
+   * PUT request
+   */
+  put<T>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return request<T>(endpoint, {
+      ...options,
+      method: "PUT",
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  },
+
+  /**
+   * PATCH request
+   */
+  patch<T>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return request<T>(endpoint, {
+      ...options,
+      method: "PATCH",
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  },
+
+  /**
+   * DELETE request
+   */
+  delete<T>(endpoint: string, options?: RequestOptions): Promise<T> {
+    return request<T>(endpoint, { ...options, method: "DELETE" });
+  },
+};

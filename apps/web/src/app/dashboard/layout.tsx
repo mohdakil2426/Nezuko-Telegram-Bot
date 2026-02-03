@@ -1,7 +1,15 @@
-"use client";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
-import DashboardLayout from "@/components/layout/DashboardLayout";
-
-export default function Layout({ children }: { children: React.ReactNode }) {
-  return <DashboardLayout>{children}</DashboardLayout>;
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <SiteHeader />
+        <main className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
 }

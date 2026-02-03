@@ -1,32 +1,61 @@
 "use client";
 
+/**
+ * React Query Provider
+ * Configures QueryClient with optimal settings
+ */
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
-export function QueryProvider({ children }: { children: React.ReactNode }) {
-    const [queryClient] = useState(
-        () =>
-            new QueryClient({
-                defaultOptions: {
-                    queries: {
-                        staleTime: 1000 * 60 * 5, // 5 minutes - prevents excessive refetches
-                        gcTime: 1000 * 60 * 60, // 1 hour - garbage collection time (v5: renamed from cacheTime)
-                        refetchOnWindowFocus: false,
-                        retry: 1, // Only retry failed requests once
-                        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-                    },
-                    mutations: {
-                        retry: 0, // Don't retry mutations by default
-                    },
-                },
-            })
-    );
+interface QueryProviderProps {
+  children: ReactNode;
+}
 
-    return (
-        <QueryClientProvider client={queryClient}>
-            {children}
-            <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
-        </QueryClientProvider>
-    );
+/**
+ * Create QueryClient with default options
+ */
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Don't refetch on window focus in development
+        refetchOnWindowFocus: process.env.NODE_ENV === "production",
+        // Retry failed requests once
+        retry: 1,
+        // Consider data stale after 30 seconds
+        staleTime: 30 * 1000,
+      },
+      mutations: {
+        // Retry mutations once
+        retry: 1,
+      },
+    },
+  });
+}
+
+// Browser: store QueryClient in module scope to avoid recreating
+let browserQueryClient: QueryClient | undefined;
+
+function getQueryClient() {
+  if (typeof window === "undefined") {
+    // Server: always create a new QueryClient
+    return makeQueryClient();
+  }
+  // Browser: create once and reuse
+  if (!browserQueryClient) {
+    browserQueryClient = makeQueryClient();
+  }
+  return browserQueryClient;
+}
+
+/**
+ * Query Provider Component
+ * Wraps the app with React Query context
+ */
+export function QueryProvider({ children }: QueryProviderProps) {
+  // Use useState to ensure we get the same client on re-renders
+  const [queryClient] = useState(getQueryClient);
+
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

@@ -1,4 +1,4 @@
-> **Last Updated**: 2026-02-03 | **Version**: 2.8.0 (Added apps/web1 Pure shadcn Dashboard)
+> **Last Updated**: 2026-02-03 | **Version**: 3.0.0 (Migrated to Pure shadcn Dashboard)
 
 ---
 
@@ -29,11 +29,9 @@ Nezuko uses a **Turborepo** monorepo with three core domains:
 ├─────────────────┬─────────────────┬─────────────────────────────┤
 │   apps/web      │    apps/api     │       apps/bot/             │
 │   (Next.js 16)  │   (FastAPI)     │    (python-telegram-bot)    │
-│   Premium UI    │                 │                             │
-│                 │   REST API      │   Enforcement Engine        │
-│   apps/web1     │   RBAC Layer    │   Verification Logic        │
-│   (shadcn/ui)   │                 │                             │
 │   Pure shadcn   │                 │                             │
+│   Dashboard     │   REST API      │   Enforcement Engine        │
+│                 │   RBAC Layer    │   Verification Logic        │
 └────────┬────────┴────────┬────────┴────────────┬────────────────┘
          │                 │                     │
          └─────────────────┴─────────────────────┘
@@ -178,7 +176,7 @@ docker-compose -f config/docker/docker-compose.yml up -d
 
 # 🌐 Frontend Patterns (Next.js 16)
 
-> **Note**: This section applies to `apps/web` (Premium Dashboard). For `apps/web1` (Pure shadcn), see the [web1 Patterns](#-web1-pure-shadcn-patterns) section below.
+> **Note**: `apps/web` is a pure shadcn/ui dashboard using standard patterns.
 
 ## Version Requirements
 

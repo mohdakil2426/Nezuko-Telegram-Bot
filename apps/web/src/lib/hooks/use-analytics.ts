@@ -1,50 +1,41 @@
-import { useQuery } from "@tanstack/react-query";
-import { analyticsApi } from "../api/endpoints/analytics";
-import { queryKeys } from "@/lib/query-keys";
-import { USE_MOCK_DATA } from "@/lib/data/config";
-import { mockApi } from "@/lib/data/mock-api";
-import type { UserGrowthResponse, VerificationTrendResponse } from "@nezuko/types";
+/**
+ * Analytics React Query Hooks
+ */
 
-export function useUserGrowth(period: string = "30d", granularity: string = "day") {
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
+import * as analyticsService from "@/lib/services/analytics.service";
+import type { TrendsParams } from "@/lib/services/types";
+
+/**
+ * Hook to fetch verification trends
+ */
+export function useVerificationTrends(params?: TrendsParams) {
   return useQuery({
-    queryKey: queryKeys.analytics.userGrowth(period, granularity),
-    queryFn: async (): Promise<UserGrowthResponse | undefined> => {
-      if (USE_MOCK_DATA) {
-        // Return mock user growth data
-        const now = new Date();
-        const series = Array.from({ length: 30 }, (_, i) => {
-          const date = new Date(now);
-          date.setDate(date.getDate() - (29 - i));
-          return {
-            date: date.toISOString().split("T")[0],
-            new_users: Math.floor(Math.random() * 100) + 20,
-            total_users: 10000 + i * 50,
-          };
-        });
-        return {
-          period,
-          granularity,
-          series,
-          summary: {
-            total_new_users: series.reduce((sum, s) => sum + s.new_users, 0),
-            growth_rate: 12.5,
-            current_total: series[series.length - 1].total_users,
-          },
-        };
-      }
-      return analyticsApi.getUserGrowth(period, granularity);
-    },
+    queryKey: queryKeys.analytics.verificationTrends(params as Record<string, unknown>),
+    queryFn: () => analyticsService.getVerificationTrends(params),
+    staleTime: 60 * 1000, // 1 minute
   });
 }
 
-export function useVerificationTrends(period: string = "7d", granularity: string = "day") {
+/**
+ * Hook to fetch user growth data
+ */
+export function useUserGrowth(params?: TrendsParams) {
   return useQuery({
-    queryKey: queryKeys.analytics.verificationTrends(period, granularity),
-    queryFn: async (): Promise<VerificationTrendResponse | undefined> => {
-      if (USE_MOCK_DATA) {
-        return mockApi.getVerificationTrends();
-      }
-      return analyticsApi.getVerificationTrends(period, granularity);
-    },
+    queryKey: queryKeys.analytics.userGrowth(params as Record<string, unknown>),
+    queryFn: () => analyticsService.getUserGrowth(params),
+    staleTime: 60 * 1000, // 1 minute
+  });
+}
+
+/**
+ * Hook to fetch analytics overview
+ */
+export function useAnalyticsOverview(period?: string) {
+  return useQuery({
+    queryKey: queryKeys.analytics.overview(period),
+    queryFn: () => analyticsService.getAnalyticsOverview(),
+    staleTime: 30 * 1000, // 30 seconds
   });
 }
