@@ -129,14 +129,14 @@ export default function Dashboard() {
         </div>
 
         <m.button
-          className="w-12 h-12 flex items-center justify-center rounded-xl glass text-(--text-muted) hover:text-(--text-primary) transition-colors group"
+          className="w-12 h-12 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl glass text-(--text-muted) hover:text-(--text-primary) transition-colors group"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
         >
           <Search className="w-5 h-5 transition-transform group-hover:rotate-12" />
         </m.button>
         <m.button
-          className="relative w-12 h-12 flex items-center justify-center rounded-xl glass text-(--text-muted) hover:text-(--text-primary) transition-colors group"
+          className="relative w-12 h-12 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl glass text-(--text-muted) hover:text-(--text-primary) transition-colors group"
           onClick={() => setNotificationCount(0)}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
@@ -213,7 +213,7 @@ export default function Dashboard() {
               {["1H", "24H", "7D", "30D"].map((period, idx) => (
                 <m.button
                   key={period}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium glass text-(--text-primary) hover:bg-primary/10 hover:text-primary transition-all"
+                  className="px-3 py-1.5 min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 rounded-lg text-xs font-medium glass text-(--text-primary) hover:bg-primary/10 hover:text-primary transition-all"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 0, y: -10 }}
@@ -226,7 +226,7 @@ export default function Dashboard() {
             </div>
           }
         >
-          <div className="h-64">
+          <div className="h-48 md:h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>

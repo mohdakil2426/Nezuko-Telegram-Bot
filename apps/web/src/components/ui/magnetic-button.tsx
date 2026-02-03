@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import { m } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useThemeConfig } from "@/lib/hooks/use-theme-config";
+import { useTouchDevice } from "@/hooks/use-touch-device";
 
 interface MagneticButtonProps {
   children: React.ReactNode;
@@ -29,9 +30,16 @@ export function MagneticButton({
   const [isHovered, setIsHovered] = useState(false);
   const { accentHex: accentColor } = useThemeConfig();
 
+  // Detect touch device and reduced motion preference
+  const isTouchDevice = useTouchDevice();
+  const shouldReduceMotion = useReducedMotion();
+
+  // Disable magnetic effect on touch devices (it's mouse-only)
+  const enableMagnetic = !isTouchDevice && !disabled;
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (!buttonRef.current || disabled) return;
+      if (!buttonRef.current || !enableMagnetic) return;
 
       const rect = buttonRef.current.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
@@ -45,7 +53,7 @@ export function MagneticButton({
         y: distanceY * magneticStrength,
       });
     },
-    [disabled, magneticStrength]
+    [enableMagnetic, magneticStrength]
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -70,9 +78,9 @@ export function MagneticButton({
   };
 
   const sizes = {
-    sm: "px-3 py-1.5 text-xs",
-    md: "px-4 py-2.5 text-sm",
-    lg: "px-6 py-3 text-base",
+    sm: "px-3 py-2 text-xs min-h-[36px] md:min-h-[32px]",
+    md: "px-4 py-2.5 text-sm min-h-[44px] md:min-h-[40px]",
+    lg: "px-6 py-3 text-base min-h-[48px] md:min-h-[44px]",
   };
 
   return (
@@ -93,9 +101,10 @@ export function MagneticButton({
       onMouseLeave={handleMouseLeave}
       onMouseEnter={handleMouseEnter}
       animate={{
-        x: position.x,
-        y: position.y,
-        scale: isHovered ? 1.05 : 1,
+        // Only apply magnetic position on non-touch devices
+        x: enableMagnetic ? position.x : 0,
+        y: enableMagnetic ? position.y : 0,
+        scale: isHovered && !isTouchDevice ? 1.05 : 1,
       }}
       transition={{
         type: "spring",
@@ -104,10 +113,10 @@ export function MagneticButton({
         mass: 0.5,
       }}
       whileTap={{ scale: 0.95 }}
-      style={{ willChange: "transform" }}
+      style={{ willChange: enableMagnetic ? "transform" : "auto" }}
     >
-      {/* Ripple Effect */}
-      {isHovered && (
+      {/* Ripple Effect - disabled on touch devices for performance */}
+      {isHovered && !isTouchDevice && (
         <m.span
           className="absolute inset-0 bg-white/10"
           initial={{ scale: 0, opacity: 0 }}
@@ -116,14 +125,18 @@ export function MagneticButton({
         />
       )}
 
-      {/* Glow Effect */}
-      <m.div
-        className="absolute inset-0 rounded-xl"
-        animate={{
-          boxShadow: isHovered ? `0 0 30px -5px ${accentColor}66` : `0 0 0px 0px ${accentColor}00`,
-        }}
-        transition={{ duration: 0.3 }}
-      />
+      {/* Glow Effect - disabled on touch devices */}
+      {!isTouchDevice && (
+        <m.div
+          className="absolute inset-0 rounded-xl"
+          animate={{
+            boxShadow: isHovered
+              ? `0 0 30px -5px ${accentColor}66`
+              : `0 0 0px 0px ${accentColor}00`,
+          }}
+          transition={{ duration: 0.3 }}
+        />
+      )}
 
       <span className="relative z-10 inline-flex items-center gap-2">{children}</span>
     </m.button>

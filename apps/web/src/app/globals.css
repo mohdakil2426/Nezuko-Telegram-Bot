@@ -883,3 +883,111 @@ a,
 [data-radix-alert-dialog-content] {
   overscroll-behavior: contain;
 }
+
+/* ============================================
+   STEP 6: Reduced Motion & Mobile Performance
+   ============================================ */
+
+/* Respect system-level reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable shimmer and expensive pseudo-element animations */
+  .shimmer::after,
+  .shimmer::before,
+  .premium-card::before,
+  .premium-card::after,
+  .glow-border::before,
+  .spotlight::before {
+    display: none !important;
+  }
+
+  /* Disable hover transforms that cause motion sickness */
+  .premium-card:hover {
+    transform: none !important;
+  }
+}
+
+/* Mobile-specific performance optimizations */
+@media (max-width: 768px) {
+  /* Reduce blur intensity for better GPU performance */
+  .blur-3xl {
+    filter: blur(32px);
+  }
+
+  .blur-2xl {
+    filter: blur(20px);
+  }
+
+  /* Disable expensive hover effects on mobile (touch doesn't trigger hover reliably) */
+  .premium-card:hover {
+    transform: translateY(-8px) scale(1.01);
+  }
+
+  /* Simplify card stack effects */
+  .card-stack::before,
+  .card-stack::after {
+    display: none;
+  }
+
+  /* Reduce glow intensity */
+  .glow-border::before {
+    opacity: 0.5;
+  }
+
+  /* Faster animations on mobile */
+  .premium-card {
+    transition-duration: 0.3s;
+  }
+}
+
+/* Touch device optimizations (applies when pointer is coarse) */
+@media (pointer: coarse) {
+  /* Ensure minimum 44px touch targets for all interactive elements */
+  button,
+  [role="button"],
+  a,
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Disable hover-dependent visual effects (touch devices don't hover) */
+  .premium-card::before,
+  .spotlight::before {
+    display: none;
+  }
+
+  /* Remove hover transforms - keep tap feedback only */
+  .premium-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Show active state instead of hover */
+  .premium-card:active {
+    transform: scale(0.98);
+    transition-duration: 0.1s;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --nezuko-border: #ffffff;
+    --nezuko-border-hover: #ffffff;
+  }
+
+  .dark {
+    --nezuko-border: #ffffff;
+    --nezuko-border-hover: #ffffff;
+  }
+}

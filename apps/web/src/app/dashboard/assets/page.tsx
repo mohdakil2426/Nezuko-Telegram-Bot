@@ -82,7 +82,7 @@ function AssetCard({ asset, index, onDelete }: AssetCardProps) {
           {/* Dropdown Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="text-(--text-muted) hover:text-(--text-primary) transition-colors p-1 rounded-lg hover:bg-(--nezuko-surface)">
+              <button className="text-(--text-muted) hover:text-(--text-primary) transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-(--nezuko-surface)">
                 <MoreVertical className="w-5 h-5" />
               </button>
             </DropdownMenuTrigger>

@@ -7,6 +7,7 @@ import { m, AnimatePresence } from "motion/react";
 import { useAuth } from "@/hooks/use-auth";
 // import { useThemeConfig } from '@/lib/hooks/use-theme-config'; // Removed unused import
 import { useTheme } from "next-themes";
+import { useTouchDevice } from "@/hooks/use-touch-device";
 import {
   LayoutDashboard,
   BarChart3,
@@ -48,9 +49,13 @@ function MagneticNavItem({
   onClick: () => void;
 }) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const isTouchDevice = useTouchDevice();
   const Icon = item.icon;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Disable magnetic effect on touch devices
+    if (isTouchDevice) return;
+
     const rect = e.currentTarget.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -78,7 +83,7 @@ function MagneticNavItem({
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          "flex items-center px-3 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden",
+          "flex items-center px-3 py-3 min-h-[44px] rounded-xl transition-all duration-300 group relative overflow-hidden",
           isActive
             ? "bg-primary/10 text-primary border border-primary/20"
             : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/5"
@@ -97,17 +102,20 @@ function MagneticNavItem({
           )}
         </AnimatePresence>
 
-        {/* Glow effect on hover */}
-        <div
-          className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsl(var(--primary) / 0.15), transparent 70%)",
-          }}
-        />
+        {/* Glow effect on hover - disabled on touch devices via CSS */}
+        {!isTouchDevice && (
+          <div
+            className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(circle at center, hsl(var(--primary) / 0.15), transparent 70%)",
+            }}
+          />
+        )}
 
         <m.div
-          whileHover={{ scale: 1.1, rotate: 5 }}
+          whileHover={isTouchDevice ? undefined : { scale: 1.1, rotate: 5 }}
+          whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 15 }}
         >
           <Icon
@@ -419,12 +427,12 @@ export default function Sidebar() {
             </div>
             <m.button
               onClick={logout}
-              className="ml-2 text-text-muted hover:text-text-primary transition-colors p-1 rounded-lg hover:bg-white/5"
+              className="ml-2 text-text-muted hover:text-text-primary transition-colors p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/5"
               whileHover={{ scale: 1.1, rotate: 90 }}
               whileTap={{ scale: 0.9 }}
               aria-label="User menu"
             >
-              <MoreVertical className="w-[18px] h-[18px]" aria-hidden="true" />
+              <MoreVertical className="w-5 h-5" aria-hidden="true" />
             </m.button>
           </m.div>
         </m.div>

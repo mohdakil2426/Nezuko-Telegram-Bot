@@ -2,8 +2,9 @@
 
 import { useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { m } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import { useThemeConfig } from "@/lib/hooks/use-theme-config";
+import { useTouchDevice } from "@/hooks/use-touch-device";
 
 interface TiltCardProps {
   children: React.ReactNode;
@@ -44,9 +45,18 @@ export default function TiltCard({
   const [glowPosition, setGlowPosition] = useState({ x: 50, y: 50 });
   const [isHovered, setIsHovered] = useState(false);
 
+  // Detect touch device and reduced motion preference
+  const isTouchDevice = useTouchDevice();
+  const shouldReduceMotion = useReducedMotion();
+
+  // Disable tilt and glow effects on touch devices for better performance
+  const effectiveTilt = enableTilt && !isTouchDevice;
+  const effectiveGlow = enableGlow && !isTouchDevice;
+  const effectiveLift = enableLift && !shouldReduceMotion;
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!cardRef.current || !enableTilt) return;
+      if (!cardRef.current || !effectiveTilt) return;
 
       const rect = cardRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -63,7 +73,7 @@ export default function TiltCard({
         y: (y / rect.height) * 100,
       });
     },
-    [enableTilt, intensity]
+    [effectiveTilt, intensity]
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -124,14 +134,23 @@ export default function TiltCard({
         opacity: 1,
         y: 0,
         // Apply lift and scale via framer-motion animate for smooth transitions
-        scale: isHovered ? 1.02 : 1,
-        translateY: isHovered && enableLift ? -liftAmount : 0,
+        // Disable scale on touch devices to prevent layout shift
+        scale: isHovered && !isTouchDevice ? 1.02 : 1,
+        translateY: isHovered && effectiveLift ? -liftAmount : 0,
       }}
       whileTap={onClick ? { scale: 0.98 } : undefined}
       transition={{
-        // Entry animation
-        opacity: { duration: 0.6, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] },
-        y: { duration: 0.6, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] },
+        // Entry animation - faster for perceived performance
+        opacity: {
+          duration: shouldReduceMotion ? 0.1 : 0.6,
+          delay: index * 0.1,
+          ease: [0.16, 1, 0.3, 1],
+        },
+        y: {
+          duration: shouldReduceMotion ? 0.1 : 0.6,
+          delay: index * 0.1,
+          ease: [0.16, 1, 0.3, 1],
+        },
         // Hover animations - fast and snappy
         scale: { type: "spring", stiffness: 400, damping: 25 },
         translateY: { type: "spring", stiffness: 400, damping: 25 },
@@ -139,9 +158,9 @@ export default function TiltCard({
       style={{
         transformStyle: "preserve-3d",
         perspective: "1000px",
-        willChange: "transform",
+        willChange: "transform, opacity",
         // Only apply tilt rotation via style (this follows cursor without transition)
-        transform: enableTilt
+        transform: effectiveTilt
           ? `perspective(1000px) rotateX(${tiltTransform.rotateX}deg) rotateY(${tiltTransform.rotateY}deg)`
           : undefined,
       }}
@@ -150,8 +169,8 @@ export default function TiltCard({
       onMouseEnter={handleMouseEnter}
       {...interactiveProps}
     >
-      {/* Dynamic Glow Effect */}
-      {enableGlow && (
+      {/* Dynamic Glow Effect - disabled on touch devices */}
+      {effectiveGlow && (
         <div
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
           style={{
