@@ -435,6 +435,7 @@ Comprehensive documentation is available in [`docs/`](docs/README.md):
 
 | Guide                                                 | Description                         |
 | ----------------------------------------------------- | ----------------------------------- |
+| [**📚 Docs Home**](docs/README.md)                    | Documentation index & quick links   |
 | [**Getting Started**](docs/getting-started/README.md) | Installation, setup, first run      |
 | [**Architecture**](docs/architecture/README.md)       | System design, data flow, diagrams  |
 | [**Tech Stack**](docs/architecture/tech-stack.md)     | Complete technology reference       |
