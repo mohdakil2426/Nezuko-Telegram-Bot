@@ -1,201 +1,178 @@
-# Active Context: Phase 39 - Web Migration Complete
+# Active Context: Phase 40 - Full-Stack Integration
 
 ## Current Status
 
-**Phase 39 COMPLETE** - Migrated from custom `apps/web` to pure shadcn/ui dashboard.
-**Focus**: Replaced premium custom UI with maintainable pure shadcn/ui dashboard.
+**Phase 40 IN PROGRESS** - Full-Stack Integration (Web + API + Bot)
+**Focus**: Connect all three components with real data flow and Supabase authentication.
 
-### Recent Achievements (2026-02-03)
+### Active Change
 
-| Item                          | Status      | Description                                         |
-| :---------------------------- | :---------- | :-------------------------------------------------- |
-| **Phase 37: Web1 Dashboard**  | ✅ Complete | Pure shadcn/ui dashboard with 26 components         |
-| **Phase 38: Advanced Charts** | ✅ Complete | 10 new charts for analytics visualization           |
-| **Phase 39: Web Migration**   | ✅ Complete | Deleted old web, renamed web1 → web                 |
-| **Chart Type Definitions**    | ✅ Complete | 10 TypeScript interfaces for chart data             |
-| **Mock Data Generators**      | ✅ Complete | Realistic mock data for all chart types             |
-| **Chart Service Layer**       | ✅ Complete | Service with mock/API toggle                        |
-| **React Query Hooks**         | ✅ Complete | 10 custom hooks for fetching chart data             |
-| **Chart Components**          | ✅ Complete | Donut, Bar, Line, Radial chart components           |
-| **Analytics Tabbed Layout**   | ✅ Complete | 4 tabs: Overview, Performance, Distribution, Trends |
-| **Lint Fixes**                | ✅ Complete | Fixed React hooks rules, unused imports             |
+| Change Name              | Status               | Location                                   |
+| :----------------------- | :------------------- | :----------------------------------------- |
+| `full-stack-integration` | 📋 Planning Complete | `openspec/changes/full-stack-integration/` |
 
----
+### OpenSpec Artifacts Created (2026-02-04)
 
-## Key Changes Summary
+| Artifact        | File          | Description                              |
+| :-------------- | :------------ | :--------------------------------------- |
+| ✅ **proposal** | `proposal.md` | Why, what, impact analysis               |
+| ✅ **design**   | `design.md`   | Architecture and implementation approach |
+| ✅ **specs**    | `specs/*.md`  | 5 detailed specifications                |
+| ✅ **tasks**    | `tasks.md`    | 32 tasks, 158 subtasks                   |
 
-### New Charts Directory: `apps/web/src/components/charts/`
+### Implementation Phases
 
-10 new chart components using native shadcn/ui charts (Recharts).
-
-### Charts Structure
-
-```
-apps/web/src/components/charts/
-├── index.ts                              # Barrel exports
-├── verification-distribution-chart.tsx   # Donut: Verified/Restricted/Error
-├── cache-breakdown-chart.tsx             # Donut: Cache hits vs API calls
-├── groups-status-chart.tsx               # Donut: Active vs Inactive groups
-├── api-calls-chart.tsx                   # Donut: API method distribution
-├── hourly-activity-chart.tsx             # Bar: 24-hour activity
-├── latency-distribution-chart.tsx        # Bar: Latency buckets
-├── top-groups-chart.tsx                  # Bar: Top groups by verifications
-├── cache-hit-rate-trend-chart.tsx        # Line: Cache hit rate over time
-├── latency-trend-chart.tsx               # Line: Avg/P95 latency trend
-└── bot-health-chart.tsx                  # Radial: Bot health score gauge
-```
-
-### Data Layer Files
-
-```
-apps/web/src/lib/
-├── services/
-│   ├── types.ts              # +10 chart interfaces
-│   ├── charts.service.ts     # NEW: Chart service layer
-│   └── index.ts              # +chartsService export
-├── hooks/
-│   ├── use-charts.ts         # NEW: 10 React Query hooks
-│   └── index.ts              # +chart hooks export
-├── mock/
-│   ├── charts.mock.ts        # NEW: Mock data generators
-│   └── index.ts              # +mock generators export
-├── api/
-│   └── endpoints.ts          # +charts.* endpoints
-└── query-keys.ts             # +charts.* keys
-```
-
-### Analytics Page: 4-Tab Layout
-
-| Tab          | Charts Displayed                                  |
-| :----------- | :------------------------------------------------ |
-| Overview     | Overview Cards, Verification Trends, User Growth  |
-| Performance  | Bot Health, Latency Trend, Latency Distribution   |
-| Distribution | Verification, Cache, Groups Status, API Calls     |
-| Trends       | Cache Hit Rate Trend, Hourly Activity, Top Groups |
-
-### Component Structure (Existing)
-
-```
-apps/web/src/components/
-├── ui/                      # 26 shadcn components
-├── dashboard/               # Dashboard-specific
-│   ├── stat-cards.tsx
-│   ├── verification-chart.tsx
-│   ├── activity-feed.tsx
-│   └── index.ts
-├── groups/                  # Groups page
-│   ├── groups-columns.tsx
-│   ├── groups-data-table.tsx
-│   ├── groups-page-content.tsx
-│   └── index.ts
-├── channels/                # Channels page
-│   ├── channels-columns.tsx
-│   ├── channels-data-table.tsx
-│   ├── channels-page-content.tsx
-│   └── index.ts
-├── analytics/               # Analytics page
-│   ├── overview-cards.tsx
-│   ├── verification-trends-chart.tsx
-│   ├── user-growth-chart.tsx
-│   ├── analytics-page-content.tsx
-│   └── index.ts
-├── settings/                # Settings page
-│   ├── appearance-card.tsx
-│   ├── account-info-card.tsx
-│   ├── settings-page-content.tsx
-│   └── index.ts
-├── login-form.tsx           # Login form component
-├── app-sidebar.tsx          # Main sidebar (sidebar-07)
-├── nav-main.tsx             # Navigation items
-├── nav-user.tsx             # User dropdown
-├── brand-logo.tsx           # Nezuko branding
-├── theme-toggle.tsx         # Light/Dark/System
-└── site-header.tsx          # Header with breadcrumbs
-```
-
-### App Routes
-
-```
-apps/web/src/app/
-├── layout.tsx               # Root layout with providers
-├── page.tsx                 # Redirects to /dashboard
-├── not-found.tsx            # Custom 404 page
-├── login/
-│   └── page.tsx             # Login page
-└── dashboard/
-    ├── layout.tsx           # Dashboard layout (sidebar + header)
-    ├── page.tsx             # Main dashboard
-    ├── analytics/page.tsx
-    ├── channels/page.tsx
-    ├── groups/page.tsx
-    └── settings/page.tsx
-```
-
-### Data Architecture
-
-```
-Component → Hook → Service → (Mock or API) → Response
-```
-
-- **Mock mode**: `NEXT_PUBLIC_USE_MOCK=true` in `.env.local`
-- **API mode**: Set `NEXT_PUBLIC_USE_MOCK=false` and configure `NEXT_PUBLIC_API_URL`
-
-### Key Fixes Applied
-
-1. **Breadcrumb Hydration**: `BreadcrumbSeparator` moved to sibling position
-2. **React Compiler**: Added `"use no memo"` directive for TanStack Table components
-3. **ESLint**: Inline disable for `react-hooks/incompatible-library` rule
+| Phase | Description                | Status     | Est. Time |
+| :---- | :------------------------- | :--------- | :-------- |
+| **1** | Database Schema Updates    | ⏳ Pending | 2-3h      |
+| **2** | Bot Analytics Enhancement  | ⏳ Pending | 4-6h      |
+| **3** | API Charts Implementation  | ⏳ Pending | 6-8h      |
+| **4** | Authentication Integration | ⏳ Pending | 3-4h      |
+| **5** | Web Connection & Testing   | ⏳ Pending | 2-3h      |
 
 ---
 
-## Build Verification
+## Problem Statement
+
+The platform has three well-developed components operating in isolation:
+
+1. **Web Dashboard** - Running on mock data (`NEXT_PUBLIC_USE_MOCK=true`)
+2. **API Backend** - Missing 10 chart endpoints required by dashboard
+3. **Telegram Bot** - Not logging all analytics data needed for charts
+
+---
+
+## Key Deliverables
+
+### New API Endpoints (10 Chart APIs)
 
 ```
-$ bun run lint
-$ eslint
-(no output = 0 errors, 0 warnings)
+GET /api/v1/charts/verification-distribution
+GET /api/v1/charts/cache-breakdown
+GET /api/v1/charts/groups-status
+GET /api/v1/charts/api-calls
+GET /api/v1/charts/hourly-activity
+GET /api/v1/charts/latency-distribution
+GET /api/v1/charts/top-groups
+GET /api/v1/charts/cache-hit-rate-trend
+GET /api/v1/charts/latency-trend
+GET /api/v1/charts/bot-health
+```
 
-$ bun run build
-✓ Compiled successfully in 4.2s
-✓ Generating static pages (10/10)
+### New Bot Features
 
-Routes:
-○ /
-○ /_not-found
-○ /dashboard
-○ /dashboard/analytics
-○ /dashboard/channels
-○ /dashboard/groups
-○ /dashboard/settings
-○ /login
+- **API Call Logging**: Track all Telegram API calls to database
+- **Member Sync Service**: Periodic sync of member/subscriber counts
+- **Uptime Tracking**: Record bot start time in Redis
+- **Error Categorization**: Add error_type to verification logs
+
+### Database Changes
+
+| Change         | Table                                                                   |
+| :------------- | :---------------------------------------------------------------------- |
+| **NEW TABLE**  | `api_call_log` (method, chat_id, user_id, success, latency, error_type) |
+| **ADD COLUMN** | `protected_groups.member_count`, `protected_groups.last_sync_at`        |
+| **ADD COLUMN** | `enforced_channels.subscriber_count`, `enforced_channels.last_sync_at`  |
+| **ADD COLUMN** | `verification_log.error_type`                                           |
+
+### Authentication
+
+- Web → API via Supabase JWT
+- API verifies JWT with Supabase secret
+- Auto-create admin user on first login
+
+---
+
+## Configuration to Change
+
+### apps/web/.env.local
+
+```bash
+NEXT_PUBLIC_USE_MOCK=false
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
+```
+
+### apps/api/.env
+
+```bash
+MOCK_AUTH=false
+SUPABASE_JWT_SECRET=xxx
 ```
 
 ---
 
-## Test Credentials
+## Files to Create
 
-| User  | Email            | Password  | Role        |
-| :---- | :--------------- | :-------- | :---------- |
-| Admin | admin@nezuko.bot | Admin@123 | super_admin |
+| App     | File                             | Purpose                 |
+| :------ | :------------------------------- | :---------------------- |
+| **Bot** | `database/api_call_logger.py`    | Async API call logging  |
+| **Bot** | `services/member_sync.py`        | Periodic count sync     |
+| **Bot** | `core/uptime.py`                 | Uptime tracking         |
+| **API** | `src/models/api_call_log.py`     | ApiCallLog model        |
+| **API** | `src/schemas/charts.py`          | Chart response schemas  |
+| **API** | `src/services/charts_service.py` | Chart query logic       |
+| **API** | `src/api/v1/endpoints/charts.py` | 10 chart endpoints      |
+| **Web** | `src/lib/supabase/client.ts`     | Browser Supabase client |
+| **Web** | `src/lib/supabase/server.ts`     | Server Supabase client  |
+
+---
+
+## Data Flow (Target State)
+
+```
+┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+│  Telegram    │      │   Supabase   │      │    Admin     │
+│  Users/Bots  │      │   PostgreSQL │      │   Browser    │
+└──────┬───────┘      └──────┬───────┘      └──────┬───────┘
+       │                     │                     │
+       ▼                     ▼                     ▼
+┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+│     BOT      │═════▶│   SHARED     │◀═════│     WEB      │
+│   (Python)   │      │   DATABASE   │      │  (Next.js)   │
+│              │      │              │      │              │
+│ • Verify     │      │ • groups     │      │ • Dashboard  │
+│ • Restrict   │      │ • channels   │      │ • Charts     │
+│ • Log APIs   │      │ • verify_log │      │ • Analytics  │
+│ • Sync Counts│      │ • api_calls  │      │              │
+└──────┬───────┘      └──────────────┘      └──────┬───────┘
+       │                     ▲                     │
+       └────────────▶│     API      │◀─────────────┘
+                     │  (FastAPI)   │
+                     │ • Auth       │
+                     │ • Charts ✨   │
+                     └──────────────┘
+```
 
 ---
 
 ## Commands Reference
 
 ```bash
-# Development
+# Start implementation
+/opsx-apply
+
+# View change status
+openspec status --change "full-stack-integration"
+
+# Run all services for testing
+cd apps/api && uvicorn src.main:app --reload --port 8080
 cd apps/web && bun dev
-
-# Lint check
-cd apps/web && bun run lint
-
-# Build verification
-cd apps/web && bun run build
-
-# Add shadcn component
-cd apps/web && bunx shadcn@latest add <component-name>
+python -m apps.bot.main
 ```
 
 ---
 
-_Last Updated: 2026-02-03 21:30 IST_
+## Previous Phase Summary
+
+### Phase 39: Web Migration (Complete)
+
+- Migrated from custom `apps/web` to pure shadcn/ui dashboard
+- 26 shadcn components, 10 chart components
+- Mock/API toggle via `NEXT_PUBLIC_USE_MOCK` flag
+- All charts using mock data (ready for real data)
+
+---
+
+_Last Updated: 2026-02-04 05:05 IST_

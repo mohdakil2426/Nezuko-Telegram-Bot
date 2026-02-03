@@ -1,8 +1,8 @@
 # Project Progress: Nezuko - Roadmap to v1.0.0
 
-## Current Status: Phase 39 COMPLETE - Web Migration
+## Current Status: Phase 40 IN PROGRESS - Full-Stack Integration
 
-**Overall Implementation Status**: **100%** (Pure shadcn/ui dashboard is now the main web app)
+**Overall Implementation Status**: **95%** (Core features complete, integration in progress)
 
 | Phase           | Description                                  | Status      |
 | :-------------- | :------------------------------------------- | :---------- |
@@ -42,6 +42,71 @@
 | **Phase 37**    | Web1 Pure shadcn Dashboard                   | ✅ Complete |
 | **Phase 38**    | Advanced Analytics Charts                    | ✅ Complete |
 | **Phase 39**    | Web Migration (web1 → web)                   | ✅ Complete |
+| **Phase 40**    | Full-Stack Integration (Web + API + Bot)     | 📋 Planning |
+
+---
+
+## 📋 Phase 40: Full-Stack Integration (2026-02-04) - IN PROGRESS
+
+### Overview
+
+Connect all three components (Web, API, Bot) with real data flow to make the dashboard display live bot verification data instead of mock data.
+
+### OpenSpec Change: `full-stack-integration`
+
+**Location**: `openspec/changes/full-stack-integration/`
+
+| Artifact                    | Status     | Description                              |
+| :-------------------------- | :--------- | :--------------------------------------- |
+| `proposal.md`               | ✅ Created | Why, what, impact analysis               |
+| `design.md`                 | ✅ Created | Architecture and implementation approach |
+| `specs/api-charts.md`       | ✅ Created | 10 API chart endpoint specifications     |
+| `specs/bot-analytics.md`    | ✅ Created | Bot API call logging, member sync        |
+| `specs/database-schema.md`  | ✅ Created | New tables, columns, migration           |
+| `specs/auth-integration.md` | ✅ Created | Supabase JWT authentication              |
+| `specs/web-connection.md`   | ✅ Created | Web configuration for real API           |
+| `tasks.md`                  | ✅ Created | 32 tasks, 158 subtasks in 5 phases       |
+
+### Implementation Phases
+
+| Phase | Focus                      | Tasks | Est. Time | Status     |
+| :---- | :------------------------- | :---- | :-------- | :--------- |
+| 1     | Database Schema Updates    | 6     | 2-3h      | ⏳ Pending |
+| 2     | Bot Analytics Enhancement  | 7     | 4-6h      | ⏳ Pending |
+| 3     | API Charts Implementation  | 5     | 6-8h      | ⏳ Pending |
+| 4     | Authentication Integration | 8     | 3-4h      | ⏳ Pending |
+| 5     | Web Connection & Testing   | 6     | 2-3h      | ⏳ Pending |
+
+### Key Deliverables
+
+**10 New API Endpoints**:
+
+- `/api/v1/charts/verification-distribution`
+- `/api/v1/charts/cache-breakdown`
+- `/api/v1/charts/groups-status`
+- `/api/v1/charts/api-calls`
+- `/api/v1/charts/hourly-activity`
+- `/api/v1/charts/latency-distribution`
+- `/api/v1/charts/top-groups`
+- `/api/v1/charts/cache-hit-rate-trend`
+- `/api/v1/charts/latency-trend`
+- `/api/v1/charts/bot-health`
+
+**New Bot Features**:
+
+- API call logging to database
+- Member/subscriber count sync (every 15 minutes)
+- Bot uptime tracking in Redis
+- Error categorization in verification logs
+
+**Database Changes**:
+
+- New `api_call_log` table
+- New columns: `member_count`, `subscriber_count`, `last_sync_at`, `error_type`
+
+### Next Steps
+
+Run `/opsx-apply` to start implementing the tasks in sequence.
 
 ---
 
@@ -403,4 +468,4 @@ Routes:
 
 ---
 
-_Last Updated: 2026-02-03 21:30 IST_
+_Last Updated: 2026-02-04 05:05 IST_
