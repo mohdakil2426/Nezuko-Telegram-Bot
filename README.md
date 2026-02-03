@@ -1,7 +1,7 @@
 <div align="center">
 
 <!-- HERO SECTION -->
-<img src="https://raw.githubusercontent.com/mohdakil2426/Nezuko-Telegram-Bot/main/docs/assets/nezuko-banner.svg" alt="Nezuko Banner" width="800"/>
+<img src="https://raw.githubusercontent.com/mohdakil2426/Nezuko-Telegram-Bot/main/docs/assets/nezuko-banner.jpg" alt="Nezuko Banner" width="800"/>
 
 <br/>
 
@@ -9,23 +9,26 @@
 
 ### The Ultimate All-In-One Telegram Bot Platform
 
-*Production-ready, multi-tenant, async-first architecture designed for scale*
+_Production-ready, multi-tenant, async-first architecture designed for scale_
 
 <br/>
 
 <!-- BADGES - Row 1: Version & Status -->
+
 [![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square&labelColor=000000)](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/releases)
 [![Python](https://img.shields.io/badge/python-3.13+-3776AB?style=flat-square&logo=python&logoColor=white&labelColor=000000)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square&labelColor=000000)](LICENSE)
 [![Telegram Bot API](https://img.shields.io/badge/Bot_API-v22.5+-26A5E4?style=flat-square&logo=telegram&logoColor=white&labelColor=000000)](https://python-telegram-bot.org/)
 
 <!-- BADGES - Row 2: Quality -->
+
 [![Pylint](https://img.shields.io/badge/pylint-10.00/10-brightgreen?style=flat-square&labelColor=000000)](https://pylint.org/)
 [![Type Check](https://img.shields.io/badge/pyrefly-passing-brightgreen?style=flat-square&labelColor=000000)](https://pyrefly.org/)
 [![Tests](https://img.shields.io/badge/tests-37_passing-brightgreen?style=flat-square&labelColor=000000)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-85%25-yellowgreen?style=flat-square&labelColor=000000)](tests/)
 
 <!-- BADGES - Row 3: Tech Stack -->
+
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-4169E1?style=flat-square&logo=postgresql&logoColor=white&labelColor=000000)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7+-DC382D?style=flat-square&logo=redis&logoColor=white&labelColor=000000)](https://redis.io/)
 [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00?style=flat-square&labelColor=000000)](https://www.sqlalchemy.org/)
@@ -34,6 +37,7 @@
 <br/>
 
 <!-- QUICK LINKS -->
+
 [**Documentation**](docs/README.md) | [**Architecture**](docs/architecture/README.md) | [**Contributing**](CONTRIBUTING.md) | [**Report Bug**](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/issues)
 
 <br/>
@@ -147,12 +151,12 @@ Monitor everything in production.
 
 <div align="center">
 
-| Metric | Target | Achieved |
-|:------:|:------:|:--------:|
-| Verification Latency (p95) | <100ms | **~50ms** |
-| Cache Hit Rate | >70% | **~80%** |
-| Database Query (p95) | <50ms | **~10ms** |
-| Throughput | 1000 verif/min | **1200/min** |
+|           Metric           |     Target     |   Achieved   |
+| :------------------------: | :------------: | :----------: |
+| Verification Latency (p95) |     <100ms     |  **~50ms**   |
+|       Cache Hit Rate       |      >70%      |   **~80%**   |
+|    Database Query (p95)    |     <50ms      |  **~10ms**   |
+|         Throughput         | 1000 verif/min | **1200/min** |
 
 </div>
 
@@ -233,7 +237,7 @@ python -m apps.bot.main
 
 ```
 1. Add Nezuko to your GROUP as Administrator
-2. Add Nezuko to your CHANNEL as Administrator  
+2. Add Nezuko to your CHANNEL as Administrator
 3. In the group, run: /protect @YourChannel
 4. Done! Members must now join the channel to chat.
 ```
@@ -247,6 +251,7 @@ python -m apps.bot.main
 Each app has its own environment file following Turborepo best practices:
 
 #### 1. **Web Dashboard**: `apps/web/.env.local`
+
 ```bash
 cd apps/web
 cp .env.example .env.local
@@ -254,11 +259,13 @@ cp .env.example .env.local
 ```
 
 Required variables:
+
 - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon/public key
 - `NEXT_PUBLIC_API_URL` - API backend URL (default: http://localhost:8080/api/v1)
 
 #### 2. **API Backend**: `apps/api/.env`
+
 ```bash
 cd apps/api
 cp .env.example .env
@@ -266,12 +273,14 @@ cp .env.example .env
 ```
 
 Required variables:
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `SUPABASE_URL` - Your Supabase project URL
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (for admin operations)
 - `REDIS_URL` - Redis connection string
 
 #### 3. **Telegram Bot**: `apps/bot/.env`
+
 ```bash
 cd apps/bot
 cp .env.example .env
@@ -279,6 +288,7 @@ cp .env.example .env
 ```
 
 Required variables:
+
 - `BOT_TOKEN` - Get this from @BotFather on Telegram
 - `DATABASE_URL` - PostgreSQL connection string (use `postgresql+asyncpg://` driver)
 - `REDIS_URL` - Redis for caching (optional, graceful degradation if unavailable)
@@ -288,17 +298,17 @@ Required variables:
 <details>
 <summary><b>All Environment Variables</b></summary>
 
-| Variable | Required | Default | Description |
-|----------|:--------:|---------|-------------|
-| `BOT_TOKEN` | Yes | - | Telegram Bot Token from @BotFather |
-| `ENVIRONMENT` | No | `development` | `development` or `production` |
-| `DATABASE_URL` | No | SQLite | PostgreSQL connection string |
-| `REDIS_URL` | No | - | Redis connection string |
-| `WEBHOOK_URL` | No | - | Public URL for webhook mode |
-| `WEBHOOK_SECRET` | No | - | Secret token for webhook security |
-| `PORT` | No | `8000` | HTTP server port |
-| `SENTRY_DSN` | No | - | Sentry error tracking DSN |
-| `LOG_LEVEL` | No | `INFO` | Logging verbosity |
+| Variable         | Required | Default       | Description                        |
+| ---------------- | :------: | ------------- | ---------------------------------- |
+| `BOT_TOKEN`      |   Yes    | -             | Telegram Bot Token from @BotFather |
+| `ENVIRONMENT`    |    No    | `development` | `development` or `production`      |
+| `DATABASE_URL`   |    No    | SQLite        | PostgreSQL connection string       |
+| `REDIS_URL`      |    No    | -             | Redis connection string            |
+| `WEBHOOK_URL`    |    No    | -             | Public URL for webhook mode        |
+| `WEBHOOK_SECRET` |    No    | -             | Secret token for webhook security  |
+| `PORT`           |    No    | `8000`        | HTTP server port                   |
+| `SENTRY_DSN`     |    No    | -             | Sentry error tracking DSN          |
+| `LOG_LEVEL`      |    No    | `INFO`        | Logging verbosity                  |
 
 </details>
 
@@ -306,14 +316,14 @@ Required variables:
 
 ## Commands
 
-| Command | Context | Permission | Description |
-|---------|---------|------------|-------------|
-| `/start` | Private | Anyone | Welcome message with setup guide |
-| `/help` | Any | Anyone | Command reference and troubleshooting |
-| `/protect @Channel` | Group | Admin | Enable channel enforcement |
-| `/status` | Group | Anyone | View protection status |
-| `/unprotect` | Group | Admin | Disable protection |
-| `/settings` | Group | Admin | View/modify configuration |
+| Command             | Context | Permission | Description                           |
+| ------------------- | ------- | ---------- | ------------------------------------- |
+| `/start`            | Private | Anyone     | Welcome message with setup guide      |
+| `/help`             | Any     | Anyone     | Command reference and troubleshooting |
+| `/protect @Channel` | Group   | Admin      | Enable channel enforcement            |
+| `/status`           | Group   | Anyone     | View protection status                |
+| `/unprotect`        | Group   | Admin      | Disable protection                    |
+| `/settings`         | Group   | Admin      | View/modify configuration             |
 
 ---
 
@@ -373,17 +383,17 @@ nezuko-monorepo/
 
 Comprehensive documentation is available in the [`docs/`](docs/README.md) directory:
 
-| Guide | Description |
-|-------|-------------|
-| [**Getting Started**](docs/getting-started/README.md) | Installation, setup, and first run |
-| [**Architecture**](docs/architecture/README.md) | System design, data flow, diagrams |
-| [**Tech Stack**](docs/architecture/tech-stack.md) | Complete technology reference |
-| [**API Reference**](docs/api/README.md) | REST endpoints, WebSocket, authentication |
-| [**Bot Reference**](docs/bot/README.md) | Commands, handlers, verification flow |
-| [**Web Dashboard**](docs/web/README.md) | Admin panel, components, state management |
-| [**Database**](docs/database/README.md) | Schema, models, migrations |
-| [**Deployment**](docs/deployment/README.md) | Docker, CI/CD, production setup |
-| [**Contributing**](docs/contributing/README.md) | Development workflow, code style |
+| Guide                                                 | Description                               |
+| ----------------------------------------------------- | ----------------------------------------- |
+| [**Getting Started**](docs/getting-started/README.md) | Installation, setup, and first run        |
+| [**Architecture**](docs/architecture/README.md)       | System design, data flow, diagrams        |
+| [**Tech Stack**](docs/architecture/tech-stack.md)     | Complete technology reference             |
+| [**API Reference**](docs/api/README.md)               | REST endpoints, WebSocket, authentication |
+| [**Bot Reference**](docs/bot/README.md)               | Commands, handlers, verification flow     |
+| [**Web Dashboard**](docs/web/README.md)               | Admin panel, components, state management |
+| [**Database**](docs/database/README.md)               | Schema, models, migrations                |
+| [**Deployment**](docs/deployment/README.md)           | Docker, CI/CD, production setup           |
+| [**Contributing**](docs/contributing/README.md)       | Development workflow, code style          |
 
 ---
 
@@ -391,20 +401,20 @@ Comprehensive documentation is available in the [`docs/`](docs/README.md) direct
 
 <div align="center">
 
-| Category | Technology |
-|:--------:|:----------:|
-| **Language** | ![Python](https://img.shields.io/badge/Python-3.13+-3776AB?style=for-the-badge&logo=python&logoColor=white) |
+|   Category    |                                                                 Technology                                                                 |
+| :-----------: | :----------------------------------------------------------------------------------------------------------------------------------------: |
+| **Language**  |                ![Python](https://img.shields.io/badge/Python-3.13+-3776AB?style=for-the-badge&logo=python&logoColor=white)                 |
 | **Framework** | ![python-telegram-bot](https://img.shields.io/badge/python--telegram--bot-v22.5+-26A5E4?style=for-the-badge&logo=telegram&logoColor=white) |
-| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white) |
-| **ORM** | ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0_Async-D71F00?style=for-the-badge) |
-| **Cache** | ![Redis](https://img.shields.io/badge/Redis-7+-DC382D?style=for-the-badge&logo=redis&logoColor=white) |
-| **Metrics** | ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white) |
-| **Errors** | ![Sentry](https://img.shields.io/badge/Sentry-362D59?style=for-the-badge&logo=sentry&logoColor=white) |
-| **Logging** | ![structlog](https://img.shields.io/badge/structlog-JSON-000000?style=for-the-badge) |
+| **Database**  |           ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)            |
+|    **ORM**    |                        ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0_Async-D71F00?style=for-the-badge)                         |
+|   **Cache**   |                   ![Redis](https://img.shields.io/badge/Redis-7+-DC382D?style=for-the-badge&logo=redis&logoColor=white)                    |
+|  **Metrics**  |             ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white)              |
+|  **Errors**   |                   ![Sentry](https://img.shields.io/badge/Sentry-362D59?style=for-the-badge&logo=sentry&logoColor=white)                    |
+|  **Logging**  |                            ![structlog](https://img.shields.io/badge/structlog-JSON-000000?style=for-the-badge)                            |
 
 </div>
 
-*For complete technology details with versions, see [Tech Stack Documentation](docs/architecture/tech-stack.md).*
+_For complete technology details with versions, see [Tech Stack Documentation](docs/architecture/tech-stack.md)._
 
 ---
 
@@ -428,14 +438,14 @@ curl http://localhost:8000/metrics
 
 ### Key Metrics
 
-| Metric | Type | Description |
-|--------|------|-------------|
-| `bot_verifications_total{status}` | Counter | Verification outcomes (success/fail) |
-| `bot_verification_latency_seconds` | Histogram | End-to-end verification latency |
-| `bot_cache_hits_total` | Counter | Cache hit count |
-| `bot_cache_misses_total` | Counter | Cache miss count |
-| `bot_active_groups` | Gauge | Currently protected groups |
-| `bot_telegram_api_calls_total` | Counter | Telegram API call count |
+| Metric                             | Type      | Description                          |
+| ---------------------------------- | --------- | ------------------------------------ |
+| `bot_verifications_total{status}`  | Counter   | Verification outcomes (success/fail) |
+| `bot_verification_latency_seconds` | Histogram | End-to-end verification latency      |
+| `bot_cache_hits_total`             | Counter   | Cache hit count                      |
+| `bot_cache_misses_total`           | Counter   | Cache miss count                     |
+| `bot_active_groups`                | Gauge     | Currently protected groups           |
+| `bot_telegram_api_calls_total`     | Counter   | Telegram API call count              |
 
 ---
 
@@ -452,7 +462,7 @@ Nezuko is built to evolve. The modular architecture supports:
 - [ ] **Scheduled Messages** - Timed announcements and reminders
 - [ ] **Integration Plugins** - Connect to external services
 
-*Have a feature idea? [Open an issue](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/issues)!*
+_Have a feature idea? [Open an issue](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/issues)!_
 
 ---
 
@@ -586,6 +596,6 @@ Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 [![GitHub Stars](https://img.shields.io/github/stars/mohdakil2426/Nezuko-Telegram-Bot?style=social)](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/stargazers)
 
-*If you find Nezuko useful, consider giving it a star!*
+_If you find Nezuko useful, consider giving it a star!_
 
 </div>

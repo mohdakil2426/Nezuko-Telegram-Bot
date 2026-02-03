@@ -36,6 +36,7 @@ Nezuko is a production-ready, multi-tenant Telegram bot platform for automated c
 ### 🧪 Testing Rules
 
 1. **Test Location**: ALL tests go in `tests/` directory
+
    ```
    tests/
    ├── conftest.py       # Shared fixtures
@@ -77,11 +78,12 @@ Nezuko is a production-ready, multi-tenant Telegram bot platform for automated c
    - `ASYNC`: Proper async patterns
 
 3. **Type Hints Required**
+
    ```python
    # ✅ Correct
    async def get_user(user_id: int) -> User | None:
        ...
-   
+
    # ❌ Wrong - missing types
    async def get_user(user_id):
        ...
@@ -118,23 +120,25 @@ Nezuko is a production-ready, multi-tenant Telegram bot platform for automated c
 ### 🔄 Async Patterns (CRITICAL)
 
 1. **Always Use Async** for I/O operations
+
    ```python
    # ✅ Correct
    async with get_session() as session:
        result = await session.execute(query)
-   
+
    # ❌ Wrong - blocks event loop
    result = session.execute(query)
    ```
 
 2. **Store Task References** (RUF006)
+
    ```python
    # ✅ Correct
    _background_tasks: set[asyncio.Task] = set()
    task = asyncio.create_task(coro())
    _background_tasks.add(task)
    task.add_done_callback(_background_tasks.discard)
-   
+
    # ❌ Wrong - task may be garbage collected
    asyncio.create_task(coro())
    ```
@@ -254,13 +258,13 @@ alembic downgrade -1               # Rollback last migration
 
 ## Tech Stack Quick Reference
 
-| Layer | Technologies |
-|-------|-------------|
+| Layer    | Technologies                                             |
+| -------- | -------------------------------------------------------- |
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
-| Backend | FastAPI, Python 3.13, SQLAlchemy 2.0, Pydantic V2 |
-| Bot | python-telegram-bot v22.6, AsyncIO |
-| Database | PostgreSQL 15+ (Supabase), Redis 7+ |
-| Infra | Docker, Turborepo, Caddy |
+| Backend  | FastAPI, Python 3.13, SQLAlchemy 2.0, Pydantic V2        |
+| Bot      | python-telegram-bot v22.6, AsyncIO                       |
+| Database | PostgreSQL 15+ (Supabase), Redis 7+                      |
+| Infra    | Docker, Turborepo, Caddy                                 |
 
 ## Key Patterns
 
@@ -286,10 +290,10 @@ For complete tech stack with versions, see `docs/architecture/tech-stack.md`.
 
 The following MCP servers are available for use:
 
-| MCP Server | Purpose |
-|------------|---------|
-| **context7** | Query up-to-date documentation for any library/framework |
-| **supabase-mcp-server** | Database operations, migrations, edge functions |
+| MCP Server              | Purpose                                                  |
+| ----------------------- | -------------------------------------------------------- |
+| **context7**            | Query up-to-date documentation for any library/framework |
+| **supabase-mcp-server** | Database operations, migrations, edge functions          |
 
 ### Usage Examples
 

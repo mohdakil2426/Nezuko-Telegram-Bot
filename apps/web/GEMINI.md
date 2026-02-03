@@ -1,4 +1,4 @@
-# Web1 Dashboard Context (Pure shadcn/ui)
+# Web Dashboard Context (Pure shadcn/ui)
 
 ## Overview
 
@@ -248,16 +248,6 @@ The Analytics page uses a 4-tab layout:
 | Performance  | Bot Health Gauge, Latency Trend, Latency Distribution    |
 | Distribution | Verification, Cache, Groups Status, API Calls (Donuts)   |
 | Trends       | Cache Hit Rate Trend, Hourly Activity, Top Groups (Bars) |
-
-## Differences from apps/web
-
-| Feature    | apps/web                                  | apps/web1              |
-| ---------- | ----------------------------------------- | ---------------------- |
-| UI Style   | Premium custom (TiltCard, MagneticButton) | 100% shadcn/ui         |
-| Animations | Framer Motion (~65%)                      | None (standard shadcn) |
-| Auth       | Supabase SSR                              | Mock-first (no auth)   |
-| Sidebar    | Custom with effects                       | shadcn sidebar-07      |
-| Data Layer | dataService abstraction                   | Service + Mock pattern |
 
 ## Test Credentials
 

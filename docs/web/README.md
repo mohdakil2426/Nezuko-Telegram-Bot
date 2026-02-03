@@ -2,7 +2,7 @@
 
 > **Complete documentation for the Nezuko Admin Dashboard**
 
-The Nezuko Admin Dashboard is a modern web application built with Next.js 16, providing a comprehensive interface for managing protected groups, monitoring bot activity, and analyzing verification metrics.
+The Nezuko Admin Dashboard is a modern web application built with Next.js 16 and pure shadcn/ui components, providing a comprehensive interface for managing protected groups, monitoring bot activity, and analyzing verification metrics.
 
 ---
 
@@ -12,9 +12,9 @@ The Nezuko Admin Dashboard is a modern web application built with Next.js 16, pr
 2. [Pages & Routes](#pages--routes)
 3. [Components](#components)
 4. [State Management](#state-management)
-5. [Authentication](#authentication)
-6. [API Integration](#api-integration)
-7. [Styling](#styling)
+5. [API Integration](#api-integration)
+6. [Styling](#styling)
+7. [Development](#development)
 
 ---
 
@@ -22,27 +22,33 @@ The Nezuko Admin Dashboard is a modern web application built with Next.js 16, pr
 
 ### Tech Stack
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Next.js** | 16.1.4 | React framework (App Router) |
-| **React** | 19.2.3 | UI library |
-| **TypeScript** | 5.9.3 | Type safety |
-| **Tailwind CSS** | 4.1.18 | Styling |
-| **shadcn/ui** | Latest | UI components |
-| **TanStack Query** | 5.90.20 | Server state |
-| **Zustand** | 5.0.10 | Client state |
-| **Supabase** | 2.93.1 | Authentication |
+| Technology         | Version | Purpose                      |
+| ------------------ | ------- | ---------------------------- |
+| **Next.js**        | 16.1.6  | React framework (App Router) |
+| **React**          | 19.2.3  | UI library                   |
+| **TypeScript**     | 5.8+    | Type safety                  |
+| **Tailwind CSS**   | 4.1.x   | Styling                      |
+| **shadcn/ui**      | Latest  | UI components (100%)         |
+| **TanStack Query** | 5.90+   | Server state                 |
+| **TanStack Table** | 8.21+   | Data tables                  |
+| **Recharts**       | 2.15+   | Charts (via shadcn)          |
 
 ### Features
 
-| Feature | Description |
-|---------|-------------|
-| **Dashboard** | Overview with key metrics and activity |
-| **Groups Management** | CRUD operations for protected groups |
-| **Channels Management** | CRUD operations for enforced channels |
-| **Real-time Logs** | Live log streaming via WebSocket |
-| **Database Browser** | Explore and query database tables |
-| **Analytics** | Charts and statistics |
+| Feature                 | Description                                                            |
+| ----------------------- | ---------------------------------------------------------------------- |
+| **Dashboard**           | Overview with key metrics and activity feed                            |
+| **Groups Management**   | Data table with sorting, filtering, pagination                         |
+| **Channels Management** | Data table with channel-specific columns                               |
+| **Analytics**           | 10+ charts across 4 tabs (Overview, Performance, Distribution, Trends) |
+| **Settings**            | Theme toggle (Light/Dark/System), account info                         |
+
+### Key Characteristics
+
+- **100% shadcn/ui** - No custom premium UI, uses official shadcn patterns
+- **Mock-first development** - Toggle with `NEXT_PUBLIC_USE_MOCK=true`
+- **sidebar-07 pattern** - Collapsible icon sidebar
+- **TanStack Query v5** - `isPending` pattern, centralized query keys
 
 ---
 
@@ -52,58 +58,37 @@ The Nezuko Admin Dashboard is a modern web application built with Next.js 16, pr
 
 ```
 apps/web/src/app/
-├── (auth)/                     # Auth route group (public)
-│   └── login/
-│       └── page.tsx            # Login page
+├── layout.tsx               # Root layout with providers
+├── page.tsx                 # Redirects to /dashboard
+├── not-found.tsx            # Custom 404 page
 │
-├── dashboard/                   # Dashboard route group (protected)
-│   ├── layout.tsx              # Dashboard layout with sidebar
-│   ├── page.tsx                # Main dashboard
-│   │
-│   ├── groups/
-│   │   ├── page.tsx            # Groups list
-│   │   └── [id]/
-│   │       └── page.tsx        # Group detail
-│   │
-│   ├── channels/
-│   │   ├── page.tsx            # Channels list
-│   │   └── [id]/
-│   │       └── page.tsx        # Channel detail
-│   │
-│   ├── analytics/
-│   │   └── page.tsx            # Analytics dashboard
-│   │
-│   ├── logs/
-│   │   └── page.tsx            # Real-time logs
-│   │
-│   ├── database/
-│   │   └── page.tsx            # Database browser
-│   │
-│   └── config/
-│       └── page.tsx            # Configuration
+├── login/
+│   └── page.tsx             # Login page (mock auth)
 │
-├── layout.tsx                   # Root layout
-├── globals.css                  # Tailwind styles
-├── loading.tsx                  # Global loading
-├── error.tsx                    # Error boundary
-└── not-found.tsx               # 404 page
+└── dashboard/
+    ├── layout.tsx           # Dashboard layout (sidebar + header)
+    ├── page.tsx             # Main dashboard
+    ├── analytics/
+    │   └── page.tsx         # Analytics with 4 tabs
+    ├── channels/
+    │   └── page.tsx         # Channels data table
+    ├── groups/
+    │   └── page.tsx         # Groups data table
+    └── settings/
+        └── page.tsx         # Theme and account settings
 ```
 
 ### Route Details
 
-| Route | Description | Access |
-|-------|-------------|--------|
-| `/` | Redirect to dashboard | Public |
-| `/login` | Authentication page | Public |
-| `/dashboard` | Main dashboard with stats | Protected |
-| `/dashboard/groups` | List all protected groups | Protected |
-| `/dashboard/groups/[id]` | Single group details | Protected |
-| `/dashboard/channels` | List all channels | Protected |
-| `/dashboard/channels/[id]` | Single channel details | Protected |
-| `/dashboard/analytics` | Charts and metrics | Protected |
-| `/dashboard/logs` | Real-time log viewer | Protected |
-| `/dashboard/database` | Database browser | Protected |
-| `/dashboard/config` | Configuration settings | Protected |
+| Route                  | Description               | Access    |
+| ---------------------- | ------------------------- | --------- |
+| `/`                    | Redirect to dashboard     | Public    |
+| `/login`               | Authentication page       | Public    |
+| `/dashboard`           | Main dashboard with stats | Protected |
+| `/dashboard/groups`    | Groups data table         | Protected |
+| `/dashboard/channels`  | Channels data table       | Protected |
+| `/dashboard/analytics` | Charts and metrics        | Protected |
+| `/dashboard/settings`  | Theme and preferences     | Protected |
 
 ---
 
@@ -113,93 +98,57 @@ apps/web/src/app/
 
 ```
 apps/web/src/components/
-├── ui/                          # shadcn/ui primitives
+├── ui/                      # 26 shadcn/ui primitives
 │   ├── button.tsx
 │   ├── card.tsx
-│   ├── dialog.tsx
-│   ├── dropdown-menu.tsx
-│   ├── input.tsx
+│   ├── chart.tsx
+│   ├── sidebar.tsx
 │   ├── table.tsx
 │   └── ...
 │
-├── layout/                      # Layout components
-│   ├── sidebar.tsx
-│   ├── header.tsx
-│   ├── nav-item.tsx
-│   └── user-menu.tsx
-│
-├── dashboard/                   # Dashboard components
-│   ├── stats-card.tsx
+├── dashboard/               # Dashboard page components
+│   ├── stat-cards.tsx
+│   ├── verification-chart.tsx
 │   ├── activity-feed.tsx
-│   └── quick-actions.tsx
+│   └── index.ts
 │
-├── groups/                      # Groups components
-│   ├── groups-table.tsx
-│   ├── group-form.tsx
-│   ├── group-card.tsx
-│   └── group-stats.tsx
+├── groups/                  # Groups page components
+│   ├── groups-columns.tsx
+│   ├── groups-data-table.tsx
+│   ├── groups-page-content.tsx
+│   └── index.ts
 │
-├── channels/                    # Channels components
-│   ├── channels-table.tsx
-│   ├── channel-form.tsx
-│   └── channel-card.tsx
+├── channels/                # Channels page components
+│   ├── channels-columns.tsx
+│   ├── channels-data-table.tsx
+│   ├── channels-page-content.tsx
+│   └── index.ts
 │
-├── logs/                        # Logs components
-│   ├── log-viewer.tsx
-│   ├── log-entry.tsx
-│   ├── log-filters.tsx
-│   └── log-level-badge.tsx
+├── analytics/               # Analytics page components
+│   ├── overview-cards.tsx
+│   ├── verification-trends-chart.tsx
+│   ├── user-growth-chart.tsx
+│   ├── analytics-page-content.tsx
+│   └── index.ts
 │
-├── database/                    # Database components
-│   ├── table-browser.tsx
-│   ├── table-viewer.tsx
-│   └── query-editor.tsx
+├── charts/                  # Advanced chart components
+│   ├── verification-distribution-chart.tsx
+│   ├── cache-hit-rate-trend-chart.tsx
+│   ├── latency-trend-chart.tsx
+│   ├── top-groups-chart.tsx
+│   └── ... (10 charts total)
 │
-└── analytics/                   # Analytics components
-    ├── verification-chart.tsx
-    ├── group-growth-chart.tsx
-    └── stats-overview.tsx
-```
-
-### Key Components
-
-#### StatsCard
-
-Displays a metric with optional trend indicator:
-
-```tsx
-<StatsCard
-  title="Total Groups"
-  value={150}
-  change={+12}
-  changeType="increase"
-  icon={<Users />}
-/>
-```
-
-#### DataTable
-
-Generic table with sorting, filtering, pagination:
-
-```tsx
-<DataTable
-  columns={groupColumns}
-  data={groups}
-  searchColumn="title"
-  pageSize={20}
-/>
-```
-
-#### LogViewer
-
-Real-time log streaming component:
-
-```tsx
-<LogViewer
-  autoConnect={true}
-  levelFilter="INFO"
-  maxEntries={1000}
-/>
+├── settings/                # Settings page components
+│   ├── appearance-card.tsx
+│   ├── account-info-card.tsx
+│   └── settings-page-content.tsx
+│
+├── app-sidebar.tsx          # Main sidebar (sidebar-07)
+├── nav-main.tsx             # Navigation items
+├── nav-user.tsx             # User dropdown
+├── site-header.tsx          # Header with breadcrumbs
+├── theme-toggle.tsx         # Light/Dark/System toggle
+└── login-form.tsx           # Login form component
 ```
 
 ---
@@ -213,32 +162,10 @@ All API data fetching uses TanStack Query v5:
 ```typescript
 // apps/web/src/lib/hooks/use-groups.ts
 
-export function useGroups(params?: GroupsParams) {
+export function useGroups() {
   return useQuery({
-    queryKey: queryKeys.groups.list(params),
-    queryFn: () => groupsApi.getAll(params),
-    staleTime: 60_000,
-  });
-}
-
-export function useGroup(id: string) {
-  return useQuery({
-    queryKey: queryKeys.groups.detail(id),
-    queryFn: () => groupsApi.getById(id),
-    enabled: !!id,
-  });
-}
-
-export function useCreateGroup() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: groupsApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.groups.all 
-      });
-    },
+    queryKey: queryKeys.groups.all,
+    queryFn: groupsService.getAll,
   });
 }
 ```
@@ -251,210 +178,94 @@ Centralized query key factory:
 // apps/web/src/lib/query-keys.ts
 
 export const queryKeys = {
+  dashboard: {
+    all: ["dashboard"] as const,
+    stats: ["dashboard", "stats"] as const,
+    chart: (days: number) => ["dashboard", "chart", days] as const,
+    activity: (limit: number) => ["dashboard", "activity", limit] as const,
+  },
   groups: {
-    all: ['groups'] as const,
-    list: (params?: GroupsParams) => [...queryKeys.groups.all, params] as const,
-    detail: (id: string) => [...queryKeys.groups.all, id] as const,
+    all: ["groups"] as const,
+    list: (params: GroupsParams) => ["groups", "list", params] as const,
   },
   channels: {
-    all: ['channels'] as const,
-    list: (params?: ChannelsParams) => [...queryKeys.channels.all, params] as const,
-    detail: (id: string) => [...queryKeys.channels.all, id] as const,
+    all: ["channels"] as const,
+    list: (params: ChannelsParams) => ["channels", "list", params] as const,
   },
-  dashboard: {
-    stats: ['dashboard', 'stats'] as const,
-    activity: ['dashboard', 'activity'] as const,
+  analytics: {
+    all: ["analytics"] as const,
+    overview: ["analytics", "overview"] as const,
+  },
+  charts: {
+    all: ["charts"] as const,
+    verificationDistribution: ["charts", "verificationDistribution"] as const,
+    // ... more chart keys
   },
 };
-```
-
-### Zustand (Client State)
-
-Local application state:
-
-```typescript
-// apps/web/src/stores/auth-store.ts
-
-interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  setUser: (user: User | null) => void;
-  logout: () => void;
-}
-
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  isAuthenticated: false,
-  setUser: (user) => set({ user, isAuthenticated: !!user }),
-  logout: () => set({ user: null, isAuthenticated: false }),
-}));
-```
-
----
-
-## Authentication
-
-### Supabase SSR
-
-Authentication uses Supabase with SSR cookie handling:
-
-```typescript
-// apps/web/src/lib/supabase/client.ts
-
-import { createBrowserClient } from '@supabase/ssr';
-
-export const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-```
-
-### Proxy Pattern (Next.js 16)
-
-Session management via `proxy.ts`:
-
-```typescript
-// apps/web/src/proxy.ts
-
-import { updateSession } from '@/lib/supabase/middleware';
-import { NextRequest } from 'next/server';
-
-export async function proxy(request: NextRequest) {
-  return await updateSession(request);
-}
-
-export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
-};
-```
-
-### Session Middleware
-
-```typescript
-// apps/web/src/lib/supabase/middleware.ts
-
-export async function updateSession(request: NextRequest) {
-  const supabase = createServerClient(URL, KEY, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value)
-        );
-      },
-    },
-  });
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  // Redirect unauthenticated users
-  if (!session && !isPublicRoute(request.url)) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  return NextResponse.next();
-}
-```
-
-### Login Flow
-
-```tsx
-// apps/web/src/app/(auth)/login/page.tsx
-
-async function handleLogin(email: string, password: string) {
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    toast.error(error.message);
-    return;
-  }
-
-  // Full page reload required for cookie refresh
-  window.location.href = '/dashboard';
-}
 ```
 
 ---
 
 ## API Integration
 
-### API Client
+### Service Layer Pattern
 
-Centralized API client with authentication:
+The dashboard uses a service abstraction that supports both mock and real API:
+
+```typescript
+// apps/web/src/lib/services/dashboard.service.ts
+
+import { getConfig } from "@/lib/api/config";
+import * as mockDashboard from "@/lib/mock/dashboard.mock";
+import { apiClient } from "@/lib/api/client";
+
+export const dashboardService = {
+  async getStats() {
+    if (getConfig().useMock) {
+      return mockDashboard.getDashboardStats();
+    }
+    return apiClient.get("/dashboard/stats");
+  },
+  // ... other methods
+};
+```
+
+### Mock/API Toggle
+
+```bash
+# apps/web/.env.local
+
+# Use mock data for development
+NEXT_PUBLIC_USE_MOCK=true
+
+# Connect to real API
+NEXT_PUBLIC_USE_MOCK=false
+NEXT_PUBLIC_API_URL=http://localhost:8080
+```
+
+### API Client (for real API integration)
 
 ```typescript
 // apps/web/src/lib/api/client.ts
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-async function getAuthHeaders(): Promise<HeadersInit> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
+export const apiClient = {
+  async get<T>(path: string): Promise<T> {
+    const response = await fetch(`${API_URL}${path}`, {
+      headers: {
+        "Content-Type": "application/json",
+        // Add auth headers when implementing real auth
+      },
+    });
 
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-}
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
 
-export async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    headers: await getAuthHeaders(),
-  });
-
-  if (!response.ok) {
-    throw new ApiError(response.status, await response.json());
-  }
-
-  return response.json();
-}
-
-export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    method: 'POST',
-    headers: await getAuthHeaders(),
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    throw new ApiError(response.status, await response.json());
-  }
-
-  return response.json();
-}
-```
-
-### API Services
-
-Domain-specific API functions:
-
-```typescript
-// apps/web/src/lib/api/groups.ts
-
-export const groupsApi = {
-  getAll: (params?: GroupsParams) => 
-    apiGet<PaginatedResponse<Group>>('/groups', params),
-    
-  getById: (id: string) => 
-    apiGet<Group>(`/groups/${id}`),
-    
-  create: (data: CreateGroup) => 
-    apiPost<Group>('/groups', data),
-    
-  update: (id: string, data: UpdateGroup) => 
-    apiPut<Group>(`/groups/${id}`, data),
-    
-  delete: (id: string) => 
-    apiDelete(`/groups/${id}`),
+    return response.json();
+  },
+  // ... post, put, delete methods
 };
 ```
 
@@ -470,74 +281,34 @@ Using the `@theme` inline pattern:
 /* apps/web/src/app/globals.css */
 
 @import "tailwindcss";
+@import "tw-animate-css";
 
-@theme {
-  /* Colors */
-  --color-primary-50: oklch(0.97 0.01 265);
-  --color-primary-500: oklch(0.55 0.25 265);
-  --color-primary-900: oklch(0.25 0.15 265);
+@custom-variant dark (&:is(.dark *));
 
-  /* Dark mode colors */
-  --color-background: oklch(0.98 0.01 265);
-  --color-foreground: oklch(0.15 0.02 265);
-
-  /* Typography */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui;
-
-  /* Spacing */
-  --spacing-sidebar: 280px;
-  --spacing-header: 64px;
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* ... more theme variables */
 }
-
-@layer base {
-  :root {
-    color-scheme: light;
-  }
-
-  .dark {
-    color-scheme: dark;
-    --color-background: oklch(0.12 0.02 265);
-    --color-foreground: oklch(0.95 0.01 265);
-  }
-}
-```
-
-### Component Styling
-
-Using shadcn/ui with Tailwind:
-
-```tsx
-// Example card component
-<Card className="p-6 hover:shadow-lg transition-shadow">
-  <CardHeader>
-    <CardTitle className="text-lg font-semibold">
-      {title}
-    </CardTitle>
-  </CardHeader>
-  <CardContent>
-    <p className="text-muted-foreground">{description}</p>
-  </CardContent>
-</Card>
 ```
 
 ### Dark Mode
 
-Automatic dark mode via CSS variables:
+Automatic dark mode via `next-themes`:
 
 ```tsx
 // Theme toggle
-import { useTheme } from 'next-themes';
+import { useTheme } from "next-themes";
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <Button
-      variant="ghost"
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-    >
-      {theme === 'dark' ? <Sun /> : <Moon />}
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuItem onClick={() => setTheme("light")}>Light</DropdownMenuItem>
+      <DropdownMenuItem onClick={() => setTheme("dark")}>Dark</DropdownMenuItem>
+      <DropdownMenuItem onClick={() => setTheme("system")}>System</DropdownMenuItem>
+    </DropdownMenu>
   );
 }
 ```
@@ -562,6 +333,9 @@ bun run type-check
 
 # Linting
 bun run lint
+
+# Build
+bun run build
 ```
 
 ### Environment Variables
@@ -569,20 +343,36 @@ bun run lint
 ```bash
 # apps/web/.env.local
 
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+# Required
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_USE_MOCK=true
+
+# Optional (for future Supabase auth)
+# NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 ```
 
-### Build
+### Adding shadcn Components
 
 ```bash
-# Production build
-bun run build
-
-# Preview production build
-bun run start
+cd apps/web
+bunx shadcn@latest add <component-name>
 ```
+
+---
+
+## Future: Real API Integration
+
+The dashboard is designed for easy transition from mock to real API:
+
+1. **Set environment variable**: `NEXT_PUBLIC_USE_MOCK=false`
+2. **Configure API URL**: `NEXT_PUBLIC_API_URL=http://localhost:8080`
+3. **Add authentication** (optional):
+   - Install Supabase: `bun add @supabase/ssr @supabase/supabase-js`
+   - Create auth client and middleware
+   - Add auth headers to API client
+
+The service layer abstraction means no component changes are needed - just configure the environment.
 
 ---
 
@@ -595,4 +385,4 @@ bun run start
 
 ---
 
-*See also: [Architecture](../architecture/README.md) | [API Reference](../api/README.md)*
+_See also: [Architecture](../architecture/README.md) | [API Reference](../api/README.md)_

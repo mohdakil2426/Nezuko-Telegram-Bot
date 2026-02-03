@@ -8,17 +8,17 @@ Welcome to the Nezuko documentation. This guide covers everything you need to ge
 
 ## 📖 Documentation
 
-| Section | Description |
-|---------|-------------|
-| [**Getting Started**](./getting-started/) | Quick setup guides for all components |
-| [**Architecture**](./architecture/) | System design, data flow, and component diagrams |
-| [**Tech Stack**](./architecture/tech-stack.md) | Complete technology reference |
-| [**API Reference**](./api/) | FastAPI endpoints, schemas, and authentication |
-| [**Bot Reference**](./bot/) | Telegram bot commands, handlers, and events |
-| [**Web Dashboard**](./web/) | Admin panel components, routing, and state |
-| [**Database**](./database/) | Schema, models, migrations, and queries |
-| [**Deployment**](./deployment/) | Docker, production setup, and CI/CD |
-| [**Contributing**](./contributing/) | Development workflow and coding standards |
+| Section                                        | Description                                      |
+| ---------------------------------------------- | ------------------------------------------------ |
+| [**Getting Started**](./getting-started/)      | Quick setup guides for all components            |
+| [**Architecture**](./architecture/)            | System design, data flow, and component diagrams |
+| [**Tech Stack**](./architecture/tech-stack.md) | Complete technology reference                    |
+| [**API Reference**](./api/)                    | FastAPI endpoints, schemas, and authentication   |
+| [**Bot Reference**](./bot/)                    | Telegram bot commands, handlers, and events      |
+| [**Web Dashboard**](./web/)                    | Admin panel components, routing, and state       |
+| [**Database**](./database/)                    | Schema, models, migrations, and queries          |
+| [**Deployment**](./deployment/)                | Docker, production setup, and CI/CD              |
+| [**Contributing**](./contributing/)            | Development workflow and coding standards        |
 
 ---
 
@@ -97,15 +97,14 @@ bun install
 
 ## 📂 Key Directories
 
-| Directory | Purpose |
-|-----------|---------|
-| `apps/api/` | FastAPI REST backend |
-| `apps/bot/` | Telegram bot application |
-| `apps/web/` | Next.js admin dashboard |
-| `requirements/` | Modular Python dependencies |
-| `storage/` | Runtime files (databases, logs, cache) |
-| `scripts/` | CLI utilities and automation |
-| `memory-bank/` | Project context for AI agents |
+| Directory       | Purpose                                |
+| --------------- | -------------------------------------- |
+| `apps/api/`     | FastAPI REST backend                   |
+| `apps/bot/`     | Telegram bot application               |
+| `apps/web/`     | Next.js admin dashboard                |
+| `requirements/` | Modular Python dependencies            |
+| `storage/`      | Runtime files (databases, logs, cache) |
+| `scripts/`      | CLI utilities and automation           |
 
 ---
 
@@ -120,13 +119,13 @@ bun install
 
 ## 📋 Version Information
 
-| Component | Version |
-|-----------|---------|
-| Bot Core | v1.0.0 |
-| API | v0.1.0 |
-| Web Dashboard | v0.1.0 |
-| Documentation | v1.0.0 |
+| Component     | Version |
+| ------------- | ------- |
+| Bot Core      | v1.0.0  |
+| API           | v0.1.0  |
+| Web Dashboard | v0.1.0  |
+| Documentation | v1.0.0  |
 
 ---
 
-*Last Updated: 2026-01-30*
+_Last Updated: 2026-01-30_
