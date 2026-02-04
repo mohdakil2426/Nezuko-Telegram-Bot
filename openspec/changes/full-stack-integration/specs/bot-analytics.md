@@ -74,7 +74,57 @@ except TelegramError as e:
 - FOR each protected group: call `getChatMemberCount`, update `member_count` column
 - FOR each enforced channel: call `getChatMemberCount`, update `subscriber_count` column
 - AND log each API call
-- AND handle rate limits gracefully (exponential backoff)
+- AND handle rate limits using PTB's built-in `AIORateLimiter`
+
+**Rate Limit Handling (Verified from python-telegram-bot v22 docs)**:
+
+> **Source**: [python-telegram-bot Wiki - Avoiding flood limits](https://github.com/python-telegram-bot/python-telegram-bot/wiki/Avoiding-flood-limits)
+
+PTB v20+ includes a built-in rate limiting mechanism via `AIORateLimiter`. When a bot exceeds Telegram's rate limits, it receives `RetryAfter` errors. The `AIORateLimiter` automatically handles retries with exponential backoff.
+
+```python
+# apps/bot/main.py - Application setup with rate limiter
+from telegram.ext import AIORateLimiter, ApplicationBuilder
+
+rate_limiter = AIORateLimiter(max_retries=5)
+
+application = (
+    ApplicationBuilder()
+    .token(settings.BOT_TOKEN)
+    .rate_limiter(rate_limiter)  # Handles RetryAfter automatically
+    .build()
+)
+```
+
+For the member sync, the rate limiter is automatically applied to all API calls. For additional safety with batch operations:
+
+```python
+# apps/bot/services/member_sync.py
+from telegram.error import RetryAfter
+import asyncio
+
+async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Sync member/subscriber counts from Telegram API with rate limit handling."""
+    async with get_session() as session:
+        groups = await get_all_protected_groups(session)
+        for group in groups:
+            try:
+                count = await context.bot.get_chat_member_count(group.group_id)
+                group.member_count = count
+                group.last_sync_at = datetime.now(UTC)
+                log_api_call_async("getChatMemberCount", chat_id=group.group_id, success=True)
+            except RetryAfter as e:
+                # Telegram rate limit - wait and skip this iteration
+                logger.warning("Rate limited, waiting %s seconds", e.retry_after)
+                await asyncio.sleep(e.retry_after + 1)
+                continue
+            except TelegramError as e:
+                log_api_call_async("getChatMemberCount", chat_id=group.group_id,
+                                  success=False, error_type=type(e).__name__)
+                continue
+
+        await session.commit()
+```
 
 **New Files**:
 

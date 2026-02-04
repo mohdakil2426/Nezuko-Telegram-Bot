@@ -12,6 +12,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -54,6 +55,9 @@ class ProtectedGroup(Base):
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     params: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
+    # Analytics columns for member sync
+    member_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_sync_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
@@ -84,6 +88,9 @@ class EnforcedChannel(Base):
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     username: Mapped[str | None] = mapped_column(String(255), nullable=True)
     invite_link: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Analytics columns for subscriber sync
+    subscriber_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_sync_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
@@ -127,3 +134,30 @@ class GroupChannelLink(Base):
 
     def __repr__(self) -> str:
         return f"<GroupChannelLink group_id={self.group_id} channel_id={self.channel_id}>"
+
+
+class ApiCallLog(Base):
+    """Log of all Telegram API calls for analytics.
+
+    Tracks API call performance, success rates, and error types
+    to power the dashboard analytics charts.
+    """
+
+    __tablename__ = "api_call_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    method: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    user_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    success: Mapped[bool] = mapped_column(Boolean, default=True)
+    latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    error_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC), index=True
+    )
+
+    # Composite index for time-based analytics queries
+    __table_args__ = (Index("idx_api_call_log_method_timestamp", "method", "timestamp"),)
+
+    def __repr__(self) -> str:
+        return f"<ApiCallLog id={self.id} method={self.method} success={self.success}>"

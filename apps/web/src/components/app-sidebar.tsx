@@ -58,7 +58,7 @@ const navItems = [
 const user = {
   name: "Bot Owner",
   email: "admin@nezuko.bot",
-  avatar: "/avatars/owner.jpg",
+  avatar: "", // Empty - uses AvatarFallback with initials
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

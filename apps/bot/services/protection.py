@@ -6,16 +6,19 @@ Handles user restriction/unmuting with proper error handling,
 retries, and logging.
 
 Integrated with Prometheus metrics for operational monitoring.
+Integrated with API call logging for analytics.
 """
 
 import asyncio
 import logging
+import time
 from typing import cast
 
 from telegram import ChatPermissions
 from telegram.error import RetryAfter, TelegramError
 from telegram.ext import ContextTypes
 
+from apps.bot.database.api_call_logger import log_api_call_async
 from apps.bot.utils.metrics import record_api_call, record_error, record_rate_limit_delay
 
 logger = logging.getLogger(__name__)
@@ -63,21 +66,43 @@ async def restrict_user(
     global _mute_count, _error_count
 
     permissions = ChatPermissions(can_send_messages=False)
+    chat_id_int = int(chat_id) if isinstance(chat_id, str) else chat_id
 
     for attempt in range(1, MAX_RETRIES + 1):
+        start_time = time.perf_counter()
         try:
             record_api_call("restrictChatMember")
             await context.bot.restrict_chat_member(
                 chat_id=chat_id, user_id=user_id, permissions=permissions
             )
+            latency_ms = int((time.perf_counter() - start_time) * 1000)
+
+            # Log successful API call to database
+            log_api_call_async(
+                method="restrictChatMember",
+                chat_id=chat_id_int,
+                user_id=user_id,
+                success=True,
+                latency_ms=latency_ms,
+            )
+
             _mute_count += 1
             logger.info("Muted user %s in chat %s", user_id, chat_id)
             return True
 
         except RetryAfter as e:
+            latency_ms = int((time.perf_counter() - start_time) * 1000)
             # Telegram rate limit - wait and retry
             wait_time = e.retry_after
             record_rate_limit_delay()
+            log_api_call_async(
+                method="restrictChatMember",
+                chat_id=chat_id_int,
+                user_id=user_id,
+                success=False,
+                latency_ms=latency_ms,
+                error_type="RetryAfter",
+            )
             logger.warning(
                 "Rate limit hit when muting user %s. Waiting %ss (attempt %d/%d)",
                 user_id,
@@ -93,6 +118,16 @@ async def restrict_user(
                 return False
 
         except TelegramError as e:
+            latency_ms = int((time.perf_counter() - start_time) * 1000)
+            error_type = type(e).__name__
+            log_api_call_async(
+                method="restrictChatMember",
+                chat_id=chat_id_int,
+                user_id=user_id,
+                success=False,
+                latency_ms=latency_ms,
+                error_type=error_type,
+            )
             logger.error(
                 "Telegram error muting user %s in %s: %s (attempt %d/%d)",
                 user_id,
@@ -129,19 +164,42 @@ async def unmute_user(chat_id: int | str, user_id: int, context: ContextTypes.DE
     """
     global _unmute_count, _error_count
 
+    chat_id_int = int(chat_id) if isinstance(chat_id, str) else chat_id
+
     for attempt in range(1, MAX_RETRIES + 1):
+        start_time = time.perf_counter()
         try:
             record_api_call("restrictChatMember")
             await context.bot.restrict_chat_member(
                 chat_id=chat_id, user_id=user_id, permissions=UNMUTE_PERMISSIONS
             )
+            latency_ms = int((time.perf_counter() - start_time) * 1000)
+
+            # Log successful API call to database (unmute is also restrictChatMember)
+            log_api_call_async(
+                method="restrictChatMember",
+                chat_id=chat_id_int,
+                user_id=user_id,
+                success=True,
+                latency_ms=latency_ms,
+            )
+
             _unmute_count += 1
             logger.info("Unmuted user %s in chat %s", user_id, chat_id)
             return True
 
         except RetryAfter as e:
+            latency_ms = int((time.perf_counter() - start_time) * 1000)
             wait_time = e.retry_after
             record_rate_limit_delay()
+            log_api_call_async(
+                method="restrictChatMember",
+                chat_id=chat_id_int,
+                user_id=user_id,
+                success=False,
+                latency_ms=latency_ms,
+                error_type="RetryAfter",
+            )
             logger.warning(
                 "Rate limit hit when unmuting user %s. Waiting %ss (attempt %d/%d)",
                 user_id,
@@ -157,6 +215,16 @@ async def unmute_user(chat_id: int | str, user_id: int, context: ContextTypes.DE
                 return False
 
         except TelegramError as e:
+            latency_ms = int((time.perf_counter() - start_time) * 1000)
+            error_type = type(e).__name__
+            log_api_call_async(
+                method="restrictChatMember",
+                chat_id=chat_id_int,
+                user_id=user_id,
+                success=False,
+                latency_ms=latency_ms,
+                error_type=error_type,
+            )
             logger.error(
                 "Telegram error unmuting user %s in %s: %s (attempt %d/%d)",
                 user_id,

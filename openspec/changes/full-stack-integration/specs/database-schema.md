@@ -178,6 +178,8 @@ def downgrade() -> None:
 
 ## Index Strategy
 
+> **Source**: [PostgreSQL Documentation - Multicolumn Indexes](https://www.postgresql.org/docs/current/indexes-multicolumn)
+
 ### Query Patterns and Indexes
 
 | Query Pattern                       | Index Required                                           |
@@ -190,17 +192,39 @@ def downgrade() -> None:
 | API calls by method                 | `api_call_log(method, timestamp)` ✅ NEW                 |
 | Bot health queries                  | Multiple indexes ✅ COVERED                              |
 
-### Additional Indexes (Optional - for large scale)
+### Composite Index Best Practices (PostgreSQL Verified)
+
+Per PostgreSQL docs, B-tree multicolumn indexes are most efficient when:
+
+1. **Leading column** is used in equality conditions (`WHERE column1 = value`)
+2. **Subsequent columns** can use range conditions (`< > BETWEEN`)
+3. Column order in index should match query `WHERE` clause order
+
+For our time-series analytics queries:
 
 ```sql
--- Composite index for cache queries
+-- Composite index for verification queries (timestamp first for range, status for filter)
+CREATE INDEX idx_verification_log_timestamp_status
+ON verification_log(timestamp, status);
+
+-- Composite index for cache breakdown queries
 CREATE INDEX idx_verification_log_timestamp_cached
 ON verification_log(timestamp, cached);
 
--- Composite index for latency queries
+-- Composite index for latency queries (with timestamp range)
 CREATE INDEX idx_verification_log_timestamp_latency
 ON verification_log(timestamp, latency_ms);
+
+-- Composite index for top groups (group_id equality, timestamp range)
+CREATE INDEX idx_verification_log_group_timestamp
+ON verification_log(group_id, timestamp);
 ```
+
+**Why This Order?**
+
+- `timestamp` first allows efficient range scans for "last 7 days" queries
+- Second column (`status`, `cached`, `latency_ms`) further filters within the time range
+- This matches PostgreSQL's B-tree index scan order optimization
 
 ---
 
@@ -233,6 +257,43 @@ python -c "from apps.bot.database.models import *; print('Bot models OK')"
 
 ---
 
+## Supabase Free Tier Limits (2025-2026 Verified)
+
+> **Source**: [Supabase Pricing](https://supabase.com/pricing) (verified February 2026)
+
+| Resource                      | Free Tier Limit    | Our Estimated Usage  | Status        |
+| ----------------------------- | ------------------ | -------------------- | ------------- |
+| **Database Size**             | 500 MB per project | ~50-100 MB (initial) | ✅ Sufficient |
+| **API Requests**              | Unlimited          | N/A                  | ✅ No limit   |
+| **Monthly Active Users**      | 50,000 MAUs        | <100 admins          | ✅ Plenty     |
+| **File Storage**              | 1 GB               | Not used             | ✅ N/A        |
+| **Database Egress**           | 5 GB/month         | <1 GB/month          | ✅ Sufficient |
+| **Edge Function Invocations** | 500,000/month      | Not used initially   | ✅ N/A        |
+| **Active Projects**           | 2 projects         | 1 project            | ✅ Sufficient |
+
+### ⚠️ Critical Free Tier Limitation
+
+**Projects are automatically paused after 7 days of inactivity.**
+
+**Mitigation Options**:
+
+1. Use bot's scheduled jobs to make periodic DB queries (keeps project active)
+2. Upgrade to Pro plan ($25/month) for production 24/7 uptime
+3. Set up external health check that hits API every 6 days
+
+### Storage Estimation
+
+| Table              | Rows/Day | Row Size   | 90-Day Storage |
+| ------------------ | -------- | ---------- | -------------- |
+| `verification_log` | ~5,000   | ~100 bytes | ~45 MB         |
+| `api_call_log`     | ~10,000  | ~80 bytes  | ~72 MB         |
+| Other tables       | N/A      | N/A        | ~5 MB          |
+| **Total**          | -        | -          | **~120 MB**    |
+
+✅ Well within 500 MB free tier limit for first year of operation.
+
+---
+
 ## Production Considerations
 
 ### Supabase vs SQLite
@@ -258,4 +319,17 @@ cp storage/data/nezuko.db storage/data/nezuko.db.backup
 
 # Supabase (via pgdump)
 pg_dump -h xxx.supabase.co -U postgres -d postgres > backup.sql
+```
+
+### Rollback Commands (if migration fails)
+
+```bash
+# Rollback last migration
+cd apps/api && alembic downgrade -1
+
+# Verify rollback
+alembic current
+
+# If needed, rollback to specific revision
+alembic downgrade <revision_id>
 ```

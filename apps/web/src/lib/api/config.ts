@@ -16,3 +16,27 @@ export const REQUEST_TIMEOUT = 30000;
  */
 export const DEFAULT_PAGE_SIZE = 10;
 export const MAX_PAGE_SIZE = 100;
+
+/**
+ * Get full configuration object
+ */
+export function getConfig() {
+  return {
+    useMock: USE_MOCK,
+    apiUrl: API_URL,
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+  };
+}
+
+// Log configuration on app load (development only)
+if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+  console.log("[Nezuko Config]", {
+    useMock: USE_MOCK,
+    apiUrl: API_URL,
+    supabaseConfigured: !!(
+      process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ),
+  });
+}
+

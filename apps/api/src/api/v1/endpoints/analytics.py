@@ -37,3 +37,13 @@ async def get_verification_trends(
     """Get verification success/failure trends."""
     data = await analytics_service.get_verification_trends(session, period, granularity)
     return SuccessResponse(data=data)
+
+
+@router.get("/overview")
+async def get_analytics_overview(
+    session: AsyncSession = Depends(get_session),
+    current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
+) -> SuccessResponse[dict]:
+    """Get analytics overview metrics."""
+    data = await analytics_service.get_overview(session)
+    return SuccessResponse(data=data)

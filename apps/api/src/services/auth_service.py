@@ -9,6 +9,58 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.admin_user import AdminUser
 
 
+async def get_admin_by_supabase_id(session: AsyncSession, supabase_uid: str) -> AdminUser | None:
+    """Get admin user by Supabase UID."""
+    stmt = select(AdminUser).where(AdminUser.supabase_uid == supabase_uid)
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def get_admin_by_email(session: AsyncSession, email: str) -> AdminUser | None:
+    """Get admin user by email."""
+    stmt = select(AdminUser).where(AdminUser.email == email)
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def create_admin_user(
+    session: AsyncSession,
+    email: str,
+    supabase_uid: str,
+    role: str = "viewer",
+    full_name: str | None = None,
+) -> AdminUser:
+    """Create a new admin user."""
+    user = AdminUser(
+        email=email,
+        supabase_uid=supabase_uid,
+        role=role,
+        full_name=full_name or email.split("@")[0],
+        is_active=True,
+    )
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
+async def create_admin_from_supabase(
+    session: AsyncSession,
+    supabase_uid: str,
+    email: str | None,
+) -> AdminUser:
+    """
+    Create an admin user from Supabase auth data.
+    Called on first login to auto-create admin record.
+    """
+    return await create_admin_user(
+        session=session,
+        email=email or f"{supabase_uid}@supabase.user",
+        supabase_uid=supabase_uid,
+        role="viewer",  # Default role for new users
+    )
+
+
 class AuthService:  # pylint: disable=too-few-public-methods
     """Service for authentication and user syncing."""
 
@@ -34,9 +86,7 @@ class AuthService:  # pylint: disable=too-few-public-methods
             # But here we need to persist or return a valid AdminUser linked to session?
             # Actually, if MOCK_AUTH is on, we are likely bypassing real DB restrictions or just testing API.
             # Let's check DB for the mock user we know exists 'admin@nezuko.bot'
-            stmt = select(AdminUser).where(AdminUser.email == "admin@nezuko.bot")
-            result = await self.session.execute(stmt)
-            user = result.scalar_one_or_none()
+            user = await get_admin_by_email(self.session, "admin@nezuko.bot")
             if user:
                 return user
             # If not found but MOCK_AUTH is on (maybe first run), create it
@@ -53,15 +103,11 @@ class AuthService:  # pylint: disable=too-few-public-methods
             return user
 
         # Check by Supabase UID
-        stmt = select(AdminUser).where(AdminUser.supabase_uid == uid)
-        result = await self.session.execute(stmt)
-        user = result.scalar_one_or_none()
+        user = await get_admin_by_supabase_id(self.session, uid)
 
         if not user and email:
             # Check by email (migration catch)
-            stmt = select(AdminUser).where(AdminUser.email == email)
-            result = await self.session.execute(stmt)
-            user = result.scalar_one_or_none()
+            user = await get_admin_by_email(self.session, email)
 
             if user:
                 # Link existing user to Supabase UID

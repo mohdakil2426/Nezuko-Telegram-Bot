@@ -72,7 +72,11 @@ def configure_logging(json_format: bool | None = None) -> None:
 
     if json_format:
         # Production: JSON format for log aggregation (Loki, ELK, etc.)
-        processors = [*shared_processors, structlog.processors.format_exc_info, structlog.processors.JSONRenderer()]
+        processors = [
+            *shared_processors,
+            structlog.processors.format_exc_info,
+            structlog.processors.JSONRenderer(),
+        ]
 
         # Configure stdlib logging for JSON as well
         logging.basicConfig(

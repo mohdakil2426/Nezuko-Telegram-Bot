@@ -30,8 +30,8 @@ export const ENDPOINTS = {
 
   // Analytics
   analytics: {
-    verificationTrends: "/api/v1/analytics/verifications/trends",
-    userGrowth: "/api/v1/analytics/users/growth",
+    verificationTrends: "/api/v1/analytics/verifications",
+    userGrowth: "/api/v1/analytics/users",
     overview: "/api/v1/analytics/overview",
   },
 

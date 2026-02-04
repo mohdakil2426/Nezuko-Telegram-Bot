@@ -19,7 +19,9 @@ from apps.bot.core.cache import close_redis_connection, get_redis_client
 from apps.bot.core.database import close_db, get_session, init_db
 from apps.bot.core.loader import register_handlers, setup_bot_commands
 from apps.bot.core.rate_limiter import create_rate_limiter
+from apps.bot.core.uptime import record_bot_start
 from apps.bot.database.crud import get_all_protected_groups
+from apps.bot.services.member_sync import schedule_member_sync
 from apps.bot.utils.health import stop_health_server
 
 # Phase 4: Monitoring imports
@@ -97,6 +99,13 @@ async def post_init(_application: Application) -> None:
     logger.info("Setting up command menus...")
     await setup_bot_commands(_application)
     logger.info("[OK] Command menus configured")
+
+    # Record bot start time for uptime tracking
+    await record_bot_start()
+
+    # Schedule member count sync (every 15 minutes)
+    schedule_member_sync(_application)
+    logger.info("[OK] Analytics integration initialized")
 
 
 async def post_shutdown(_application: Application) -> None:

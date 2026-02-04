@@ -4,6 +4,7 @@ from .admin_audit_log import AdminAuditLog
 from .admin_log import AdminLog
 from .admin_session import AdminSession
 from .admin_user import AdminUser
+from .api_call_log import ApiCallLog
 from .base import Base
 from .bot import EnforcedChannel, GroupChannelLink, Owner, ProtectedGroup
 from .config import AdminConfig
@@ -15,6 +16,7 @@ __all__ = [
     "AdminLog",
     "AdminSession",
     "AdminUser",
+    "ApiCallLog",
     "Base",
     "EnforcedChannel",
     "GroupChannelLink",

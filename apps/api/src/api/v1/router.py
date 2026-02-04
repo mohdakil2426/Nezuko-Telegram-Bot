@@ -8,6 +8,7 @@ from .endpoints import (
     audit,
     auth,
     channels,
+    charts,
     config,
     dashboard,
     database,
@@ -22,6 +23,7 @@ api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(groups.router, prefix="/groups", tags=["groups"])
 api_router.include_router(channels.router, prefix="/channels", tags=["channels"])
+api_router.include_router(charts.router, prefix="/charts", tags=["charts"])
 api_router.include_router(config.router, prefix="/config", tags=["config"])
 api_router.include_router(database.router, prefix="/database", tags=["database"])
 api_router.include_router(logs.router, prefix="/logs", tags=["logs"])

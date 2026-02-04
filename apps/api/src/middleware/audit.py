@@ -1,7 +1,5 @@
 """Audit logging middleware for administrative actions."""
 
-
-
 import structlog
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint

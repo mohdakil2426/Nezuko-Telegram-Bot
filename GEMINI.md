@@ -5,7 +5,7 @@
 
 **Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read these all files for deep project understanding. **NEVER SKIP THIS STEP**
 
-**⚠️ RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, and best practice documented below. No exceptions, no shortcuts. Violations lead to broken builds, security issues, and technical debt.
+**⚠️ RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, and best practice documented below. No exceptions, no shortcuts. Violations lead to broken builds, security issues, and technical debt. nad most imp project pattern existng ui consistancy work accourding to project.
 
 ---
 
@@ -208,6 +208,12 @@ Skills are located in `.agent/skills/`. Read the **SKILL.md** file inside each s
 4. **Context-aware reading** - Focus on sections relevant to your current task, but never skip critical rules.
 5. **No shortcuts** - Taking shortcuts by skipping skill content leads to errors and tech debt.
 
+**Skill Priority Guide:**
+
+- **Simple tasks** (fix a bug, add a field): Read 1-2 directly relevant skills
+- **Medium tasks** (new endpoint, new component): Read category-specific skills (e.g., all Backend skills for API work)
+- **Complex tasks** (new feature, refactoring): Read all relevant category skills + cross-cutting skills (testing, patterns)
+
 ### Frontend (Web Dashboard)
 
 | Skill                           | When to Use                                        | Path                                        |
@@ -261,3 +267,7 @@ Skills are located in `.agent/skills/`. Read the **SKILL.md** file inside each s
 | **openspec-new-change**    | Start a new feature/fix     | `.agent/skills/openspec-new-change/`    |
 | **openspec-apply-change**  | Implement tasks from change | `.agent/skills/openspec-apply-change/`  |
 | **openspec-verify-change** | Verify before archiving     | `.agent/skills/openspec-verify-change/` |
+
+---
+
+_Last Updated: 2026-02-04_
