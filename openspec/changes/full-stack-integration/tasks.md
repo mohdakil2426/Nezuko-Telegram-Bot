@@ -637,15 +637,164 @@ This document contains all implementation tasks organized by phase. Each task in
 
 ---
 
-### Task 5.6: Run Linters and Tests
+### Task 5.6: Run Linters and Tests (ZERO ERRORS REQUIRED)
+
+**⚠️ CRITICAL: All linters must pass with ZERO errors before proceeding.**
 
 - [ ] **5.6.1** Run bot linter: `cd apps/bot && ruff check .`
-- [ ] **5.6.2** Run API linter: `cd apps/api && ruff check .`
-- [ ] **5.6.3** Run web linter: `cd apps/web && bun run lint`
-- [ ] **5.6.4** Run bot tests: `pytest tests/bot/ -v`
-- [ ] **5.6.5** Run API tests: `pytest tests/api/ -v`
-- [ ] **5.6.6** Fix any failing tests
-- [ ] **5.6.7** Verify all checks pass
+  - [ ] Must show: `All checks passed!` or `0 errors`
+  - [ ] If errors, run `ruff check . --fix` and manually fix remaining
+- [ ] **5.6.2** Run bot formatter: `cd apps/bot && ruff format --check .`
+  - [ ] Must show: `X files already formatted`
+- [ ] **5.6.3** Run API linter: `cd apps/api && ruff check .`
+  - [ ] Must show: `All checks passed!` or `0 errors`
+- [ ] **5.6.4** Run API formatter: `cd apps/api && ruff format --check .`
+  - [ ] Must show: `X files already formatted`
+- [ ] **5.6.5** Run web linter: `cd apps/web && bun run lint`
+  - [ ] Must show: no output (0 errors, 0 warnings)
+- [ ] **5.6.6** Run web type check: `cd apps/web && bun run typecheck` (if available)
+  - [ ] Must show: no TypeScript errors
+- [ ] **5.6.7** Run bot tests: `pytest tests/bot/ -v`
+  - [ ] All tests must pass
+- [ ] **5.6.8** Run API tests: `pytest tests/api/ -v`
+  - [ ] All tests must pass
+- [ ] **5.6.9** Fix any failing tests
+- [ ] **5.6.10** Verify all checks pass with no warnings
+
+---
+
+## Phase 6: Post-Production Optimization (Optional)
+
+**Duration**: 2-3 hours  
+**Dependencies**: Phase 5 complete  
+**Validation**: Data retention works, health checks pass, load test results documented
+
+### Task 6.1: Implement Data Retention Policy
+
+**File**: `apps/api/src/services/maintenance_service.py` (NEW)
+
+- [ ] **6.1.1** Create new file with module docstring
+- [ ] **6.1.2** Implement `cleanup_old_api_call_logs` async function:
+  - [ ] Accept `days_to_keep` parameter (default: 90)
+  - [ ] Delete `api_call_log` records older than cutoff date
+  - [ ] Return count of deleted records
+- [ ] **6.1.3** Implement `cleanup_old_verification_logs` async function:
+  - [ ] Accept `days_to_keep` parameter (default: 90)
+  - [ ] Delete `verification_log` records older than cutoff date
+  - [ ] Return count of deleted records
+- [ ] **6.1.4** Implement `get_storage_stats` async function:
+  - [ ] Count records in each analytics table
+  - [ ] Estimate storage size
+  - [ ] Return stats dict
+
+**File**: `apps/api/src/api/v1/endpoints/maintenance.py` (NEW)
+
+- [ ] **6.1.5** Create endpoint `POST /api/v1/maintenance/cleanup`
+  - [ ] Require super_admin role
+  - [ ] Call cleanup functions
+  - [ ] Return deleted counts
+- [ ] **6.1.6** Create endpoint `GET /api/v1/maintenance/storage-stats`
+  - [ ] Return storage statistics
+
+**File**: `apps/api/src/api/v1/router.py`
+
+- [ ] **6.1.7** Add maintenance router registration
+
+---
+
+### Task 6.2: Add Health Check Endpoint Tests
+
+**File**: `tests/api/test_health.py` (NEW)
+
+- [ ] **6.2.1** Create test file with fixtures
+- [ ] **6.2.2** Test `GET /health` returns 200
+- [ ] **6.2.3** Test `GET /health` includes database status
+- [ ] **6.2.4** Test `GET /health` includes Redis status (if available)
+- [ ] **6.2.5** Test `GET /health` includes bot uptime (from Redis key)
+- [ ] **6.2.6** Test health check handles DB connection failure gracefully
+- [ ] **6.2.7** Test health check handles Redis connection failure gracefully
+
+**File**: `tests/api/test_charts.py` (NEW)
+
+- [ ] **6.2.8** Create chart endpoint integration tests
+- [ ] **6.2.9** Test each chart endpoint with empty data
+- [ ] **6.2.10** Test each chart endpoint with sample data
+- [ ] **6.2.11** Test query parameters (period, limit)
+- [ ] **6.2.12** Test authentication required for all chart endpoints
+
+---
+
+### Task 6.3: Create Load Testing Script
+
+**File**: `scripts/load_test.py` (NEW)
+
+- [ ] **6.3.1** Create script with argparse for configuration
+- [ ] **6.3.2** Implement async HTTP client using `httpx`
+- [ ] **6.3.3** Implement `simulate_verifications` function:
+  - [ ] Generate random user/group/channel IDs
+  - [ ] Insert verification_log records at configurable rate
+- [ ] **6.3.4** Implement `benchmark_chart_endpoints` function:
+  - [ ] Call each chart endpoint N times
+  - [ ] Measure response times
+  - [ ] Report avg, p95, p99 latencies
+- [ ] **6.3.5** Implement `stress_test_api` function:
+  - [ ] Concurrent requests to all chart endpoints
+  - [ ] Report success rate and errors
+- [ ] **6.3.6** Add CLI options:
+  - [ ] `--verifications N` - Number of verification records to generate
+  - [ ] `--requests N` - Number of chart API requests per endpoint
+  - [ ] `--concurrency N` - Concurrent request count
+  - [ ] `--api-url URL` - Target API URL
+- [ ] **6.3.7** Add results summary output
+
+---
+
+### Task 6.4: Verify Final Lint Status
+
+**⚠️ CRITICAL: Final lint verification with ZERO TOLERANCE for errors.**
+
+- [ ] **6.4.1** Run full project lint check:
+
+  ```bash
+  # Bot
+  cd apps/bot && ruff check . && ruff format --check .
+
+  # API
+  cd apps/api && ruff check . && ruff format --check .
+
+  # Web
+  cd apps/web && bun run lint
+  ```
+
+- [ ] **6.4.2** Run Pylint with target score:
+  ```bash
+  pylint apps/bot apps/api --fail-under=9.5
+  ```
+- [ ] **6.4.3** Run type checker (if available):
+  ```bash
+  cd apps/api && pyrefly check
+  ```
+- [ ] **6.4.4** Verify web TypeScript types:
+  ```bash
+  cd apps/web && bun run build
+  ```
+- [ ] **6.4.5** Document any intentional lint disables with comments
+
+---
+
+### Task 6.5: Update Documentation
+
+**File**: `docs/deployment/README.md` (UPDATE)
+
+- [ ] **6.5.1** Add section for Supabase setup
+- [ ] **6.5.2** Add environment variable reference
+- [ ] **6.5.3** Add chart endpoint documentation
+
+**File**: `docs/api/charts.md` (NEW)
+
+- [ ] **6.5.4** Document all 10 chart endpoints
+- [ ] **6.5.5** Include request/response examples
+- [ ] **6.5.6** Include rate limiting notes
 
 ---
 
@@ -657,8 +806,31 @@ This document contains all implementation tasks organized by phase. Each task in
 | Phase 2: Bot Analytics   | 7 tasks, 35 subtasks       | 4-6 hours       |
 | Phase 3: API Charts      | 5 tasks, 48 subtasks       | 6-8 hours       |
 | Phase 4: Authentication  | 8 tasks, 32 subtasks       | 3-4 hours       |
-| Phase 5: E2E Testing     | 6 tasks, 25 subtasks       | 2-3 hours       |
-| **Total**                | **32 tasks, 158 subtasks** | **17-24 hours** |
+| Phase 5: E2E Testing     | 6 tasks, 28 subtasks       | 2-3 hours       |
+| Phase 6: Optimization    | 5 tasks, 28 subtasks       | 2-3 hours       |
+| **Total**                | **37 tasks, 189 subtasks** | **19-27 hours** |
+
+---
+
+## 🚨 Lint Requirements (MANDATORY)
+
+Every phase MUST end with zero lint errors. Run these commands after each phase:
+
+```bash
+# Python (Bot + API)
+ruff check apps/bot apps/api --fix
+ruff format apps/bot apps/api
+
+# TypeScript (Web)
+cd apps/web && bun run lint --fix
+```
+
+**Lint Violations = Blocked Progress**. Do NOT proceed to next phase until:
+
+- ✅ `ruff check` shows 0 errors
+- ✅ `ruff format --check` shows all files formatted
+- ✅ `bun run lint` shows no output
+- ✅ All tests pass
 
 ---
 
@@ -671,6 +843,14 @@ Before marking this change as complete:
 - [ ] Member/subscriber counts sync every 15 minutes
 - [ ] Supabase authentication working end-to-end
 - [ ] Web dashboard displays real data from API
-- [ ] All linters pass with zero errors
-- [ ] All tests pass
-- [ ] Documentation updated (if needed)
+- [ ] **All linters pass with ZERO errors:**
+  - [ ] `ruff check apps/bot` = 0 errors
+  - [ ] `ruff check apps/api` = 0 errors
+  - [ ] `bun run lint` = 0 errors/warnings
+- [ ] All tests pass:
+  - [ ] `pytest tests/bot/` = All passed
+  - [ ] `pytest tests/api/` = All passed
+- [ ] Data retention policy implemented (Phase 6)
+- [ ] Health check tests added (Phase 6)
+- [ ] Load testing script created (Phase 6)
+- [ ] Documentation updated
