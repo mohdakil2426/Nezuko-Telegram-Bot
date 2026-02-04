@@ -55,4 +55,10 @@ export const ENDPOINTS = {
     logout: "/api/v1/auth/logout",
     me: "/api/v1/auth/me",
   },
+
+  // Logs
+  logs: {
+    list: "/api/v1/logs",
+  },
 } as const;
+

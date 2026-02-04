@@ -33,3 +33,7 @@ export {
   useLatencyTrend,
   useBotHealthMetrics,
 } from "./use-charts";
+
+// Logs hooks
+export { useLogs } from "./use-logs";
+

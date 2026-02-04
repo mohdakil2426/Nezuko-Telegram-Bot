@@ -140,6 +140,27 @@ def main():
         # Record bot start time for metrics
         set_bot_start_time()
 
+        # Check for dashboard mode (no BOT_TOKEN = read from database)
+        if config.dashboard_mode:
+            logger.info("=" * 60)
+            logger.info("Nezuko - Dashboard Mode (Multi-Bot)")
+            logger.info("=" * 60)
+            logger.info("Environment: %s", config.environment)
+            logger.info("Database: %s", config.database_url.split("://")[0])
+            logger.info("=" * 60)
+
+            # Run bot manager
+            import asyncio
+
+            from apps.bot.core.bot_manager import bot_manager
+
+            try:
+                asyncio.run(bot_manager.run())
+            except KeyboardInterrupt:
+                asyncio.run(bot_manager.shutdown())
+            return
+
+        # Standalone mode - single bot from .env
         logger.info("=" * 60)
         logger.info("Nezuko - The Ultimate All-In-One Bot")
         logger.info("=" * 60)
@@ -155,6 +176,8 @@ def main():
         # Build application with rate limiter
         # Note: python-telegram-bot manages its own event loop internally,
         # so we use synchronous run_polling() instead of asyncio.run()
+        # Type assertion - config.bot_token is guaranteed non-None here (not dashboard_mode)
+        assert config.bot_token is not None, "BOT_TOKEN required in standalone mode"
         application = (
             Application.builder()
             .token(config.bot_token)

@@ -1,138 +1,142 @@
-# Active Context: Phase 40 - Full-Stack Integration ✅ COMPLETE
+# Active Context: Phase 41+ - Separated Bot Architecture ✅ COMPLETE
 
 ## Current Status
 
-**Phase 40 COMPLETE** - Full-Stack Integration (Web + API + Bot)
-**Result**: All three components connected with real data flow and working authentication.
+**Phase 41+ COMPLETE** - Separated Bot Architecture Implemented
+**Date**: 2026-02-05
+
+### Architecture Change
+
+Implemented **separated bot architecture**:
+
+- **Login Bot**: Only for Telegram Login Widget authentication (in .env)
+- **Working Bots**: Added via Dashboard UI, encrypted in database
 
 ### Final Status
 
-| Change Name              | Status      | Location                                   |
-| :----------------------- | :---------- | :----------------------------------------- |
-| `full-stack-integration` | ✅ Complete | `openspec/changes/full-stack-integration/` |
-
-### Implementation Phases
-
-| Phase | Description                | Status      | Time Spent |
-| :---- | :------------------------- | :---------- | :--------- |
-| **1** | Database Schema Updates    | ✅ Complete | 2h         |
-| **2** | Bot Analytics Enhancement  | ✅ Complete | 4h         |
-| **3** | API Charts Implementation  | ✅ Complete | 6h         |
-| **4** | Authentication Integration | ✅ Complete | 3h         |
-| **5** | Web Connection & Testing   | ✅ Complete | 3h         |
+| Change Name                          | Status      | Location                                               |
+| :----------------------------------- | :---------- | :----------------------------------------------------- |
+| `owner-telegram-auth-bot-management` | ✅ Complete | `openspec/changes/owner-telegram-auth-bot-management/` |
 
 ---
 
-## Issues Fixed (2026-02-04)
+## Current Architecture
 
-### Critical Fixes Applied
-
-| Issue                      | Root Cause                                       | Fix Applied                                                 |
-| :------------------------- | :----------------------------------------------- | :---------------------------------------------------------- |
-| **Web Reloading**          | 401 Unauthorized from API                        | Enabled `MOCK_AUTH=true` in `apps/api/.env`                 |
-| **Analytics Endpoint 404** | Frontend calling wrong path                      | Fixed path from `/verifications/trends` to `/verifications` |
-| **API Parameter Mismatch** | Frontend sending `days`, API expects `period`    | Added conversion logic in `dashboard.service.ts`            |
-| **Response Mapping Error** | API returns `series`, web expected `data_points` | Fixed mapping to use `response.data.series`                 |
-| **Analytics Overview 404** | Endpoint didn't exist                            | Created `/api/v1/analytics/overview` endpoint               |
-| **Query Undefined Error**  | Activity service accessing wrong response level  | Fixed to access `response.data?.items`                      |
-| **Avatar 404**             | Missing `/avatars/owner.jpg` file                | Removed path to use initials fallback                       |
-| **Hydration Mismatch**     | `next-themes` modifying body class               | Added `suppressHydrationWarning` to body                    |
-
-### Files Modified
-
-| File                                             | Change                                |
-| :----------------------------------------------- | :------------------------------------ |
-| `apps/api/.env`                                  | `MOCK_AUTH=true`                      |
-| `apps/web/src/lib/api/endpoints.ts`              | Fixed analytics paths                 |
-| `apps/web/src/lib/services/dashboard.service.ts` | Fixed API params and response mapping |
-| `apps/api/src/api/v1/endpoints/analytics.py`     | Added `/overview` endpoint            |
-| `apps/api/src/services/analytics_service.py`     | Added `get_overview()` method         |
-| `apps/web/src/components/app-sidebar.tsx`        | Removed avatar path                   |
-| `apps/web/src/app/layout.tsx`                    | Added `suppressHydrationWarning`      |
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    NEZUKO ARCHITECTURE                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  📱 LOGIN BOT (apps/api/.env)                                    │
+│  └── Purpose: Telegram Login Widget authentication only         │
+│  └── Token: LOGIN_BOT_TOKEN                                      │
+│                                                                  │
+│  🖥️  DASHBOARD (Web UI)                                          │
+│  └── Add working bots via "Add Bot" button                       │
+│  └── Tokens encrypted with Fernet, stored in database           │
+│                                                                  │
+│  🤖 WORKING BOTS (from Database)                                 │
+│  └── Read from DB by bot worker process                          │
+│  └── Multiple bots supported                                     │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Verified Working Features
+## Configuration Files
 
-### Dashboard
-
-- ✅ All stat cards loading real data (Protected Groups, Enforced Channels, etc.)
-- ✅ Verification Trends chart rendering with date axis
-- ✅ Quick Insights section loading
-- ✅ No skeleton loaders stuck
-- ✅ No continuous reloading
-
-### Analytics Page
-
-- ✅ Overview metrics loading
-- ✅ Verification Trends chart working
-- ✅ User Growth chart working
-
-### Other Pages
-
-- ✅ Groups page - table loading (empty when no data)
-- ✅ Channels page - table loading
-- ✅ Settings page - theme toggle working
-
-### Authentication
-
-- ✅ Supabase login working
-- ✅ Mock auth enabled for local development
-- ✅ JWT verification ready (needs correct secret for production)
-
----
-
-## Configuration Status
-
-### apps/web/.env.local
+### apps/api/.env (Required)
 
 ```bash
-NEXT_PUBLIC_USE_MOCK=false
+LOGIN_BOT_TOKEN=<bot-token-for-login>
+BOT_OWNER_TELEGRAM_ID=<your-telegram-id>
+ENCRYPTION_KEY=<fernet-key>
+DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
+```
+
+### apps/web/.env.local (Required)
+
+```bash
 NEXT_PUBLIC_API_URL=http://localhost:8080
-NEXT_PUBLIC_SUPABASE_URL=https://aibpwpsqpmcncvuxzpxz.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
+NEXT_PUBLIC_LOGIN_BOT_USERNAME=<bot-username>
 ```
 
-### apps/api/.env
+### apps/bot/.env (Optional BOT_TOKEN)
 
 ```bash
-MOCK_AUTH=true  # Set to false for production with correct JWT secret
-SUPABASE_JWT_SECRET=<needs-correct-secret-for-production>
+BOT_TOKEN=<optional-standalone-mode>
+DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
 ```
 
 ---
 
-## Running Services
+## Changes Made This Session
+
+### New Files Created
+
+- `apps/api/.env.example` - API configuration template
+- `apps/web/.env.example` - Web configuration template
+- `apps/bot/.env.example` - Bot configuration template
+- `docs/setup/environment-configuration.md` - Complete env guide
+
+### Files Updated
+
+- `apps/api/.env` - Cleaned, removed Supabase, only login bot
+- `apps/web/.env.local` - Cleaned, minimal config
+- `apps/api/src/core/config.py` - Removed Supabase settings
+- `apps/bot/config.py` - Made BOT_TOKEN optional, added dashboard_mode
+
+### Supabase Removed
+
+- All Supabase configuration removed from .env files
+- Supabase settings removed from API config.py
+- Authentication now 100% Telegram-based
+
+---
+
+## Running the Application
+
+### Start Services
 
 ```bash
-# Bot - Telegram long-polling
-python -m apps.bot.main
-
-# API - FastAPI backend
+# Terminal 1 - API (port 8080)
 cd apps/api && python -m uvicorn src.main:app --reload --port 8080
 
-# Web - Next.js frontend
+# Terminal 2 - Web (port 3000)
 cd apps/web && bun dev
 ```
 
----
+### BotFather Configuration
 
-## Next Steps (Post-Phase 40)
+For Telegram Login Widget to work:
 
-1. **Production Auth Setup**
-   - Get correct `SUPABASE_JWT_SECRET` from Supabase dashboard
-   - Set `MOCK_AUTH=false` in production
-   - Test full JWT verification flow
-
-2. **Data Population**
-   - Configure bot with real Telegram groups/channels
-   - Generate verification activity data
-   - View real analytics in dashboard
-
-3. **Archive OpenSpec Change**
-   - Run `/opsx-archive` to archive the completed change
-   - Update main specs with delta changes
+1. Message @BotFather
+2. Send `/setdomain`
+3. Select your login bot
+4. Enter: `localhost` (or production domain)
 
 ---
 
-_Last Updated: 2026-02-04 19:48 IST_
+## Verified Working
+
+| Component       | Status                 | Port |
+| :-------------- | :--------------------- | :--- |
+| API Server      | ✅ Running             | 8080 |
+| Web Dashboard   | ✅ Running             | 3002 |
+| Login Page UI   | ✅ Beautiful           | -    |
+| Telegram Widget | ⏳ Needs domain config | -    |
+| Database        | ✅ SQLite              | -    |
+
+---
+
+## Next Steps
+
+1. Configure domain in BotFather (`localhost`)
+2. Test Telegram login flow
+3. Add working bots via Dashboard
+4. Test bot enforcement features
+
+---
+
+_Last Updated: 2026-02-05 00:43 IST_

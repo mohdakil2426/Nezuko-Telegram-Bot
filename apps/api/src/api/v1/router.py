@@ -7,20 +7,34 @@ from .endpoints import (
     analytics,
     audit,
     auth,
+    bots,
     channels,
     charts,
     config,
     dashboard,
     database,
+    events,
     groups,
     logs,
     maintenance,
+    telegram_auth,
     websocket,
 )
 
 api_router = APIRouter()
 
+# Telegram authentication (new - owner-only access)
+api_router.include_router(telegram_auth.router)
+
+# Bot management (new - multi-bot support)
+api_router.include_router(bots.router)
+
+# Real-time events (SSE)
+api_router.include_router(events.router)
+
+# Legacy auth (deprecated, kept for migration)
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(groups.router, prefix="/groups", tags=["groups"])
 api_router.include_router(channels.router, prefix="/channels", tags=["channels"])

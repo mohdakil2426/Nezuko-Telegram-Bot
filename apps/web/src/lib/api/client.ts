@@ -1,10 +1,12 @@
 /**
  * Typed API Client
- * Fetch wrapper with error handling, type safety, and Supabase authentication
+ * Fetch wrapper with error handling, type safety, and session-based authentication
+ * 
+ * Authentication is handled via HTTP-only cookies (nezuko_session),
+ * which are automatically included in requests via credentials: "include"
  */
 
 import { API_URL, REQUEST_TIMEOUT } from "./config";
-import { createClient } from "@/lib/supabase/client";
 
 /**
  * API Error class for structured error handling
@@ -50,25 +52,6 @@ function buildUrl(
 }
 
 /**
- * Get authentication header from Supabase session
- */
-async function getAuthHeader(): Promise<Record<string, string>> {
-  try {
-    const supabase = createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (session?.access_token) {
-      return { Authorization: `Bearer ${session.access_token}` };
-    }
-  } catch {
-    // No Supabase configured or session unavailable
-  }
-  return {};
-}
-
-/**
  * Execute fetch with timeout
  */
 async function fetchWithTimeout(
@@ -92,22 +75,23 @@ async function fetchWithTimeout(
 
 /**
  * Core request function
+ * 
+ * Authentication is handled via HTTP-only session cookies.
+ * We include credentials: "include" to send cookies with cross-origin requests.
  */
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { params, timeout = REQUEST_TIMEOUT, skipAuth = false, ...fetchOptions } = options;
 
   const url = buildUrl(endpoint, params);
 
-  // Get auth header unless skipped
-  const authHeader = skipAuth ? {} : await getAuthHeader();
-
   const response = await fetchWithTimeout(
     url,
     {
       ...fetchOptions,
+      // Include cookies for session-based authentication
+      credentials: skipAuth ? "omit" : "include",
       headers: {
         "Content-Type": "application/json",
-        ...authHeader,
         ...fetchOptions.headers,
       },
     },
@@ -186,4 +170,3 @@ export const apiClient = {
     return request<T>(endpoint, { ...options, method: "DELETE" });
   },
 };
-

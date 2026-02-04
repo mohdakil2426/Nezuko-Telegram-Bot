@@ -6,7 +6,7 @@
  */
 
 import * as React from "react";
-import { LayoutDashboard, BarChart3, Users, Radio, Settings } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, Radio, Bot, ScrollText, Settings } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
@@ -46,20 +46,21 @@ const navItems = [
     icon: Radio,
   },
   {
+    title: "Bots",
+    url: "/dashboard/bots",
+    icon: Bot,
+  },
+  {
+    title: "Logs",
+    url: "/dashboard/logs",
+    icon: ScrollText,
+  },
+  {
     title: "Settings",
     url: "/dashboard/settings",
     icon: Settings,
   },
 ];
-
-/**
- * User configuration (bot owner)
- */
-const user = {
-  name: "Bot Owner",
-  email: "admin@nezuko.bot",
-  avatar: "", // Empty - uses AvatarFallback with initials
-};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -73,9 +74,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <ThemeToggle />
         <SidebarSeparator />
-        <NavUser user={user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
 }
+

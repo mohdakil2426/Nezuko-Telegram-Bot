@@ -19,10 +19,10 @@ alembic>=1.18.3                    # Database migrations
 redis>=7.1.0                       # Redis cache client
 
 # ─────────────────────────────────────────────────────────────────────────────────
-# Authentication
+# Authentication (Telegram Login + Fernet Encryption)
 # ─────────────────────────────────────────────────────────────────────────────────
-supabase>=2.27.2                   # Supabase client
 pyjwt>=2.11.0                      # JWT token handling
+cryptography>=45.0.0               # Fernet encryption for bot tokens
 
 # ─────────────────────────────────────────────────────────────────────────────────
 # HTTP & Async

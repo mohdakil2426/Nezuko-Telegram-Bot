@@ -31,6 +31,49 @@ configure_logging(
 logger = structlog.get_logger(__name__)
 
 
+def validate_config() -> None:
+    """Validate required configuration at startup.
+
+    Raises:
+        SystemExit: If critical configuration is missing.
+    """
+    errors: list[str] = []
+
+    # Telegram Authentication (required for dashboard access)
+    if not settings.LOGIN_BOT_TOKEN:
+        errors.append("LOGIN_BOT_TOKEN is required. Get it from @BotFather on Telegram.")
+
+    if not settings.BOT_OWNER_TELEGRAM_ID:
+        errors.append("BOT_OWNER_TELEGRAM_ID is required. Get yours from @userinfobot on Telegram.")
+
+    if not settings.ENCRYPTION_KEY:
+        errors.append(
+            "ENCRYPTION_KEY is required for bot token encryption. "
+            'Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
+        )
+
+    # In production, enforce all settings
+    if settings.ENVIRONMENT == "production" and errors:
+        logger.error(
+            "configuration_validation_failed",
+            errors=errors,
+            environment=settings.ENVIRONMENT,
+        )
+        raise SystemExit(
+            "\n\n❌ Configuration Error:\n"
+            + "\n".join(f"  • {e}" for e in errors)
+            + "\n\nPlease set the required environment variables.\n"
+        )
+    elif errors:
+        # In development, just warn
+        for error in errors:
+            logger.warning("configuration_warning", message=error)
+
+
+# Validate configuration at startup
+validate_config()
+
+
 # Lifespan context manager
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:

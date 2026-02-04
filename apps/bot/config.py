@@ -20,10 +20,15 @@ load_dotenv(_BOT_DIR / ".env")
 
 # pylint: disable=too-many-instance-attributes
 class Config:
-    """Application configuration with validation."""
+    """Application configuration with validation.
 
-    # Required
-    bot_token: str
+    Supports two modes:
+    1. Standalone Mode: BOT_TOKEN in .env, runs single bot
+    2. Dashboard Mode: No BOT_TOKEN, reads active bots from database
+    """
+
+    # Optional in dashboard mode
+    bot_token: str | None
     environment: str  # 'development' or 'production'
     database_url: str
     base_dir: Path
@@ -45,8 +50,8 @@ class Config:
         os.makedirs(self.logs_dir, exist_ok=True)
         os.makedirs(self.data_dir, exist_ok=True)
 
-        # Required variables
-        self.bot_token = self._get_required("BOT_TOKEN")
+        # BOT_TOKEN is optional - if not set, bot reads from database
+        self.bot_token = self._get_optional("BOT_TOKEN")
         self.environment = self._get_optional("ENVIRONMENT", "development")
 
         # Database URL with path normalization for SQLite
@@ -76,6 +81,9 @@ class Config:
 
         # Optional - Monitoring
         self.sentry_dsn = self._get_optional("SENTRY_DSN")
+
+        # Dashboard mode - for decrypting bot tokens from database
+        self.encryption_key = self._get_optional("ENCRYPTION_KEY")
 
     def _get_required(self, key: str) -> str:
         """Get required environment variable or raise error."""
@@ -117,6 +125,16 @@ class Config:
         """Determine if polling should be used."""
         return not self.use_webhooks
 
+    @property
+    def dashboard_mode(self) -> bool:
+        """Check if running in dashboard mode (no BOT_TOKEN, reads from DB)."""
+        return self.bot_token is None or self.bot_token.strip() == ""
+
+    @property
+    def standalone_mode(self) -> bool:
+        """Check if running in standalone mode (BOT_TOKEN in env)."""
+        return not self.dashboard_mode
+
     def validate(self):
         """Validate configuration consistency."""
         # Webhook validation
@@ -132,13 +150,15 @@ class Config:
 
     def __repr__(self) -> str:
         """String representation (hide sensitive data)."""
+        mode = "dashboard" if self.dashboard_mode else "standalone"
         return (
             f"Config(\n"
             f"  environment={self.environment},\n"
+            f"  bot_mode={mode},\n"
             f"  database_url={'***' if self.database_url else 'None'},\n"
             f"  redis_url={'set' if self.redis_url else 'None'},\n"
             f"  webhook_url={'set' if self.webhook_url else 'None'},\n"
-            f"  mode={'webhooks' if self.use_webhooks else 'polling'}\n"
+            f"  polling={'webhooks' if self.use_webhooks else 'polling'}\n"
             f")"
         )
 

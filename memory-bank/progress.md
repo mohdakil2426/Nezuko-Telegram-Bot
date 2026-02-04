@@ -1,8 +1,6 @@
-# Project Progress: Nezuko - Roadmap to v1.0.0
+## Current Status: Phase 41+ COMPLETE ✅ - Separated Bot Architecture
 
-## Current Status: Phase 40 COMPLETE ✅ - Full-Stack Integration
-
-**Overall Implementation Status**: **98%** (Full-stack integration complete, ready for production auth setup)
+**Overall Implementation Status**: **100%** (Production ready, separated bot architecture)
 
 | Phase           | Description                                  | Status      |
 | :-------------- | :------------------------------------------- | :---------- |
@@ -43,14 +41,119 @@
 | **Phase 38**    | Advanced Analytics Charts                    | ✅ Complete |
 | **Phase 39**    | Web Migration (web1 → web)                   | ✅ Complete |
 | **Phase 40**    | Full-Stack Integration (Web + API + Bot)     | ✅ Complete |
+| **Phase 41**    | Telegram Auth & Multi-Bot Management         | ✅ Complete |
+| **Phase 41+**   | Separated Bot Architecture                   | ✅ Complete |
 
 ---
 
-## ✅ Phase 40: Full-Stack Integration (2026-02-04) - COMPLETE
+## ✅ Phase 41+: Separated Bot Architecture (2026-02-05)
 
 ### Overview
 
-Connected all three components (Web, API, Bot) with real data flow. Dashboard now displays live bot verification data from the database.
+Implemented separated bot architecture where login bot is only for authentication (in .env) and working bots are added via Dashboard UI (encrypted in database). Completely removed Supabase dependencies.
+
+### Key Changes
+
+| Change                 | Description                                    |
+| :--------------------- | :--------------------------------------------- |
+| **Separated Bots**     | Login bot for auth, working bots via dashboard |
+| **Supabase Removed**   | All Supabase config removed from codebase      |
+| **Clean .env Files**   | Minimal, documented configuration              |
+| **Optional BOT_TOKEN** | Bot can run in dashboard mode or standalone    |
+| **.env.example Files** | Created templates for all apps                 |
+
+---
+
+## ✅ Phase 41: Telegram Auth & Bot Management (2026-02-04) - COMPLETE
+
+### Overview
+
+Replaced Supabase authentication with Telegram Login Widget for owner-only access. Added multi-bot management with encrypted token storage and comprehensive real-time SSE infrastructure.
+
+### Key Features Delivered
+
+| Feature                   | Description                                        |
+| :------------------------ | :------------------------------------------------- |
+| **Telegram Login Widget** | Owner-only auth via Telegram                       |
+| **Session-based Auth**    | HTTP-only cookies, 24h expiration                  |
+| **Multi-Bot Management**  | Add/edit/delete bots with encrypted tokens         |
+| **Fernet Encryption**     | Secure bot token storage at rest                   |
+| **SSE Infrastructure**    | EventBus, streaming endpoint, React hooks          |
+| **Connection Status**     | Real-time 🟢/🟡/🔴 indicator                       |
+| **Real-Time Activity**    | Activity feed with SSE and smooth animations       |
+| **Real-Time Analytics**   | Analytics cards with live stat updates             |
+| **Real-Time Logs Page**   | Log viewer with streaming, filtering, pause/resume |
+| **Event Publishing**      | Backend events for bot status changes              |
+
+### Implementation Phases
+
+| Phase  | Focus                     | Status      |
+| :----- | :------------------------ | :---------- |
+| **0**  | Supabase Removal          | ✅ Complete |
+| **1**  | Environment Configuration | ✅ Complete |
+| **2**  | Database Schema           | ✅ Complete |
+| **3**  | Token Encryption          | ✅ Complete |
+| **4**  | Telegram Auth API         | ✅ Complete |
+| **5**  | Bot Management API        | ✅ Complete |
+| **6**  | Telegram Login Component  | ✅ Complete |
+| **7**  | Login Page Redesign       | ✅ Complete |
+| **8**  | Bot Management UI         | ✅ Complete |
+| **9**  | Navigation Update         | ✅ Complete |
+| **10** | Testing & Documentation   | ✅ Complete |
+| **11** | Cleanup & Polish          | ✅ Complete |
+| **12** | Real-Time SSE             | ✅ Complete |
+
+### New Files Created
+
+**Backend (18 files):**
+
+- `apps/api/src/core/encryption.py` - Fernet encryption
+- `apps/api/src/core/events.py` - SSE EventBus with publish helpers
+- `apps/api/src/models/session.py` - Session model
+- `apps/api/src/models/bot_instance.py` - BotInstance model
+- `apps/api/src/schemas/telegram_auth.py` - Auth schemas
+- `apps/api/src/schemas/bot_instance.py` - Bot schemas
+- `apps/api/src/services/telegram_auth_service.py` - Auth logic
+- `apps/api/src/services/telegram_api.py` - Telegram API client
+- `apps/api/src/services/bot_instance_service.py` - Bot CRUD with event publishing
+- `apps/api/src/api/v1/endpoints/telegram_auth.py` - Auth routes
+- `apps/api/src/api/v1/endpoints/bots.py` - Bot routes
+- `apps/api/src/api/v1/endpoints/events.py` - SSE routes
+- `apps/api/src/api/v1/dependencies/session.py` - Auth dependency
+- `apps/api/src/api/v1/dependencies/auth.py` - Compatibility layer
+- `alembic/versions/2026_02_04_telegram_auth.py` - Migration
+- `tests/api/unit/test_encryption.py` - Encryption tests
+- `tests/api/unit/test_bot_instance_service.py` - Bot service tests (16 tests)
+- `docs/setup/botfather-login-setup.md` - BotFather documentation
+
+**Frontend (15 files):**
+
+- `apps/web/src/components/auth/telegram-login.tsx`
+- `apps/web/src/lib/api/auth.ts`
+- `apps/web/src/lib/api/bots.ts`
+- `apps/web/src/lib/hooks/use-auth.ts`
+- `apps/web/src/lib/hooks/use-bots.ts`
+- `apps/web/src/lib/hooks/use-realtime.ts`
+- `apps/web/src/lib/hooks/use-logs.ts`
+- `apps/web/src/lib/sse/event-source.ts`
+- `apps/web/src/lib/services/logs.service.ts`
+- `apps/web/src/lib/mock/logs.mock.ts`
+- `apps/web/src/app/dashboard/bots/page.tsx`
+- `apps/web/src/app/dashboard/bots/[id]/page.tsx`
+- `apps/web/src/app/dashboard/logs/page.tsx`
+- `apps/web/src/components/realtime/connection-status.tsx`
+- `apps/web/src/components/dashboard/activity-feed.tsx` (updated with SSE)
+- `apps/web/src/components/analytics/overview-cards.tsx` (updated with SSE)
+
+### Build Status
+
+- ✅ API Ruff: All checks passed
+- ✅ Web ESLint: 0 warnings
+- ✅ Web Build: 13 routes generated (including /logs)
+- ✅ All unit tests passing (122+ tests)
+- ✅ Database migrations applied
+
+---
 
 ### Implementation Phases
 

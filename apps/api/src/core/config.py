@@ -21,16 +21,15 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_PASSWORD: str | None = None
 
-    # Supabase Configuration
-    SUPABASE_URL: str | None = None
-    SUPABASE_ANON_KEY: str | None = None
-    SUPABASE_SERVICE_ROLE_KEY: str | None = None
-    SUPABASE_JWT_SECRET: str | None = None
-
-    # Admin Panel - Initial Admin User
-    ADMIN_INITIAL_EMAIL: str = "admin@nezuko.bot"
-    ADMIN_INITIAL_PASSWORD: str = "ChangeMe123!"
-    ADMIN_INITIAL_FULL_NAME: str = "Admin User"
+    # Telegram Authentication (Owner-Only Access)
+    # Bot token used for login verification (get from @BotFather)
+    LOGIN_BOT_TOKEN: str | None = None
+    # Your Telegram user ID (get from @userinfobot)
+    BOT_OWNER_TELEGRAM_ID: int | None = None
+    # Fernet encryption key for bot tokens (generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+    ENCRYPTION_KEY: str | None = None
+    # Session duration in hours
+    SESSION_EXPIRY_HOURS: int = 24
 
     # API Configuration
     API_BASE_URL: str = "http://localhost:8080"
@@ -42,6 +41,7 @@ class Settings(BaseSettings):
     # Security
     SECURITY_HEADERS_ENABLED: bool = False
     MOCK_AUTH: bool = False
+    SECRET_KEY: str = "dev_secret_key_change_in_production"
 
     # Observability
     SENTRY_DSN: str | None = None

@@ -1,16 +1,20 @@
 /**
  * Next.js Proxy
- * Handles Supabase session refresh and route protection.
+ * Handles session-based route protection using Telegram Login.
  * Next.js 16 uses 'proxy' convention instead of 'middleware'.
  */
 
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+
+/**
+ * Session cookie name (matches API backend)
+ */
+const SESSION_COOKIE = "nezuko_session";
 
 /**
  * Public routes that don't require authentication.
  */
-const PUBLIC_ROUTES = ["/login", "/auth/callback", "/auth/confirm"];
+const PUBLIC_ROUTES = ["/login"];
 
 /**
  * Check if the path is a public route.
@@ -36,39 +40,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if Supabase is configured
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Check for session cookie
+  const sessionId = request.cookies.get(SESSION_COOKIE)?.value;
+  const isAuthenticated = !!sessionId;
 
-  // If Supabase is not configured, allow all routes (dev mode)
-  if (!supabaseUrl || !supabaseAnonKey) {
+  // Check if we're in mock/dev mode (allow all routes)
+  // DEV_LOGIN bypasses auth check, USE_MOCK uses mock data
+  const devLogin = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
+  const useMock = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+  if (devLogin || useMock) {
     return NextResponse.next();
   }
 
-  let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        supabaseResponse = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options)
-        );
-      },
-    },
-  });
-
-  // Refresh session if expired - important for Server Components
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   // Route protection: redirect unauthenticated users to login
-  if (!user && !isPublicRoute(request.nextUrl.pathname)) {
+  if (!isAuthenticated && !isPublicRoute(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirectTo", request.nextUrl.pathname);
@@ -76,7 +61,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Redirect authenticated users away from login page
-  if (user && request.nextUrl.pathname === "/login") {
+  if (isAuthenticated && request.nextUrl.pathname === "/login") {
     const redirectTo = request.nextUrl.searchParams.get("redirectTo") || "/dashboard";
     const url = request.nextUrl.clone();
     url.pathname = redirectTo;
@@ -84,7 +69,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return supabaseResponse;
+  return NextResponse.next();
 }
 
 export const config = {
@@ -99,4 +84,3 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
-

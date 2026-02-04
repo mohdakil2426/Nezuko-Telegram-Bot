@@ -25,9 +25,10 @@ Nezuko bridges this gap by acting as a high-performance **Gatekeeper** and **Ana
 
 The **Nezuko Dashboard** provides a unified interface for system owners:
 
-- **Real-Time Observability**: Live log streaming (via Supabase Realtime) and activity feeds showing system actions.
-- **RBAC System**: Granular permissions (Owner, Admin, Viewer) managed via Supabase Auth + Local Roles.
+- **Real-Time Observability**: Live SSE streaming and activity feeds showing system actions.
+- **Owner-Only Access**: Secure Telegram Login Widget authentication (no external accounts needed).
 - **Insightful Analytics**: Visualizing verification trends and user growth through interactive charts.
+- **Multi-Bot Management**: Add and manage multiple Telegram bots from a single dashboard.
 - **Config-as-UI**: Modify bot behavior (messages, rate limits, webhooks) without touching environment variables.
 
 ---
@@ -48,24 +49,25 @@ The **Nezuko Dashboard** provides a unified interface for system owners:
 
 ### The Premium Experience (Visuals)
 
-- **Glassmorphism**: Diffuse blur backgrounds (`backdrop-filter`) for depth.
-- **Micro-Interactions**: `MagneticButton` and `TiltCard` provide tactile feedback.
-- **Data Visualization**: Smooth streaming charts with `Recharts` and animated counters.
-- **Theming**: 11+ preset themes (Cyberpunk, Synthwave) + custom color generator.
+- **Modern Design**: Clean shadcn/ui components with consistent styling.
+- **Micro-Interactions**: Smooth animations and hover effects.
+- **Data Visualization**: Real-time charts with `Recharts` and animated counters.
+- **Theming**: Light/Dark/System modes with customizable accent colors.
 
 ---
 
 ## 🛠️ Technology Rationale
 
-| Component         | Technology             | Reason                                   |
-| :---------------- | :--------------------- | :--------------------------------------- |
-| **Bot Core**      | Python 3.13, PTB v22.6 | Maximum async performance, modern typing |
-| **Admin API**     | FastAPI, Pydantic V2   | High-performance REST with validation    |
-| **Dashboard**     | Next.js 16, React 19   | Server Components, streaming, premium UX |
-| **Auth**          | Supabase Auth          | JWT-based secure identity management     |
-| **Realtime Logs** | Supabase Realtime      | Postgres Change Detection                |
-| **Database**      | PostgreSQL (Supabase)  | Production-grade SQL at any scale        |
-| **Cache**         | Redis 7+               | Distributed caching, session management  |
+| Component          | Technology               | Reason                                    |
+| :----------------- | :----------------------- | :---------------------------------------- |
+| **Bot Core**       | Python 3.13, PTB v22.6   | Maximum async performance, modern typing  |
+| **Admin API**      | FastAPI, Pydantic V2     | High-performance REST with validation     |
+| **Dashboard**      | Next.js 16, React 19     | Server Components, streaming, premium UX  |
+| **Auth**           | Telegram Login Widget    | Owner-only access, no external accounts   |
+| **Real-Time**      | Server-Sent Events (SSE) | Live updates without WebSocket complexity |
+| **Database**       | PostgreSQL (Supabase)    | Production-grade SQL at any scale         |
+| **Token Security** | Fernet Encryption        | Bot tokens encrypted at rest              |
+| **Cache**          | Redis 7+                 | Distributed caching, session management   |
 
 ---
 
@@ -79,34 +81,32 @@ The **Nezuko Dashboard** provides a unified interface for system owners:
 | **Static Analysis Errors** | 0        | ✅ Zero Errors |
 | **Pylint Score**           | 10.00/10 | ✅ Achieved    |
 | **TypeScript Errors**      | 0        | ✅ Zero Errors |
-| **UI Pages Working**       | 9/9      | ✅ All Tested  |
-| **Auth Tests Passed**      | 6/6      | ✅ All Passed  |
+| **UI Pages Working**       | 10/10    | ✅ All Tested  |
+| **Auth Tests Passed**      | 15/15    | ✅ All Passed  |
 | **Security Tests Passed**  | 3/3      | ✅ All Passed  |
 
 ---
 
-## 🎯 Current State Summary (2026-02-02)
+## 🎯 Current State Summary (2026-02-04)
 
 ### Platform Status
 
-| Component          | Status        | Notes                           |
-| ------------------ | ------------- | ------------------------------- |
-| **Bot Core**       | ✅ Functional | Enforcement engine working      |
-| **Admin API**      | ✅ Functional | Supabase JWT verification       |
-| **Dashboard**      | ✅ Polished   | Premium UI + 11 Themes          |
-| **Authentication** | ✅ Working    | Login, session, logout verified |
-| **Documentation**  | ✅ Complete   | Structured in docs/             |
+| Component          | Status        | Notes                                |
+| ------------------ | ------------- | ------------------------------------ |
+| **Bot Core**       | ✅ Functional | Enforcement engine working           |
+| **Admin API**      | ✅ Functional | Telegram Login + SSE                 |
+| **Dashboard**      | ✅ Polished   | shadcn/ui + Multi-Bot Management     |
+| **Authentication** | ✅ Working    | Telegram Login Widget (owner-only)   |
+| **Bot Management** | ✅ Working    | Add/edit/delete bots with encryption |
+| **Documentation**  | ✅ Complete   | Structured in docs/                  |
 
-### Recent Improvements (Phase 28-40)
+### Recent Improvements (Phase 41)
 
-- **Dashboard Redesign**: Complete overhaul with Glassmorphism and Tilt effects.
-- **New Assets Page**: Unified Groups and Channels management.
-- **Logs Page**: Added real-time log streaming with premium overview stats.
-- **Development Experience**: Added mock data toggle and auth bypass for offline dev.
-- **Full-Stack Integration (Phase 40)**: Connected Web + API + Bot with real data flow.
-  - 11 new API endpoints for charts and analytics
-  - Supabase authentication integrated
-  - Dashboard displays live verification data from database
+- **Telegram Login Widget**: Replaced Supabase auth with native Telegram authentication.
+- **Multi-Bot Management**: Add unlimited bots with encrypted token storage.
+- **SSE Infrastructure**: Real-time event streaming with connection status UI.
+- **Session-based Auth**: HTTP-only cookies with configurable expiration.
+- **Startup Validation**: API fails fast with clear errors if config missing.
 
 ---
 
@@ -116,11 +116,11 @@ The **Nezuko Dashboard** provides a unified interface for system owners:
 
 - [ ] Multi-language support (i18n)
 - [ ] Member Whitelisting UI
-- [ ] Telegram Login Widget integration
+- [ ] Real-time activity feed integration
 - [ ] Mobile-responsive sidebar
 - [ ] LLM-based sentiment analysis
 - [ ] Automated FAQ handling
-- [ ] Production auth setup (correct Supabase JWT secret)
+- [ ] Bot-to-group linking UI
 
 ---
 

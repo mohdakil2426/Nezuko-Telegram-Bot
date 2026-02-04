@@ -36,13 +36,12 @@ class AdminService:
             )
 
         # Creates user in local DB.
-        # Ideally, user should also be created in Supabase Auth by frontend or separate process.
-        # This service now only manages the SQL record.
+        # Authentication is handled by Telegram Login Widget.
         admin = AdminUser(
             email=data.email,
             full_name=data.full_name,
             role=data.role,
-            # Password not stored locally anymore (Supabase handles auth)
+            # Password not stored locally (Telegram handles auth)
             telegram_id=data.telegram_id,
             is_active=data.is_active,
         )
@@ -57,7 +56,7 @@ class AdminService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
 
         updated_data = data.model_dump(exclude_unset=True)
-        # Password updates are handled by Supabase, ignore local password updates if any
+        # Password updates are not supported (Telegram handles auth)
         if "password" in updated_data:
             del updated_data["password"]
 

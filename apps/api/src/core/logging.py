@@ -2,7 +2,7 @@
 
 Uses structlog for structured, context-rich logging with multiple outputs:
 - Console (pretty for dev, JSON for production)
-- File (storage/logs/api.log)
+- File (project root: storage/logs/api.log)
 - Postgres (admin_logs table, production only)
 - Redis (pub/sub for real-time streaming, production only)
 
@@ -104,9 +104,11 @@ def configure_logging(
         log_format = "%(message)s"
         level = logging.DEBUG
 
-    # File handler - log to storage/logs/api.log
+    # File handler - log to storage/logs/api.log (project root, not relative to cwd)
     if log_to_file:
-        log_dir = Path("storage/logs")
+        # Get project root (3 levels up from this file: core -> src -> api -> apps -> root)
+        project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+        log_dir = project_root / "storage" / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file = log_dir / "api.log"
         file_handler = logging.FileHandler(log_file)

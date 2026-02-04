@@ -5,7 +5,7 @@
 
 **Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read these all files for deep project understanding. **NEVER SKIP THIS STEP**
 
-**⚠️ RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, and best practice documented below. No exceptions, no shortcuts. Violations lead to broken builds, security issues, and technical debt. nad most imp project pattern existng ui consistancy work accourding to project.
+**⚠️ RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, and best practice documented below. No exceptions, no shortcuts. Violations lead to broken builds, security issues, hard coding, and technical debt. and most importantly project pattern, existing ui style consistancy to insure all ui changes alligned with project, and respect all the rules and guidelines documented below.
 
 ---
 
@@ -131,7 +131,8 @@ alembic revision --autogenerate -m "desc"  # Create migration
 | **Frontend** | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
 | **Backend**  | FastAPI, Python 3.13, SQLAlchemy 2.0, Pydantic V2        |
 | **Bot**      | python-telegram-bot v22.6, AsyncIO, Redis                |
-| **Database** | PostgreSQL 15+ (Supabase), SQLite (dev)                  |
+| **Database** | SQLite (dev), PostgreSQL (production)                    |
+| **Auth**     | Telegram Login Widget (owner-only)                       |
 | **Infra**    | Docker, Turborepo, Caddy                                 |
 
 ---
@@ -270,4 +271,4 @@ Skills are located in `.agent/skills/`. Read the **SKILL.md** file inside each s
 
 ---
 
-_Last Updated: 2026-02-04_
+_Last Updated: 2026-02-05_

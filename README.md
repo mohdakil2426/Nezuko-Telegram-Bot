@@ -35,7 +35,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white&labelColor=1a1a2e)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.128+-009688?style=for-the-badge&logo=fastapi&logoColor=white&labelColor=1a1a2e)](https://fastapi.tiangolo.com/)
 [![Telegram Bot API](https://img.shields.io/badge/PTB-v22.6+-26A5E4?style=for-the-badge&logo=telegram&logoColor=white&labelColor=1a1a2e)](https://python-telegram-bot.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Auth-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white&labelColor=1a1a2e)](https://supabase.com/)
+[![Telegram Login](https://img.shields.io/badge/Telegram-Login_Widget-26A5E4?style=for-the-badge&logo=telegram&logoColor=white&labelColor=1a1a2e)](https://core.telegram.org/widgets/login)
 
 <br/>
 
@@ -311,7 +311,7 @@ nezuko-monorepo/
 [![PTB](https://img.shields.io/badge/python--telegram--bot-v22.6+-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://python-telegram-bot.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7+-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
-[![Supabase](https://img.shields.io/badge/Supabase-Auth-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Telegram Login](https://img.shields.io/badge/Telegram-Login_Widget-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://core.telegram.org/widgets/login)
 
 </div>
 
@@ -334,7 +334,7 @@ nezuko-monorepo/
 | **Bot Library**        | python-telegram-bot | 22.6+                  |
 | **Database**           | PostgreSQL          | 15+                    |
 | **Cache**              | Redis               | 7+                     |
-| **Auth**               | Supabase Auth       | Latest                 |
+| **Auth**               | Telegram Login      | Latest                 |
 | **Package Manager**    | Bun                 | 1.3+                   |
 | **Monorepo**           | Turborepo           | Latest                 |
 
@@ -469,14 +469,15 @@ Comprehensive documentation is available in [`docs/`](docs/README.md):
 - [x] **FastAPI REST Backend** — Pydantic V2, SQLAlchemy 2.0
 - [x] **Admin Dashboard** — Pure shadcn/ui with 26 components
 - [x] **Analytics Charts** — 10 chart types across 4 tabs
-- [x] **Supabase Auth** — JWT-based authentication
+- [x] **Telegram Login Widget** — Owner-only authentication via Telegram
+- [x] **Multi-Bot Management** — Add and manage multiple bots from dashboard
 - [x] **Mock Data Layer** — Development without backend
 
 ### Planned 🚧
 
 - [ ] **Multi-Language Support (i18n)** — Localized bot messages
 - [ ] **Member Whitelisting** — Exempt specific users
-- [ ] **Telegram Login Widget** — Seamless web auth
+- [ ] **Real-Time SSE Updates** — Live activity feed and analytics
 - [ ] **Command Palette** — Cmd+K quick actions
 - [ ] **Auto-Moderation** — Spam detection & filtering
 - [ ] **Scheduled Messages** — Timed announcements

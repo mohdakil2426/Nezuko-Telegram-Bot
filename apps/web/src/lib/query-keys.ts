@@ -40,6 +40,19 @@ export const queryKeys = {
       [...queryKeys.analytics.all, "user-growth", params] as const,
   },
 
+  // Auth keys
+  auth: {
+    all: ["auth"] as const,
+    me: ["auth", "me"] as const,
+  },
+
+  // Bots keys (Bot Management)
+  bots: {
+    all: ["bots"] as const,
+    list: () => [...queryKeys.bots.all, "list"] as const,
+    detail: (id: number) => [...queryKeys.bots.all, "detail", id] as const,
+  },
+
   // Charts keys (Advanced Analytics)
   charts: {
     all: ["charts"] as const,
@@ -59,6 +72,12 @@ export const queryKeys = {
       [...queryKeys.charts.all, "latency-trend", params] as const,
     // Radial charts
     botHealth: () => [...queryKeys.charts.all, "bot-health"] as const,
+  },
+
+  // Logs keys
+  logs: {
+    all: ["logs"] as const,
+    list: (limit?: number, level?: string) => [...queryKeys.logs.all, "list", { limit, level }] as const,
   },
 } as const;
 
