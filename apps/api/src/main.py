@@ -19,10 +19,13 @@ from .middleware.request_id import RequestIDMiddleware
 # Get settings first
 settings = get_settings()
 
-# Initialize structured logging
+# Initialize structured logging with file + Postgres + Redis handlers
 configure_logging(
     environment=settings.ENVIRONMENT,
     log_level=settings.LOG_LEVEL,
+    log_to_file=True,
+    log_to_postgres=settings.ENVIRONMENT == "production",
+    log_to_redis=settings.ENVIRONMENT == "production",
 )
 
 logger = structlog.get_logger(__name__)
