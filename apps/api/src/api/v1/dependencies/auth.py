@@ -106,3 +106,25 @@ async def get_current_active_user(
 
 # Alias for backward compatibility or more specific usage
 get_current_admin_user = get_current_active_user
+
+
+async def require_super_admin(
+    current_user: AdminUser = Depends(get_current_active_user),
+) -> AdminUser:
+    """Require super_admin role for access.
+
+    Args:
+        current_user: Current authenticated user.
+
+    Returns:
+        AdminUser if role is super_admin.
+
+    Raises:
+        HTTPException: 403 if user is not a super_admin.
+    """
+    if current_user.role != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Requires super_admin role",
+        )
+    return current_user

@@ -57,31 +57,31 @@ The **Nezuko Dashboard** provides a unified interface for system owners:
 
 ## 🛠️ Technology Rationale
 
-| Component | Technology | Reason |
-|:----------|:-----------|:-------|
-| **Bot Core** | Python 3.13, PTB v22.6 | Maximum async performance, modern typing |
-| **Admin API** | FastAPI, Pydantic V2 | High-performance REST with validation |
-| **Dashboard** | Next.js 16, React 19 | Server Components, streaming, premium UX |
-| **Auth** | Supabase Auth | JWT-based secure identity management |
-| **Realtime Logs** | Supabase Realtime | Postgres Change Detection |
-| **Database** | PostgreSQL (Supabase) | Production-grade SQL at any scale |
-| **Cache** | Redis 7+ | Distributed caching, session management |
+| Component         | Technology             | Reason                                   |
+| :---------------- | :--------------------- | :--------------------------------------- |
+| **Bot Core**      | Python 3.13, PTB v22.6 | Maximum async performance, modern typing |
+| **Admin API**     | FastAPI, Pydantic V2   | High-performance REST with validation    |
+| **Dashboard**     | Next.js 16, React 19   | Server Components, streaming, premium UX |
+| **Auth**          | Supabase Auth          | JWT-based secure identity management     |
+| **Realtime Logs** | Supabase Realtime      | Postgres Change Detection                |
+| **Database**      | PostgreSQL (Supabase)  | Production-grade SQL at any scale        |
+| **Cache**         | Redis 7+               | Distributed caching, session management  |
 
 ---
 
 ## 📈 Success Metrics
 
-| Metric | Target | Current Status |
-|:-------|:-------|:---------------|
-| **p99 Verification** | < 150ms | ✅ Achieved |
-| **Uptime** | 99.9% | ✅ On Track |
-| **Admin Login Success** | 100% | ✅ Working |
-| **Static Analysis Errors** | 0 | ✅ Zero Errors |
-| **Pylint Score** | 10.00/10 | ✅ Achieved |
-| **TypeScript Errors** | 0 | ✅ Zero Errors |
-| **UI Pages Working** | 9/9 | ✅ All Tested |
-| **Auth Tests Passed** | 6/6 | ✅ All Passed |
-| **Security Tests Passed** | 3/3 | ✅ All Passed |
+| Metric                     | Target   | Current Status |
+| :------------------------- | :------- | :------------- |
+| **p99 Verification**       | < 150ms  | ✅ Achieved    |
+| **Uptime**                 | 99.9%    | ✅ On Track    |
+| **Admin Login Success**    | 100%     | ✅ Working     |
+| **Static Analysis Errors** | 0        | ✅ Zero Errors |
+| **Pylint Score**           | 10.00/10 | ✅ Achieved    |
+| **TypeScript Errors**      | 0        | ✅ Zero Errors |
+| **UI Pages Working**       | 9/9      | ✅ All Tested  |
+| **Auth Tests Passed**      | 6/6      | ✅ All Passed  |
+| **Security Tests Passed**  | 3/3      | ✅ All Passed  |
 
 ---
 
@@ -89,20 +89,24 @@ The **Nezuko Dashboard** provides a unified interface for system owners:
 
 ### Platform Status
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| **Bot Core** | ✅ Functional | Enforcement engine working |
-| **Admin API** | ✅ Functional | Supabase JWT verification |
-| **Dashboard** | ✅ Polished | Premium UI + 11 Themes |
-| **Authentication** | ✅ Working | Login, session, logout verified |
-| **Documentation** | ✅ Complete | Structured in docs/ |
+| Component          | Status        | Notes                           |
+| ------------------ | ------------- | ------------------------------- |
+| **Bot Core**       | ✅ Functional | Enforcement engine working      |
+| **Admin API**      | ✅ Functional | Supabase JWT verification       |
+| **Dashboard**      | ✅ Polished   | Premium UI + 11 Themes          |
+| **Authentication** | ✅ Working    | Login, session, logout verified |
+| **Documentation**  | ✅ Complete   | Structured in docs/             |
 
-### Recent Improvements (Phase 28-29)
+### Recent Improvements (Phase 28-40)
 
 - **Dashboard Redesign**: Complete overhaul with Glassmorphism and Tilt effects.
 - **New Assets Page**: Unified Groups and Channels management.
 - **Logs Page**: Added real-time log streaming with premium overview stats.
 - **Development Experience**: Added mock data toggle and auth bypass for offline dev.
+- **Full-Stack Integration (Phase 40)**: Connected Web + API + Bot with real data flow.
+  - 11 new API endpoints for charts and analytics
+  - Supabase authentication integrated
+  - Dashboard displays live verification data from database
 
 ---
 
@@ -116,19 +120,20 @@ The **Nezuko Dashboard** provides a unified interface for system owners:
 - [ ] Mobile-responsive sidebar
 - [ ] LLM-based sentiment analysis
 - [ ] Automated FAQ handling
+- [ ] Production auth setup (correct Supabase JWT secret)
 
 ---
 
 ## 📚 Documentation
 
-| Topic | Location |
-|-------|----------|
-| Full Documentation | `docs/README.md` |
-| Tech Stack | `docs/architecture/tech-stack.md` |
-| Architecture | `docs/architecture/README.md` |
-| API Reference | `docs/api/README.md` |
-| Contributing | `docs/contributing/README.md` |
+| Topic              | Location                          |
+| ------------------ | --------------------------------- |
+| Full Documentation | `docs/README.md`                  |
+| Tech Stack         | `docs/architecture/tech-stack.md` |
+| Architecture       | `docs/architecture/README.md`     |
+| API Reference      | `docs/api/README.md`              |
+| Contributing       | `docs/contributing/README.md`     |
 
 ---
 
-*Last Updated: 2026-02-02*
+_Last Updated: 2026-02-04_
