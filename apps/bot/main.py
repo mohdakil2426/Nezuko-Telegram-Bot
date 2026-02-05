@@ -21,6 +21,8 @@ from apps.bot.core.loader import register_handlers, setup_bot_commands
 from apps.bot.core.rate_limiter import create_rate_limiter
 from apps.bot.core.uptime import record_bot_start
 from apps.bot.database.crud import get_all_protected_groups
+from apps.bot.services.event_publisher import configure_event_publisher
+from apps.bot.services.heartbeat import configure_heartbeat_service, get_heartbeat_service
 from apps.bot.services.member_sync import schedule_member_sync
 from apps.bot.utils.health import stop_health_server
 
@@ -51,13 +53,13 @@ logging.basicConfig(
     ],
 )
 # Add Postgres Handler (Real-time logs)
-postgres_handler = None
+POSTGRES_HANDLER = None
 try:
     from apps.bot.utils.postgres_logging import PostgresLogHandler
 
-    postgres_handler = PostgresLogHandler()
-    postgres_handler.setLevel(logging.INFO)  # Always send INFO+ to dashboard
-    logging.getLogger().addHandler(postgres_handler)
+    POSTGRES_HANDLER = PostgresLogHandler()
+    POSTGRES_HANDLER.setLevel(logging.INFO)  # Always send INFO+ to dashboard
+    logging.getLogger().addHandler(POSTGRES_HANDLER)
 except Exception as e:  # pylint: disable=broad-exception-caught
     print(f"Failed to initialize Postgres logger: {e}")
 
@@ -107,10 +109,31 @@ async def post_init(_application: Application) -> None:
     schedule_member_sync(_application)
     logger.info("[OK] Analytics integration initialized")
 
+    # Initialize EventPublisher for real-time dashboard updates
+    # Configure with API URL from environment or default
+    api_url = getattr(config, "api_url", "http://localhost:8080")
+    configure_event_publisher(api_url, enabled=True)
+    logger.info("[OK] Event publisher configured for real-time updates")
+
+    # Initialize HeartbeatService for uptime tracking
+    # Note: Session cookie needs to be set when available
+    configure_heartbeat_service(
+        api_base_url=api_url,
+        interval_seconds=30,
+    )
+    logger.info("[OK] Heartbeat service configured (requires authentication to start)")
+
 
 async def post_shutdown(_application: Application) -> None:
     """Cleanup resources on shutdown."""
     logger.info("Shutting down gracefully...")
+
+    # Stop heartbeat service
+    try:
+        heartbeat = get_heartbeat_service()
+        await heartbeat.stop()
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.warning("Error stopping heartbeat service: %s", e)
 
     # Stop health server
     await stop_health_server()
@@ -119,8 +142,8 @@ async def post_shutdown(_application: Application) -> None:
     sentry_flush(timeout=2)
 
     # Close Postgres log handler
-    if postgres_handler:
-        await postgres_handler.close_async()
+    if POSTGRES_HANDLER:
+        await POSTGRES_HANDLER.close_async()
 
     # Close connections
     await close_redis_connection()

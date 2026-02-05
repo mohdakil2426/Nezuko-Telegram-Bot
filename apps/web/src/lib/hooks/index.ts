@@ -34,6 +34,14 @@ export {
   useBotHealthMetrics,
 } from "./use-charts";
 
+// Real-time enhanced chart hooks
+export {
+  useRealtimeChart,
+  useRealtimeVerificationChart,
+  useRealtimeActivityChart,
+  useRealtimeBotHealthChart,
+} from "./use-realtime-chart";
+
 // Logs hooks
 export { useLogs } from "./use-logs";
 

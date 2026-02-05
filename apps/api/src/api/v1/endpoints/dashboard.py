@@ -14,6 +14,7 @@ from src.models.bot import EnforcedChannel, ProtectedGroup
 from src.models.verification_log import VerificationLog
 from src.schemas.base import SuccessResponse
 from src.schemas.dashboard import ActivityResponse, DashboardStatsResponse
+from src.services.uptime_service import get_uptime_tracker
 
 router = APIRouter()
 
@@ -40,8 +41,9 @@ async def get_dashboard_stats(
     success_rate = await _get_success_rate(session, week_start)
     cache_hit_rate = await _get_cache_hit_rate(session, today_start)
 
-    # Bot uptime - placeholder for now (would need Prometheus/Redis)
-    bot_uptime_seconds = 0
+    # Bot uptime from the uptime tracker service
+    uptime_tracker = get_uptime_tracker()
+    bot_uptime_seconds = await uptime_tracker.get_uptime_seconds()
 
     return SuccessResponse(
         data=DashboardStatsResponse(

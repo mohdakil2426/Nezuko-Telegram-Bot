@@ -1,22 +1,18 @@
-# Active Context: Phase 41+ - Separated Bot Architecture ✅ COMPLETE
+# Active Context: Phase 43 - Real-time Dashboard Infrastructure ✅ COMPLETE
 
 ## Current Status
 
-**Phase 41+ COMPLETE** - Separated Bot Architecture Implemented
+**Phase 43 COMPLETE** - Real-time Dashboard Infrastructure
 **Date**: 2026-02-05
 
-### Architecture Change
+### Work Completed This Session
 
-Implemented **separated bot architecture**:
-
-- **Login Bot**: Only for Telegram Login Widget authentication (in .env)
-- **Working Bots**: Added via Dashboard UI, encrypted in database
-
-### Final Status
-
-| Change Name                          | Status      | Location                                               |
-| :----------------------------------- | :---------- | :----------------------------------------------------- |
-| `owner-telegram-auth-bot-management` | ✅ Complete | `openspec/changes/owner-telegram-auth-bot-management/` |
+1. **Auto-refresh Polling** - All TanStack Query hooks now have refetchInterval (15-60s)
+2. **SSE Event Integration** - Added `useRealtimeChart` hook combining polling + SSE
+3. **Bot Event Publishing** - Bot publishes verification events to API for SSE broadcast
+4. **Redis Uptime Tracking** - Persistent bot uptime across API restarts
+5. **Heartbeat Service** - Bot sends periodic heartbeats (30s) to prove it's alive
+6. **Code Quality Fixes** - Replaced global statements, fixed exception handling
 
 ---
 
@@ -32,66 +28,91 @@ Implemented **separated bot architecture**:
 │  └── Token: LOGIN_BOT_TOKEN                                      │
 │                                                                  │
 │  🖥️  DASHBOARD (Web UI)                                          │
-│  └── Add working bots via "Add Bot" button                       │
-│  └── Tokens encrypted with Fernet, stored in database           │
+│  └── Real-time updates via TanStack Query polling               │
+│  └── SSE events trigger cache invalidation for instant sync     │
+│  └── Bot uptime from API /dashboard/stats                       │
 │                                                                  │
 │  🤖 WORKING BOTS (from Database)                                 │
-│  └── Read from DB by bot worker process                          │
-│  └── Multiple bots supported                                     │
+│  └── BotManager reads active bots from DB                        │
+│  └── Decrypts tokens with ENCRYPTION_KEY                         │
+│  └── Publishes verification events to dashboard                  │
+│  └── HeartbeatService for uptime tracking                        │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
+## New Files Created This Session
+
+| File                                           | Purpose                                   |
+| ---------------------------------------------- | ----------------------------------------- |
+| `apps/bot/services/event_publisher.py`         | Publishes events to API for SSE broadcast |
+| `apps/bot/services/heartbeat.py`               | Periodic heartbeats for uptime tracking   |
+| `apps/api/src/services/uptime_service.py`      | Redis-backed uptime tracking              |
+| `apps/web/src/lib/hooks/use-realtime-chart.ts` | SSE + TanStack Query combo hook           |
+| `scripts/seed_test_data.py`                    | Standalone SQLite test data seeder        |
+
+---
+
+## Files Modified This Session
+
+| File                                         | Change                                              |
+| -------------------------------------------- | --------------------------------------------------- |
+| `apps/web/src/lib/hooks/use-dashboard.ts`    | Added refetchInterval (15-60s)                      |
+| `apps/web/src/lib/hooks/use-charts.ts`       | Added 60s polling to all chart hooks                |
+| `apps/web/src/lib/hooks/use-analytics.ts`    | Added 30-60s polling                                |
+| `apps/bot/services/verification.py`          | Integrated EventPublisher for SSE                   |
+| `apps/bot/main.py`                           | Initialize event publisher and heartbeat at startup |
+| `apps/api/src/api/v1/endpoints/events.py`    | Added bot heartbeat/start/stop/status endpoints     |
+| `apps/api/src/api/v1/endpoints/dashboard.py` | Uses async UptimeTracker for real bot uptime        |
+| `apps/api/src/services/log_service.py`       | Redis + database fallback                           |
+| `apps/api/src/core/logging.py`               | Fixed log path to project root                      |
+
+---
+
+## Files Deleted This Session
+
+- ~~`apps/api/requirements.txt`~~ (deprecated redirect)
+- ~~`apps/api/requirements-dev.txt`~~ (deprecated redirect)
+- ~~`apps/bot/requirements.txt`~~ (deprecated redirect)
+
+---
+
 ## Configuration Files
 
-### apps/api/.env (Required)
+### Dashboard Mode (Bot from Database)
+
+**apps/bot/.env:**
 
 ```bash
-LOGIN_BOT_TOKEN=<bot-token-for-login>
-BOT_OWNER_TELEGRAM_ID=<your-telegram-id>
-ENCRYPTION_KEY=<fernet-key>
+BOT_TOKEN=                    # Leave empty for dashboard mode
+ENCRYPTION_KEY=<same-as-api>  # Required for token decryption
 DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
 ```
 
-### apps/web/.env.local (Required)
+### Standalone Mode (Single Bot)
+
+**apps/bot/.env:**
 
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:8080
-NEXT_PUBLIC_LOGIN_BOT_USERNAME=<bot-username>
-```
-
-### apps/bot/.env (Optional BOT_TOKEN)
-
-```bash
-BOT_TOKEN=<optional-standalone-mode>
+BOT_TOKEN=<your-bot-token>    # Set for standalone mode
 DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
 ```
 
 ---
 
-## Changes Made This Session
+## Requirements Structure (Cleaned)
 
-### New Files Created
-
-- `apps/api/.env.example` - API configuration template
-- `apps/web/.env.example` - Web configuration template
-- `apps/bot/.env.example` - Bot configuration template
-- `docs/setup/environment-configuration.md` - Complete env guide
-
-### Files Updated
-
-- `apps/api/.env` - Cleaned, removed Supabase, only login bot
-- `apps/web/.env.local` - Cleaned, minimal config
-- `apps/api/src/core/config.py` - Removed Supabase settings
-- `apps/bot/config.py` - Made BOT_TOKEN optional, added dashboard_mode
-
-### Supabase Removed
-
-- All Supabase configuration removed from .env files
-- Supabase settings removed from API config.py
-- Authentication now 100% Telegram-based
+```
+requirements/
+├── base.txt       ← Shared (SQLAlchemy, Redis, Pydantic, cryptography)
+├── api.txt        ← API-only (FastAPI, Uvicorn, httpx)
+├── bot.txt        ← Bot-only (python-telegram-bot)
+├── dev.txt        ← Dev tools (pytest, ruff, mypy)
+├── prod-api.txt   ← Production API: base + api
+└── prod-bot.txt   ← Production Bot: base + bot
+```
 
 ---
 
@@ -105,38 +126,24 @@ cd apps/api && python -m uvicorn src.main:app --reload --port 8080
 
 # Terminal 2 - Web (port 3000)
 cd apps/web && bun dev
+
+# Terminal 3 - Bot (dashboard mode)
+python -m apps.bot.main
 ```
-
-### BotFather Configuration
-
-For Telegram Login Widget to work:
-
-1. Message @BotFather
-2. Send `/setdomain`
-3. Select your login bot
-4. Enter: `localhost` (or production domain)
 
 ---
 
 ## Verified Working
 
-| Component       | Status                 | Port |
-| :-------------- | :--------------------- | :--- |
-| API Server      | ✅ Running             | 8080 |
-| Web Dashboard   | ✅ Running             | 3002 |
-| Login Page UI   | ✅ Beautiful           | -    |
-| Telegram Widget | ⏳ Needs domain config | -    |
-| Database        | ✅ SQLite              | -    |
+| Component     | Status       | Notes                |
+| ------------- | ------------ | -------------------- |
+| API Server    | ✅ Running   | Port 8080            |
+| Web Dashboard | ✅ Running   | Port 3000            |
+| Activity Feed | ✅ Real Data | From VerificationLog |
+| Logs Page     | ✅ Fallback  | Works without Redis  |
+| Bot Manager   | ✅ Ready     | Multi-bot from DB    |
+| API Logs      | ✅ Fixed     | Now in storage/logs/ |
 
 ---
 
-## Next Steps
-
-1. Configure domain in BotFather (`localhost`)
-2. Test Telegram login flow
-3. Add working bots via Dashboard
-4. Test bot enforcement features
-
----
-
-_Last Updated: 2026-02-05 00:43 IST_
+_Last Updated: 2026-02-05 04:28 IST_
