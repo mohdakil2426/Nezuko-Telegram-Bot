@@ -1,18 +1,18 @@
-# Active Context: Phase 43 - Real-time Dashboard Infrastructure ✅ COMPLETE
+# Active Context: Phase 44 - PostgreSQL Migration ✅ COMPLETE
 
 ## Current Status
 
-**Phase 43 COMPLETE** - Real-time Dashboard Infrastructure
+**Phase 44 COMPLETE** - PostgreSQL Migration & Schema Fix
 **Date**: 2026-02-05
 
 ### Work Completed This Session
 
-1. **Auto-refresh Polling** - All TanStack Query hooks now have refetchInterval (15-60s)
-2. **SSE Event Integration** - Added `useRealtimeChart` hook combining polling + SSE
-3. **Bot Event Publishing** - Bot publishes verification events to API for SSE broadcast
-4. **Redis Uptime Tracking** - Persistent bot uptime across API restarts
-5. **Heartbeat Service** - Bot sends periodic heartbeats (30s) to prove it's alive
-6. **Code Quality Fixes** - Replaced global statements, fixed exception handling
+1. **PostgreSQL Docker Setup** - Running on port 5432 (`nezuko-postgres` container)
+2. **DateTime Timezone Fix** - Changed all timestamp columns to `DateTime(timezone=True)`
+3. **BotInstance Schema Fix** - Updated migration to match model (bot_id, bot_username, etc.)
+4. **Database Reset & Migrate** - Full schema recreated with Alembic migrations
+5. **API Service Verified** - All endpoints tested and working with PostgreSQL
+6. **Web Dashboard Running** - Serving pages correctly on port 3000
 
 ---
 
@@ -135,15 +135,28 @@ python -m apps.bot.main
 
 ## Verified Working
 
-| Component     | Status       | Notes                |
-| ------------- | ------------ | -------------------- |
-| API Server    | ✅ Running   | Port 8080            |
-| Web Dashboard | ✅ Running   | Port 3000            |
-| Activity Feed | ✅ Real Data | From VerificationLog |
-| Logs Page     | ✅ Fallback  | Works without Redis  |
-| Bot Manager   | ✅ Ready     | Multi-bot from DB    |
-| API Logs      | ✅ Fixed     | Now in storage/logs/ |
+| Component       | Status     | Notes                     |
+| --------------- | ---------- | ------------------------- |
+| PostgreSQL      | ✅ Running | Docker `nezuko-postgres`  |
+| API Server      | ✅ Running | Port 8080                 |
+| Web Dashboard   | ✅ Running | Port 3000                 |
+| Bot Instances   | ✅ Fixed   | Schema matches model      |
+| Verification    | ✅ Fixed   | Timezone-aware timestamps |
+| Analytics       | ✅ Working | All chart endpoints       |
+| Dashboard Stats | ✅ Working | Real-time metrics         |
 
 ---
 
-_Last Updated: 2026-02-05 04:28 IST_
+## PostgreSQL Configuration
+
+```bash
+# Start PostgreSQL container
+docker run --name nezuko-postgres -e POSTGRES_USER=nezuko -e POSTGRES_PASSWORD=nezuko123 -e POSTGRES_DB=nezuko -p 5432:5432 -d postgres:17
+
+# Connection string (apps/api/.env)
+DATABASE_URL=postgresql+asyncpg://nezuko:nezuko123@localhost:5432/nezuko
+```
+
+---
+
+_Last Updated: 2026-02-05 15:36 IST_

@@ -15,7 +15,7 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 | **Frontend**       | Next.js 16, React 19, TypeScript 5.8+, Tailwind v4, shadcn/ui (web + web1) |
 | **Backend API**    | FastAPI 0.128+, Python 3.13, SQLAlchemy 2.0, Pydantic V2                   |
 | **Bot Engine**     | python-telegram-bot v22.6, AsyncIO                                         |
-| **Database**       | SQLite (Local Dev), PostgreSQL (Production)                                |
+| **Database**       | PostgreSQL 17 (Production via Docker), SQLite (Fallback)                   |
 | **Infrastructure** | Docker, Turborepo, Caddy                                                   |
 
 ---
@@ -127,6 +127,7 @@ const { accentHex } = useThemeConfig(); // Config
 | AIOSQLite  | 0.22+   | SQLite async driver (dev) |
 | Alembic    | 1.18.3+ | Database migrations       |
 | Redis      | 7.1+    | Caching and pub/sub       |
+| PostgreSQL | 17      | Primary database (Docker) |
 
 ### Key Patterns (SQLAlchemy 2.0)
 
@@ -406,7 +407,13 @@ storage/
 LOGIN_BOT_TOKEN=<bot-token-for-login>
 BOT_OWNER_TELEGRAM_ID=<your-telegram-id>
 ENCRYPTION_KEY=<fernet-key>
-DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
+
+# PostgreSQL (recommended for production)
+DATABASE_URL=postgresql+asyncpg://nezuko:nezuko123@localhost:5432/nezuko
+
+# SQLite (fallback for development)
+# DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
+
 MOCK_AUTH=true  # Enable mock auth for local dev
 
 # apps/web/.env.local
@@ -415,7 +422,21 @@ NEXT_PUBLIC_LOGIN_BOT_USERNAME=YourBotUsername
 
 # apps/bot/.env (optional)
 BOT_TOKEN=<optional-for-standalone-mode>
-DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
+DATABASE_URL=postgresql+asyncpg://nezuko:nezuko123@localhost:5432/nezuko
+```
+
+### PostgreSQL Docker Setup
+
+```bash
+# Start PostgreSQL container
+docker run --name nezuko-postgres \
+  -e POSTGRES_USER=nezuko \
+  -e POSTGRES_PASSWORD=nezuko123 \
+  -e POSTGRES_DB=nezuko \
+  -p 5432:5432 -d postgres:17
+
+# Apply migrations
+cd apps/api && alembic upgrade head
 ```
 
 ---
@@ -461,4 +482,4 @@ DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
 
 ---
 
-_Last Updated: 2026-02-04_
+_Last Updated: 2026-02-05_
