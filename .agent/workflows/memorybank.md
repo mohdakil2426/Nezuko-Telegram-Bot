@@ -2,4 +2,4 @@
 description: memorybank read
 ---
 
-read all memorybank files for full context of project/codebase.
+read all memorybank files, all lines no skip, for full context of project/codebase.
