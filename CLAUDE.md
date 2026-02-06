@@ -184,11 +184,10 @@ Before marking any task complete:
 
 ## 🧰 MCP Tools
 
-| Server                  | Purpose                                                             |
-| ----------------------- | ------------------------------------------------------------------- |
-| **context7**            | Query library docs: `resolve-library-id` → `query-docs`             |
-| **supabase-mcp-server** | DB ops: `execute_sql`, `apply_migration`, `list_tables`             |
-| **shadcn**              | Components: `view_items_in_registries`, `get_add_command_for_items` |
+| Server       | Purpose                                                             |
+| ------------ | ------------------------------------------------------------------- |
+| **context7** | Query library docs: `resolve-library-id` → `query-docs`             |
+| **shadcn**   | Components: `view_items_in_registries`, `get_add_command_for_items` |
 
 **🔍 Web Search Rule:** When searching the web or fetching URLs for documentation, best practices, or solutions, always append `2025-2026` to queries to ensure latest, up-to-date information.
 
@@ -201,7 +200,7 @@ Before marking any task complete:
 
 **⚠️ MANDATORY: Read relevant skills BEFORE generating any code.**
 
-Skills are located in `.agent/skills/`. Read the **SKILL.md** file inside each skill folder.
+Skills are located in `.claude/skills/`. Read the **SKILL.md** file inside each skill folder.
 
 **Skill Reading Rules:**
 
@@ -219,58 +218,46 @@ Skills are located in `.agent/skills/`. Read the **SKILL.md** file inside each s
 
 ### Frontend (Web Dashboard)
 
-| Skill                           | When to Use                                        | Path                                        |
-| ------------------------------- | -------------------------------------------------- | ------------------------------------------- |
-| **nextjs**                      | Any Next.js 16 work, App Router, Server Components | `.agent/skills/nextjs/`                     |
-| **shadcn-ui**                   | Adding/customizing shadcn components               | `.agent/skills/shadcn-ui`                   |
-| **tanstack-query**              | Data fetching, mutations, caching                  | `.agent/skills/tanstack-query/`             |
-| **typescript-expert**           | Complex TS patterns, generics                      | `.agent/skills/typescript-expert`           |
-| **typescript-advanced-types**   | Utility types, conditional types                   | `.agent/skills/typescript-advanced-types`   |
-| **vercel-react-best-practices** | React 19 patterns, performance                     | `.agent/skills/vercel-react-best-practices` |
-| **ui-ux-pro-max**               | Design systems, color palettes, typography         | `.agent/skills/ui-ux-pro-max`               |
-| **web-design-guidelines**       | Layout, spacing, responsive design                 | `.agent/skills/web-design-guidelines`       |
+| Skill | When to Use | Path |
+| ------------------------------- | -------------------------------------------------- | -------------------------------------------- | |
+| **shadcn-ui** | Adding/customizing shadcn components | `.claude/skills/shadcn-ui` |
+| **tanstack-query** | Data fetching, mutations, caching | `.claude/skills/tanstack-query/` |
+| **typescript-expert** | Complex TS patterns, generics | `.claude/skills/typescript-expert` |
+| **typescript-advanced-types** | Utility types, conditional types | `.claude/skills/typescript-advanced-types` |
+| **vercel-react-best-practices** | React 19 patterns, performance | `.claude/skills/vercel-react-best-practices` |
+| **ui-ux-pro-max** | Design systems, color palettes, typography | `.claude/skills/ui-ux-pro-max` |
+| **web-design-guidelines** | Layout, spacing, responsive design | `.claude/skills/web-design-guidelines` |
 
 ### Backend (API & Bot)
 
-| Skill                               | When to Use                                 | Path                                                                       |
-| ----------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------- |
-| **fastapi**                         | FastAPI endpoints, dependencies, middleware | `.agent/skills/fastapi`                                                    |
-| **async-python-patterns**           | Async/await, concurrency, event loops       | `.agent/skills/python-development/skills/async-python-patterns/`           |
-| **python-code-style**               | PEP 8, naming conventions, formatting       | `.agent/skills/python-development/skills/python-code-style/`               |
-| **python-type-safety**              | Type hints, generics, Pydantic              | `.agent/skills/python-development/skills/python-type-safety/`              |
-| **python-error-handling**           | Exceptions, error recovery, logging         | `.agent/skills/python-development/skills/python-error-handling/`           |
-| **python-design-patterns**          | Factory, singleton, dependency injection    | `.agent/skills/python-development/skills/python-design-patterns/`          |
-| **python-testing-patterns**         | pytest, fixtures, mocking                   | `.agent/skills/python-development/skills/python-testing-patterns/`         |
-| **python-performance-optimization** | Profiling, caching, memory management       | `.agent/skills/python-development/skills/python-performance-optimization/` |
-| **python-anti-patterns**            | Common mistakes to avoid                    | `.agent/skills/python-development/skills/python-anti-patterns/`            |
-| **python-resilience**               | Retry, circuit breaker, fallbacks           | `.agent/skills/python-development/skills/python-resilience/`               |
-| **python-background-jobs**          | Task queues, scheduled jobs                 | `.agent/skills/python-development/skills/python-background-jobs/`          |
-| **python-observability**            | Logging, metrics, tracing                   | `.agent/skills/python-development/skills/python-observability/`            |
+| Skill       | When to Use                                 | Path                     |
+| ----------- | ------------------------------------------- | ------------------------ |
+| **fastapi** | FastAPI endpoints, dependencies, middleware | `.claude/skills/fastapi` |
 
 ### Database
 
-| Skill                                | When to Use                              | Path                                             |
-| ------------------------------------ | ---------------------------------------- | ------------------------------------------------ |
-| **postgresql-table-design**          | Schema design, indexes, constraints      | `.agent/skills/postgresql-table-design/`         |
-| **supabase-postgres-best-practices** | Supabase auth, RLS, Edge Functions       | `.agent/skills/supabase-postgres-best-practices` |
-| **timescaledb**                      | Time-series data, hypertables, analytics | `.agent/skills/timescaledb/`                     |
+| Skill                                | When to Use                              | Path                                              |
+| ------------------------------------ | ---------------------------------------- | ------------------------------------------------- |
+| **postgresql-table-design**          | Schema design, indexes, constraints      | `.claude/skills/postgresql-table-design/`         |
+| **supabase-postgres-best-practices** | Supabase auth, RLS, Edge Functions       | `.claude/skills/supabase-postgres-best-practices` |
+| **timescaledb**                      | Time-series data, hypertables, analytics | `.claude/skills/timescaledb/`                     |
 
 ### DevOps & Tooling
 
-| Skill                        | When to Use                   | Path                                      |
-| ---------------------------- | ----------------------------- | ----------------------------------------- |
-| **git-commit**               | Conventional commits, staging | `.agent/skills/git-commit/`               |
-| **github-actions-templates** | CI/CD workflows               | `.agent/skills/github-actions-templates/` |
-| **powershell-expert**        | Windows scripts, automation   | `.agent/skills/powershell-expert`         |
+| Skill                        | When to Use                   | Path                                       |
+| ---------------------------- | ----------------------------- | ------------------------------------------ |
+| **git-commit**               | Conventional commits, staging | `.claude/skills/git-commit/`               |
+| **github-actions-templates** | CI/CD workflows               | `.claude/skills/github-actions-templates/` |
+| **powershell-expert**        | Windows scripts, automation   | `.claude/skills/powershell-expert`         |
 
 ### Project Management
 
-| Skill                      | When to Use                 | Path                                    |
-| -------------------------- | --------------------------- | --------------------------------------- |
-| **openspec-new-change**    | Start a new feature/fix     | `.agent/skills/openspec-new-change/`    |
-| **openspec-apply-change**  | Implement tasks from change | `.agent/skills/openspec-apply-change/`  |
-| **openspec-verify-change** | Verify before archiving     | `.agent/skills/openspec-verify-change/` |
+| Skill                      | When to Use                 | Path                                     |
+| -------------------------- | --------------------------- | ---------------------------------------- |
+| **openspec-new-change**    | Start a new feature/fix     | `.claude/skills/openspec-new-change/`    |
+| **openspec-apply-change**  | Implement tasks from change | `.claude/skills/openspec-apply-change/`  |
+| **openspec-verify-change** | Verify before archiving     | `.claude/skills/openspec-verify-change/` |
 
 ---
 
-_Last Updated: 2026-02-05_
+_Last Updated: 2026-02-06_

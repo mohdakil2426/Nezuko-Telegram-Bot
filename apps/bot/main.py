@@ -8,6 +8,7 @@ Operational Features:
 - Sentry error tracking
 """
 
+import asyncio
 import logging
 import sys
 
@@ -53,15 +54,16 @@ logging.basicConfig(
     ],
 )
 # Add Postgres Handler (Real-time logs)
-POSTGRES_HANDLER = None
+_postgres_handler = None
 try:
     from apps.bot.utils.postgres_logging import PostgresLogHandler
 
-    POSTGRES_HANDLER = PostgresLogHandler()
-    POSTGRES_HANDLER.setLevel(logging.INFO)  # Always send INFO+ to dashboard
-    logging.getLogger().addHandler(POSTGRES_HANDLER)
-except Exception as e:  # pylint: disable=broad-exception-caught
-    print(f"Failed to initialize Postgres logger: {e}")
+    _postgres_handler = PostgresLogHandler()
+    _postgres_handler.setLevel(logging.INFO)  # Always send INFO+ to dashboard
+    logging.getLogger().addHandler(_postgres_handler)
+except (ImportError, ConnectionError, OSError, RuntimeError) as e:
+    # Use sys.stderr since logger may not be configured yet
+    sys.stderr.write(f"Postgres logger unavailable: {e}\n")
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +134,7 @@ async def post_shutdown(_application: Application) -> None:
     try:
         heartbeat = get_heartbeat_service()
         await heartbeat.stop()
-    except Exception as e:  # pylint: disable=broad-exception-caught
+    except (RuntimeError, OSError, asyncio.CancelledError) as e:
         logger.warning("Error stopping heartbeat service: %s", e)
 
     # Stop health server
@@ -142,8 +144,8 @@ async def post_shutdown(_application: Application) -> None:
     sentry_flush(timeout=2)
 
     # Close Postgres log handler
-    if POSTGRES_HANDLER:
-        await POSTGRES_HANDLER.close_async()
+    if _postgres_handler:
+        await _postgres_handler.close_async()
 
     # Close connections
     await close_redis_connection()
@@ -155,7 +157,7 @@ def main():
     """Main entry point with mode detection."""
     try:
         # Validate configuration
-        config.validate()
+        config.check_config()
 
         # Initialize Sentry (if configured)
         init_sentry()
@@ -169,12 +171,10 @@ def main():
             logger.info("Nezuko - Dashboard Mode (Multi-Bot)")
             logger.info("=" * 60)
             logger.info("Environment: %s", config.environment)
-            logger.info("Database: %s", config.database_url.split("://")[0])
+            logger.info("Database: %s", config.database_url.split("://", maxsplit=1)[0])
             logger.info("=" * 60)
 
             # Run bot manager
-            import asyncio
-
             from apps.bot.core.bot_manager import bot_manager
 
             try:
@@ -189,7 +189,7 @@ def main():
         logger.info("=" * 60)
         logger.info("Environment: %s", config.environment)
         logger.info("Mode: %s", "WEBHOOK" if config.use_webhooks else "POLLING")
-        logger.info("Database: %s", config.database_url.split("://")[0])
+        logger.info("Database: %s", config.database_url.split("://", maxsplit=1)[0])
         logger.info("Redis: %s", "Enabled" if config.redis_url else "Disabled (degraded mode)")
         logger.info("Sentry: %s", "Enabled" if config.sentry_dsn else "Disabled")
         logger.info("Health: http://localhost:8000/health")

@@ -1,4 +1,4 @@
-## Current Status: Phase 44 COMPLETE ✅ - PostgreSQL Migration & Schema Fix
+## Current Status: Phase 48 COMPLETE ✅ - Verification Logging Fix
 
 **Overall Implementation Status**: **100%** (Production ready with PostgreSQL)
 
@@ -46,6 +46,142 @@
 | **Phase 42**    | Dashboard Integration & Cleanup              | ✅ Complete |
 | **Phase 43**    | Real-time Dashboard Infrastructure           | ✅ Complete |
 | **Phase 44**    | PostgreSQL Migration & Schema Fix            | ✅ Complete |
+| **Phase 45**    | CLI & Developer Experience Overhaul          | ✅ Complete |
+| **Phase 46**    | Scripts Cleanup & Enhanced CLI               | ✅ Complete |
+| **Phase 47**    | Python Code Review & Fixes                   | ✅ Complete |
+| **Phase 48**    | Verification Logging Fix                     | ✅ Complete |
+
+---
+
+## ✅ Phase 48: Verification Logging Fix (2026-02-07)
+
+### Overview
+
+Critical bug fix that resolved dashboard charts/analytics showing zeros. The root cause was that `group_id` parameter was not being passed to `check_multi_membership()` in both verification handlers, causing verification logging to be silently skipped.
+
+### Root Cause Analysis
+
+In `apps/bot/services/verification.py` line 242, logging only executes when `group_id is not None`:
+
+```python
+if group_id is not None:
+    task = asyncio.create_task(log_verification(...))
+```
+
+Both handlers calling `check_multi_membership()` did NOT pass `group_id`, so logging never occurred.
+
+### Files Fixed
+
+| File | Change |
+|------|--------|
+| `apps/bot/handlers/events/join.py` | Added `group_id=chat_id` parameter to `check_multi_membership()` call (line 81-86) |
+| `apps/bot/handlers/verify.py` | Added `group_id=chat_id` parameter to `check_multi_membership()` call (line 74-79) |
+
+### Before vs After
+
+```python
+# BEFORE (Broken - no logging)
+missing_channels = await check_multi_membership(
+    user_id=user_id, channels=channels, context=context
+)
+
+# AFTER (Fixed - logs to verification_log table)
+missing_channels = await check_multi_membership(
+    user_id=user_id,
+    channels=channels,
+    context=context,
+    group_id=chat_id,  # Required for verification logging to database
+)
+```
+
+### Verification Flow (Now Working)
+
+```
+1. User joins group → join.py:handle_new_member()
+2. check_multi_membership(user_id, channels, context, group_id=chat_id)
+3. For each channel: check_membership() called with group_id
+4. _log_result() receives group_id (not None!)
+5. asyncio.create_task(log_verification(...)) EXECUTES
+6. verification_log table gets new row
+7. Dashboard charts show real data ✅
+```
+
+### Testing
+
+After bot restart, trigger a verification event to confirm:
+- `/api/v1/dashboard/activity` returns verification events
+- Charts on dashboard display real data
+- Analytics page shows verification statistics
+
+---
+
+## ✅ Phase 47: Python Code Review & Fixes (2026-02-06)
+
+### Overview
+
+Comprehensive Python code review using Python development skills. Analyzed 93+ files across `apps/bot` and `apps/api`. Fixed all linting issues to achieve zero errors on ruff, pylint 10.00/10, and pyrefly 0 errors.
+
+### Issues Fixed
+
+| # | Issue | File | Fix |
+|---|-------|------|-----|
+| 1 | Broad `except Exception` | `apps/bot/main.py` | Replaced with `(ImportError, ConnectionError, OSError, RuntimeError)` and `(RuntimeError, OSError, asyncio.CancelledError)` |
+| 2 | Missing exception chains | `apps/api/src/api/v1/endpoints/bots.py` | Added `from exc` to all 7 HTTPException raises |
+| 3 | Loose type `list[Any]` | `apps/bot/services/verification.py` | Added `HasChannelId` Protocol, changed to `list[HasChannelId]` |
+| 4 | `CORS_ORIGINS: Any` | `apps/api/src/core/config.py` | Changed to `str \| list[str]` |
+| 5 | Untyped tuple | `apps/bot/utils/resilience.py` | Changed `tuple = (Exception,)` to `tuple[type[Exception], ...] = (Exception,)` |
+| 6 | Missing DB error handling | `apps/bot/handlers/events/join.py` | Added `SQLAlchemyError` handling |
+| 7 | Print statement | `apps/bot/main.py` | Changed to `sys.stderr.write()` |
+| 8 | Hardcoded SECRET_KEY | `apps/api/src/core/config.py` | Added `model_validator` to reject `dev_` prefix in production |
+| 9 | Custom Config class | `apps/bot/config.py` | Migrated to Pydantic Settings with backwards-compatible properties |
+| 10 | Bad method override | `apps/bot/config.py` | Renamed `validate()` to `check_config()` to avoid BaseSettings conflict |
+
+### Additional Linting Fixes
+
+| File | Fix |
+|------|-----|
+| `apps/bot/main.py` | Removed unused `asyncio` reimport, renamed `POSTGRES_HANDLER` to `_postgres_handler`, added `maxsplit=1` to `.split()` |
+| `apps/bot/config.py` | Added `# pylint: disable=too-many-public-methods` |
+| `apps/api/src/core/config.py` | Removed unused `os` import, combined nested `if` with `and` |
+| `apps/bot/services/verification.py` | Removed unused `Any` import |
+
+### Test Infrastructure Enhanced
+
+| File | Changes |
+|------|---------|
+| `tests/bot/conftest.py` | Added `MockChannel` dataclass, `mock_telegram_bot`, `mock_context`, `mock_update_with_new_member`, `mock_redis_client` fixtures |
+| `tests/bot/test_verification.py` | NEW - 10 tests for verification service with Protocol type checking |
+
+### Linter Results
+
+| Tool | Result |
+|------|--------|
+| **ruff** | All checks passed! |
+| **pylint** | 10.00/10 |
+| **pyrefly** | 0 errors |
+
+---
+
+### Overview
+
+Completely revamped the developer CLI (`nezuko.bat`) into a categorized, user-friendly interactive menu system. Added critical security tooling for easy encryption key management and granular service control.
+
+### Key features Delivered
+
+| Feature              | Description                                                              |
+| :------------------- | :----------------------------------------------------------------------- |
+| **Categorized Menu** | Organized into Development, Configuration, and Maintenance zones         |
+| **Start Submenu**    | Granular control to start All services, or just Bot/API/Web individually |
+| **Security Tools**   | Automated Fernet key generator (`generate-key.ps1`)                      |
+| **Smart Setup**      | Fixed bugs in menu logic and improved UX flow                            |
+
+### Files Modified
+
+| File                             | Change                                               |
+| :------------------------------- | :--------------------------------------------------- |
+| `scripts/core/menu.ps1`          | Complete refactor with submenus and optimized layout |
+| `scripts/dev/start.ps1`          | Added `-Service` parameter for granular startup      |
+| `scripts/utils/generate-key.ps1` | Created new key generation utility                   |
 
 ---
 
@@ -739,4 +875,4 @@ Routes:
 
 ---
 
-_Last Updated: 2026-02-05 15:36 IST_
+_Last Updated: 2026-02-05 17:25 IST_

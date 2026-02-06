@@ -72,7 +72,10 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
 
         # Re-check membership in all channels
         missing_channels = await check_multi_membership(
-            user_id=user_id, channels=channels, context=context
+            user_id=user_id,
+            channels=channels,
+            context=context,
+            group_id=chat_id,  # Required for verification logging to database
         )
 
         # If still missing channels, show error

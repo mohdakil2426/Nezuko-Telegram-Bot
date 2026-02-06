@@ -6,7 +6,7 @@ to power the dashboard analytics charts.
 
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import case, func, select
+from sqlalchemy import case, extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.api_call_log import ApiCallLog
@@ -107,18 +107,18 @@ class ChartsService:
         Get active vs inactive protected groups count.
         """
         stmt = select(
-            func.sum(case((ProtectedGroup.enabled.is_(True), 1), else_=0)).label("active"),
-            func.sum(case((ProtectedGroup.enabled.is_(False), 1), else_=0)).label("inactive"),
+            func.sum(case((ProtectedGroup.enabled == True, 1), else_=0)).label("active"),  # noqa: E712
+            func.sum(case((ProtectedGroup.enabled == False, 1), else_=0)).label("inactive"),  # noqa: E712
             func.count().label("total"),
-        )
+        ).select_from(ProtectedGroup)
 
         result = await session.execute(stmt)
         row = result.one()
 
         return GroupsStatusDistribution(
-            active=row.active or 0,
-            inactive=row.inactive or 0,
-            total=row.total or 0,
+            active=int(row.active or 0),
+            inactive=int(row.inactive or 0),
+            total=int(row.total or 0),
         )
 
     async def get_api_calls_distribution(self, session: AsyncSession) -> list[ApiCallsDistribution]:
@@ -165,19 +165,17 @@ class ChartsService:
         """
         start_date = datetime.now(UTC) - timedelta(hours=24)
 
-        # Query grouped by hour
-        # Using EXTRACT(HOUR FROM timestamp) for PostgreSQL
-        # and strftime for SQLite compatibility
+        # Query grouped by hour using EXTRACT for PostgreSQL
         stmt = (
             select(
-                func.strftime("%H", VerificationLog.timestamp).label("hour"),
+                extract("hour", VerificationLog.timestamp).label("hour"),
                 func.count().label("verifications"),
                 func.sum(case((VerificationLog.status == "restricted", 1), else_=0)).label(
                     "restrictions"
                 ),
             )
             .where(VerificationLog.timestamp >= start_date)
-            .group_by(func.strftime("%H", VerificationLog.timestamp))
+            .group_by(extract("hour", VerificationLog.timestamp))
         )
 
         result = await session.execute(stmt)

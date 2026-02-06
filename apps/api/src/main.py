@@ -35,17 +35,11 @@ def validate_config() -> None:
     """Validate required configuration at startup.
 
     Raises:
-        SystemExit: If critical configuration is missing.
+        SystemExit: If critical configuration is missing in production.
     """
     errors: list[str] = []
 
-    # Telegram Authentication (required for dashboard access)
-    if not settings.LOGIN_BOT_TOKEN:
-        errors.append("LOGIN_BOT_TOKEN is required. Get it from @BotFather on Telegram.")
-
-    if not settings.BOT_OWNER_TELEGRAM_ID:
-        errors.append("BOT_OWNER_TELEGRAM_ID is required. Get yours from @userinfobot on Telegram.")
-
+    # ENCRYPTION_KEY is required for bot token encryption
     if not settings.ENCRYPTION_KEY:
         errors.append(
             "ENCRYPTION_KEY is required for bot token encryption. "

@@ -1,9 +1,9 @@
 """Application configuration using Pydantic BaseSettings."""
 
 from functools import lru_cache
-from typing import Any, Literal
+from typing import Literal
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     API_DEBUG: bool = True
 
     # CORS
-    CORS_ORIGINS: Any = ["http://localhost:3000"]
+    CORS_ORIGINS: str | list[str] = ["http://localhost:3000"]
 
     # Security
     SECURITY_HEADERS_ENABLED: bool = False
@@ -75,6 +75,16 @@ class Settings(BaseSettings):
             # Standard comma-separated fallback
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return []
+
+    @model_validator(mode="after")
+    def validate_production_secret_key(self) -> "Settings":
+        """Ensure SECRET_KEY is not the default in production."""
+        if self.ENVIRONMENT == "production" and self.SECRET_KEY.startswith("dev_"):
+            raise ValueError(
+                "SECRET_KEY must be changed from default in production. "
+                'Generate a secure key with: python -c "import secrets; print(secrets.token_urlsafe(32))"'
+            )
+        return self
 
 
 @lru_cache

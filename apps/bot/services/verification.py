@@ -13,7 +13,7 @@ Integrated with EventPublisher for real-time dashboard updates.
 import asyncio
 import logging
 import time
-from typing import Any
+from typing import Protocol
 
 from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
@@ -34,6 +34,12 @@ from apps.bot.utils.metrics import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class HasChannelId(Protocol):
+    """Protocol for objects with a channel_id attribute."""
+
+    channel_id: int | str
 
 # Metrics counters for prometheus tracking
 _cache_hits = 0  # pylint: disable=invalid-name
@@ -266,10 +272,10 @@ async def _log_result(
 
 async def check_multi_membership(
     user_id: int,
-    channels: list[Any],
+    channels: list[HasChannelId],
     context: ContextTypes.DEFAULT_TYPE,
     group_id: int | None = None,
-) -> list[Any]:
+) -> list[HasChannelId]:
     """
     Check membership in multiple channels.
 

@@ -6,10 +6,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.v1.dependencies.auth import get_current_active_user
+from src.api.v1.dependencies.session import get_current_session
 from src.core.cache import Cache
 from src.core.database import get_session
-from src.models.admin_user import AdminUser
+from src.models.session import Session
 from src.schemas.base import PaginationMeta, SuccessResponse
 from src.schemas.group import (
     ChannelLinkRequest,
@@ -33,7 +33,7 @@ async def list_groups(
     status_filter: str = Query("all", alias="status", pattern="^(active|inactive|all)$"),
     sort_by: str = "created_at",
     sort_order: str = Query("desc", pattern="^(asc|desc)$"),
-    current_user: Annotated[AdminUser, Depends(get_current_active_user)],
+    current_user: Annotated[Session, Depends(get_current_session)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> GroupListResponse:
     """
@@ -84,7 +84,7 @@ async def list_groups(
 @router.get("/{group_id}", response_model=GroupDetailResponse)
 async def get_group_details(
     group_id: int,
-    current_user: Annotated[AdminUser, Depends(get_current_active_user)],
+    current_user: Annotated[Session, Depends(get_current_session)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> GroupDetailResponse:
     """
@@ -130,7 +130,7 @@ async def get_group_details(
 async def update_group(
     group_id: int,
     data: GroupUpdateRequest,
-    current_user: Annotated[AdminUser, Depends(get_current_active_user)],
+    current_user: Annotated[Session, Depends(get_current_session)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> GroupDetailResponse:
     """
@@ -175,7 +175,7 @@ async def update_group(
 async def link_channel(
     group_id: int,
     data: ChannelLinkRequest,
-    current_user: Annotated[AdminUser, Depends(get_current_active_user)],
+    current_user: Annotated[Session, Depends(get_current_session)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> SuccessResponse[dict[str, str]]:
     """
@@ -194,7 +194,7 @@ async def link_channel(
 async def unlink_channel(
     group_id: int,
     channel_id: int,
-    current_user: Annotated[AdminUser, Depends(get_current_active_user)],
+    current_user: Annotated[Session, Depends(get_current_session)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> SuccessResponse[dict[str, str]]:
     """

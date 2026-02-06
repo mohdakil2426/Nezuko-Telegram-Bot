@@ -80,28 +80,28 @@ async def add_bot(
         bot = await service.add_bot(session.telegram_id, bot_data)
         return service.to_response(bot)
 
-    except InvalidTokenError:
+    except InvalidTokenError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid bot token. Please check and try again.",
-        )
+        ) from exc
     except DuplicateBotError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
-        )
-    except EncryptionNotConfiguredError:
+        ) from exc
+    except EncryptionNotConfiguredError as exc:
         logger.error("Encryption not configured when adding bot")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server configuration error. Please contact support.",
-        )
+        ) from exc
     except TelegramAPIError as exc:
         logger.error("Telegram API error: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Failed to verify bot with Telegram. Please try again.",
-        )
+        ) from exc
 
 
 @router.post("/verify", response_model=BotVerifyResponse)
@@ -128,17 +128,17 @@ async def verify_bot_token(
             first_name=bot_info.first_name,
             is_valid=True,
         )
-    except InvalidTokenError:
+    except InvalidTokenError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid bot token. Please check and try again.",
-        )
+        ) from exc
     except TelegramAPIError as exc:
         logger.error("Telegram API error during verify: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Failed to verify bot with Telegram. Please try again.",
-        )
+        ) from exc
 
 
 @router.get("/{bot_id}", response_model=BotResponse)
@@ -162,11 +162,11 @@ async def get_bot(
     try:
         bot = await service.get_bot(session.telegram_id, bot_id)
         return service.to_response(bot)
-    except BotNotFoundError:
+    except BotNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bot not found",
-        )
+        ) from exc
 
 
 @router.patch("/{bot_id}", response_model=BotResponse)
@@ -192,11 +192,11 @@ async def update_bot(
     try:
         bot = await service.update_bot(session.telegram_id, bot_id, update_data)
         return service.to_response(bot)
-    except BotNotFoundError:
+    except BotNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bot not found",
-        )
+        ) from exc
 
 
 @router.delete("/{bot_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -218,8 +218,8 @@ async def delete_bot(
 
     try:
         await service.delete_bot(session.telegram_id, bot_id)
-    except BotNotFoundError:
+    except BotNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bot not found",
-        )
+        ) from exc

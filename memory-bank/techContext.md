@@ -323,11 +323,13 @@ DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
 
 ```bash
 # Launch unified CLI menu (humans only)
-.\nezuko.bat
+.\nezuko.bat menu
 
 # Direct commands (for AI agents)
-.\scripts\dev\start.ps1    # Start services
-.\scripts\dev\stop.ps1     # Stop services
+.\scripts\dev\start.ps1 -Service "all"   # Start all services
+.\scripts\dev\start.ps1 -Service "api"   # Start just API
+.\scripts\utils\generate-key.ps1         # Generate encryption key
+.\scripts\dev\stop.ps1                   # Stop services
 ```
 
 ### Logging System

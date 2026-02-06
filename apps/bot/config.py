@@ -1,13 +1,16 @@
 """
-Configuration management and environment variable validation.
+Configuration management using Pydantic Settings.
+
+Provides type-safe, validated configuration with environment variable support.
 """
 
 import logging
-import os
 from pathlib import Path
-from typing import overload
+from typing import Literal
 
 from dotenv import load_dotenv
+from pydantic import field_validator, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
 
@@ -18,107 +21,144 @@ _BOT_DIR = Path(__file__).resolve().parent
 load_dotenv(_BOT_DIR / ".env")
 
 
-# pylint: disable=too-many-instance-attributes
-class Config:
-    """Application configuration with validation.
+# pylint: disable=too-many-public-methods
+class BotSettings(BaseSettings):
+    """Bot application settings loaded from environment variables.
 
     Supports two modes:
     1. Standalone Mode: BOT_TOKEN in .env, runs single bot
     2. Dashboard Mode: No BOT_TOKEN, reads active bots from database
     """
 
-    # Optional in dashboard mode
-    bot_token: str | None
-    environment: str  # 'development' or 'production'
-    database_url: str
-    base_dir: Path
-    storage_dir: Path
-    logs_dir: Path
-    data_dir: Path
-    log_file: Path
+    # Core settings
+    BOT_TOKEN: str | None = None
+    ENVIRONMENT: Literal["development", "production"] = "development"
 
-    def __init__(self):
-        """Initialize and validate configuration from environment variables."""
-        # Setup paths
-        self.base_dir = Path(__file__).resolve().parent.parent.parent
-        self.storage_dir = self.base_dir / "storage"
-        self.logs_dir = self.storage_dir / "logs"
-        self.data_dir = self.storage_dir / "data"
-        self.log_file = self.logs_dir / "bot.log"
+    # Database
+    DATABASE_URL: str | None = None
 
-        # Ensure directories exist
-        os.makedirs(self.logs_dir, exist_ok=True)
-        os.makedirs(self.data_dir, exist_ok=True)
+    # Webhook settings
+    WEBHOOK_URL: str | None = None
+    WEBHOOK_SECRET: str | None = None
+    PORT: int = 8443
 
-        # BOT_TOKEN is optional - if not set, bot reads from database
-        self.bot_token = self._get_optional("BOT_TOKEN")
-        self.environment = self._get_optional("ENVIRONMENT", "development")
+    # Redis
+    REDIS_URL: str | None = None
 
-        # Database URL with path normalization for SQLite
-        db_url = self._get_optional(
-            "DATABASE_URL",
-            f"sqlite+aiosqlite:///{self.data_dir.as_posix()}/nezuko.db",
-        )
-        # Normalize relative SQLite paths to absolute (relative to bot directory)
-        if db_url and "sqlite" in db_url.lower() and ":///" in db_url:
-            # Extract path from sqlite URL (after sqlite:/// or sqlite+aiosqlite:///)
-            prefix, _, path = db_url.partition(":///")
+    # Monitoring
+    SENTRY_DSN: str | None = None
+
+    # Dashboard mode - for decrypting bot tokens from database
+    ENCRYPTION_KEY: str | None = None
+
+    # API URL for event publishing
+    API_URL: str = "http://localhost:8080"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",
+    )
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def set_default_database_url(cls, value: str | None) -> str:
+        """Set default database URL if not provided."""
+        if value:
+            return value
+        # Default to SQLite in storage/data/
+        base_dir = Path(__file__).resolve().parent.parent.parent
+        data_dir = base_dir / "storage" / "data"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        return f"sqlite+aiosqlite:///{data_dir.as_posix()}/nezuko.db"
+
+    @field_validator("DATABASE_URL", mode="after")
+    @classmethod
+    def normalize_sqlite_path(cls, value: str) -> str:
+        """Normalize relative SQLite paths to absolute."""
+        if value and "sqlite" in value.lower() and ":///" in value:
+            prefix, _, path = value.partition(":///")
             if path and path != ":memory:" and not Path(path).is_absolute():
-                # Convert relative path to absolute (relative to apps/bot/)
                 abs_path = (_BOT_DIR / path).resolve()
-                # Ensure parent directory exists
                 abs_path.parent.mkdir(parents=True, exist_ok=True)
-                db_url = f"{prefix}:///{abs_path.as_posix()}"
-        self.database_url = db_url
-
-        # Optional - Webhook
-        self.webhook_url = self._get_optional("WEBHOOK_URL")
-        self.webhook_secret = self._get_optional("WEBHOOK_SECRET")
-        self.port = int(self._get_optional("PORT", "8443"))
-
-        # Optional - Redis
-        self.redis_url = self._get_optional("REDIS_URL")
-
-        # Optional - Monitoring
-        self.sentry_dsn = self._get_optional("SENTRY_DSN")
-
-        # Dashboard mode - for decrypting bot tokens from database
-        self.encryption_key = self._get_optional("ENCRYPTION_KEY")
-
-    def _get_required(self, key: str) -> str:
-        """Get required environment variable or raise error."""
-        value = os.getenv(key)
-        if not value:
-            raise ValueError(
-                f"Missing required environment variable: {key}\n"
-                f"Please set {key} in your .env file or environment."
-            )
+                return f"{prefix}:///{abs_path.as_posix()}"
         return value
 
-    @overload
-    def _get_optional(self, key: str) -> str | None: ...
+    @model_validator(mode="after")
+    def validate_webhook_config(self) -> "BotSettings":
+        """Validate webhook configuration in production."""
+        if self.use_webhooks and not self.WEBHOOK_SECRET:
+            raise ValueError(
+                "WEBHOOK_SECRET is required when using webhooks in production mode"
+            )
+        return self
 
-    @overload
-    def _get_optional(self, key: str, default: str) -> str: ...
+    # Computed properties
+    @property
+    def bot_token(self) -> str | None:
+        """Alias for BOT_TOKEN for backwards compatibility."""
+        return self.BOT_TOKEN
 
-    def _get_optional(self, key: str, default: str | None = None) -> str | None:
-        """Get optional environment variable with default."""
-        return os.getenv(key, default)
+    @property
+    def environment(self) -> str:
+        """Alias for ENVIRONMENT for backwards compatibility."""
+        return self.ENVIRONMENT
+
+    @property
+    def database_url(self) -> str:
+        """Alias for DATABASE_URL for backwards compatibility."""
+        return self.DATABASE_URL or ""
+
+    @property
+    def webhook_url(self) -> str | None:
+        """Alias for WEBHOOK_URL for backwards compatibility."""
+        return self.WEBHOOK_URL
+
+    @property
+    def webhook_secret(self) -> str | None:
+        """Alias for WEBHOOK_SECRET for backwards compatibility."""
+        return self.WEBHOOK_SECRET
+
+    @property
+    def port(self) -> int:
+        """Alias for PORT for backwards compatibility."""
+        return self.PORT
+
+    @property
+    def redis_url(self) -> str | None:
+        """Alias for REDIS_URL for backwards compatibility."""
+        return self.REDIS_URL
+
+    @property
+    def sentry_dsn(self) -> str | None:
+        """Alias for SENTRY_DSN for backwards compatibility."""
+        return self.SENTRY_DSN
+
+    @property
+    def encryption_key(self) -> str | None:
+        """Alias for ENCRYPTION_KEY for backwards compatibility."""
+        return self.ENCRYPTION_KEY
+
+    @property
+    def api_url(self) -> str:
+        """Alias for API_URL for backwards compatibility."""
+        return self.API_URL
 
     @property
     def is_production(self) -> bool:
         """Check if running in production mode."""
-        return self.environment.lower() == "production"
+        return self.ENVIRONMENT.lower() == "production"
 
     @property
     def is_development(self) -> bool:
         """Check if running in development mode."""
-        return self.environment.lower() == "development"
+        return self.ENVIRONMENT.lower() == "development"
 
     @property
     def use_webhooks(self) -> bool:
         """Determine if webhooks should be used."""
-        return self.is_production and self.webhook_url is not None
+        return self.is_production and self.WEBHOOK_URL is not None
 
     @property
     def use_polling(self) -> bool:
@@ -128,31 +168,63 @@ class Config:
     @property
     def dashboard_mode(self) -> bool:
         """Check if running in dashboard mode (no BOT_TOKEN, reads from DB)."""
-        return self.bot_token is None or self.bot_token.strip() == ""
+        return self.BOT_TOKEN is None or self.BOT_TOKEN.strip() == ""
 
     @property
     def standalone_mode(self) -> bool:
         """Check if running in standalone mode (BOT_TOKEN in env)."""
         return not self.dashboard_mode
 
-    def validate(self):
-        """Validate configuration consistency."""
-        # Webhook validation
-        if self.use_webhooks and not self.webhook_secret:
-            raise ValueError("WEBHOOK_SECRET is required when using webhooks in production mode")
+    # Path properties
+    @property
+    def base_dir(self) -> Path:
+        """Get the base directory (project root)."""
+        return Path(__file__).resolve().parent.parent.parent
 
+    @property
+    def storage_dir(self) -> Path:
+        """Get the storage directory."""
+        path = self.base_dir / "storage"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def logs_dir(self) -> Path:
+        """Get the logs directory."""
+        path = self.storage_dir / "logs"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def data_dir(self) -> Path:
+        """Get the data directory."""
+        path = self.storage_dir / "data"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def log_file(self) -> Path:
+        """Get the log file path."""
+        return self.logs_dir / "bot.log"
+
+    def check_config(self) -> None:
+        """Validate configuration consistency.
+
+        Call this method after instantiation to check for warnings.
+        Webhook validation is handled by model_validator.
+        """
         # Redis warning
         if self.is_production and not self.redis_url:
             logger.warning(
-                "⚠️  WARNING: REDIS_URL not set. Running without distributed cache.\n"
-                "   Performance will be degraded. Set REDIS_URL for production use."
+                "WARNING: REDIS_URL not set. Running without distributed cache. "
+                "Performance will be degraded. Set REDIS_URL for production use."
             )
 
     def __repr__(self) -> str:
         """String representation (hide sensitive data)."""
         mode = "dashboard" if self.dashboard_mode else "standalone"
         return (
-            f"Config(\n"
+            f"BotSettings(\n"
             f"  environment={self.environment},\n"
             f"  bot_mode={mode},\n"
             f"  database_url={'***' if self.database_url else 'None'},\n"
@@ -163,5 +235,5 @@ class Config:
         )
 
 
-# Global config instance
-config = Config()
+# Global config instance (backwards compatible name)
+config = BotSettings()
