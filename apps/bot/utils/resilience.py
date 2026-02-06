@@ -187,10 +187,10 @@ def exponential_backoff(
 
 def async_retry(
     max_attempts: int = 3,
-    exceptions: tuple = (Exception,),
+    exceptions: tuple[type[Exception], ...] = (Exception,),
     base_delay: float = 1.0,
     max_delay: float = 30.0,
-    on_retry: Callable | None = None,
+    on_retry: Callable[[int, Exception], None] | None = None,
 ):
     """
     Decorator for async functions with retry logic.

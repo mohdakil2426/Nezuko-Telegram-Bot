@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(bun --version:*)",
+      "Bash(docker --version:*)",
+      "Bash(pip show:*)",
+      "Bash(findstr:*)",
+      "Bash(python -m uvicorn:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(bun run dev:*)",
+      "Bash(bun install:*)",
+      "Bash(netstat -ano)",
+      "Bash(timeout:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "mcp__shadcn__get_project_registries",
+      "mcp__shadcn__list_items_in_registries",
+      "mcp__shadcn__view_items_in_registries",
+      "mcp__shadcn__get_item_examples_from_registries",
+      "Bash(ruff check:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker start:*)",
+      "Bash(docker exec:*)",
+      "Bash(tasklist:*)",
+      "Bash(alembic downgrade:*)",
+      "Bash(alembic upgrade:*)",
+      "Bash(powershell -Command \"\\(Get-Item ''apps/api/src/main.py''\\).LastWriteTime = Get-Date\")",
+      "Bash(taskkill:*)"
+    ]
+  },
+  "enabledPlugins": {
+    "python-development@claude-code-workflows": true
+  }
+}

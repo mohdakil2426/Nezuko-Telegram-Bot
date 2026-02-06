@@ -158,77 +158,7 @@ if (-not $SkipPython) {
             }
         }
         
-        # Check if pyroaring failed - if so, use the standalone supabase installer
-        $pyroaringFailed = ($pipOutput | Out-String) -match "pyroaring|Failed building wheel"
-        
-        if ($pipExitCode -ne 0 -and $pyroaringFailed) {
-            Write-Host ""
-            Write-Host "        ⚠️  pyroaring build failed (requires C++ build tools)" -ForegroundColor Yellow
-            Write-Host "        Running standalone Supabase installer..." -ForegroundColor Cyan
-            Write-Log -Message "Running standalone Supabase installer" -Category "PYTHON"
-            
-            # Call the standalone supabase installer script
-            $supabaseInstaller = Join-Path $ScriptRoot "install-supabase.ps1"
-            if (Test-Path $supabaseInstaller) {
-                & $supabaseInstaller -VenvPath $venvPath -Force
-                $supabaseExitCode = $LASTEXITCODE
-                
-                if ($supabaseExitCode -eq 0) {
-                    Write-Log -Message "Supabase installed via standalone installer" -Level "SUCCESS" -Category "PYTHON"
-                    
-                    # Now install remaining packages from individual requirement files (skip base.txt which has supabase)
-                    Write-Host ""
-                    Write-Host "        Installing remaining packages (skipping supabase)..." -ForegroundColor Gray
-                    
-                    $reqFiles = @(
-                        (Join-Path $ProjectRoot "requirements\api.txt"),
-                        (Join-Path $ProjectRoot "requirements\bot.txt"),
-                        (Join-Path $ProjectRoot "requirements\dev.txt")
-                    )
-                    
-                    foreach ($reqFile in $reqFiles) {
-                        if (Test-Path $reqFile) {
-                            $fileName = Split-Path $reqFile -Leaf
-                            Write-Host "        Installing $fileName..." -ForegroundColor DarkGray
-                            & $venvPython -m pip install --prefer-binary -r $reqFile 2>&1 | Out-Null
-                        }
-                    }
-                    
-                    # Install base.txt packages individually (excluding supabase)
-                    Write-Host "        Installing base packages (excluding supabase)..." -ForegroundColor DarkGray
-                    $basePackages = @(
-                        "sqlalchemy[asyncio]>=2.0.46",
-                        "asyncpg>=0.31.0",
-                        "aiosqlite>=0.22.1",
-                        "alembic>=1.18.3",
-                        "redis>=7.1.0",
-                        "pyjwt>=2.11.0",
-                        "aiohttp>=3.13.3",
-                        "pydantic>=2.12.5",
-                        "pydantic-settings>=2.12.0",
-                        "python-dotenv>=1.2.1",
-                        "structlog>=25.5.0",
-                        "prometheus-client>=0.24.1",
-                        "sentry-sdk>=2.51.0"
-                    )
-                    foreach ($pkg in $basePackages) {
-                        & $venvPython -m pip install --prefer-binary $pkg 2>&1 | Out-Null
-                    }
-                    
-                    Write-Success "All Python dependencies installed (with supabase workaround)"
-                    Write-Log -Message "Installed with supabase workaround" -Level "SUCCESS" -Category "PYTHON"
-                }
-                else {
-                    Write-Failure "Supabase installation failed"
-                    Write-Log -Message "Supabase installer failed" -Level "ERROR" -Category "PYTHON"
-                }
-            }
-            else {
-                Write-Failure "Supabase installer not found at: $supabaseInstaller"
-                Write-Log -Message "install-supabase.ps1 not found" -Level "ERROR" -Category "PYTHON"
-            }
-        }
-        elseif ($pipExitCode -eq 0) {
+        if ($pipExitCode -eq 0) {
             Write-Success "All Python dependencies installed"
             Write-Log -Message "Installed from requirements.txt" -Level "SUCCESS" -Category "PYTHON"
         }
@@ -355,17 +285,18 @@ Write-Host " Edit these files with your credentials:"
 Write-Host ""
 Write-Host "  📝 " -NoNewline -ForegroundColor White
 Write-Host "apps/web/.env.local" -ForegroundColor Cyan
-Write-Host "     - NEXT_PUBLIC_SUPABASE_URL" -ForegroundColor Gray
-Write-Host "     - NEXT_PUBLIC_SUPABASE_ANON_KEY" -ForegroundColor Gray
+Write-Host "     - NEXT_PUBLIC_API_URL (default: http://localhost:8080)" -ForegroundColor Gray
+Write-Host "     - NEXT_PUBLIC_LOGIN_BOT_USERNAME (your bot's username)" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  📝 " -NoNewline -ForegroundColor White
 Write-Host "apps/api/.env" -ForegroundColor Cyan
-Write-Host "     - SUPABASE_URL, SUPABASE_ANON_KEY" -ForegroundColor Gray
-Write-Host "     - Set MOCK_AUTH=true for local dev" -ForegroundColor Gray
+Write-Host "     - LOGIN_BOT_TOKEN (from @BotFather - for dashboard auth)" -ForegroundColor Gray
+Write-Host "     - BOT_OWNER_TELEGRAM_ID (your Telegram ID)" -ForegroundColor Gray
+Write-Host "     - ENCRYPTION_KEY (generate with: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  📝 " -NoNewline -ForegroundColor White
 Write-Host "apps/bot/.env" -ForegroundColor Cyan
-Write-Host "     - BOT_TOKEN (from @BotFather)" -ForegroundColor Gray
+Write-Host "     - BOT_TOKEN (optional - for standalone mode)" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  Then run: " -NoNewline
 Write-Host "nezuko dev" -ForegroundColor Green

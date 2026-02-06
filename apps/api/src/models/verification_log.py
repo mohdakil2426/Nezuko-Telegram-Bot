@@ -34,8 +34,9 @@ class VerificationLog(Base):
     )  # 'verified', 'restricted', 'error'
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     cached: Mapped[bool] = mapped_column(Boolean, default=False)
+    error_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     timestamp: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
         index=True,
     )

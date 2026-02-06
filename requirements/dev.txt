@@ -20,8 +20,3 @@ ruff>=0.14.14                      # Fast linter and formatter
 pylint>=4.0.4                      # Code analysis
 pyrefly>=0.50.1                    # Meta's Python type checker (Pyre successor)
 mypy>=1.19.1                       # Static type checker (alternative)
-
-# ─────────────────────────────────────────────────────────────────────────────────
-# API Testing
-# ─────────────────────────────────────────────────────────────────────────────────
-httpx>=0.28.1                      # HTTP client for testing endpoints

@@ -1,201 +1,180 @@
-# Active Context: Phase 39 - Web Migration Complete
+# Active Context: Phase 48 - Verification Logging Fix ✅ VERIFIED WORKING
 
 ## Current Status
 
-**Phase 39 COMPLETE** - Migrated from custom `apps/web` to pure shadcn/ui dashboard.
-**Focus**: Replaced premium custom UI with maintainable pure shadcn/ui dashboard.
+**Phase 48 COMPLETE & VERIFIED** - All Dashboard Charts Now Working
+**Date**: 2026-02-07
 
-### Recent Achievements (2026-02-03)
+### Work Completed This Session
 
-| Item                          | Status      | Description                                         |
-| :---------------------------- | :---------- | :-------------------------------------------------- |
-| **Phase 37: Web1 Dashboard**  | ✅ Complete | Pure shadcn/ui dashboard with 26 components         |
-| **Phase 38: Advanced Charts** | ✅ Complete | 10 new charts for analytics visualization           |
-| **Phase 39: Web Migration**   | ✅ Complete | Deleted old web, renamed web1 → web                 |
-| **Chart Type Definitions**    | ✅ Complete | 10 TypeScript interfaces for chart data             |
-| **Mock Data Generators**      | ✅ Complete | Realistic mock data for all chart types             |
-| **Chart Service Layer**       | ✅ Complete | Service with mock/API toggle                        |
-| **React Query Hooks**         | ✅ Complete | 10 custom hooks for fetching chart data             |
-| **Chart Components**          | ✅ Complete | Donut, Bar, Line, Radial chart components           |
-| **Analytics Tabbed Layout**   | ✅ Complete | 4 tabs: Overview, Performance, Distribution, Trends |
-| **Lint Fixes**                | ✅ Complete | Fixed React hooks rules, unused imports             |
+1. **Root Cause Analysis** - Deep investigation into why dashboard charts/analytics showed zeros
+2. **Critical Bug Fixed** - `group_id` parameter was not being passed to `check_multi_membership()`
+3. **Two Handlers Fixed** - Both `join.py` and `verify.py` now pass `group_id` for logging
+4. **Database Verified** - PostgreSQL correctly configured, bot uses same DB as API
+5. **Fix Verified** - All charts now displaying real verification data ✅
 
 ---
 
-## Key Changes Summary
+## Bug Summary
 
-### New Charts Directory: `apps/web/src/components/charts/`
+### The Problem
+Dashboard showed zeros for all verification data, charts empty, bot uptime not displaying.
 
-10 new chart components using native shadcn/ui charts (Recharts).
-
-### Charts Structure
-
-```
-apps/web/src/components/charts/
-├── index.ts                              # Barrel exports
-├── verification-distribution-chart.tsx   # Donut: Verified/Restricted/Error
-├── cache-breakdown-chart.tsx             # Donut: Cache hits vs API calls
-├── groups-status-chart.tsx               # Donut: Active vs Inactive groups
-├── api-calls-chart.tsx                   # Donut: API method distribution
-├── hourly-activity-chart.tsx             # Bar: 24-hour activity
-├── latency-distribution-chart.tsx        # Bar: Latency buckets
-├── top-groups-chart.tsx                  # Bar: Top groups by verifications
-├── cache-hit-rate-trend-chart.tsx        # Line: Cache hit rate over time
-├── latency-trend-chart.tsx               # Line: Avg/P95 latency trend
-└── bot-health-chart.tsx                  # Radial: Bot health score gauge
+### Root Cause
+In `verification.py` line 242, logging only occurs when `group_id is not None`:
+```python
+if group_id is not None:
+    task = asyncio.create_task(log_verification(...))
 ```
 
-### Data Layer Files
+But BOTH handlers calling `check_multi_membership()` did NOT pass `group_id`:
 
-```
-apps/web/src/lib/
-├── services/
-│   ├── types.ts              # +10 chart interfaces
-│   ├── charts.service.ts     # NEW: Chart service layer
-│   └── index.ts              # +chartsService export
-├── hooks/
-│   ├── use-charts.ts         # NEW: 10 React Query hooks
-│   └── index.ts              # +chart hooks export
-├── mock/
-│   ├── charts.mock.ts        # NEW: Mock data generators
-│   └── index.ts              # +mock generators export
-├── api/
-│   └── endpoints.ts          # +charts.* endpoints
-└── query-keys.ts             # +charts.* keys
+**Before (Broken):**
+```python
+# apps/bot/handlers/events/join.py line 81-83
+missing_channels = await check_multi_membership(
+    user_id=user_id, channels=channels, context=context
+)
+
+# apps/bot/handlers/verify.py line 74-76
+missing_channels = await check_multi_membership(
+    user_id=user_id, channels=channels, context=context
+)
 ```
 
-### Analytics Page: 4-Tab Layout
-
-| Tab          | Charts Displayed                                  |
-| :----------- | :------------------------------------------------ |
-| Overview     | Overview Cards, Verification Trends, User Growth  |
-| Performance  | Bot Health, Latency Trend, Latency Distribution   |
-| Distribution | Verification, Cache, Groups Status, API Calls     |
-| Trends       | Cache Hit Rate Trend, Hourly Activity, Top Groups |
-
-### Component Structure (Existing)
-
-```
-apps/web/src/components/
-├── ui/                      # 26 shadcn components
-├── dashboard/               # Dashboard-specific
-│   ├── stat-cards.tsx
-│   ├── verification-chart.tsx
-│   ├── activity-feed.tsx
-│   └── index.ts
-├── groups/                  # Groups page
-│   ├── groups-columns.tsx
-│   ├── groups-data-table.tsx
-│   ├── groups-page-content.tsx
-│   └── index.ts
-├── channels/                # Channels page
-│   ├── channels-columns.tsx
-│   ├── channels-data-table.tsx
-│   ├── channels-page-content.tsx
-│   └── index.ts
-├── analytics/               # Analytics page
-│   ├── overview-cards.tsx
-│   ├── verification-trends-chart.tsx
-│   ├── user-growth-chart.tsx
-│   ├── analytics-page-content.tsx
-│   └── index.ts
-├── settings/                # Settings page
-│   ├── appearance-card.tsx
-│   ├── account-info-card.tsx
-│   ├── settings-page-content.tsx
-│   └── index.ts
-├── login-form.tsx           # Login form component
-├── app-sidebar.tsx          # Main sidebar (sidebar-07)
-├── nav-main.tsx             # Navigation items
-├── nav-user.tsx             # User dropdown
-├── brand-logo.tsx           # Nezuko branding
-├── theme-toggle.tsx         # Light/Dark/System
-└── site-header.tsx          # Header with breadcrumbs
-```
-
-### App Routes
-
-```
-apps/web/src/app/
-├── layout.tsx               # Root layout with providers
-├── page.tsx                 # Redirects to /dashboard
-├── not-found.tsx            # Custom 404 page
-├── login/
-│   └── page.tsx             # Login page
-└── dashboard/
-    ├── layout.tsx           # Dashboard layout (sidebar + header)
-    ├── page.tsx             # Main dashboard
-    ├── analytics/page.tsx
-    ├── channels/page.tsx
-    ├── groups/page.tsx
-    └── settings/page.tsx
-```
-
-### Data Architecture
-
-```
-Component → Hook → Service → (Mock or API) → Response
-```
-
-- **Mock mode**: `NEXT_PUBLIC_USE_MOCK=true` in `.env.local`
-- **API mode**: Set `NEXT_PUBLIC_USE_MOCK=false` and configure `NEXT_PUBLIC_API_URL`
-
-### Key Fixes Applied
-
-1. **Breadcrumb Hydration**: `BreadcrumbSeparator` moved to sibling position
-2. **React Compiler**: Added `"use no memo"` directive for TanStack Table components
-3. **ESLint**: Inline disable for `react-hooks/incompatible-library` rule
-
----
-
-## Build Verification
-
-```
-$ bun run lint
-$ eslint
-(no output = 0 errors, 0 warnings)
-
-$ bun run build
-✓ Compiled successfully in 4.2s
-✓ Generating static pages (10/10)
-
-Routes:
-○ /
-○ /_not-found
-○ /dashboard
-○ /dashboard/analytics
-○ /dashboard/channels
-○ /dashboard/groups
-○ /dashboard/settings
-○ /login
+**After (Fixed):**
+```python
+# Both files now include group_id
+missing_channels = await check_multi_membership(
+    user_id=user_id,
+    channels=channels,
+    context=context,
+    group_id=chat_id,  # Required for verification logging to database
+)
 ```
 
 ---
 
-## Test Credentials
+## Current Architecture
 
-| User  | Email            | Password  | Role        |
-| :---- | :--------------- | :-------- | :---------- |
-| Admin | admin@nezuko.bot | Admin@123 | super_admin |
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    NEZUKO ARCHITECTURE                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  📱 LOGIN BOT (apps/api/.env)                                    │
+│  └── Purpose: Telegram Login Widget authentication only         │
+│  └── Token: LOGIN_BOT_TOKEN                                      │
+│                                                                  │
+│  🖥️  DASHBOARD (Web UI) - ✅ ALL CHARTS WORKING                  │
+│  └── Real-time updates via TanStack Query polling               │
+│  └── SSE events trigger cache invalidation for instant sync     │
+│  └── Bot uptime from API /dashboard/stats                       │
+│  └── Verification trends chart ✅                                │
+│  └── Cache breakdown chart ✅                                    │
+│  └── Bot health metrics ✅                                       │
+│  └── Verification distribution ✅                                │
+│  └── Groups status chart ✅                                      │
+│  └── Activity feed ✅                                            │
+│                                                                  │
+│  🤖 WORKING BOTS (from Database)                                 │
+│  └── BotManager reads active bots from DB                        │
+│  └── Decrypts tokens with ENCRYPTION_KEY                         │
+│  └── Publishes verification events to dashboard                  │
+│  └── HeartbeatService for uptime tracking                        │
+│  └── ✅ LOGS VERIFICATIONS TO DATABASE (VERIFIED WORKING)       │
+│                                                                  │
+│  🗄️  DATABASE (PostgreSQL)                                       │
+│  └── Bot and API share same database                             │
+│  └── DATABASE_URL in both apps/bot/.env and apps/api/.env       │
+│  └── verification_log table populated on each verification ✅   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Commands Reference
+## Files Modified This Session
 
+| File | Change |
+|------|--------|
+| `apps/bot/handlers/events/join.py` | Added `group_id=chat_id` parameter to `check_multi_membership()` call |
+| `apps/bot/handlers/verify.py` | Added `group_id=chat_id` parameter to `check_multi_membership()` call |
+
+---
+
+## Verification Flow (Now Working)
+
+```
+1. User joins group
+   ↓
+2. join.py:handle_new_member() triggers
+   ↓
+3. check_multi_membership(user_id, channels, context, group_id=chat_id)
+   ↓
+4. For each channel: check_membership() called with group_id
+   ↓
+5. _log_result() receives group_id (not None!)
+   ↓
+6. asyncio.create_task(log_verification(...)) EXECUTES
+   ↓
+7. verification_log table gets new row
+   ↓
+8. Dashboard charts show real data ✅
+```
+
+---
+
+## Environment Configuration (Verified)
+
+### apps/bot/.env
 ```bash
-# Development
-cd apps/web && bun dev
+DATABASE_URL=postgresql+asyncpg://nezuko:nezuko123@localhost:5432/nezuko
+ENCRYPTION_KEY=cWYdiGbzQqgjllPskB7d55feP8dPRTVv98AJh1_sFBg=
+```
 
-# Lint check
-cd apps/web && bun run lint
+### apps/api/.env
+```bash
+DATABASE_URL=postgresql+asyncpg://nezuko:nezuko123@localhost:5432/nezuko
+```
 
-# Build verification
-cd apps/web && bun run build
+Both apps now use the **same PostgreSQL database**.
 
-# Add shadcn component
-cd apps/web && bunx shadcn@latest add <component-name>
+---
+
+## Running the Application
+
+### Start Everything
+```bash
+.\nezuko.bat
+# Select [4] Start Services → [1] Start ALL
 ```
 
 ---
 
-_Last Updated: 2026-02-03 21:30 IST_
+## ✅ All Components Verified Working
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| PostgreSQL | ✅ Running | Docker `nezuko-postgres` |
+| API Server | ✅ Running | Port 8080 |
+| Web Dashboard | ✅ Running | Port 3000 |
+| Bot | ✅ Running | Logs verifications correctly |
+| Verification Logging | ✅ Working | `group_id` now passed |
+| **Dashboard Charts** | ✅ **ALL WORKING** | Real data displaying |
+
+### Charts Verified Working
+
+| Chart | Endpoint | Status |
+|-------|----------|--------|
+| Verification Trends | `/api/v1/analytics/verifications` | ✅ Working |
+| Cache Breakdown | `/api/v1/charts/cache-breakdown` | ✅ Working |
+| Bot Health | `/api/v1/charts/bot-health` | ✅ Working |
+| Verification Distribution | `/api/v1/charts/verification-distribution` | ✅ Working |
+| Groups Status | `/api/v1/charts/groups-status` | ✅ Working |
+| Activity Feed | `/api/v1/dashboard/activity` | ✅ Working |
+| Dashboard Stats | `/api/v1/dashboard/stats` | ✅ Working |
+
+---
+
+_Last Updated: 2026-02-07_

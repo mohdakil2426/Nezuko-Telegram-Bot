@@ -1,22 +1,43 @@
-"""Business logic for log retrieval and monitoring."""
+"""Business logic for log retrieval and monitoring.
+
+Supports both Redis (preferred) and database fallback when Redis unavailable.
+"""
 
 import json
+import logging
 from collections.abc import Awaitable
 from typing import Any, cast
 
-from redis.asyncio import Redis
+from sqlalchemy import select
 
 from src.core.config import get_settings
+from src.core.database import async_session_factory
+from src.models.admin_log import AdminLog
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 class LogService:
-    """Service for handling log retrieval and filtering from Redis."""
+    """Service for handling log retrieval with Redis and database fallback."""
 
     def __init__(self) -> None:
-        self.redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
+        """Initialize log service with optional Redis connection."""
+        self.redis = None
         self.history_key = "nezuko:logs:history"
+
+        # Only initialize Redis if URL is configured
+        if settings.REDIS_URL:
+            try:
+                from redis.asyncio import Redis
+
+                self.redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
+                logger.info("LogService: Redis initialized")
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning("LogService: Redis unavailable (%s), using database", e)
+                self.redis = None
+        else:
+            logger.info("LogService: Redis not configured, using database fallback")
 
     async def get_logs(
         self,
@@ -25,18 +46,42 @@ class LogService:
         search: str | None = None,
     ) -> list[dict[str, Any]]:
         """
-        Retrieve historical logs from Redis List.
-        Note: Redis List doesn't support advanced filtering server-side efficiently.
-        We will fetch a batch and filter in memory for this simple implementation.
-        For production with heavy logs, use a real DB or specific logging stack (Loki/ELK).
+        Retrieve logs from Redis or database.
+
+        Args:
+            limit: Maximum number of logs to return.
+            level: Filter by log level (info, warning, error).
+            search: Search term to filter by message content.
+
+        Returns:
+            List of log entries as dictionaries.
         """
-        # Fetch more than limit to allow for filtering fallout
+        # Try Redis first
+        if self.redis:
+            try:
+                return await self._get_logs_from_redis(limit, level, search)
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning("Redis log retrieval failed: %s, falling back to DB", e)
+
+        # Fallback to database
+        return await self._get_logs_from_database(limit, level, search)
+
+    async def _get_logs_from_redis(
+        self,
+        limit: int,
+        level: str | None,
+        search: str | None,
+    ) -> list[dict[str, Any]]:
+        """Retrieve logs from Redis List."""
+        if not self.redis:
+            return []
+
+        # Fetch more than limit to allow for filtering
         fetch_limit = limit * 5 if (level or search) else limit
 
-        # Pyrefly/Pyright might be confused about the async nature of the redis client stub
-        # But in runtime with redis-py 5.x+, lrange is awaitable.
         raw_logs = await cast(
-            Awaitable[list[str]], self.redis.lrange(self.history_key, 0, fetch_limit - 1)
+            Awaitable[list[str]],
+            self.redis.lrange(self.history_key, 0, fetch_limit - 1),
         )
 
         logs = []
@@ -45,7 +90,7 @@ class LogService:
                 entry = json.loads(raw)
 
                 # Apply filters
-                if level and entry.get("level") != level:
+                if level and entry.get("level", "").lower() != level.lower():
                     continue
 
                 if search:
@@ -63,6 +108,40 @@ class LogService:
                 continue
 
         return logs
+
+    async def _get_logs_from_database(
+        self,
+        limit: int,
+        level: str | None,
+        search: str | None,
+    ) -> list[dict[str, Any]]:
+        """Retrieve logs from admin_log table."""
+        async with async_session_factory() as session:
+            stmt = select(AdminLog).order_by(AdminLog.timestamp.desc())
+
+            # Apply level filter
+            if level:
+                stmt = stmt.where(AdminLog.level == level.upper())
+
+            # Apply search filter
+            if search:
+                stmt = stmt.where(AdminLog.message.ilike(f"%{search}%"))
+
+            stmt = stmt.limit(limit)
+
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+
+            return [
+                {
+                    "id": str(row.id),
+                    "level": row.level.lower() if row.level else "info",
+                    "message": row.message,
+                    "timestamp": row.timestamp.isoformat() if row.timestamp else "",
+                    "logger": row.logger or "system",
+                }
+                for row in rows
+            ]
 
 
 log_service = LogService()

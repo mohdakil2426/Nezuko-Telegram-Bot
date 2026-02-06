@@ -183,3 +183,9 @@ async def get_all_protected_groups(session: AsyncSession) -> list[ProtectedGroup
     """Get all protected groups (for metrics/admin purposes)."""
     result = await session.execute(select(ProtectedGroup).where(ProtectedGroup.enabled.is_(True)))
     return list(result.scalars().all())
+
+
+async def get_all_enforced_channels(session: AsyncSession) -> list[EnforcedChannel]:
+    """Get all enforced channels (for member sync/analytics)."""
+    result = await session.execute(select(EnforcedChannel))
+    return list(result.scalars().all())

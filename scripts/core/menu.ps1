@@ -41,40 +41,42 @@ function Show-Banner {
     Write-Host ""
 }
 
-function Show-Menu {
+function Show-MainMenu {
     <#
     .SYNOPSIS
         Displays the main menu options.
     #>
+    Write-Host "  ┌── 📦 SETUP & CONFIGURATION ──────────────────────────┐" -ForegroundColor Magenta
+    Write-Host "  │    [1] 🏗️  First-Time Setup                          │" -ForegroundColor White
+    Write-Host "  │    [2] 🔐 Security & Keys...                         │" -ForegroundColor White
+    Write-Host "  │    [3] 🗄️  Database...                                │" -ForegroundColor White
+    Write-Host "  ├── 🚀 DEVELOPMENT ────────────────────────────────────┤" -ForegroundColor Green
+    Write-Host "  │    [4] ▶️  Start Services...                          │" -ForegroundColor White
+    Write-Host "  │    [5] ⏹️  Stop All Services                          │" -ForegroundColor White
+    Write-Host "  ├── 🧹 UTILITIES ──────────────────────────────────────┤" -ForegroundColor Yellow
+    Write-Host "  │    [6] 🧼 Clean Artifacts...                         │" -ForegroundColor White
+    Write-Host "  │    [7] ♻️  Full Reset (Clean + Reinstall)             │" -ForegroundColor White
+    Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
+    Write-Host "  │    [0] ❌ Exit                                       │" -ForegroundColor White
+    Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
+    Write-Host ""
+}
+
+function Show-SecurityMenu {
+    <#
+    .SYNOPSIS
+        Displays the security tools submenu.
+    #>
+    Write-Host ""
     Write-Host "  ┌──────────────────────────────────────────────────────┐" -ForegroundColor White
     Write-Host "  │  " -ForegroundColor White -NoNewline
-    Write-Host "DEVELOPMENT" -ForegroundColor Green -NoNewline
-    Write-Host "                                         │" -ForegroundColor White
+    Write-Host "🔐 SECURITY & KEYS" -ForegroundColor Red -NoNewline
+    Write-Host "                              │" -ForegroundColor White
     Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  │    [1] 🚀 Start All Services                         │" -ForegroundColor White
-    Write-Host "  │    [2] 🛑 Stop All Services                          │" -ForegroundColor White
-    Write-Host "  │    [3] 🔄 Restart All Services                       │" -ForegroundColor White
-    Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  ├──────────────────────────────────────────────────────┤" -ForegroundColor White
-    Write-Host "  │  " -ForegroundColor White -NoNewline
-    Write-Host "SETUP & MAINTENANCE" -ForegroundColor Yellow -NoNewline
-    Write-Host "                               │" -ForegroundColor White
-    Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  │    [4] 📦 First-Time Setup (Install Dependencies)    │" -ForegroundColor White
-    Write-Host "  │    [5] 🧹 Clean All Artifacts                        │" -ForegroundColor White
-    Write-Host "  │    [6] ♻️  Total Reset (Clean + Reinstall)            │" -ForegroundColor White
-    Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  ├──────────────────────────────────────────────────────┤" -ForegroundColor White
-    Write-Host "  │  " -ForegroundColor White -NoNewline
-    Write-Host "TESTING & TOOLS" -ForegroundColor Magenta -NoNewline
-    Write-Host "                                   │" -ForegroundColor White
-    Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  │    [7] 🧪 Run Tests                                  │" -ForegroundColor White
-    Write-Host "  │    [8] 🗄️  Database Tools                            │" -ForegroundColor White
-    Write-Host "  │    [9] 🐳 Docker Commands                            │" -ForegroundColor White
-    Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  ├──────────────────────────────────────────────────────┤" -ForegroundColor White
-    Write-Host "  │    [0] ❌ Exit                                       │" -ForegroundColor White
+    Write-Host "  │    [1] 🔑 Generate Encryption Key (Fernet)           │" -ForegroundColor White
+    Write-Host "  │    [2] 📋 Check .env Files Status                    │" -ForegroundColor White
+    Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
+    Write-Host "  │    [0] ⬅️  Back                                       │" -ForegroundColor White
     Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
     Write-Host ""
 }
@@ -87,33 +89,40 @@ function Show-DatabaseMenu {
     Write-Host ""
     Write-Host "  ┌──────────────────────────────────────────────────────┐" -ForegroundColor White
     Write-Host "  │  " -ForegroundColor White -NoNewline
-    Write-Host "DATABASE TOOLS" -ForegroundColor Cyan -NoNewline
+    Write-Host "🗄️  DATABASE" -ForegroundColor Cyan -NoNewline
     Write-Host "                                    │" -ForegroundColor White
     Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  │    [1] 🔧 Setup Database (Create Tables)             │" -ForegroundColor White
-    Write-Host "  │    [2] 🐛 Debug Database Connection                  │" -ForegroundColor White
-    Write-Host "  │    [3] ⬆️  Run Migrations                             │" -ForegroundColor White
-    Write-Host "  │    [0] ⬅️  Back to Main Menu                          │" -ForegroundColor White
+    Write-Host "  │    [1] 🐘 Start PostgreSQL (Docker)                  │" -ForegroundColor White
+    Write-Host "  │    [2] 🛑 Stop PostgreSQL (Docker)                   │" -ForegroundColor White
+    Write-Host "  │    [3] ⬆️  Run Migrations (Alembic)                   │" -ForegroundColor White
+    Write-Host "  │    [4] 🌱 Seed Test Data                             │" -ForegroundColor White
+    Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
+    Write-Host "  │    [0] ⬅️  Back                                       │" -ForegroundColor White
     Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
     Write-Host ""
 }
 
-function Show-DockerMenu {
+function Show-StartMenu {
     <#
     .SYNOPSIS
-        Displays the Docker commands submenu.
+        Displays the start services submenu.
     #>
     Write-Host ""
     Write-Host "  ┌──────────────────────────────────────────────────────┐" -ForegroundColor White
     Write-Host "  │  " -ForegroundColor White -NoNewline
-    Write-Host "DOCKER COMMANDS" -ForegroundColor Blue -NoNewline
-    Write-Host "                                   │" -ForegroundColor White
+    Write-Host "▶️  START SERVICES" -ForegroundColor Green -NoNewline
+    Write-Host "                               │" -ForegroundColor White
     Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  │    [1] 🏗️  Build All Containers                      │" -ForegroundColor White
-    Write-Host "  │    [2] ▶️  Start Containers                           │" -ForegroundColor White
-    Write-Host "  │    [3] ⏹️  Stop Containers                            │" -ForegroundColor White
-    Write-Host "  │    [4] 📋 View Logs                                  │" -ForegroundColor White
-    Write-Host "  │    [0] ⬅️  Back to Main Menu                          │" -ForegroundColor White
+    Write-Host "  │    [1] 🚀 Start ALL (DB + Bot + API + Web)           │" -ForegroundColor White
+    Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
+    Write-Host "  │    [2] 🤖 Bot Only                                   │" -ForegroundColor White
+    Write-Host "  │    [3] 📡 API Only                                   │" -ForegroundColor White
+    Write-Host "  │    [4] 💻 Web Dashboard Only                         │" -ForegroundColor White
+    Write-Host "  │    [5] 🐘 Database Only (PostgreSQL Docker)         │" -ForegroundColor White
+    Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
+    Write-Host "  │    [6] ⏹️  Stop All Services                          │" -ForegroundColor White
+    Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
+    Write-Host "  │    [0] ⬅️  Back                                       │" -ForegroundColor White
     Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
     Write-Host ""
 }
@@ -126,14 +135,14 @@ function Show-CleanMenu {
     Write-Host ""
     Write-Host "  ┌──────────────────────────────────────────────────────┐" -ForegroundColor White
     Write-Host "  │  " -ForegroundColor White -NoNewline
-    Write-Host "CLEAN OPTIONS" -ForegroundColor Yellow -NoNewline
-    Write-Host "                                     │" -ForegroundColor White
+    Write-Host "🧼 CLEAN ARTIFACTS" -ForegroundColor Yellow -NoNewline
+    Write-Host "                               │" -ForegroundColor White
     Write-Host "  │                                                      │" -ForegroundColor White
     Write-Host "  │    [1] 📦 Clean node_modules only                    │" -ForegroundColor White
     Write-Host "  │    [2] 🐍 Clean Python .venv only                    │" -ForegroundColor White
     Write-Host "  │    [3] 🧹 Clean ALL (node_modules + .venv)           │" -ForegroundColor White
-    Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  │    [0] ⬅️  Back to Main Menu                          │" -ForegroundColor White
+    Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
+    Write-Host "  │    [0] ⬅️  Back                                       │" -ForegroundColor White
     Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
     Write-Host ""
     Write-Host "  " -NoNewline
@@ -143,37 +152,396 @@ function Show-CleanMenu {
 }
 
 # ============================================================
-# Action Functions
+# Helper Functions
 # ============================================================
 
-function Invoke-StartServices {
+function Wait-ForKeyPress {
     Write-Host ""
-    Write-Host "  🚀 Starting all development services..." -ForegroundColor Green
-    $startScript = Join-Path $ScriptRoot "..\dev\start.ps1"
-    & $startScript
+    Write-Host "  Press any key to continue..." -ForegroundColor DarkGray
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
-function Invoke-StopServices {
-    Write-Host ""
-    Write-Host "  🛑 Stopping all services..." -ForegroundColor Red
-    $stopScript = Join-Path $ScriptRoot "..\dev\stop.ps1"
-    & $stopScript
+function Get-ProjectRoot {
+    # Navigate up from scripts/core to project root
+    return Split-Path -Parent (Split-Path -Parent $ScriptRoot)
 }
 
-function Invoke-RestartServices {
-    Write-Host ""
-    Write-Host "  🔄 Restarting all services..." -ForegroundColor Yellow
-    Invoke-StopServices
-    Start-Sleep -Seconds 2
-    Invoke-StartServices
-}
+# ============================================================
+# Action Functions - Setup & Configuration
+# ============================================================
 
-function Invoke-Setup {
+function Invoke-FirstTimeSetup {
     Write-Host ""
     Write-Host "  📦 Running first-time setup..." -ForegroundColor Yellow
     $setupScript = Join-Path $ScriptRoot "..\setup\install.ps1"
     & $setupScript
 }
+
+function Invoke-SecurityMenu {
+    <#
+    .SYNOPSIS
+        Security tools submenu handler.
+    #>
+    while ($true) {
+        Show-Banner
+        Show-SecurityMenu
+        
+        $choice = Read-Host "  Enter choice"
+        
+        switch ($choice) {
+            "1" {
+                Write-Host ""
+                Write-Host "  🔑 Generating encryption key..." -ForegroundColor Yellow
+                $keyScript = Join-Path $ScriptRoot "..\utils\generate-key.ps1"
+                & $keyScript
+                Wait-ForKeyPress
+            }
+            "2" {
+                Write-Host ""
+                Write-Host "  📋 Checking .env files status..." -ForegroundColor Cyan
+                Write-Host ""
+                
+                $projectRoot = Get-ProjectRoot
+                
+                # Check API .env
+                $apiEnv = Join-Path $projectRoot "apps\api\.env"
+                $apiEnvExample = Join-Path $projectRoot "apps\api\.env.example"
+                Write-Host "  apps/api/.env: " -NoNewline
+                if (Test-Path $apiEnv) {
+                    Write-Host "✅ EXISTS" -ForegroundColor Green
+                }
+                else {
+                    Write-Host "❌ MISSING" -ForegroundColor Red -NoNewline
+                    if (Test-Path $apiEnvExample) {
+                        Write-Host " (copy from .env.example)" -ForegroundColor Gray
+                    }
+                    else {
+                        Write-Host ""
+                    }
+                }
+                
+                # Check Web .env.local
+                $webEnv = Join-Path $projectRoot "apps\web\.env.local"
+                $webEnvExample = Join-Path $projectRoot "apps\web\.env.example"
+                Write-Host "  apps/web/.env.local: " -NoNewline
+                if (Test-Path $webEnv) {
+                    Write-Host "✅ EXISTS" -ForegroundColor Green
+                }
+                else {
+                    Write-Host "❌ MISSING" -ForegroundColor Red -NoNewline
+                    if (Test-Path $webEnvExample) {
+                        Write-Host " (copy from .env.example)" -ForegroundColor Gray
+                    }
+                    else {
+                        Write-Host ""
+                    }
+                }
+                
+                # Check Bot .env
+                $botEnv = Join-Path $projectRoot "apps\bot\.env"
+                $botEnvExample = Join-Path $projectRoot "apps\bot\.env.example"
+                Write-Host "  apps/bot/.env: " -NoNewline
+                if (Test-Path $botEnv) {
+                    Write-Host "✅ EXISTS" -ForegroundColor Green
+                }
+                else {
+                    Write-Host "❌ MISSING" -ForegroundColor Red -NoNewline
+                    if (Test-Path $botEnvExample) {
+                        Write-Host " (copy from .env.example)" -ForegroundColor Gray
+                    }
+                    else {
+                        Write-Host ""
+                    }
+                }
+                
+                Write-Host ""
+                Wait-ForKeyPress
+            }
+            "0" { return }
+            default {
+                Write-Host "  ⚠️  Invalid choice. Please try again." -ForegroundColor Yellow
+                Start-Sleep -Seconds 1
+            }
+        }
+    }
+}
+
+function Invoke-DatabaseMenu {
+    <#
+    .SYNOPSIS
+        Database tools submenu handler.
+    #>
+    while ($true) {
+        Show-Banner
+        Show-DatabaseMenu
+        
+        $choice = Read-Host "  Enter choice"
+        $projectRoot = Get-ProjectRoot
+        $venvPython = Join-Path $projectRoot ".venv\Scripts\python.exe"
+        
+        switch ($choice) {
+            "1" {
+                # Start PostgreSQL via Docker
+                Write-Host ""
+                Write-Host "  🐘 Starting PostgreSQL container..." -ForegroundColor Cyan
+                Write-Host ""
+                
+                # Check if container exists
+                $containerExists = docker ps -a --filter "name=nezuko-postgres" --format "{{.Names}}" 2>$null
+                
+                if ($containerExists -eq "nezuko-postgres") {
+                    # Container exists, just start it
+                    Write-Host "  Container exists, starting..." -ForegroundColor Gray
+                    docker start nezuko-postgres
+                }
+                else {
+                    # Create new container
+                    Write-Host "  Creating new PostgreSQL container..." -ForegroundColor Gray
+                    docker run -d `
+                        --name nezuko-postgres `
+                        -e POSTGRES_USER=nezuko `
+                        -e POSTGRES_PASSWORD=nezuko123 `
+                        -e POSTGRES_DB=nezuko `
+                        -p 5432:5432 `
+                        postgres:17-alpine
+                }
+                
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host ""
+                    Write-Host "  ✅ PostgreSQL started!" -ForegroundColor Green
+                    Write-Host ""
+                    Write-Host "  Connection: postgresql://nezuko:nezuko123@localhost:5432/nezuko" -ForegroundColor Gray
+                }
+                else {
+                    Write-Host ""
+                    Write-Host "  ❌ Failed to start PostgreSQL" -ForegroundColor Red
+                }
+                Wait-ForKeyPress
+            }
+            "2" {
+                # Stop PostgreSQL
+                Write-Host ""
+                Write-Host "  🛑 Stopping PostgreSQL container..." -ForegroundColor Yellow
+                docker stop nezuko-postgres 2>$null
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "  ✅ PostgreSQL stopped!" -ForegroundColor Green
+                }
+                else {
+                    Write-Host "  ℹ️  Container not running or doesn't exist" -ForegroundColor Gray
+                }
+                Wait-ForKeyPress
+            }
+            "3" {
+                # Run Alembic migrations
+                Write-Host ""
+                Write-Host "  ⬆️  Running Alembic migrations..." -ForegroundColor Cyan
+                Write-Host ""
+                
+                $apiDir = Join-Path $projectRoot "apps\api"
+                Push-Location $apiDir
+                
+                if (Test-Path $venvPython) {
+                    # Use venv python with alembic module
+                    & $venvPython -m alembic upgrade head
+                }
+                else {
+                    # Fallback to system alembic
+                    alembic upgrade head
+                }
+                
+                Pop-Location
+                
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host ""
+                    Write-Host "  ✅ Migrations applied successfully!" -ForegroundColor Green
+                }
+                Wait-ForKeyPress
+            }
+            "4" {
+                # Seed test data
+                Write-Host ""
+                Write-Host "  🌱 Seeding test data..." -ForegroundColor Cyan
+                Write-Host ""
+                
+                $seedScript = Join-Path $projectRoot "scripts\db\seed.py"
+                
+                if (Test-Path $seedScript) {
+                    Push-Location $projectRoot
+                    if (Test-Path $venvPython) {
+                        & $venvPython $seedScript
+                    }
+                    else {
+                        python $seedScript
+                    }
+                    Pop-Location
+                    
+                    if ($LASTEXITCODE -eq 0) {
+                        Write-Host ""
+                        Write-Host "  ✅ Test data seeded!" -ForegroundColor Green
+                    }
+                }
+                else {
+                    Write-Host "  ❌ Seed script not found: $seedScript" -ForegroundColor Red
+                }
+                Wait-ForKeyPress
+            }
+            "0" { return }
+            default {
+                Write-Host "  ⚠️  Invalid choice. Please try again." -ForegroundColor Yellow
+                Start-Sleep -Seconds 1
+            }
+        }
+    }
+}
+
+# ============================================================
+# Action Functions - Development
+# ============================================================
+
+function Invoke-StartMenu {
+    <#
+    .SYNOPSIS
+        Start services submenu handler.
+    #>
+    while ($true) {
+        Show-Banner
+        Show-StartMenu
+        
+        $choice = Read-Host "  Enter choice"
+        $startScript = Join-Path $ScriptRoot "..\dev\start.ps1"
+        
+        switch ($choice) {
+            "1" { 
+                Write-Host ""
+                Write-Host "  🚀 Starting ALL services (including Database)..." -ForegroundColor Green
+                Write-Host ""
+                
+                # Start PostgreSQL Docker first
+                Write-Host "  [1/2] Starting PostgreSQL container..." -ForegroundColor Cyan
+                Start-PostgresContainer
+                
+                Start-Sleep -Seconds 2
+                
+                # Then start Bot + API + Web
+                Write-Host ""
+                Write-Host "  [2/2] Starting application services..." -ForegroundColor Cyan
+                & $startScript -Service "all"
+                Wait-ForKeyPress 
+            }
+            "2" {
+                Write-Host ""
+                Write-Host "  🤖 Starting Bot..." -ForegroundColor Yellow
+                & $startScript -Service "bot"
+                Wait-ForKeyPress
+            }
+            "3" {
+                Write-Host ""
+                Write-Host "  📡 Starting API..." -ForegroundColor Cyan
+                & $startScript -Service "api"
+                Wait-ForKeyPress
+            }
+            "4" {
+                Write-Host ""
+                Write-Host "  💻 Starting Web Dashboard..." -ForegroundColor Blue
+                & $startScript -Service "web"
+                Wait-ForKeyPress
+            }
+            "5" {
+                Write-Host ""
+                Write-Host "  🐘 Starting PostgreSQL container..." -ForegroundColor Cyan
+                Start-PostgresContainer
+                Wait-ForKeyPress
+            }
+            "6" {
+                Write-Host ""
+                Write-Host "  ⏹️  Stopping all services..." -ForegroundColor Red
+                $stopScript = Join-Path $ScriptRoot "..\dev\stop.ps1"
+                & $stopScript
+                Wait-ForKeyPress
+            }
+            "0" { return }
+            default {
+                Write-Host "  ⚠️  Invalid choice. Please try again." -ForegroundColor Yellow
+                Start-Sleep -Seconds 1
+            }
+        }
+    }
+}
+
+# Helper function to start PostgreSQL Docker container
+function Start-PostgresContainer {
+    <#
+    .SYNOPSIS
+        Starts PostgreSQL Docker container, creating if necessary.
+    #>
+    
+    # Check if Docker is available
+    $dockerAvailable = $null
+    try {
+        $dockerAvailable = docker --version 2>&1
+    } catch {
+        $dockerAvailable = $null
+    }
+    
+    if (-not $dockerAvailable) {
+        Write-Host "  ❌ Docker not found or not running!" -ForegroundColor Red
+        Write-Host "     Please install Docker Desktop: https://docker.com/products/docker-desktop" -ForegroundColor Gray
+        return
+    }
+    
+    # Check if container exists
+    $containerExists = docker ps -a --filter "name=nezuko-postgres" --format "{{.Names}}" 2>$null
+    
+    if ($containerExists -eq "nezuko-postgres") {
+        # Container exists, check if running
+        $containerRunning = docker ps --filter "name=nezuko-postgres" --format "{{.Names}}" 2>$null
+        
+        if ($containerRunning -eq "nezuko-postgres") {
+            Write-Host "  ✅ PostgreSQL already running!" -ForegroundColor Green
+        } else {
+            # Start existing container
+            Write-Host "  Starting existing container..." -ForegroundColor Gray
+            docker start nezuko-postgres 2>$null | Out-Null
+            
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "  ✅ PostgreSQL started!" -ForegroundColor Green
+            } else {
+                Write-Host "  ❌ Failed to start PostgreSQL" -ForegroundColor Red
+            }
+        }
+    } else {
+        # Create new container
+        Write-Host "  Creating new PostgreSQL container..." -ForegroundColor Gray
+        docker run -d `
+            --name nezuko-postgres `
+            -e POSTGRES_USER=nezuko `
+            -e POSTGRES_PASSWORD=nezuko123 `
+            -e POSTGRES_DB=nezuko `
+            -p 5432:5432 `
+            postgres:17-alpine 2>$null | Out-Null
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  ✅ PostgreSQL container created and started!" -ForegroundColor Green
+            Write-Host ""
+            Write-Host "  Connection: postgresql://nezuko:nezuko123@localhost:5432/nezuko" -ForegroundColor Gray
+        } else {
+            Write-Host "  ❌ Failed to create PostgreSQL container" -ForegroundColor Red
+        }
+    }
+}
+
+
+
+function Invoke-StopServices {
+    Write-Host ""
+    Write-Host "  ⏹️  Stopping all services..." -ForegroundColor Red
+    $stopScript = Join-Path $ScriptRoot "..\dev\stop.ps1"
+    & $stopScript
+}
+
+# ============================================================
+# Action Functions - Utilities
+# ============================================================
 
 function Invoke-CleanMenu {
     <#
@@ -181,6 +549,7 @@ function Invoke-CleanMenu {
         Clean submenu with options and confirmations.
     #>
     $cleanScript = Join-Path $ScriptRoot "..\utils\clean.ps1"
+    $projectRoot = Get-ProjectRoot
     
     while ($true) {
         Show-Banner
@@ -208,11 +577,10 @@ function Invoke-CleanMenu {
                 # Clean .venv only
                 Write-Host ""
                 Write-Host "  🐍 This will delete the Python virtual environment (.venv)." -ForegroundColor Yellow
-                Write-Host "  ⚠️  You will need to run 'nezuko setup' to recreate it!" -ForegroundColor Red
+                Write-Host "  ⚠️  You will need to run Setup to recreate it!" -ForegroundColor Red
                 $confirm = Read-Host "  Are you sure? (y/N)"
                 if ($confirm -eq "y" -or $confirm -eq "Y") {
                     Write-Host ""
-                    $projectRoot = Get-ProjectRoot
                     $venvPath = Join-Path $projectRoot ".venv"
                     if (Test-Path $venvPath) {
                         Write-Host "  Removing .venv..." -ForegroundColor Gray
@@ -235,7 +603,7 @@ function Invoke-CleanMenu {
                 Write-Host "     - node_modules folders" -ForegroundColor Gray
                 Write-Host "     - Python .venv" -ForegroundColor Gray
                 Write-Host ""
-                Write-Host "  ⚠️  You will need to run 'nezuko setup' to reinstall!" -ForegroundColor Red
+                Write-Host "  ⚠️  You will need to run Setup to reinstall!" -ForegroundColor Red
                 $confirm = Read-Host "  Are you sure? (y/N)"
                 if ($confirm -eq "y" -or $confirm -eq "Y") {
                     Write-Host ""
@@ -256,132 +624,33 @@ function Invoke-CleanMenu {
     }
 }
 
-function Invoke-TotalReset {
+function Invoke-FullReset {
     Write-Host ""
-    Write-Host "  ♻️  Performing total reset (clean + reinstall)..." -ForegroundColor Red
-    
-    # Call the clean script with -IncludeVenv flag
-    $cleanScript = Join-Path $ScriptRoot "..\utils\clean.ps1"
-    & $cleanScript -IncludeVenv
-    
-    Start-Sleep -Seconds 1
-    Invoke-Setup
-}
-
-function Invoke-RunTests {
+    Write-Host "  ♻️  FULL RESET" -ForegroundColor Red
     Write-Host ""
-    Write-Host "  🧪 Running test suite..." -ForegroundColor Magenta
-    $projectRoot = Split-Path -Parent (Split-Path -Parent $ScriptRoot)
+    Write-Host "  This will:" -ForegroundColor Yellow
+    Write-Host "     1. Delete all node_modules" -ForegroundColor Gray
+    Write-Host "     2. Delete Python .venv" -ForegroundColor Gray
+    Write-Host "     3. Reinstall all dependencies" -ForegroundColor Gray
+    Write-Host ""
+    $confirm = Read-Host "  Are you sure? (y/N)"
     
-    # Use venv python directly if available
-    $venvPython = Join-Path $projectRoot ".venv\Scripts\python.exe"
-    
-    Push-Location $projectRoot
-    if (Test-Path $venvPython) {
-        # Use venv python directly (most reliable)
-        & $venvPython -m pytest tests/ -v
+    if ($confirm -eq "y" -or $confirm -eq "Y") {
+        Write-Host ""
+        Write-Host "  ♻️  Performing full reset..." -ForegroundColor Red
+        
+        # Clean
+        $cleanScript = Join-Path $ScriptRoot "..\utils\clean.ps1"
+        & $cleanScript -IncludeVenv
+        
+        Start-Sleep -Seconds 1
+        
+        # Reinstall
+        Invoke-FirstTimeSetup
     }
     else {
-        # Fallback to system python
-        Write-Host "  ⚠️  .venv not found, using system Python" -ForegroundColor Yellow
-        python -m pytest tests/ -v
+        Write-Host "  ❌ Cancelled." -ForegroundColor Gray
     }
-    Pop-Location
-}
-
-function Invoke-DatabaseMenu {
-    while ($true) {
-        Show-Banner
-        Show-DatabaseMenu
-        
-        $choice = Read-Host "  Enter choice"
-        
-        switch ($choice) {
-            "1" {
-                Write-Host ""
-                Write-Host "  🔧 Setting up database..." -ForegroundColor Cyan
-                $dbScript = Join-Path $ScriptRoot "..\db\setup.py"
-                python $dbScript
-                Wait-ForKeyPress
-            }
-            "2" {
-                Write-Host ""
-                Write-Host "  🐛 Debugging database connection..." -ForegroundColor Cyan
-                $debugScript = Join-Path $ScriptRoot "..\db\debug.py"
-                python $debugScript
-                Wait-ForKeyPress
-            }
-            "3" {
-                Write-Host ""
-                Write-Host "  ⬆️  Running migrations..." -ForegroundColor Cyan
-                $projectRoot = Split-Path -Parent (Split-Path -Parent $ScriptRoot)
-                Push-Location (Join-Path $projectRoot "apps\api")
-                alembic upgrade head
-                Pop-Location
-                Wait-ForKeyPress
-            }
-            "0" { return }
-            default {
-                Write-Host "  ⚠️  Invalid choice. Please try again." -ForegroundColor Yellow
-                Start-Sleep -Seconds 1
-            }
-        }
-    }
-}
-
-function Invoke-DockerMenu {
-    while ($true) {
-        Show-Banner
-        Show-DockerMenu
-        
-        $choice = Read-Host "  Enter choice"
-        $dockerDir = Join-Path (Split-Path -Parent (Split-Path -Parent $ScriptRoot)) "config\docker"
-        
-        switch ($choice) {
-            "1" {
-                Write-Host ""
-                Write-Host "  🏗️  Building Docker containers..." -ForegroundColor Blue
-                Push-Location $dockerDir
-                docker-compose build
-                Pop-Location
-                Wait-ForKeyPress
-            }
-            "2" {
-                Write-Host ""
-                Write-Host "  ▶️  Starting Docker containers..." -ForegroundColor Blue
-                Push-Location $dockerDir
-                docker-compose up -d
-                Pop-Location
-                Wait-ForKeyPress
-            }
-            "3" {
-                Write-Host ""
-                Write-Host "  ⏹️  Stopping Docker containers..." -ForegroundColor Blue
-                Push-Location $dockerDir
-                docker-compose down
-                Pop-Location
-                Wait-ForKeyPress
-            }
-            "4" {
-                Write-Host ""
-                Write-Host "  📋 Viewing Docker logs (Ctrl+C to exit)..." -ForegroundColor Blue
-                Push-Location $dockerDir
-                docker-compose logs -f --tail=100
-                Pop-Location
-            }
-            "0" { return }
-            default {
-                Write-Host "  ⚠️  Invalid choice. Please try again." -ForegroundColor Yellow
-                Start-Sleep -Seconds 1
-            }
-        }
-    }
-}
-
-function Wait-ForKeyPress {
-    Write-Host ""
-    Write-Host "  Press any key to continue..." -ForegroundColor DarkGray
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
 # ============================================================
@@ -395,20 +664,25 @@ function Start-MainMenu {
     #>
     while ($true) {
         Show-Banner
-        Show-Menu
+        Show-MainMenu
         
         $choice = Read-Host "  Enter choice"
         
         switch ($choice) {
-            "1" { Invoke-StartServices; Wait-ForKeyPress }
-            "2" { Invoke-StopServices; Wait-ForKeyPress }
-            "3" { Invoke-RestartServices; Wait-ForKeyPress }
-            "4" { Invoke-Setup; Wait-ForKeyPress }
-            "5" { Invoke-CleanMenu }
-            "6" { Invoke-TotalReset; Wait-ForKeyPress }
-            "7" { Invoke-RunTests; Wait-ForKeyPress }
-            "8" { Invoke-DatabaseMenu }
-            "9" { Invoke-DockerMenu }
+            # Setup & Configuration
+            "1" { Invoke-FirstTimeSetup; Wait-ForKeyPress }
+            "2" { Invoke-SecurityMenu }
+            "3" { Invoke-DatabaseMenu }
+            
+            # Development
+            "4" { Invoke-StartMenu }
+            "5" { Invoke-StopServices; Wait-ForKeyPress }
+            
+            # Utilities
+            "6" { Invoke-CleanMenu }
+            "7" { Invoke-FullReset; Wait-ForKeyPress }
+            
+            # Exit
             "0" {
                 Write-Host ""
                 Write-Host "  👋 Goodbye!" -ForegroundColor Cyan

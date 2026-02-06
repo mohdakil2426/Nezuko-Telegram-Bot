@@ -19,13 +19,53 @@ from .middleware.request_id import RequestIDMiddleware
 # Get settings first
 settings = get_settings()
 
-# Initialize structured logging
+# Initialize structured logging with file + Postgres + Redis handlers
 configure_logging(
     environment=settings.ENVIRONMENT,
     log_level=settings.LOG_LEVEL,
+    log_to_file=True,
+    log_to_postgres=settings.ENVIRONMENT == "production",
+    log_to_redis=settings.ENVIRONMENT == "production",
 )
 
 logger = structlog.get_logger(__name__)
+
+
+def validate_config() -> None:
+    """Validate required configuration at startup.
+
+    Raises:
+        SystemExit: If critical configuration is missing in production.
+    """
+    errors: list[str] = []
+
+    # ENCRYPTION_KEY is required for bot token encryption
+    if not settings.ENCRYPTION_KEY:
+        errors.append(
+            "ENCRYPTION_KEY is required for bot token encryption. "
+            'Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
+        )
+
+    # In production, enforce all settings
+    if settings.ENVIRONMENT == "production" and errors:
+        logger.error(
+            "configuration_validation_failed",
+            errors=errors,
+            environment=settings.ENVIRONMENT,
+        )
+        raise SystemExit(
+            "\n\n❌ Configuration Error:\n"
+            + "\n".join(f"  • {e}" for e in errors)
+            + "\n\nPlease set the required environment variables.\n"
+        )
+    elif errors:
+        # In development, just warn
+        for error in errors:
+            logger.warning("configuration_warning", message=error)
+
+
+# Validate configuration at startup
+validate_config()
 
 
 # Lifespan context manager

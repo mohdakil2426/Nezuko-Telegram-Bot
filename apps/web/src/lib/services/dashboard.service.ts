@@ -35,11 +35,34 @@ export async function getChartData(days = 30): Promise<ChartDataPoint[]> {
     return mockData.getChartData(days);
   }
 
-  const response = await apiClient.get<SuccessResponse<ChartDataPoint[]>>(
+  // Convert days to period format expected by API
+  const period = days <= 1 ? "24h" : days <= 7 ? "7d" : "30d";
+  const granularity = days <= 1 ? "hour" : "day";
+
+  interface VerificationTrendItem {
+    timestamp: string;
+    total: number;
+    successful: number;
+    failed: number;
+  }
+
+  interface VerificationTrendResponse {
+    period: string;
+    series: VerificationTrendItem[];
+    summary: Record<string, unknown>;
+  }
+
+  const response = await apiClient.get<SuccessResponse<VerificationTrendResponse>>(
     ENDPOINTS.analytics.verificationTrends,
-    { params: { days } }
+    { params: { period, granularity } }
   );
-  return response.data;
+
+  // Map API response to ChartDataPoint format (verified = successful, restricted = failed)
+  return (response.data.series ?? []).map((item) => ({
+    date: item.timestamp,
+    verified: item.successful,
+    restricted: item.failed,
+  }));
 }
 
 /**
@@ -50,8 +73,9 @@ export async function getActivity(limit = 10): Promise<ActivityItem[]> {
     return mockData.getActivity(limit);
   }
 
-  const response = await apiClient.get<ActivityResponse>(ENDPOINTS.dashboard.activity, {
+  const response = await apiClient.get<SuccessResponse<ActivityResponse>>(ENDPOINTS.dashboard.activity, {
     params: { limit },
   });
-  return response.items;
+  // API returns { status: "success", data: { items: [...] } }
+  return response.data?.items ?? [];
 }

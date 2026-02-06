@@ -6,7 +6,15 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from .auth import UserResponse
+
+class UserResponse(BaseModel):
+    """Basic user response for audit logs."""
+
+    id: str
+    email: str | None = None
+    full_name: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AuditLogResponse(BaseModel):

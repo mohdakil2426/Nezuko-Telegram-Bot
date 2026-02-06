@@ -22,14 +22,12 @@ This opens an **interactive menu** for all development tasks.
 
 ### Direct Commands
 
-| Command | Windows | Mac/Linux |
-|---------|---------|-----------|
-| **Start all services** | `nezuko dev` | `./nezuko dev` |
-| **Stop all services** | `nezuko stop` | `./nezuko stop` |
-| **First-time setup** | `nezuko setup` | `./nezuko setup` |
-| **Run tests** | `nezuko test` | `./nezuko test` |
-| **Clean artifacts** | `nezuko clean` | `./nezuko clean` |
-| **Help** | `nezuko help` | `./nezuko help` |
+| Command                | Windows        | Mac/Linux        |
+| ---------------------- | -------------- | ---------------- |
+| **Start all services** | `nezuko dev`   | `./nezuko dev`   |
+| **Stop all services**  | `nezuko stop`  | `./nezuko stop`  |
+| **First-time setup**   | `nezuko setup` | `./nezuko setup` |
+| **Clean artifacts**    | `nezuko clean` | `./nezuko clean` |
 
 ---
 
@@ -37,66 +35,56 @@ This opens an **interactive menu** for all development tasks.
 
 ```
 scripts/
-├── core/                  # 🎯 Core utilities (shared functions)
-│   ├── menu.ps1           # Interactive menu (Windows)
-│   ├── menu.sh            # Interactive menu (Mac/Linux)
-│   ├── utils.ps1          # Shared PowerShell functions
-│   └── utils.sh           # Shared Bash functions
+├── README.md                   # 📚 This file
 │
-├── dev/                   # 🚀 Development server scripts
-│   ├── start.ps1          # Start all services (Windows)
-│   ├── start.sh           # Start all services (Mac/Linux)
-│   ├── stop.ps1           # Stop all services (Windows)
-│   └── stop.sh            # Stop all services (Mac/Linux)
+├── core/                       # 🎯 Core utilities (shared functions)
+│   ├── menu.ps1                # Interactive menu (Windows)
+│   ├── menu.sh                 # Interactive menu (Mac/Linux)
+│   ├── utils.ps1               # Shared PowerShell functions
+│   └── utils.sh                # Shared Bash functions
 │
-├── setup/                 # 📦 Initial setup scripts
-│   ├── install.ps1        # First-time setup (Windows)
-│   └── install.sh         # First-time setup (Mac/Linux)
+├── dev/                        # 🚀 Development server scripts
+│   ├── start.ps1               # Start services (with -Service param)
+│   ├── start.sh                # Start all services (Mac/Linux)
+│   ├── stop.ps1                # Stop all services (Windows)
+│   └── stop.sh                 # Stop all services (Mac/Linux)
 │
-├── test/                  # 🧪 Test runners
-│   ├── run.ps1            # Test runner (Windows)
-│   └── run.sh             # Test runner (Mac/Linux)
+├── setup/                      # 📦 Initial setup scripts
+│   ├── install.ps1             # First-time setup (Windows)
+│   └── install.sh              # First-time setup (Mac/Linux)
 │
-├── db/                    # 🗄️ Database scripts
-│   ├── setup.py           # Database setup utility
-│   ├── debug.py           # Database debugging tool
-│   └── init.sql           # Initial database schema
+├── db/                         # 🗄️ Database scripts
+│   ├── init.sql                # PostgreSQL init script (Docker)
+│   ├── seed.py                 # 🌱 Seed test data (charts, verifications)
+│   └── README.md               # Database documentation
 │
-├── deploy/                # 🚢 Deployment scripts
-│   └── docker-build.sh    # Docker build script
+├── test/                       # 🧪 Test scripts
+│   ├── run.ps1                 # Run pytest (Windows)
+│   ├── run.sh                  # Run pytest (Mac/Linux)
+│   └── load_test.py            # 📊 API performance benchmarking
 │
-├── logs/                  # 📋 Script execution logs (git-ignored)
-│   ├── nezuko-YYYY-MM-DD.log  # Daily log files
-│   └── README.md          # Log format documentation
+├── deploy/                     # 🚢 Deployment scripts
+│   └── docker-build.sh         # Docker build script
 │
-└── utils/                 # 🔧 Utility scripts
-    ├── clean.ps1          # Clean build artifacts (Windows)
-    ├── clean.sh           # Clean build artifacts (Mac/Linux)
-    ├── generate-structure.ps1  # Generate folder structure
-    └── manage.ps1         # Project management utilities
+├── logs/                       # 📋 Script execution logs (git-ignored)
+│   └── nezuko-YYYY-MM-DD.log
+│
+└── utils/                      # 🔧 Utility scripts
+    ├── clean.ps1               # Clean build artifacts (Windows)
+    ├── clean.sh                # Clean build artifacts (Mac/Linux)
+    ├── generate-key.ps1        # Generate Fernet encryption key
+    └── generate-structure.ps1  # Folder structure generator
 ```
 
 ---
 
 ## 🖥️ Platform Support
 
-| Platform | Primary Scripts | Entry Point |
-|----------|----------------|-------------|
+| Platform    | Primary Scripts     | Entry Point  |
+| ----------- | ------------------- | ------------ |
 | **Windows** | `.ps1` (PowerShell) | `nezuko.bat` |
-| **macOS** | `.sh` (Bash) | `./nezuko` |
-| **Linux** | `.sh` (Bash) | `./nezuko` |
-
-### Windows Notes
-
-- Requires PowerShell 5.1 or later (included in Windows 10/11)
-- PowerShell 7 (pwsh) is preferred if available
-- Scripts auto-enable execution policy when run via `nezuko.bat`
-
-### Mac/Linux Notes
-
-- Requires Bash 4.0 or later
-- Run `chmod +x nezuko` if permission denied
-- Run `chmod +x scripts/**/*.sh` to make all scripts executable
+| **macOS**   | `.sh` (Bash)        | `./nezuko`   |
+| **Linux**   | `.sh` (Bash)        | `./nezuko`   |
 
 ---
 
@@ -105,31 +93,22 @@ scripts/
 When you run `nezuko` without arguments, you get an interactive menu:
 
 ```
-╔══════════════════════════════════════════════════════╗
-║         🦊 NEZUKO DEVELOPER CLI                      ║
-╠══════════════════════════════════════════════════════╣
-║   Telegram Bot Platform • Admin Dashboard • API      ║
-╚══════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════╗
+║                 🦊 NEZUKO DEVELOPER CLI                   ║
+╠══════════════════════════════════════════════════════════╣
+║   Telegram Bot Platform • Admin Dashboard • API           ║
+╚══════════════════════════════════════════════════════════╝
 
-┌──────────────────────────────────────────────────────┐
-│  DEVELOPMENT                                         │
-│                                                      │
-│    [1] 🚀 Start All Services                         │
-│    [2] 🛑 Stop All Services                          │
-│    [3] 🔄 Restart All Services                       │
-├──────────────────────────────────────────────────────┤
-│  SETUP & MAINTENANCE                                 │
-│                                                      │
-│    [4] 📦 First-Time Setup (Install Dependencies)   │
-│    [5] 🧹 Clean All Artifacts                        │
-│    [6] ♻️  Total Reset (Clean + Reinstall)           │
-├──────────────────────────────────────────────────────┤
-│  TESTING & TOOLS                                     │
-│                                                      │
-│    [7] 🧪 Run Tests                                  │
-│    [8] 🗄️  Database Tools                            │
-│    [9] 🐳 Docker Commands                            │
-├──────────────────────────────────────────────────────┤
+┌── 📦 SETUP & CONFIGURATION ──────────────────────────┐
+│    [1] 🏗️  First-Time Setup                          │
+│    [2] 🔐 Security & Keys...                         │
+│    [3] 🗄️  Database...                                │
+├── 🚀 DEVELOPMENT ────────────────────────────────────┤
+│    [4] ▶️  Start Services...                          │
+│    [5] ⏹️  Stop All Services                          │
+├── 🧹 UTILITIES ──────────────────────────────────────┤
+│    [6] 🧼 Clean Artifacts...                         │
+│    [7] ♻️  Full Reset (Clean + Reinstall)             │
 │    [0] ❌ Exit                                       │
 └──────────────────────────────────────────────────────┘
 ```
@@ -141,17 +120,14 @@ When you run `nezuko` without arguments, you get an interactive menu:
 Run once after cloning the repository:
 
 ```bash
-# Windows
-nezuko setup
-
-# Mac/Linux
-./nezuko setup
+# Via menu: [1] First-Time Setup
+# Or directly:
+.\scripts\setup\install.ps1
 ```
 
 This will:
-1. ✅ Check prerequisites (Python
 
- 3.13+, Bun)
+1. ✅ Check prerequisites (Python 3.13+, Bun)
 2. ✅ Create Python virtual environment (`.venv`)
 3. ✅ Install Python dependencies
 4. ✅ Install Node.js dependencies (via Bun)
@@ -160,111 +136,110 @@ This will:
 
 ---
 
-## 🗄️ Database Scripts
+## 🗄️ Database Setup
+
+### Start PostgreSQL (Docker)
 
 ```bash
-# Setup database (create tables)
-python scripts/db/setup.py
-
-# Debug database connection
-python scripts/db/debug.py
+# Via menu: [3] Database → [1] Start PostgreSQL
+# Or directly:
+docker run -d --name nezuko-postgres \
+  -e POSTGRES_USER=nezuko \
+  -e POSTGRES_PASSWORD=nezuko123 \
+  -e POSTGRES_DB=nezuko \
+  -p 5432:5432 \
+  postgres:17-alpine
 ```
+
+### Run Migrations
+
+```bash
+# Via menu: [3] Database → [3] Run Migrations
+# Or directly:
+cd apps/api && alembic upgrade head
+```
+
+### Seed Test Data
+
+```bash
+# Via menu: [3] Database → [4] Seed Test Data
+# Or directly:
+python scripts/db/seed.py --days 30 --count 20
+```
+
+**What it does:** Creates fake verification records so dashboard charts show data instead of empty graphs.
 
 ---
 
-## 🧪 Running Tests
+## 🧪 Testing
+
+### Run Unit Tests
 
 ```bash
-# Interactive test menu
-nezuko test
+# Via script:
+.\scripts\test\run.ps1
 
-# Direct pytest (with venv activated)
-python -m pytest tests/ -v
-
-# With coverage
-python -m pytest tests/ --cov=apps --cov-report=html
+# Or directly:
+pytest tests/ -v
+pytest tests/api/ -v --cov=apps/api
 ```
+
+### Load Testing (API Performance)
+
+```bash
+# Benchmark API endpoints:
+python scripts/test/load_test.py --requests 50 --concurrency 10
+
+# Options:
+#   --api-url     Target API (default: http://localhost:8080)
+#   --requests    Requests per endpoint (default: 50)
+#   --concurrency Concurrent requests (default: 10)
+```
+
+**What it does:** Measures latency (avg, p95, p99) and throughput for all chart endpoints.
+
+---
+
+## 🔑 Security & Encryption
+
+Generate a Fernet encryption key:
+
+```bash
+# Via menu: [2] Security & Keys → [1] Generate Key
+# Or directly:
+.\scripts\utils\generate-key.ps1
+```
+
+Add the key to:
+
+- `apps/api/.env` → `ENCRYPTION_KEY=...`
+- `apps/bot/.env` → `ENCRYPTION_KEY=...`
 
 ---
 
 ## 🧹 Cleaning Artifacts
 
 ```bash
-# Windows
-.\scripts\utils\clean.ps1                   # Clean node_modules, __pycache__, etc.
+# Via menu: [6] Clean Artifacts
+# Or directly:
+.\scripts\utils\clean.ps1                   # Clean caches
 .\scripts\utils\clean.ps1 -IncludeVenv      # Also remove .venv
-
-# Mac/Linux
-./scripts/utils/clean.sh                    # Clean node_modules, __pycache__, etc.
-./scripts/utils/clean.sh --include-venv     # Also remove .venv
-```
-
----
-
-## 🐳 Docker
-
-```bash
-# Build containers
-cd config/docker && docker-compose build
-
-# Start containers
-cd config/docker && docker-compose up -d
-
-# View logs
-cd config/docker && docker-compose logs -f
+.\scripts\utils\clean.ps1 -DryRun           # Preview only
 ```
 
 ---
 
 ## 📋 Logging
 
-All script operations are logged to `scripts/logs/nezuko-YYYY-MM-DD.log` with daily rotation.
+Script operations are logged to `scripts/logs/nezuko-YYYY-MM-DD.log`.
 
 ### Log Format
 
 ```
-[2026-01-28 17:30:47] [INFO] [DEV] Starting Web Dashboard (bun dev)
-[2026-01-28 17:30:51] [SUCCESS] [DEV] All 3 services started successfully
-[2026-01-28 17:30:57] [ERROR] [INSTALL] Prerequisites check FAILED
+[2026-02-05 16:30:47] [INFO] [DEV] Starting Web Dashboard
+[2026-02-05 16:30:51] [SUCCESS] [DEV] All services started
 ```
-
-### Log Categories
-
-| Category | Description |
-|----------|-------------|
-| `SYSTEM` | General system operations |
-| `INSTALL` | Setup/installation operations |
-| `CLEAN` | Cleanup operations |
-| `DEV` | Development server operations |
-| `TEST` | Test runner operations |
-| `PYTHON` | Python-specific operations (pip, venv) |
-| `NODE` | Node.js/Bun operations |
-| `MENU` | Menu interactions |
-
-### Viewing Logs
-
-```powershell
-# View last 50 lines (Windows)
-Get-Content scripts/logs/nezuko-2026-01-28.log -Tail 50
-
-# View last 50 lines (Mac/Linux)
-tail -n 50 scripts/logs/nezuko-2026-01-28.log
-
-# Watch logs in real-time (Mac/Linux)
-tail -f scripts/logs/nezuko-*.log
-```
-
-> **Note:** Log files are git-ignored and will not be committed to the repository.
 
 ---
 
-## 📝 Notes
-
-- **PowerShell scripts** (`.ps1`) are the primary Windows scripts
-- **Bash scripts** (`.sh`) are the primary Mac/Linux scripts
-- All scripts support `--help` or `-h` for usage information
-- Logs are automatically created in `scripts/logs/`
-
----
-
-*Last Updated: 2026-01-28*
+_Last Updated: 2026-02-05_

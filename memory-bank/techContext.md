@@ -15,7 +15,7 @@ Nezuko is built on a "Precision First" philosophy, selecting the most stable yet
 | **Frontend**       | Next.js 16, React 19, TypeScript 5.8+, Tailwind v4, shadcn/ui (web + web1) |
 | **Backend API**    | FastAPI 0.128+, Python 3.13, SQLAlchemy 2.0, Pydantic V2                   |
 | **Bot Engine**     | python-telegram-bot v22.6, AsyncIO                                         |
-| **Database**       | PostgreSQL 15+ (Supabase), Unified SQLite (Local Dev)                      |
+| **Database**       | PostgreSQL 17 (Production via Docker), SQLite (Fallback)                   |
 | **Infrastructure** | Docker, Turborepo, Caddy                                                   |
 
 ---
@@ -127,6 +127,7 @@ const { accentHex } = useThemeConfig(); // Config
 | AIOSQLite  | 0.22+   | SQLite async driver (dev) |
 | Alembic    | 1.18.3+ | Database migrations       |
 | Redis      | 7.1+    | Caching and pub/sub       |
+| PostgreSQL | 17      | Primary database (Docker) |
 
 ### Key Patterns (SQLAlchemy 2.0)
 
@@ -170,35 +171,126 @@ def validate_channel(self) -> 'GroupCreate':
 
 ## 🔑 Authentication Architecture
 
-### Supabase Auth Flow
+### Telegram Login Widget Flow (Phase 41+)
 
-1. **Web Client** → `supabase.auth.signInWithPassword` → **Supabase Auth**
-2. **Web Client** → Receives `access_token` (JWT) stored in HTTP-only cookie
-3. **Proxy (proxy.ts)** → Verifies session using `getSession()`
-4. **API Requests** → Sends `Authorization: Bearer <jwt>`
-5. **API** → Verifies JWT signature using `SUPABASE_JWT_SECRET`
+1. **Web Client** → Loads Telegram Login Widget (`telegram-login.tsx`)
+2. **Telegram** → User authenticates with Telegram, returns signed data
+3. **Web Client** → Sends auth data `POST /api/v1/auth/telegram`
+4. **API** → Verifies HMAC-SHA256 hash using `LOGIN_BOT_TOKEN`
+5. **API** → Checks `telegram_id == BOT_OWNER_TELEGRAM_ID`
+6. **API** → Creates session, sets HTTP-only `nezuko_session` cookie
+7. **Proxy (proxy.ts)** → Checks for `nezuko_session` cookie
+8. **API Requests** → Cookie sent automatically with `credentials: 'include'`
 
-### Critical Package Versions
+### Authentication Packages
 
-| Package                 | Required Version | Notes                             |
-| ----------------------- | ---------------- | --------------------------------- |
-| `@supabase/ssr`         | `^0.8.0`         | ⚠️ v0.1.0 has cookie parsing bugs |
-| `@supabase/supabase-js` | `^2.93.1`        | Latest stable                     |
+| Package           | Purpose                            |
+| ----------------- | ---------------------------------- |
+| `cryptography`    | Fernet encryption for bot tokens   |
+| `hmac` + `sha256` | HMAC verification of Telegram data |
+
+### Session Model (`apps/api/src/models/session.py`)
+
+| Column               | Type          | Notes                |
+| :------------------- | :------------ | :------------------- |
+| `id`                 | `String(36)`  | Primary Key, UUID    |
+| `telegram_id`        | `BigInteger`  | Indexed (owner ID)   |
+| `telegram_username`  | `String(255)` | Nullable             |
+| `telegram_name`      | `String(255)` | Required             |
+| `telegram_photo_url` | `Text`        | Nullable             |
+| `expires_at`         | `DateTime`    | Indexed (expiration) |
+| `created_at`         | `DateTime`    | Auto-set             |
+
+### Bot Instance Model (`apps/api/src/models/bot_instance.py`)
+
+| Column              | Type          | Notes                  |
+| :------------------ | :------------ | :--------------------- |
+| `id`                | `Integer`     | Primary Key, Auto-inc  |
+| `owner_telegram_id` | `BigInteger`  | Indexed                |
+| `bot_id`            | `BigInteger`  | Unique, Indexed        |
+| `bot_username`      | `String(255)` | Required               |
+| `bot_name`          | `String(255)` | Nullable               |
+| `token_encrypted`   | `Text`        | Fernet-encrypted token |
+| `is_active`         | `Boolean`     | Default: True          |
+| `created_at`        | `DateTime`    | Auto-set               |
+| `updated_at`        | `DateTime`    | Auto-update            |
+
+### Environment Variables (Separated Bot Architecture)
+
+The system uses a **separated bot architecture**:
+
+- **Login Bot**: Only for Telegram Login Widget (in .env)
+- **Working Bots**: Added via Dashboard, encrypted in database
+
+```bash
+# ===========================================
+# apps/api/.env (Required)
+# ===========================================
+# Login bot - only for dashboard authentication
+LOGIN_BOT_TOKEN=1234567890:ABCdefGHIjklmnopQRSTuvwxyz
+BOT_OWNER_TELEGRAM_ID=123456789
+ENCRYPTION_KEY=<Fernet.generate_key()>
+SESSION_EXPIRY_HOURS=24
+
+# Database
+DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
+
+# ===========================================
+# apps/web/.env.local (Required)
+# ===========================================
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_LOGIN_BOT_USERNAME=YourBotUsername
+
+# ===========================================
+# apps/bot/.env (Optional BOT_TOKEN)
+# ===========================================
+# If set: Standalone mode (runs this single bot)
+# If empty: Dashboard mode (reads bots from database)
+BOT_TOKEN=
+DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
+```
+
+### Configuration Files
+
+| File                                      | Purpose                |
+| :---------------------------------------- | :--------------------- |
+| `apps/api/.env`                           | API + login bot config |
+| `apps/api/.env.example`                   | Template with docs     |
+| `apps/web/.env.local`                     | Web dashboard config   |
+| `apps/web/.env.example`                   | Template with docs     |
+| `apps/bot/.env`                           | Bot worker config      |
+| `apps/bot/.env.example`                   | Template with docs     |
+| `docs/setup/environment-configuration.md` | Full guide             |
 
 ---
 
 ## 📄 Database Schema Reference
 
-### Model: `AdminUser`
+### Model: `Session` (Telegram Auth)
 
-| Column         | Type          | Notes                     |
-| :------------- | :------------ | :------------------------ |
-| `id`           | `String(36)`  | Primary Key, UUID         |
-| `supabase_uid` | `String(36)`  | Unique, Indexed (Auth ID) |
-| `email`        | `String(255)` | Unique                    |
-| `role`         | `String(20)`  | Default: "viewer"         |
-| `is_active`    | `Boolean`     | Default: True             |
-| `telegram_id`  | `BigInteger`  | Nullable, Unique          |
+| Column               | Type          | Notes                |
+| :------------------- | :------------ | :------------------- |
+| `id`                 | `String(36)`  | Primary Key, UUID    |
+| `telegram_id`        | `BigInteger`  | Indexed (owner ID)   |
+| `telegram_username`  | `String(255)` | Nullable             |
+| `telegram_name`      | `String(255)` | Required             |
+| `telegram_photo_url` | `Text`        | Nullable             |
+| `expires_at`         | `DateTime`    | Indexed (expiration) |
+| `created_at`         | `DateTime`    | Auto-set             |
+
+### Model: `BotInstance` (Encrypted Bot Tokens)
+
+| Column              | Type          | Notes                  |
+| :------------------ | :------------ | :--------------------- |
+| `id`                | `Integer`     | Primary Key, Auto-inc  |
+| `owner_telegram_id` | `BigInteger`  | Indexed                |
+| `bot_id`            | `BigInteger`  | Unique, Indexed        |
+| `bot_username`      | `String(255)` | Required               |
+| `bot_name`          | `String(255)` | Nullable               |
+| `token_encrypted`   | `Text`        | Fernet-encrypted token |
+| `is_active`         | `Boolean`     | Default: True          |
+| `created_at`        | `DateTime`    | Auto-set               |
+| `updated_at`        | `DateTime`    | Auto-update            |
 
 ### Model: `AdminAuditLog`
 
@@ -231,11 +323,13 @@ def validate_channel(self) -> 'GroupCreate':
 
 ```bash
 # Launch unified CLI menu (humans only)
-.\nezuko.bat
+.\nezuko.bat menu
 
 # Direct commands (for AI agents)
-.\scripts\dev\start.ps1    # Start services
-.\scripts\dev\stop.ps1     # Stop services
+.\scripts\dev\start.ps1 -Service "all"   # Start all services
+.\scripts\dev\start.ps1 -Service "api"   # Start just API
+.\scripts\utils\generate-key.ps1         # Generate encryption key
+.\scripts\dev\stop.ps1                   # Stop services
 ```
 
 ### Logging System
@@ -312,21 +406,39 @@ storage/
 
 ```bash
 # apps/api/.env
-SUPABASE_URL=https://<project>.supabase.co
-SUPABASE_ANON_KEY=<public-anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<private-service-key>
-SUPABASE_JWT_SECRET=<jwt-secret>
-DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db  # Local dev
+LOGIN_BOT_TOKEN=<bot-token-for-login>
+BOT_OWNER_TELEGRAM_ID=<your-telegram-id>
+ENCRYPTION_KEY=<fernet-key>
+
+# PostgreSQL (recommended for production)
+DATABASE_URL=postgresql+asyncpg://nezuko:nezuko123@localhost:5432/nezuko
+
+# SQLite (fallback for development)
+# DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
+
 MOCK_AUTH=true  # Enable mock auth for local dev
 
 # apps/web/.env.local
-NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<public-anon-key>
-NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
-
-# apps/web1/.env.local
 NEXT_PUBLIC_API_URL=http://localhost:8080
-NEXT_PUBLIC_USE_MOCK=true  # Enable mock data layer
+NEXT_PUBLIC_LOGIN_BOT_USERNAME=YourBotUsername
+
+# apps/bot/.env (optional)
+BOT_TOKEN=<optional-for-standalone-mode>
+DATABASE_URL=postgresql+asyncpg://nezuko:nezuko123@localhost:5432/nezuko
+```
+
+### PostgreSQL Docker Setup
+
+```bash
+# Start PostgreSQL container
+docker run --name nezuko-postgres \
+  -e POSTGRES_USER=nezuko \
+  -e POSTGRES_PASSWORD=nezuko123 \
+  -e POSTGRES_DB=nezuko \
+  -p 5432:5432 -d postgres:17
+
+# Apply migrations
+cd apps/api && alembic upgrade head
 ```
 
 ---
@@ -372,4 +484,4 @@ NEXT_PUBLIC_USE_MOCK=true  # Enable mock data layer
 
 ---
 
-_Last Updated: 2026-02-03_
+_Last Updated: 2026-02-05_

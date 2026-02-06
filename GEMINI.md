@@ -1,165 +1,15 @@
-# Project: Nezuko Telegram Bot Platform
+# Nezuko Telegram Bot Platform
 
-<!-- NEXT-AGENTS-MD-START -->[Next.js Docs Index]|root: ./.next-docs|STOP. What you remember about Next.js is WRONG for this project. Always search docs and read before any task.|If docs missing, run this command first: npx @next/codemod agents-md --output AGENTS.md
-<!-- NEXT-AGENTS-MD-END -->
+> **Production-ready Telegram bot platform** for automated channel membership enforcement.  
+> Python 3.13+ | python-telegram-bot v22.6+ | Async-first architecture
 
-## Project Overview
+**Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read these all files for deep project understanding. **NEVER SKIP THIS STEP**
 
-Nezuko is a production-ready, multi-tenant Telegram bot platform for automated channel membership enforcement. Built with Python 3.13+ and async-first architecture using python-telegram-bot v22.6+.
-
-**Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read these files for deep project understanding.
+**⚠️ RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, and best practice documented below. No exceptions, no shortcuts. Violations lead to broken builds, security issues, hard coding, and technical debt. and most importantly project pattern, existing ui style consistancy to insure all ui changes alligned with project, and respect all the rules and guidelines documented below.
 
 ---
 
-## ⚠️ AI Agent Rules (MUST FOLLOW)
-
-### 🏗️ Architecture Rules
-
-1. **Respect Project Structure**
-   - Apps go in `apps/` (web, api, bot)
-   - Tests go in `tests/` (NOT in app directories)
-   - Shared packages in `packages/`
-   - Runtime files in `storage/` (gitignored)
-   - Docker configs in `config/docker/`
-
-2. **Never Create Files In Wrong Locations**
-   - ❌ Don't create `apps/api/tests/` - use `tests/api/`
-   - ❌ Don't create `apps/bot/tests/` - use `tests/bot/`
-   - ❌ Don't put .db files in app dirs - use `storage/data/`
-   - ❌ Don't put logs in app dirs - use `storage/logs/`
-
-3. **Import Patterns**
-   - Bot: Run from root with `python -m apps.bot.main`
-   - API: Use relative imports within `src/`
-   - Tests: Import from `apps.api.src` or `apps.bot`
-
-### 🧪 Testing Rules
-
-1. **Test Location**: ALL tests go in `tests/` directory
-   ```
-   tests/
-   ├── conftest.py       # Shared fixtures
-   ├── api/              # API tests
-   │   ├── conftest.py   # API-specific fixtures
-   │   ├── unit/
-   │   └── integration/
-   └── bot/              # Bot tests
-       ├── conftest.py   # Bot-specific fixtures
-       ├── unit/
-       └── integration/
-   ```
-
-2. **Test Requirements**
-   - Use pytest with async support (`pytest-asyncio`)
-   - Use fixtures from `conftest.py`
-   - Mock external services (Telegram API, Supabase)
-   - Achieve meaningful coverage, not just line count
-
-3. **Run Tests Before Committing**
-   ```bash
-   pytest                    # All tests must pass
-   pytest tests/api/ -v      # API tests
-   pytest tests/bot/ -v      # Bot tests
-   ```
-
-### 📝 Code Quality Rules
-
-1. **Linting (ZERO TOLERANCE)**
-   - Ruff: `ruff check .` must pass with NO errors
-   - Pylint: Target 10.00/10 score
-   - Pyrefly: Target 0 errors
-   - Run linters BEFORE suggesting code is complete
-
-2. **Ruff Rules Enabled** (Do NOT violate):
-   - `RUF006`: Store `asyncio.create_task()` references
-   - `PERF401`: Use list comprehensions, not loop+append
-   - `RUF005`: Use `*iterable` unpacking, not `+` concatenation
-   - `ASYNC`: Proper async patterns
-
-3. **Type Hints Required**
-   ```python
-   # ✅ Correct
-   async def get_user(user_id: int) -> User | None:
-       ...
-   
-   # ❌ Wrong - missing types
-   async def get_user(user_id):
-       ...
-   ```
-
-4. **Docstrings Required** for all public functions/classes
-
-### 🔒 Security Rules
-
-1. **Never Commit Secrets**
-   - `.env` files are gitignored
-   - Use `.env.example` for templates
-   - Check `git status` before commits
-
-2. **Environment Files**
-   - Each app has its own `.env` file
-   - `apps/web/.env.local`
-   - `apps/api/.env`
-   - `apps/bot/.env`
-
-### 📦 Dependency Rules
-
-1. **Python Dependencies**
-   - Add to appropriate file in `requirements/`
-   - `base.txt` for shared deps
-   - `api.txt` for API-only
-   - `bot.txt` for Bot-only
-   - `dev.txt` for dev tools
-
-2. **Node Dependencies**
-   - Use `bun add` in `apps/web/`
-   - Shared types in `packages/types/`
-
-### 🔄 Async Patterns (CRITICAL)
-
-1. **Always Use Async** for I/O operations
-   ```python
-   # ✅ Correct
-   async with get_session() as session:
-       result = await session.execute(query)
-   
-   # ❌ Wrong - blocks event loop
-   result = session.execute(query)
-   ```
-
-2. **Store Task References** (RUF006)
-   ```python
-   # ✅ Correct
-   _background_tasks: set[asyncio.Task] = set()
-   task = asyncio.create_task(coro())
-   _background_tasks.add(task)
-   task.add_done_callback(_background_tasks.discard)
-   
-   # ❌ Wrong - task may be garbage collected
-   asyncio.create_task(coro())
-   ```
-
-### 📋 Before Completing Any Task
-
-1. ✅ Run `ruff check .` - must pass
-2. ✅ Run `pytest` - tests must pass
-3. ✅ Check imports work correctly
-4. ✅ Verify files are in correct locations
-5. ✅ Add/update tests for new code
-6. ✅ Update memory-bank if significant changes
-
----
-
-## General Instructions
-
-- Follow the existing coding patterns, style, and conventions in the codebase
-- Use async/await for all I/O operations
-- Ensure all new functions have proper docstrings
-- Write type hints for all function parameters and return types
-- Prefer composition over inheritance
-- Keep functions small and focused (single responsibility)
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 nezuko-monorepo/
@@ -167,131 +17,260 @@ nezuko-monorepo/
 │   ├── web/          # Next.js 16 Admin Dashboard
 │   ├── api/          # FastAPI REST Backend
 │   └── bot/          # Telegram Bot (PTB v22)
-├── packages/         # Shared packages (@nezuko/types, @nezuko/config)
-├── config/docker/    # Docker configuration
+├── packages/         # Shared packages (@nezuko/types)
+├── config/           # Docker, Caddy, deployment configs
+├── requirements/     # Python deps (base, api, bot, dev)
+├── tests/            # ALL tests (not in apps/)
 ├── scripts/          # Utility scripts
-├── storage/          # Runtime files (GITIGNORED)
-├── docs/             # Documentation
-└── tests/            # Test suites
+├── storage/          # Runtime files (gitignored)
+├── memory-bank/      # Project context & progress
+└── docs/             # Documentation
 ```
 
-## Coding Style
+---
 
-### Python (Backend & Bot)
+## 🚨 Critical Rules
 
-- Use 4 spaces for indentation
-- Line length: 100 characters (not PEP 8's 79)
-- Formatter: Ruff (`ruff format .`)
-- Linter: Ruff + Pylint (target: 10.00/10)
-- Type checker: Pyrefly (target: 0 errors)
-- Always use `async def` for I/O bound functions
-- Use `snake_case` for functions and variables
-- Use `PascalCase` for classes
+### File Locations (NEVER Violate)
 
-### TypeScript (Frontend)
+| Type        | Correct Location            | ❌ Wrong                     |
+| ----------- | --------------------------- | ---------------------------- |
+| Tests       | `tests/api/`, `tests/bot/`  | `apps/*/tests/`              |
+| Database    | `storage/data/`             | `apps/*.db`                  |
+| Logs        | `storage/logs/`             | `apps/*.log`                 |
+| Env files   | `apps/*/.env`, `.env.local` | Root `.env`                  |
+| Python deps | `requirements/*.txt`        | Root `requirements.txt` only |
 
-- Use 2 spaces for indentation
-- Formatter: Prettier
-- Linter: ESLint
-- Use `camelCase` for functions and variables
-- Use `PascalCase` for components and interfaces
-- Prefer functional components with hooks
+### Code Quality (ZERO TOLERANCE)
 
-## Build & Run Commands
-
-> **Note**: `nezuko.bat` CLI menu is for humans. AI agents should use direct commands below.
+**⚠️ Always use LATEST versions. Check before installing:**
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt    # Python
-bun install                        # Node.js
+# Python (Bot & API) - 3 tools required:
+ruff check apps/bot apps/api         # Lint (0 errors)
+ruff format --check .                # Format check
+pylint apps/bot apps/api             # Score: 10.00/10
+pyrefly check                        # Type check (0 errors)
 
-# Run services
-python -m apps.bot.main           # Bot (from project root)
-cd apps/api && uvicorn src.main:app --reload --port 8080  # API
-cd apps/web && bun dev             # Web Dashboard
+# TypeScript (Web):
+cd apps/web && bun run lint          # ESLint (0 warnings)
+cd apps/web && bun run build         # TypeScript (0 errors)
 
-# Monorepo commands
-npx turbo dev                      # Run all services
-npx turbo build                    # Build all
+# MUST pass before ANY commit:
+pytest                               # All tests pass
 ```
 
-## Linting & Formatting
+### Async Patterns (RUF006)
+
+```python
+# ✅ Store task references
+_tasks: set[asyncio.Task] = set()
+task = asyncio.create_task(coro())
+_tasks.add(task)
+task.add_done_callback(_tasks.discard)
+
+# ❌ WRONG - task may be garbage collected
+asyncio.create_task(coro())
+```
+
+---
+
+## 🎯 Universal Development Principles
+
+**ALWAYS follow these principles - no exceptions:**
+
+1. **No Hardcoding** - Use environment variables, config files, or constants. Never hardcode URLs, keys, IDs, or magic numbers.
+2. **DRY (Don't Repeat Yourself)** - Extract reusable functions, components, and utilities. If you write it twice, refactor.
+3. **Single Responsibility** - Each function/class does ONE thing well. If it does multiple things, split it.
+4. **Fail Fast** - Validate inputs early, throw meaningful errors, use proper error boundaries.
+5. **Type Everything** - Full type coverage in Python and TypeScript. No `any`, no untyped parameters.
+6. **Document Intent** - Write docstrings explaining WHY, not just WHAT. Comments for complex logic only.
+7. **Test Critical Paths** - Unit tests for business logic, integration tests for APIs, no untested code in production.
+8. **Security First** - Sanitize inputs, validate tokens, never log secrets, use parameterized queries.
+9. **Performance Aware** - Avoid N+1 queries, cache expensive operations, lazy load when possible.
+10. **Clean Commits** - Atomic commits, conventional messages, no broken builds in commit history.
+
+---
+
+## 🛠️ Commands
+
+### Run Services
 
 ```bash
-# Python
-ruff check .                       # Check for lint errors
-ruff check . --fix                 # Auto-fix lint errors
-ruff format .                      # Format code
-pylint apps/bot apps/api           # Run pylint
-
-# TypeScript
-cd apps/web && bun run lint        # Lint
-cd apps/web && bun run format      # Format
+python -m apps.bot.main                                    # Bot
+cd apps/api && uvicorn src.main:app --reload --port 8080   # API
+cd apps/web && bun dev                                     # Web
+npx turbo dev                                              # All services
 ```
 
-## Testing
+### Lint & Format
 
 ```bash
-# Run all tests
-pytest
-
-# Run specific tests
-pytest tests/unit/test_verification.py -v
-pytest -k "cache" -v               # Pattern matching
-
-# Coverage
-pytest --cov=apps --cov-report=html
+ruff check . --fix && ruff format .   # Python auto-fix
+cd apps/web && bun run lint --fix     # TypeScript
+pylint apps/bot apps/api              # Target: 10.00/10
 ```
 
-## Database Migrations
+### Test & Migrate
 
 ```bash
-alembic upgrade head               # Apply all migrations
-alembic revision --autogenerate -m "description"  # Create migration
-alembic downgrade -1               # Rollback last migration
+pytest tests/api/ -v                  # API tests
+pytest tests/bot/ -v                  # Bot tests
+pytest --cov=apps --cov-report=html   # Coverage
+
+alembic upgrade head                  # Apply migrations
+alembic revision --autogenerate -m "desc"  # Create migration
 ```
 
-## Tech Stack Quick Reference
+---
 
-| Layer | Technologies |
-|-------|-------------|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
-| Backend | FastAPI, Python 3.13, SQLAlchemy 2.0, Pydantic V2 |
-| Bot | python-telegram-bot v22.6, AsyncIO |
-| Database | PostgreSQL 15+ (Supabase), Redis 7+ |
-| Infra | Docker, Turborepo, Caddy |
+## ⚙️ Tech Stack
 
-## Key Patterns
+| Layer        | Stack                                                    |
+| ------------ | -------------------------------------------------------- |
+| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
+| **Backend**  | FastAPI, Python 3.13, SQLAlchemy 2.0, Pydantic V2        |
+| **Bot**      | python-telegram-bot v22.6, AsyncIO, Redis                |
+| **Database** | SQLite (dev), PostgreSQL (production)                    |
+| **Auth**     | Telegram Login Widget (owner-only)                       |
+| **Infra**    | Docker, Turborepo, Caddy                                 |
 
-- **Per-app environment files**: Each app has its own `.env` file
-- **Async-first**: All database and API operations use async
-- **SQLAlchemy 2.0**: Use `select()` style queries, not legacy ORM
-- **Pydantic V2**: Use `model_validator` not `root_validator`
-- **TanStack Query v5**: Use `isPending` not `isLoading`
+---
 
-## Documentation
+## 📐 Coding Standards
 
-Full documentation is available in `docs/README.md`.
+### Python (Bot & API)
 
-For complete tech stack with versions, see `docs/architecture/tech-stack.md`.
+- **Indent**: 4 spaces | **Line**: 100 chars
+- **Format**: `ruff format` | **Lint**: ruff + pylint
+- **Types**: Required on all functions
+- **Docstrings**: Required on public functions
+- **Async**: Always for I/O operations
+- **SQLAlchemy**: Use `select()` style, not ORM queries
+- **Pydantic**: Use `model_validator`, not `root_validator`
 
-## Component-Specific Context
+### TypeScript (Web)
 
-@./apps/web/GEMINI.md
-@./apps/api/GEMINI.md
-@./apps/bot/GEMINI.md
+- **Indent**: 2 spaces | **Format**: Prettier | **Lint**: ESLint
+- **Components**: Functional with hooks
+- **TanStack Query**: Use `isPending`, not `isLoading`
 
-## MCP Tools (Model Context Protocol)
+---
 
-The following MCP servers are available for use:
+## 🔑 Key Patterns
 
-| MCP Server | Purpose |
-|------------|---------|
-| **context7** | Query up-to-date documentation for any library/framework |
-| **supabase-mcp-server** | Database operations, migrations, edge functions |
+| Pattern             | Implementation                                  |
+| ------------------- | ----------------------------------------------- |
+| **Imports (Bot)**   | `python -m apps.bot.main` from root             |
+| **Imports (API)**   | Relative imports within `src/`                  |
+| **Imports (Tests)** | `from apps.api.src` or `from apps.bot`          |
+| **Env files**       | Per-app: `apps/web/.env.local`, `apps/api/.env` |
+| **Dependencies**    | `requirements/{base,api,bot,dev}.txt`           |
 
-### Usage Examples
+---
 
-- **Context7**: Use `resolve-library-id` then `query-docs` to get current library documentation
-- **Supabase**: Use `execute_sql`, `apply_migration`, `list_tables` for database operations
+## ✅ Task Completion Checklist
+
+Before marking any task complete:
+
+- [ ] `ruff check .` passes with 0 errors
+- [ ] `pytest` all tests pass
+- [ ] Imports work correctly
+- [ ] Files in correct locations
+- [ ] Tests added for new code
+- [ ] Memory-bank updated (if significant)
+
+---
+
+## 🧰 MCP Tools
+
+| Server                  | Purpose                                                             |
+| ----------------------- | ------------------------------------------------------------------- |
+| **context7**            | Query library docs: `resolve-library-id` → `query-docs`             |
+| **supabase-mcp-server** | DB ops: `execute_sql`, `apply_migration`, `list_tables`             |
+| **shadcn**              | Components: `view_items_in_registries`, `get_add_command_for_items` |
+
+**🔍 Web Search Rule:** When searching the web or fetching URLs for documentation, best practices, or solutions, always append `2025-2026` to queries to ensure latest, up-to-date information.
+
+## 📚 Next.js Docs Never Skip when working on Next.js
+
+<!-- NEXT-AGENTS-MD-START -->[Next.js Docs Index]|root: ./.next-docs|STOP. What you remember about Next.js is WRONG for this project. Always search docs and read before any task.|If docs missing, run this command first: npx @next/codemod agents-md --output AGENTS.md
+<!-- NEXT-AGENTS-MD-END -->
+
+## 🧠 Skills
+
+**⚠️ MANDATORY: Read relevant skills BEFORE generating any code.**
+
+Skills are located in `.agent/skills/`. Read the **SKILL.md** file inside each skill folder.
+
+**Skill Reading Rules:**
+
+1. **Read the ENTIRE SKILL.md** - Do NOT skip any line. Study everything thoroughly.
+2. **Follow all reference files** - If the skill mentions other files, examples, or resources, read those too.
+3. **NEVER violate rules** - Skills contain rules, principles, guidelines, and best practices that MUST be followed.
+4. **Context-aware reading** - Focus on sections relevant to your current task, but never skip critical rules.
+5. **No shortcuts** - Taking shortcuts by skipping skill content leads to errors and tech debt.
+
+**Skill Priority Guide:**
+
+- **Simple tasks** (fix a bug, add a field): Read 1-2 directly relevant skills
+- **Medium tasks** (new endpoint, new component): Read category-specific skills (e.g., all Backend skills for API work)
+- **Complex tasks** (new feature, refactoring): Read all relevant category skills + cross-cutting skills (testing, patterns)
+
+### Frontend (Web Dashboard)
+
+| Skill                           | When to Use                                        | Path                                        |
+| ------------------------------- | -------------------------------------------------- | ------------------------------------------- |
+| **nextjs**                      | Any Next.js 16 work, App Router, Server Components | `.agent/skills/nextjs/`                     |
+| **shadcn-ui**                   | Adding/customizing shadcn components               | `.agent/skills/shadcn-ui`                   |
+| **tanstack-query**              | Data fetching, mutations, caching                  | `.agent/skills/tanstack-query/`             |
+| **typescript-expert**           | Complex TS patterns, generics                      | `.agent/skills/typescript-expert`           |
+| **typescript-advanced-types**   | Utility types, conditional types                   | `.agent/skills/typescript-advanced-types`   |
+| **vercel-react-best-practices** | React 19 patterns, performance                     | `.agent/skills/vercel-react-best-practices` |
+| **ui-ux-pro-max**               | Design systems, color palettes, typography         | `.agent/skills/ui-ux-pro-max`               |
+| **web-design-guidelines**       | Layout, spacing, responsive design                 | `.agent/skills/web-design-guidelines`       |
+
+### Backend (API & Bot)
+
+| Skill                               | When to Use                                 | Path                                                                       |
+| ----------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------- |
+| **fastapi**                         | FastAPI endpoints, dependencies, middleware | `.agent/skills/fastapi`                                                    |
+| **async-python-patterns**           | Async/await, concurrency, event loops       | `.agent/skills/python-development/skills/async-python-patterns/`           |
+| **python-code-style**               | PEP 8, naming conventions, formatting       | `.agent/skills/python-development/skills/python-code-style/`               |
+| **python-type-safety**              | Type hints, generics, Pydantic              | `.agent/skills/python-development/skills/python-type-safety/`              |
+| **python-error-handling**           | Exceptions, error recovery, logging         | `.agent/skills/python-development/skills/python-error-handling/`           |
+| **python-design-patterns**          | Factory, singleton, dependency injection    | `.agent/skills/python-development/skills/python-design-patterns/`          |
+| **python-testing-patterns**         | pytest, fixtures, mocking                   | `.agent/skills/python-development/skills/python-testing-patterns/`         |
+| **python-performance-optimization** | Profiling, caching, memory management       | `.agent/skills/python-development/skills/python-performance-optimization/` |
+| **python-anti-patterns**            | Common mistakes to avoid                    | `.agent/skills/python-development/skills/python-anti-patterns/`            |
+| **python-resilience**               | Retry, circuit breaker, fallbacks           | `.agent/skills/python-development/skills/python-resilience/`               |
+| **python-background-jobs**          | Task queues, scheduled jobs                 | `.agent/skills/python-development/skills/python-background-jobs/`          |
+| **python-observability**            | Logging, metrics, tracing                   | `.agent/skills/python-development/skills/python-observability/`            |
+
+### Database
+
+| Skill                                | When to Use                              | Path                                             |
+| ------------------------------------ | ---------------------------------------- | ------------------------------------------------ |
+| **postgresql-table-design**          | Schema design, indexes, constraints      | `.agent/skills/postgresql-table-design/`         |
+| **supabase-postgres-best-practices** | Supabase auth, RLS, Edge Functions       | `.agent/skills/supabase-postgres-best-practices` |
+| **timescaledb**                      | Time-series data, hypertables, analytics | `.agent/skills/timescaledb/`                     |
+
+### DevOps & Tooling
+
+| Skill                        | When to Use                   | Path                                      |
+| ---------------------------- | ----------------------------- | ----------------------------------------- |
+| **git-commit**               | Conventional commits, staging | `.agent/skills/git-commit/`               |
+| **github-actions-templates** | CI/CD workflows               | `.agent/skills/github-actions-templates/` |
+| **powershell-expert**        | Windows scripts, automation   | `.agent/skills/powershell-expert`         |
+
+### Project Management
+
+| Skill                      | When to Use                 | Path                                    |
+| -------------------------- | --------------------------- | --------------------------------------- |
+| **openspec-new-change**    | Start a new feature/fix     | `.agent/skills/openspec-new-change/`    |
+| **openspec-apply-change**  | Implement tasks from change | `.agent/skills/openspec-apply-change/`  |
+| **openspec-verify-change** | Verify before archiving     | `.agent/skills/openspec-verify-change/` |
+
+---
+
+_Last Updated: 2026-02-05_

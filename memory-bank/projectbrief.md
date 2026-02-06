@@ -31,12 +31,12 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 
 ## 👥 Stakeholders
 
-| Stakeholder | Primary Need | Value Delivered |
-|:------------|:-------------|:----------------|
-| **Community Managers** | Audience Growth | Automated subscriber acquisition from group chats |
-| **Moderators** | Spam Control | Automated muting of unverified or non-compliant users |
-| **End Users** | Group Access | Clear, interactive guidance on how to gain permission quickly |
-| **Bot Owners** | System Overview | Detailed analytics, log streaming, and RBAC management |
+| Stakeholder            | Primary Need    | Value Delivered                                               |
+| :--------------------- | :-------------- | :------------------------------------------------------------ |
+| **Community Managers** | Audience Growth | Automated subscriber acquisition from group chats             |
+| **Moderators**         | Spam Control    | Automated muting of unverified or non-compliant users         |
+| **End Users**          | Group Access    | Clear, interactive guidance on how to gain permission quickly |
+| **Bot Owners**         | System Overview | Detailed analytics, log streaming, and RBAC management        |
 
 ---
 
@@ -52,18 +52,18 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 ### Phase B: The Admin API (Intelligence) ✅
 
 - [x] **FastAPI REST Backbone**: Pydantic V2 validated endpoints
-- [x] **Supabase Auth Integration**: Industry-standard secure identity (JWT)
-- [x] **RBAC Management**: Owner, Admin, and Viewer roles with granular scoping
+- [x] **Telegram Login Widget**: Owner-only authentication via Telegram
+- [x] **Session-based Auth**: HTTP-only cookies with configurable expiration
 - [x] **Audit Logging System**: Immutable record of every administrative action
-- [x] **Database-Agnostic Models**: Supabase Postgres or SQLite for all environments
+- [x] **Database-Agnostic Models**: PostgreSQL (Supabase) or SQLite for all environments
 
 ### Phase C: Dashboard & Analytics (Visualization) ✅
 
 - [x] **Next.js 16 Web Interface**: Server Components and Streaming
-- [x] **Supabase Realtime Streams**: Live logs via `postgres_changes`
+- [x] **Real-Time SSE Streams**: Live events via Server-Sent Events
 - [x] **Verification Analytics**: Recharts-driven growth and conversion visualization
 - [x] **Database Browser**: Direct inspection of system state from the UI
-- [x] **Supabase Authentication Flow**: Login, sync, and session management
+- [x] **Multi-Bot Management**: Add, manage, and monitor multiple bots from dashboard
 
 ### Phase D: Advanced Management (Configuration) 🚧
 
@@ -79,17 +79,17 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 
 ### Technical Performance (SLAs)
 
-| Metric | Target | Status |
-|:-------|:-------|:-------|
-| **Uptime** | 99.9% | ✅ On Track |
-| **API Latency (p90)** | <50ms | ✅ Achieved |
-| **Pylint Score** | 10.00/10 | ✅ Achieved |
-| **Pyrefly Errors** | 0 | ✅ Zero Errors |
-| **Supabase Auth** | Working | ✅ Integrated |
-| **Local Dev Setup** | <5 min | ✅ Achieved |
-| **Auth Tests** | 6/6 | ✅ All Passed |
-| **UI Pages** | 9/9 | ✅ All Working |
-| **Security Tests** | 3/3 | ✅ All Passed |
+| Metric                | Target   | Status         |
+| :-------------------- | :------- | :------------- |
+| **Uptime**            | 99.9%    | ✅ On Track    |
+| **API Latency (p90)** | <50ms    | ✅ Achieved    |
+| **Pylint Score**      | 10.00/10 | ✅ Achieved    |
+| **Pyrefly Errors**    | 0        | ✅ Zero Errors |
+| **Telegram Login**    | Working  | ✅ Integrated  |
+| **Local Dev Setup**   | <5 min   | ✅ Achieved    |
+| **Auth Tests**        | 15/15    | ✅ All Passed  |
+| **UI Pages**          | 10/10    | ✅ All Working |
+| **Security Tests**    | 3/3      | ✅ All Passed  |
 
 ---
 
@@ -104,9 +104,10 @@ To build the most performant, secure, and user-friendly Telegram management ecos
 ## 🔐 Compliance & Security
 
 - **OWASP 2025 Standard**: Strict adherence to web security practices.
-- **Data Privacy**: Minimalistic data collection (Telegram IDs + Supabase Metadata only).
-- **Encryption**: TLS 1.3 in transit, SCRAM-SHA-256 for Postgres at rest.
+- **Data Privacy**: Minimalistic data collection (Telegram IDs + session metadata only).
+- **Encryption**: TLS 1.3 in transit, Fernet for bot tokens at rest.
 - **API Protection**: 401 Unauthorized for unauthenticated requests.
+- **Token Security**: Bot tokens encrypted with Fernet before storage.
 
 ---
 
@@ -157,19 +158,19 @@ python main.py
 
 ### Test Credentials
 
-| User | Email | Password | Role |
-|------|-------|----------|------|
-| Admin | admin@nezuko.bot | Admin@123 | super_admin |
+| User  | Access                                 | Role        |
+| ----- | -------------------------------------- | ----------- |
+| Owner | Telegram Login (BOT_OWNER_TELEGRAM_ID) | super_admin |
 
 ### Key Documentation
 
-| Topic | Location |
-|-------|----------|
-| Full Docs | `docs/README.md` |
-| Tech Stack | `docs/architecture/tech-stack.md` |
-| Architecture | `docs/architecture/README.md` |
-| Contributing | `docs/contributing/README.md` |
+| Topic        | Location                          |
+| ------------ | --------------------------------- |
+| Full Docs    | `docs/README.md`                  |
+| Tech Stack   | `docs/architecture/tech-stack.md` |
+| Architecture | `docs/architecture/README.md`     |
+| Contributing | `docs/contributing/README.md`     |
 
 ---
 
-*Last Updated: 2026-01-28*
+_Last Updated: 2026-02-04_

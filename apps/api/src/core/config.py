@@ -1,9 +1,9 @@
 """Application configuration using Pydantic BaseSettings."""
 
 from functools import lru_cache
-from typing import Any, Literal
+from typing import Literal
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,27 +21,27 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_PASSWORD: str | None = None
 
-    # Supabase Configuration
-    SUPABASE_URL: str | None = None
-    SUPABASE_ANON_KEY: str | None = None
-    SUPABASE_SERVICE_ROLE_KEY: str | None = None
-    SUPABASE_JWT_SECRET: str | None = None
-
-    # Admin Panel - Initial Admin User
-    ADMIN_INITIAL_EMAIL: str = "admin@nezuko.bot"
-    ADMIN_INITIAL_PASSWORD: str = "ChangeMe123!"
-    ADMIN_INITIAL_FULL_NAME: str = "Admin User"
+    # Telegram Authentication (Owner-Only Access)
+    # Bot token used for login verification (get from @BotFather)
+    LOGIN_BOT_TOKEN: str | None = None
+    # Your Telegram user ID (get from @userinfobot)
+    BOT_OWNER_TELEGRAM_ID: int | None = None
+    # Fernet encryption key for bot tokens (generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+    ENCRYPTION_KEY: str | None = None
+    # Session duration in hours
+    SESSION_EXPIRY_HOURS: int = 24
 
     # API Configuration
     API_BASE_URL: str = "http://localhost:8080"
     API_DEBUG: bool = True
 
     # CORS
-    CORS_ORIGINS: Any = ["http://localhost:3000"]
+    CORS_ORIGINS: str | list[str] = ["http://localhost:3000"]
 
     # Security
     SECURITY_HEADERS_ENABLED: bool = False
     MOCK_AUTH: bool = False
+    SECRET_KEY: str = "dev_secret_key_change_in_production"
 
     # Observability
     SENTRY_DSN: str | None = None
@@ -75,6 +75,16 @@ class Settings(BaseSettings):
             # Standard comma-separated fallback
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return []
+
+    @model_validator(mode="after")
+    def validate_production_secret_key(self) -> "Settings":
+        """Ensure SECRET_KEY is not the default in production."""
+        if self.ENVIRONMENT == "production" and self.SECRET_KEY.startswith("dev_"):
+            raise ValueError(
+                "SECRET_KEY must be changed from default in production. "
+                'Generate a secure key with: python -c "import secrets; print(secrets.token_urlsafe(32))"'
+            )
+        return self
 
 
 @lru_cache

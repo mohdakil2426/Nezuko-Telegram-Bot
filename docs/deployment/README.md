@@ -21,12 +21,12 @@ This document covers deploying Nezuko in production environments, including Dock
 
 ## Deployment Options
 
-| Option | Best For | Complexity |
-|--------|----------|------------|
-| **Docker Compose** | Single server, small-medium scale | Low |
-| **Kubernetes** | Large scale, high availability | High |
-| **Serverless** | Web dashboard only | Medium |
-| **VPS** | Budget deployments | Low |
+| Option             | Best For                          | Complexity |
+| ------------------ | --------------------------------- | ---------- |
+| **Docker Compose** | Single server, small-medium scale | Low        |
+| **Kubernetes**     | Large scale, high availability    | High       |
+| **Serverless**     | Web dashboard only                | Medium     |
+| **VPS**            | Budget deployments                | Low        |
 
 ### Recommended Stack
 
@@ -57,11 +57,11 @@ This document covers deploying Nezuko in production environments, including Dock
 
 ### Required Services
 
-| Service | Purpose | Provider Options |
-|---------|---------|------------------|
-| **PostgreSQL** | Primary database | Supabase, Neon, AWS RDS |
-| **Redis** | Caching | Upstash, Redis Cloud, self-hosted |
-| **Domain** | HTTPS access | Any registrar |
+| Service        | Purpose          | Provider Options                  |
+| -------------- | ---------------- | --------------------------------- |
+| **PostgreSQL** | Primary database | Supabase, Neon, AWS RDS           |
+| **Redis**      | Caching          | Upstash, Redis Cloud, self-hosted |
+| **Domain**     | HTTPS access     | Any registrar                     |
 
 ### Required Accounts
 
@@ -245,7 +245,7 @@ docker compose -f docker-compose.prod.yml up -d --scale api=3
 api.nezuko.bot {
     reverse_proxy api:8080
     encode gzip
-    
+
     header {
         Strict-Transport-Security "max-age=31536000"
         X-Content-Type-Options "nosniff"
@@ -350,12 +350,12 @@ NEXT_PUBLIC_API_URL=https://api.nezuko.bot/api/v1
 
 Options for secret management:
 
-| Solution | Complexity | Best For |
-|----------|------------|----------|
-| **Docker Secrets** | Low | Docker Swarm |
-| **Environment Variables** | Low | Any deployment |
-| **Vault** | High | Enterprise |
-| **AWS Secrets Manager** | Medium | AWS deployments |
+| Solution                  | Complexity | Best For        |
+| ------------------------- | ---------- | --------------- |
+| **Docker Secrets**        | Low        | Docker Swarm    |
+| **Environment Variables** | Low        | Any deployment  |
+| **Vault**                 | High       | Enterprise      |
+| **AWS Secrets Manager**   | Medium     | AWS deployments |
 
 ---
 
@@ -385,25 +385,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
-      
+          python-version: "3.13"
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
           pip install ruff pylint pytest
-      
+
       - name: Lint
         run: |
           ruff check .
           pylint apps/bot --exit-zero
-      
+
       - name: Type check
         run: python -m pyrefly check
-      
+
       - name: Test
         run: pytest --tb=short
 
@@ -414,17 +414,17 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Build and push Bot image
         uses: docker/build-push-action@v5
         with:
@@ -432,7 +432,7 @@ jobs:
           file: config/docker/Dockerfile.bot
           push: true
           tags: ${{ env.BOT_IMAGE }}:${{ github.sha }}
-      
+
       - name: Build and push API image
         uses: docker/build-push-action@v5
         with:
@@ -446,7 +446,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
-    
+
     steps:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1
@@ -469,7 +469,7 @@ graph LR
     C -->|No| D[Fail]
     C -->|Yes| E[Build Images]
     E --> F[Push to Registry]
-    
+
     G[Create Release] --> H[Trigger Deploy]
     H --> I[Pull Images]
     I --> J[Rolling Update]
@@ -500,23 +500,23 @@ curl https://api.nezuko.bot/ready  # Readiness
 # prometheus.yml
 
 scrape_configs:
-  - job_name: 'nezuko-bot'
+  - job_name: "nezuko-bot"
     static_configs:
-      - targets: ['bot:8000']
-    
-  - job_name: 'nezuko-api'
+      - targets: ["bot:8000"]
+
+  - job_name: "nezuko-api"
     static_configs:
-      - targets: ['api:8080']
+      - targets: ["api:8080"]
 ```
 
 ### Key Metrics to Monitor
 
-| Metric | Alert Threshold | Description |
-|--------|-----------------|-------------|
-| `bot_verifications_total{status="failed"}` | > 10/min | Failed verifications |
-| `bot_verification_latency_seconds{quantile="0.95"}` | > 500ms | p95 latency |
-| `bot_telegram_api_errors_total` | > 5/min | Telegram API errors |
-| `http_requests_total{status="5xx"}` | > 1/min | Server errors |
+| Metric                                              | Alert Threshold | Description          |
+| --------------------------------------------------- | --------------- | -------------------- |
+| `bot_verifications_total{status="failed"}`          | > 10/min        | Failed verifications |
+| `bot_verification_latency_seconds{quantile="0.95"}` | > 500ms         | p95 latency          |
+| `bot_telegram_api_errors_total`                     | > 5/min         | Telegram API errors  |
+| `http_requests_total{status="5xx"}`                 | > 1/min         | Server errors        |
 
 ### Alerting Rules
 
@@ -558,7 +558,7 @@ services:
       replicas: 3
       resources:
         limits:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 512M
 ```
 
@@ -624,13 +624,121 @@ docker compose up -d
 
 ---
 
+## Supabase Setup
+
+Supabase provides authentication, database, and realtime features for Nezuko.
+
+### 1. Create Supabase Project
+
+1. Go to [supabase.com](https://supabase.com) and create a new project
+2. Choose a region close to your deployment
+3. Note your project URL and API keys
+
+### 2. Configure Environment Variables
+
+```bash
+# apps/api/.env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...  # From Project Settings > API
+SUPABASE_JWT_SECRET=your-jwt-secret  # From Project Settings > API > JWT Settings
+SUPABASE_ANON_KEY=eyJ...  # From Project Settings > API
+
+# apps/web/.env.local
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
+
+### 3. Create Admin User
+
+```bash
+# Using Supabase dashboard:
+# 1. Go to Authentication > Users
+# 2. Click "Add User"
+# 3. Enter admin email and password
+
+# Then add to admin_users table in your database:
+INSERT INTO admin_users (email, role, supabase_uid, is_active)
+VALUES ('admin@yoursite.com', 'super_admin', 'uid-from-supabase', true);
+```
+
+### 4. Configure RLS Policies
+
+Enable Row Level Security on all tables:
+
+```sql
+-- Example: admin_users table
+ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+
+-- Allow authenticated users to read their own data
+CREATE POLICY "Users can view own profile"
+ON admin_users FOR SELECT
+TO authenticated
+USING (supabase_uid = auth.uid()::text);
+```
+
+### 5. Verify Setup
+
+```bash
+# Check the health endpoint
+curl http://localhost:8080/health
+
+# Login via web dashboard
+open http://localhost:3000/login
+```
+
+---
+
+## Chart Endpoints Reference
+
+The API provides 10 chart endpoints for analytics visualization.
+
+| Endpoint                                   | Description                              | Parameters            |
+| ------------------------------------------ | ---------------------------------------- | --------------------- |
+| `/api/v1/charts/verification-distribution` | Pie chart data for verification outcomes | -                     |
+| `/api/v1/charts/cache-breakdown`           | Cache hits vs API calls                  | -                     |
+| `/api/v1/charts/groups-status`             | Active vs inactive groups                | -                     |
+| `/api/v1/charts/api-calls`                 | Distribution by API method               | -                     |
+| `/api/v1/charts/hourly-activity`           | 24-hour activity pattern                 | -                     |
+| `/api/v1/charts/latency-distribution`      | Latency histogram buckets                | -                     |
+| `/api/v1/charts/top-groups`                | Top groups by verifications              | `limit` (1-20)        |
+| `/api/v1/charts/cache-hit-rate-trend`      | Cache efficiency over time               | `period` (7d/30d/90d) |
+| `/api/v1/charts/latency-trend`             | Latency trends over time                 | `period` (7d/30d/90d) |
+| `/api/v1/charts/bot-health`                | Composite health metrics                 | -                     |
+
+**Authentication**: All chart endpoints require a valid JWT token.
+
+**Example Request**:
+
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "https://api.nezuko.bot/api/v1/charts/verification-distribution"
+```
+
+**Example Response**:
+
+```json
+{
+  "data": {
+    "verified": 1250,
+    "restricted": 45,
+    "error": 12,
+    "total": 1307
+  }
+}
+```
+
+For detailed API documentation, see [docs/api/charts.md](../api/charts.md).
+
+---
+
 ## Related Documentation
 
 - [**Architecture**](../architecture/README.md) - System design overview
 - [**Getting Started**](../getting-started/README.md) - Development setup
 - [**Contributing**](../contributing/README.md) - Development workflow
 - [**Horizontal Scaling**](../architecture/horizontal-scaling.md) - Scaling strategies
+- [**Charts API**](../api/charts.md) - Complete chart endpoint reference
 
 ---
 
-*See also: [Architecture](../architecture/README.md) | [Monitoring](#monitoring)*
+_See also: [Architecture](../architecture/README.md) | [Monitoring](#monitoring)_

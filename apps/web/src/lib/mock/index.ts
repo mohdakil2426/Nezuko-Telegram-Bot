@@ -35,3 +35,7 @@ export {
   getLatencyTrend,
   getBotHealthMetrics,
 } from "./charts.mock";
+
+// Logs
+export { getRecentLogs } from "./logs.mock";
+

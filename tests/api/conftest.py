@@ -30,6 +30,8 @@ os.environ["ENVIRONMENT"] = "development"
 os.environ["MOCK_AUTH"] = "true"
 
 # Now import app modules (after environment is set)
+from src.core.config import get_settings  # noqa: E402
+from src.core.encryption import get_fernet  # noqa: E402
 from src.main import app  # noqa: E402
 from src.models import Base  # noqa: E402
 
@@ -37,6 +39,16 @@ from src.models import Base  # noqa: E402
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
 TestingSessionLocal = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
+
+
+@pytest.fixture(autouse=True)
+def clear_caches():
+    """Clear settings and encryption caches before each test to avoid contamination."""
+    get_settings.cache_clear()
+    get_fernet.cache_clear()
+    yield
+    get_settings.cache_clear()
+    get_fernet.cache_clear()
 
 
 @pytest.fixture(scope="session")

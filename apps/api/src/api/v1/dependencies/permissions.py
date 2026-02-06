@@ -1,56 +1,55 @@
-"""Permission-based dependencies for RBAC."""
+"""Permission-based dependencies for owner-only access.
+
+Uses session-based authentication with Telegram Login Widget.
+Since the dashboard is now owner-only, most endpoints use `require_owner` directly.
+This module is kept for API compatibility and future multi-user expansion.
+"""
 
 from collections.abc import Callable
 from typing import Any
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 
-from src.api.v1.dependencies.auth import get_current_active_user
-from src.core.permissions import ROLE_PERMISSIONS, Permission, Role
-from src.models.admin_user import AdminUser
+from src.api.v1.dependencies.session import require_owner
+from src.core.permissions import Permission, Role
+from src.models.session import Session
 
 __all__ = ["Permission", "Role", "require_permission", "require_role"]
 
 
 def require_permission(permission: Permission) -> Callable[..., Any]:
-    """Dependency factory to check if user has required permission."""
+    """Dependency factory to check if user has required permission.
+
+    NOTE: In the current owner-only setup, the owner has all permissions.
+    This function exists for API compatibility and future multi-user expansion.
+
+    For most endpoints, use `require_owner` from session.py instead.
+    """
 
     async def permission_checker(
-        current_user: AdminUser = Depends(get_current_active_user),
-    ) -> AdminUser:
-        user_role_str = current_user.role
-        try:
-            # Handle case where role might be mocked or invalid
-            user_role = Role(user_role_str)
-        except ValueError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Invalid user role configuration",
-            ) from exc
-
-        allowed_permissions = ROLE_PERMISSIONS.get(user_role, [])
-
-        if permission not in allowed_permissions:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Permission denied: {permission.value} required",
-            )
-
-        return current_user
+        session: Session = Depends(require_owner),
+    ) -> Session:
+        # Owner has all permissions in current implementation
+        # When multi-user is added, this will check against user roles
+        _ = permission  # Currently unused - owner has all permissions
+        return session
 
     return permission_checker
 
 
 def require_role(role: Role) -> Callable[..., Any]:
-    """Dependency factory to check if user has specific role."""
+    """Dependency factory to check if user has specific role.
 
-    async def role_checker(current_user: AdminUser = Depends(get_current_active_user)) -> AdminUser:
-        user_role_str = current_user.role
-        if user_role_str != role.value:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Role requirement not met: {role.value} required",
-            )
-        return current_user
+    NOTE: In the current owner-only setup, the owner is implicitly 'super_admin'.
+    This function exists for API compatibility and future multi-user expansion.
+
+    For most endpoints, use `require_owner` from session.py instead.
+    """
+
+    async def role_checker(session: Session = Depends(require_owner)) -> Session:
+        # Owner is implicitly super_admin in current implementation
+        # When multi-user is added, this will check against user roles
+        _ = role  # Currently unused - owner has all roles
+        return session
 
     return role_checker

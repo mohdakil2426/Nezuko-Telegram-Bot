@@ -97,9 +97,7 @@ async def update_row(
     body: UpdateRowRequest,
     request: Request,
     session: AsyncSession = Depends(get_session),
-    current_user: AdminUser = Depends(
-        require_permission(Permission.MODIFY_DATABASE)
-    ),
+    current_user: AdminUser = Depends(require_permission(Permission.MODIFY_DATABASE)),
 ) -> SuccessResponse[dict[str, Any]]:
     """
     Update a row in a database table.
@@ -143,9 +141,7 @@ async def delete_row(
     request: Request,
     hard_delete: bool = Query(False, description="Permanently delete instead of soft delete"),
     session: AsyncSession = Depends(get_session),
-    current_user: AdminUser = Depends(
-        require_permission(Permission.MODIFY_DATABASE)
-    ),
+    current_user: AdminUser = Depends(require_permission(Permission.MODIFY_DATABASE)),
 ) -> SuccessResponse[DeleteRowResponse]:
     """
     Delete a row from a database table.

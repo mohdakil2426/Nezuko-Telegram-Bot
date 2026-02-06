@@ -1,15 +1,15 @@
 """RBAC permission and role definitions."""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     OWNER = "owner"
     ADMIN = "admin"
     VIEWER = "viewer"
 
 
-class Permission(str, Enum):
+class Permission(StrEnum):
     # Dashboard
     VIEW_DASHBOARD = "view:dashboard"
 

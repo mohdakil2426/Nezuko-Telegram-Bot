@@ -14,6 +14,7 @@ from src.models.bot import EnforcedChannel, ProtectedGroup
 from src.models.verification_log import VerificationLog
 from src.schemas.base import SuccessResponse
 from src.schemas.dashboard import ActivityResponse, DashboardStatsResponse
+from src.services.uptime_service import get_uptime_tracker
 
 router = APIRouter()
 
@@ -40,8 +41,9 @@ async def get_dashboard_stats(
     success_rate = await _get_success_rate(session, week_start)
     cache_hit_rate = await _get_cache_hit_rate(session, today_start)
 
-    # Bot uptime - placeholder for now (would need Prometheus/Redis)
-    bot_uptime_seconds = 0
+    # Bot uptime from the uptime tracker service
+    uptime_tracker = get_uptime_tracker()
+    bot_uptime_seconds = await uptime_tracker.get_uptime_seconds()
 
     return SuccessResponse(
         data=DashboardStatsResponse(
@@ -113,14 +115,45 @@ async def _get_cache_hit_rate(session: AsyncSession, today_start: datetime) -> f
 @router.get("/activity", response_model=SuccessResponse[ActivityResponse])
 async def get_dashboard_activity(
     current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
-    session: AsyncSession = Depends(get_session),  # pylint: disable=unused-argument
+    session: AsyncSession = Depends(get_session),
 ) -> Any:
     """
-    Get recent activity feed.
+    Get recent activity feed from verification logs.
     """
-    # TODO: Implement real activity log query from admin_audit_log
-    # For now, return empty list
-    return SuccessResponse(data=ActivityResponse(items=[]))
+    # Query recent verifications for activity feed
+    stmt = select(VerificationLog).order_by(VerificationLog.timestamp.desc()).limit(20)
+    result = await session.execute(stmt)
+    verifications = result.scalars().all()
+
+    items = []
+    for v in verifications:
+        # Determine activity type and description
+        if v.status == "verified":
+            description = f"User {v.user_id} verified in group {v.group_id}"
+            activity_type = "verification"
+        elif v.status in ("restricted", "kicked"):
+            description = f"User {v.user_id} restricted in group {v.group_id}"
+            activity_type = "protection"
+        else:
+            description = f"Verification check for user {v.user_id}"
+            activity_type = "system"
+
+        items.append(
+            {
+                "id": str(v.id),
+                "type": activity_type,
+                "description": description,
+                "timestamp": v.timestamp.isoformat(),
+                "metadata": {
+                    "user_id": v.user_id,
+                    "group_id": v.group_id,
+                    "status": v.status,
+                    "cached": v.cached,
+                },
+            }
+        )
+
+    return SuccessResponse(data=ActivityResponse(items=items))
 
 
 @router.get("/chart-data")

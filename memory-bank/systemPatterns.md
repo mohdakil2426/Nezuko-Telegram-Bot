@@ -1,4 +1,4 @@
-> **Last Updated**: 2026-02-03 | **Version**: 3.0.0 (Migrated to Pure shadcn Dashboard)
+> **Last Updated**: 2026-02-04 | **Version**: 4.0.0 (Telegram Auth & Multi-Bot Complete)
 
 ---
 
@@ -7,13 +7,14 @@
 1. [Architecture Overview](#-architecture-overview)
 2. [Frontend Patterns (Next.js 16)](#-frontend-patterns-nextjs-16)
 3. [Backend Patterns (Python/FastAPI)](#-backend-patterns-pythonfastapi)
-4. [Authentication (Supabase)](#-authentication-supabase)
+4. [Authentication (Telegram Login)](#-authentication-telegram-login)
 5. [Database Patterns](#-database-patterns)
 6. [Bot Engine Architecture](#-bot-engine-architecture)
 7. [Anti-Patterns Reference](#-anti-patterns-reference) (incl. TanStack Query v5)
 8. [Security Standards](#-security-standards)
-9. [DevOps & CI/CD](#-devops--cicd)
-10. [Quick Reference](#-quick-reference)
+9. [Real-Time SSE Patterns](#-real-time-sse-patterns)
+10. [DevOps & CI/CD](#-devops--cicd)
+11. [Quick Reference](#-quick-reference)
 
 ---
 
@@ -681,97 +682,131 @@ ruff format .
 
 ---
 
-# 🔐 Authentication (Supabase)
+# 🔐 Authentication (Telegram Login Widget)
 
 ## Auth Flow Diagram
 
 ```
-┌──────────┐    ┌───────────────┐    ┌─────────────┐
-│ Browser  │───▶│ Supabase Auth │───▶│ JWT Cookie  │
-└──────────┘    └───────────────┘    └──────┬──────┘
-                                            │
-      ┌─────────────────────────────────────┘
+┌──────────┐    ┌─────────────────────┐    ┌──────────────────┐
+│ Browser  │───▶│ Telegram Login      │───▶│ Session Cookie   │
+└──────────┘    │ Widget              │    │ (nezuko_session)  │
+                └─────────────────────┘    └────────┬─────────┘
+                                                    │
+      ┌─────────────────────────────────────────────┘
       ▼
 ┌──────────┐    ┌───────────────┐    ┌─────────────┐
-│ proxy.ts │───▶│ getSession()  │───▶│ Route Guard │
+│ API Call │───▶│ Cookie Check  │───▶│ DB Session  │
 └──────────┘    └───────────────┘    └─────────────┘
 ```
 
-## Proxy Pattern (Next.js 16)
+## Telegram Login Component
 
 ```typescript
-// apps/web/src/proxy.ts - REQUIRED for Next.js 16
-import { updateSession } from "@/lib/supabase/middleware";
-import { NextRequest } from "next/server";
+// apps/web/src/components/auth/telegram-login.tsx
+"use client";
 
-export async function proxy(request: NextRequest) {
-  return await updateSession(request);
+import { useEffect, useRef } from "react";
+
+interface TelegramLoginProps {
+  botUsername: string;
+  onAuth: (user: TelegramUser) => void;
 }
 
-export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
-};
+export function TelegramLogin({ botUsername, onAuth }: TelegramLoginProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Load Telegram widget script
+    const script = document.createElement("script");
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.setAttribute("data-telegram-login", botUsername);
+    script.setAttribute("data-size", "large");
+    script.setAttribute("data-onauth", "onTelegramAuth(user)");
+    script.async = true;
+
+    // Global callback
+    (window as any).onTelegramAuth = onAuth;
+
+    containerRef.current?.appendChild(script);
+  }, [botUsername, onAuth]);
+
+  return <div ref={containerRef} />;
+}
 ```
 
-## Session Middleware
+## Session-based Auth (API)
 
-```typescript
-// apps/web/src/lib/supabase/middleware.ts
-export async function updateSession(request: NextRequest) {
-  const supabase = createServerClient(URL, KEY, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-      },
-    },
-  });
+```python
+# apps/api/src/api/v1/dependencies/session.py
+async def get_current_session(
+    session_id: Annotated[str | None, Cookie(alias="nezuko_session")] = None,
+    db: AsyncSession = Depends(get_session),
+) -> Session:
+    """Validate session cookie and return the current session."""
+    if settings.MOCK_AUTH:
+        return Session(
+            id="mock-session-id",
+            telegram_id=settings.BOT_OWNER_TELEGRAM_ID,
+            telegram_username="owner",
+            telegram_name="Mock Owner",
+        )
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    if not session_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
 
-  if (!session && !isPublicRoute(request.url)) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
+    auth_service = TelegramAuthService(db)
+    session = await auth_service.get_session(session_id)
 
-  return NextResponse.next();
-}
+    if not session:
+        raise HTTPException(status_code=401, detail="Session expired")
+
+    return session
 ```
 
 ## Login/Logout Patterns
 
 ```typescript
-// ✅ CORRECT - Login with full page reload
-const handleLogin = async () => {
-  await supabase.auth.signInWithPassword({ email, password });
-  window.location.href = "/dashboard"; // Full reload required
+// ✅ CORRECT - Login via Telegram
+const handleTelegramAuth = async (user: TelegramUser) => {
+  const response = await fetch("/api/v1/auth/telegram", {
+    method: "POST",
+    credentials: "include",
+    body: JSON.stringify(user),
+  });
+  if (response.ok) {
+    window.location.href = "/dashboard";
+  }
 };
 
-// ✅ CORRECT - Logout with state clear
+// ✅ CORRECT - Logout with session clear
 const handleLogout = async () => {
-  await supabase.auth.signOut();
-  logout(); // Clear Zustand store
+  await fetch("/api/v1/auth/logout", {
+    method: "POST",
+    credentials: "include",
+  });
   window.location.href = "/login";
 };
 ```
 
-## Backend JWT Verification
+## Owner Verification
 
 ```python
-# apps/api/src/core/security.py
-def verify_jwt(token: str) -> dict:
-    if settings.MOCK_AUTH:
-        return {"uid": "dev-user", "email": "admin@nezuko.bot"}
+# apps/api/src/api/v1/endpoints/telegram_auth.py
+async def verify_telegram_auth(data: TelegramAuthData, db: AsyncSession):
+    """Verify Telegram Login Widget data using HMAC-SHA256."""
+    # Verify hash using LOGIN_BOT_TOKEN
+    secret_key = hashlib.sha256(settings.LOGIN_BOT_TOKEN.encode()).digest()
+    check_string = "\n".join(f"{k}={v}" for k, v in sorted(data_dict.items()))
+    hmac_hash = hmac.new(secret_key, check_string.encode(), hashlib.sha256)
 
-    return jwt.decode(
-        token,
-        settings.SUPABASE_JWT_SECRET,
-        algorithms=["HS256"],
-        audience="authenticated"
-    )
+    if hmac_hash.hexdigest() != data.hash:
+        raise HTTPException(status_code=401, detail="Invalid auth data")
+
+    # Owner-only check
+    if data.id != settings.BOT_OWNER_TELEGRAM_ID:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    return create_session(db, data)
 ```
 
 ---
