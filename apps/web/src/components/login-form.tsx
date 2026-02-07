@@ -47,7 +47,8 @@ export function LoginForm() {
         setError(response.message || "Authentication failed");
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Authentication failed. Please try again.";
+      const message =
+        err instanceof Error ? err.message : "Authentication failed. Please try again.";
 
       // Check for specific error types
       if (message.includes("403") || message.includes("owner")) {
@@ -132,8 +133,7 @@ export function LoginForm() {
             />
 
             <p className="text-xs text-muted-foreground text-center max-w-[250px]">
-              Only the project owner can access this dashboard.
-              Your Telegram ID will be verified.
+              Only the project owner can access this dashboard. Your Telegram ID will be verified.
             </p>
           </div>
         )}

@@ -89,9 +89,7 @@ class BotSettings(BaseSettings):
     def validate_webhook_config(self) -> "BotSettings":
         """Validate webhook configuration in production."""
         if self.use_webhooks and not self.WEBHOOK_SECRET:
-            raise ValueError(
-                "WEBHOOK_SECRET is required when using webhooks in production mode"
-            )
+            raise ValueError("WEBHOOK_SECRET is required when using webhooks in production mode")
         return self
 
     # Computed properties

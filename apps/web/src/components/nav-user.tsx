@@ -90,9 +90,7 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{displayUser.name}</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {displayUser.email}
-                </span>
+                <span className="truncate text-xs text-muted-foreground">{displayUser.email}</span>
               </div>
             </SidebarMenuButton>
           </DropdownMenuTrigger>
@@ -139,11 +137,7 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
               disabled={isLoggingOut}
               className="text-destructive focus:text-destructive"
             >
-              {isLoggingOut ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                <LogOut />
-              )}
+              {isLoggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
               {isLoggingOut ? "Logging out..." : "Log out"}
             </DropdownMenuItem>
           </DropdownMenuContent>

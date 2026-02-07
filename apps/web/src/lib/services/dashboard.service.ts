@@ -73,9 +73,12 @@ export async function getActivity(limit = 10): Promise<ActivityItem[]> {
     return mockData.getActivity(limit);
   }
 
-  const response = await apiClient.get<SuccessResponse<ActivityResponse>>(ENDPOINTS.dashboard.activity, {
-    params: { limit },
-  });
+  const response = await apiClient.get<SuccessResponse<ActivityResponse>>(
+    ENDPOINTS.dashboard.activity,
+    {
+      params: { limit },
+    }
+  );
   // API returns { status: "success", data: { items: [...] } }
   return response.data?.items ?? [];
 }

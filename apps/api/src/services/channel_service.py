@@ -10,16 +10,35 @@ from src.models.bot import EnforcedChannel, GroupChannelLink
 from src.schemas.channel import ChannelCreateRequest
 
 
-async def get_channels(  # pylint: disable=too-many-locals
+async def get_channels(
     session: AsyncSession,
     page: int = 1,
     per_page: int = 10,
     search: str | None = None,
 ) -> dict[str, Any]:
-    """Get paginated list of channels."""
+    """Get paginated list of channels with linked groups count.
 
-    # Base query
-    query = select(EnforcedChannel)
+    Uses a subquery to count linked groups in a single query,
+    avoiding N+1 query performance issues.
+    """
+    # Subquery for linked groups count per channel
+    link_count_subq = (
+        select(
+            GroupChannelLink.channel_id,
+            func.count(GroupChannelLink.id).label("link_count"),  # pylint: disable=not-callable
+        )
+        .group_by(GroupChannelLink.channel_id)
+        .subquery()
+    )
+
+    # Base query with left join to get counts
+    query = select(
+        EnforcedChannel,
+        func.coalesce(link_count_subq.c.link_count, 0).label("linked_groups_count"),  # pylint: disable=not-callable
+    ).outerjoin(
+        link_count_subq,
+        EnforcedChannel.channel_id == link_count_subq.c.channel_id,
+    )
 
     # Filter by search
     if search:
@@ -31,35 +50,34 @@ async def get_channels(  # pylint: disable=too-many-locals
             ),
         )
 
-    # Count total
-    count_stmt = select(func.count()).select_from(query.subquery())  # pylint: disable=not-callable
+    # Count total (before pagination)
+    count_base = select(EnforcedChannel)
+    if search:
+        search_term = f"%{search}%"
+        count_base = count_base.where(
+            or_(
+                EnforcedChannel.title.ilike(search_term),
+                EnforcedChannel.username.ilike(search_term),
+            ),
+        )
+    count_stmt = select(func.count()).select_from(count_base.subquery())  # pylint: disable=not-callable
     total_result = await session.execute(count_stmt)
     total = total_result.scalar_one()
 
-    # Pagination
+    # Pagination and ordering
     query = (
         query.limit(per_page)
         .offset((page - 1) * per_page)
         .order_by(desc(EnforcedChannel.created_at))
     )
 
-    # Execute query
+    # Execute single optimized query
     result = await session.execute(query)
-    channels = result.scalars().all()
+    rows = result.all()
 
-    # Enrich with linked groups count (optimized query could be better but this is simple for now)
-    # Ideally we should use a subquery or join for counts
-
-    items = []
-    for channel in channels:
-        # Get count of linked groups
-        link_count_stmt = select(func.count()).where(  # pylint: disable=not-callable
-            GroupChannelLink.channel_id == channel.channel_id,
-        )
-        link_count_res = await session.execute(link_count_stmt)
-        link_count = link_count_res.scalar_one()
-
-        channel_dict = {
+    # Build response items
+    items = [
+        {
             "channel_id": channel.channel_id,
             "title": channel.title,
             "username": channel.username,
@@ -67,9 +85,10 @@ async def get_channels(  # pylint: disable=too-many-locals
             "created_at": channel.created_at,
             "updated_at": channel.updated_at,
             "linked_groups_count": link_count,
-            "subscriber_count": 0,  # We don't track this in DB currently
+            "subscriber_count": 0,  # Not tracked in DB currently
         }
-        items.append(channel_dict)
+        for channel, link_count in rows
+    ]
 
     total_pages = (total + per_page - 1) // per_page
     return {

@@ -8,12 +8,7 @@
 
 import { Wifi, WifiOff, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useRealtime } from "@/lib/hooks/use-realtime";
 import { cn } from "@/lib/utils";
 
@@ -99,19 +94,10 @@ export function ConnectionStatus({ className, compact = false }: ConnectionStatu
                 className
               )}
             >
-              <Icon
-                className={cn(
-                  "h-4 w-4",
-                  config.iconColor,
-                  config.animate && "animate-spin"
-                )}
-              />
+              <Icon className={cn("h-4 w-4", config.iconColor, config.animate && "animate-spin")} />
               {/* Status dot */}
               <span
-                className={cn(
-                  "absolute top-0 right-0 h-2 w-2 rounded-full",
-                  config.dotColor
-                )}
+                className={cn("absolute top-0 right-0 h-2 w-2 rounded-full", config.dotColor)}
               />
             </button>
           </TooltipTrigger>
@@ -144,12 +130,7 @@ export function ConnectionStatus({ className, compact = false }: ConnectionStatu
                 isConnected && "animate-pulse"
               )}
             />
-            <Icon
-              className={cn(
-                "h-3 w-3",
-                config.animate && "animate-spin"
-              )}
-            />
+            <Icon className={cn("h-3 w-3", config.animate && "animate-spin")} />
             <span>{config.label}</span>
           </Badge>
         </TooltipTrigger>

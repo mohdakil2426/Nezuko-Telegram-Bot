@@ -61,4 +61,3 @@ export const ENDPOINTS = {
     list: "/api/v1/logs",
   },
 } as const;
-

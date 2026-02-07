@@ -15,7 +15,7 @@
  *   logError('Failed to load data', error, { page: '/dashboard' });
  */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = "debug" | "info" | "warn" | "error";
 
 interface LogContext {
   [key: string]: unknown;
@@ -42,14 +42,14 @@ interface LogEntry {
 }
 
 // Environment detection
-const isDevelopment = process.env.NODE_ENV === 'development';
-const isClient = typeof window !== 'undefined';
+const isDevelopment = process.env.NODE_ENV === "development";
+const isClient = typeof window !== "undefined";
 
 /**
  * Get current environment
  */
 function getEnvironment(): string {
-  return process.env.NODE_ENV || 'development';
+  return process.env.NODE_ENV || "development";
 }
 
 /**
@@ -58,12 +58,8 @@ function getEnvironment(): string {
 function formatLogEntry(entry: LogEntry, pretty: boolean): string {
   if (pretty) {
     const prefix = `[${entry.timestamp}] [${entry.level.toUpperCase()}]`;
-    const contextStr = entry.context
-      ? ` ${JSON.stringify(entry.context)}`
-      : '';
-    const errorStr = entry.error
-      ? `\n  Error: ${entry.error.name}: ${entry.error.message}`
-      : '';
+    const contextStr = entry.context ? ` ${JSON.stringify(entry.context)}` : "";
+    const errorStr = entry.error ? `\n  Error: ${entry.error.name}: ${entry.error.message}` : "";
     return `${prefix} ${entry.message}${contextStr}${errorStr}`;
   }
   return JSON.stringify(entry);
@@ -76,7 +72,7 @@ class Logger {
   private source: string;
   private context: LogContext;
 
-  constructor(source: string = 'web', context: LogContext = {}) {
+  constructor(source: string = "web", context: LogContext = {}) {
     this.source = source;
     this.context = context;
   }
@@ -93,7 +89,7 @@ class Logger {
    */
   private log(level: LogLevel, message: string, context?: LogContext): void {
     // Skip debug logs in production
-    if (level === 'debug' && !isDevelopment) {
+    if (level === "debug" && !isDevelopment) {
       return;
     }
 
@@ -101,7 +97,7 @@ class Logger {
       timestamp: new Date().toISOString(),
       level,
       message,
-      app: 'nezuko-web',
+      app: "nezuko-web",
       environment: getEnvironment(),
       source: this.source,
       context: { ...this.context, ...context },
@@ -111,22 +107,22 @@ class Logger {
 
     // Use appropriate console method
     switch (level) {
-      case 'debug':
+      case "debug":
         console.debug(formatted);
         break;
-      case 'info':
+      case "info":
         console.info(formatted);
         break;
-      case 'warn':
+      case "warn":
         console.warn(formatted);
         break;
-      case 'error':
+      case "error":
         console.error(formatted);
         break;
     }
 
     // In production, could also send to API endpoint
-    if (!isDevelopment && level !== 'debug') {
+    if (!isDevelopment && level !== "debug") {
       this.sendToApi(entry);
     }
   }
@@ -136,14 +132,14 @@ class Logger {
    */
   private async sendToApi(entry: LogEntry): Promise<void> {
     // Only send errors and warnings to API in production
-    if (entry.level === 'debug' || entry.level === 'info') {
+    if (entry.level === "debug" || entry.level === "info") {
       return;
     }
 
     try {
       // Use navigator.sendBeacon for non-blocking logging
-      if (isClient && 'sendBeacon' in navigator) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      if (isClient && "sendBeacon" in navigator) {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
         const endpoint = `${apiUrl}/api/v1/logs/web`;
         navigator.sendBeacon(endpoint, JSON.stringify(entry));
       }
@@ -153,23 +149,23 @@ class Logger {
   }
 
   debug(message: string, context?: LogContext): void {
-    this.log('debug', message, context);
+    this.log("debug", message, context);
   }
 
   info(message: string, context?: LogContext): void {
-    this.log('info', message, context);
+    this.log("info", message, context);
   }
 
   warn(message: string, context?: LogContext): void {
-    this.log('warn', message, context);
+    this.log("warn", message, context);
   }
 
   error(message: string, error?: Error, context?: LogContext): void {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
-      level: 'error',
+      level: "error",
       message,
-      app: 'nezuko-web',
+      app: "nezuko-web",
       environment: getEnvironment(),
       source: this.source,
       context: { ...this.context, ...context },
@@ -193,7 +189,7 @@ class Logger {
 }
 
 // Default logger instance
-export const logger = new Logger('web');
+export const logger = new Logger("web");
 
 // ====================
 // Pre-defined Log Functions
@@ -202,11 +198,8 @@ export const logger = new Logger('web');
 /**
  * Log page view event
  */
-export function logPageView(
-  path: string,
-  userId?: string | number
-): void {
-  logger.info('Page view', {
+export function logPageView(path: string, userId?: string | number): void {
+  logger.info("Page view", {
     page: path,
     user_id: userId,
   });
@@ -215,12 +208,8 @@ export function logPageView(
 /**
  * Log navigation event
  */
-export function logNavigation(
-  from: string,
-  to: string,
-  userId?: string | number
-): void {
-  logger.debug('Navigation', {
+export function logNavigation(from: string, to: string, userId?: string | number): void {
+  logger.debug("Navigation", {
     from,
     to,
     user_id: userId,
@@ -230,11 +219,7 @@ export function logNavigation(
 /**
  * Log user action
  */
-export function logUserAction(
-  action: string,
-  target: string,
-  context?: LogContext
-): void {
+export function logUserAction(action: string, target: string, context?: LogContext): void {
   logger.info(`User action: ${action}`, {
     action,
     target,
@@ -246,7 +231,7 @@ export function logUserAction(
  * Log authentication event
  */
 export function logAuth(
-  event: 'login' | 'logout' | 'session_refresh' | 'session_expired',
+  event: "login" | "logout" | "session_refresh" | "session_expired",
   userId?: string | number,
   context?: LogContext
 ): void {
@@ -267,10 +252,10 @@ export function logApiCall(
   durationMs?: number,
   context?: LogContext
 ): void {
-  const level = statusCode && statusCode >= 400 ? 'warn' : 'debug';
-  const message = `API ${method} ${endpoint}${statusCode ? ` -> ${statusCode}` : ''}`;
+  const level = statusCode && statusCode >= 400 ? "warn" : "debug";
+  const message = `API ${method} ${endpoint}${statusCode ? ` -> ${statusCode}` : ""}`;
 
-  if (level === 'warn') {
+  if (level === "warn") {
     logger.warn(message, {
       method,
       endpoint,
@@ -292,11 +277,7 @@ export function logApiCall(
 /**
  * Log error with full context
  */
-export function logError(
-  message: string,
-  error: Error,
-  context?: LogContext
-): void {
+export function logError(message: string, error: Error, context?: LogContext): void {
   logger.error(message, error, context);
 }
 
@@ -304,7 +285,7 @@ export function logError(
  * Log component mount/unmount for debugging
  */
 export function logComponent(
-  event: 'mount' | 'unmount' | 'render' | 'error',
+  event: "mount" | "unmount" | "render" | "error",
   componentName: string,
   context?: LogContext
 ): void {
@@ -321,7 +302,7 @@ export function logComponent(
 export function logPerformance(
   metric: string,
   value: number,
-  unit: string = 'ms',
+  unit: string = "ms",
   context?: LogContext
 ): void {
   logger.info(`Performance: ${metric}`, {
@@ -339,11 +320,8 @@ export function logPerformance(
 /**
  * Error handler for React Error Boundaries
  */
-export function handleReactError(
-  error: Error,
-  errorInfo: { componentStack: string }
-): void {
-  logger.error('React component error', error, {
+export function handleReactError(error: Error, errorInfo: { componentStack: string }): void {
+  logger.error("React component error", error, {
     component_stack: errorInfo.componentStack,
   });
 }

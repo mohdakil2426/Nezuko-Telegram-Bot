@@ -53,7 +53,7 @@ export function getRecentLogs(limit = 100): LogEntry[] {
     const rand = Math.random();
     const level = rand < 0.7 ? "info" : rand < 0.9 ? "warning" : "error";
     const messages = LOG_MESSAGES[level];
-    
+
     logs.push({
       id: `log-${i}-${randomInt(1000, 9999)}`,
       level,

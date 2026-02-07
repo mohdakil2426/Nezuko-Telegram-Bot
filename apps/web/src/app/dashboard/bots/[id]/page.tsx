@@ -8,15 +8,7 @@
 
 import { useRouter } from "next/navigation";
 import { use } from "react";
-import {
-  ArrowLeft,
-  Bot,
-  Power,
-  Trash2,
-  Calendar,
-  RefreshCw,
-  AlertCircle,
-} from "lucide-react";
+import { ArrowLeft, Bot, Power, Trash2, Calendar, RefreshCw, AlertCircle } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,20 +83,14 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
   if (error) {
     return (
       <div className="flex flex-col gap-6 p-6">
-        <Button
-          variant="ghost"
-          className="w-fit"
-          onClick={() => router.push("/dashboard/bots")}
-        >
+        <Button variant="ghost" className="w-fit" onClick={() => router.push("/dashboard/bots")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Bots
         </Button>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            Failed to load bot details. Please try again.
-          </AlertDescription>
+          <AlertDescription>Failed to load bot details. Please try again.</AlertDescription>
         </Alert>
       </div>
     );
@@ -114,11 +100,7 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
   if (!bot) {
     return (
       <div className="flex flex-col gap-6 p-6">
-        <Button
-          variant="ghost"
-          className="w-fit"
-          onClick={() => router.push("/dashboard/bots")}
-        >
+        <Button variant="ghost" className="w-fit" onClick={() => router.push("/dashboard/bots")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Bots
         </Button>
@@ -138,11 +120,7 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
       {/* Header with back button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/dashboard/bots")}
-          >
+          <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard/bots")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-3">
@@ -150,20 +128,13 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
               <Bot className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                {bot.bot_name || "Unnamed Bot"}
-              </h1>
+              <h1 className="text-2xl font-bold tracking-tight">{bot.bot_name || "Unnamed Bot"}</h1>
               <p className="text-muted-foreground">@{bot.bot_username}</p>
             </div>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => refetch()}
-            disabled={isPending}
-          >
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isPending}>
             <RefreshCw className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
           </Button>
         </div>
@@ -179,9 +150,7 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
           <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
             <div className="flex items-center gap-3">
               <Power
-                className={`h-5 w-5 ${
-                  bot.is_active ? "text-green-500" : "text-muted-foreground"
-                }`}
+                className={`h-5 w-5 ${bot.is_active ? "text-green-500" : "text-muted-foreground"}`}
               />
               <div>
                 <Label htmlFor="status-toggle" className="text-base font-medium">
@@ -234,12 +203,10 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
 
           {/* Danger Zone */}
           <div className="border border-destructive/20 rounded-lg p-4 bg-destructive/5">
-            <h3 className="text-lg font-semibold text-destructive mb-2">
-              Danger Zone
-            </h3>
+            <h3 className="text-lg font-semibold text-destructive mb-2">Danger Zone</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Deleting this bot will remove it from your dashboard. Any linked
-              groups will need to be reconfigured.
+              Deleting this bot will remove it from your dashboard. Any linked groups will need to
+              be reconfigured.
             </p>
 
             <AlertDialog>
@@ -253,8 +220,8 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete @{bot.bot_username}?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the
-                    bot from your dashboard.
+                    This action cannot be undone. This will permanently delete the bot from your
+                    dashboard.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -279,9 +246,7 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <p className="text-muted-foreground">
-              Group linking feature coming soon.
-            </p>
+            <p className="text-muted-foreground">Group linking feature coming soon.</p>
           </div>
         </CardContent>
       </Card>

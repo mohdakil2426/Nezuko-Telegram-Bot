@@ -77,7 +77,8 @@ export const queryKeys = {
   // Logs keys
   logs: {
     all: ["logs"] as const,
-    list: (limit?: number, level?: string) => [...queryKeys.logs.all, "list", { limit, level }] as const,
+    list: (limit?: number, level?: string) =>
+      [...queryKeys.logs.all, "list", { limit, level }] as const,
   },
 } as const;
 

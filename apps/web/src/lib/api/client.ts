@@ -1,7 +1,7 @@
 /**
  * Typed API Client
  * Fetch wrapper with error handling, type safety, and session-based authentication
- * 
+ *
  * Authentication is handled via HTTP-only cookies (nezuko_session),
  * which are automatically included in requests via credentials: "include"
  */
@@ -75,7 +75,7 @@ async function fetchWithTimeout(
 
 /**
  * Core request function
- * 
+ *
  * Authentication is handled via HTTP-only session cookies.
  * We include credentials: "include" to send cookies with cross-origin requests.
  */

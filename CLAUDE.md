@@ -46,19 +46,33 @@ nezuko-monorepo/
 **⚠️ Always use LATEST versions. Check before installing:**
 
 ```bash
-# Python (Bot & API) - 3 tools required:
+# Python (Bot & API) - 4 tools required:
 ruff check apps/bot apps/api         # Lint (0 errors)
-ruff format --check .                # Format check
+ruff format .                        # Format Python files
 pylint apps/bot apps/api             # Score: 10.00/10
 pyrefly check                        # Type check (0 errors)
 
-# TypeScript (Web):
+# TypeScript (Web) - 4 tools required:
 cd apps/web && bun run lint          # ESLint (0 warnings)
 cd apps/web && bun run build         # TypeScript (0 errors)
+cd apps/web && bunx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,md}"  # Prettier format
 
 # MUST pass before ANY commit:
 pytest                               # All tests pass
 ```
+
+### Code Quality Checklist
+
+| Tool | Command | Target |
+|------|---------|--------|
+| **Ruff Check** | `ruff check apps/bot apps/api` | 0 errors |
+| **Ruff Format** | `ruff format .` | All formatted |
+| **Pylint** | `pylint apps/bot apps/api` | 10.00/10 |
+| **Pyrefly** | `pyrefly check` | 0 errors |
+| **ESLint** | `cd apps/web && bun run lint` | 0 warnings |
+| **Prettier** | `cd apps/web && bunx prettier --write "src/**/*"` | All formatted |
+| **TypeScript** | `cd apps/web && bun run build` | 0 errors |
+| **Pytest** | `pytest` | All pass |
 
 ### Async Patterns (RUF006)
 
@@ -191,6 +205,12 @@ Before marking any task complete:
 
 **🔍 Web Search Rule:** When searching the web or fetching URLs for documentation, best practices, or solutions, always append `2025-2026` to queries to ensure latest, up-to-date information.
 
+## Browser Automation
+
+### Alway use playwright-cli tool to open browser and test web dashboard
+
+| **playwright-cli** | Browser automation | `.claude/skills/playwright-cli/SKILL.md` |
+
 ## 📚 Next.js Docs Never Skip when working on Next.js
 
 <!-- NEXT-AGENTS-MD-START -->[Next.js Docs Index]|root: ./.next-docs|STOP. What you remember about Next.js is WRONG for this project. Always search docs and read before any task.|If docs missing, run this command first: npx @next/codemod agents-md --output AGENTS.md
@@ -236,11 +256,12 @@ Skills are located in `.claude/skills/`. Read the **SKILL.md** file inside each 
 
 ### Database
 
-| Skill                                | When to Use                              | Path                                              |
-| ------------------------------------ | ---------------------------------------- | ------------------------------------------------- |
-| **postgresql-table-design**          | Schema design, indexes, constraints      | `.claude/skills/postgresql-table-design/`         |
-| **supabase-postgres-best-practices** | Supabase auth, RLS, Edge Functions       | `.claude/skills/supabase-postgres-best-practices` |
-| **timescaledb**                      | Time-series data, hypertables, analytics | `.claude/skills/timescaledb/`                     |
+| Skill                                | When to Use                               | Path                                              |
+| ------------------------------------ | ----------------------------------------- | ------------------------------------------------- |
+| **postgresql-table-design**          | Schema design, indexes, constraints       | `.claude/skills/postgresql-table-design/`         |
+| **supabase-postgres-best-practices** | supabase-postgres-best-practices          | `.claude/skills/supabase-postgres-best-practices` |
+| **timescaledb**                      | Time-series data, hypertables, analytics  | `.claude/skills/timescaledb/`                     |
+| **postgres-pro**                     | Advanced optimization, replication, JSONB | `.claude/skills/postgres-pro`                     |
 
 ### DevOps & Tooling
 
@@ -260,4 +281,4 @@ Skills are located in `.claude/skills/`. Read the **SKILL.md** file inside each 
 
 ---
 
-_Last Updated: 2026-02-06_
+_Last Updated: 2026-02-07_

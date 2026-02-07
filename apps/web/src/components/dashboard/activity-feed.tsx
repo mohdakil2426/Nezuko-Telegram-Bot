@@ -81,7 +81,10 @@ function ConnectionStatus({
 }) {
   if (isConnected) {
     return (
-      <Badge variant="outline" className="gap-1 text-green-600 border-green-200 bg-green-50 dark:bg-green-950/30">
+      <Badge
+        variant="outline"
+        className="gap-1 text-green-600 border-green-200 bg-green-50 dark:bg-green-950/30"
+      >
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
@@ -93,7 +96,10 @@ function ConnectionStatus({
 
   if (isReconnecting) {
     return (
-      <Badge variant="outline" className="gap-1 text-yellow-600 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30">
+      <Badge
+        variant="outline"
+        className="gap-1 text-yellow-600 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30"
+      >
         <Loader2 className="h-3 w-3 animate-spin" />
         Reconnecting...
       </Badge>
@@ -121,44 +127,51 @@ export function ActivityFeed() {
   const processedEventCountRef = useRef(0);
 
   // Convert SSE events to ActivityItem format
-  const convertEventToActivity = useCallback((event: { type: string; data: Record<string, unknown>; timestamp: string }): ActivityItem | null => {
-    const eventType = event.type;
-    const data = event.data;
+  const convertEventToActivity = useCallback(
+    (event: {
+      type: string;
+      data: Record<string, unknown>;
+      timestamp: string;
+    }): ActivityItem | null => {
+      const eventType = event.type;
+      const data = event.data;
 
-    // Map SSE event types to ActivityItem types
-    let activityType: ActivityItem["type"];
-    let description: string;
+      // Map SSE event types to ActivityItem types
+      let activityType: ActivityItem["type"];
+      let description: string;
 
-    switch (eventType) {
-      case "verification":
-        activityType = "verification";
-        description = data.success
-          ? `User ${data.username || data.user_id} verified in group ${data.group_id}`
-          : `Verification failed for user ${data.username || data.user_id}`;
-        break;
-      case "member_join":
-        activityType = "system";
-        description = `New member joined: ${data.username || data.user_id}`;
-        break;
-      case "member_leave":
-        activityType = "system";
-        description = `Member left: ${data.username || data.user_id}`;
-        break;
-      case "activity":
-        activityType = "system";
-        description = data.action as string || "Activity recorded";
-        break;
-      default:
-        return null;
-    }
+      switch (eventType) {
+        case "verification":
+          activityType = "verification";
+          description = data.success
+            ? `User ${data.username || data.user_id} verified in group ${data.group_id}`
+            : `Verification failed for user ${data.username || data.user_id}`;
+          break;
+        case "member_join":
+          activityType = "system";
+          description = `New member joined: ${data.username || data.user_id}`;
+          break;
+        case "member_leave":
+          activityType = "system";
+          description = `Member left: ${data.username || data.user_id}`;
+          break;
+        case "activity":
+          activityType = "system";
+          description = (data.action as string) || "Activity recorded";
+          break;
+        default:
+          return null;
+      }
 
-    return {
-      id: `rt-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      type: activityType,
-      description,
-      timestamp: event.timestamp || new Date().toISOString(),
-    };
-  }, []);
+      return {
+        id: `rt-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        type: activityType,
+        description,
+        timestamp: event.timestamp || new Date().toISOString(),
+      };
+    },
+    []
+  );
 
   // Process incoming SSE events - only process new events based on event count
   useEffect(() => {
@@ -174,7 +187,9 @@ export function ActivityFeed() {
     // Schedule updates after render cycle completes
     const newActivities: ActivityItem[] = [];
     for (const event of newEvents) {
-      const activity = convertEventToActivity(event as { type: string; data: Record<string, unknown>; timestamp: string });
+      const activity = convertEventToActivity(
+        event as { type: string; data: Record<string, unknown>; timestamp: string }
+      );
       if (activity) {
         newActivities.push(activity);
       }
@@ -186,21 +201,21 @@ export function ActivityFeed() {
         setRealtimeActivities((prev) => {
           const combined = [...newActivities, ...prev];
           // Remove duplicates and limit
-          const unique = combined.filter((item, index) => 
-            combined.findIndex((t) => t.id === item.id) === index
+          const unique = combined.filter(
+            (item, index) => combined.findIndex((t) => t.id === item.id) === index
           );
           return unique.slice(0, 50);
         });
 
         // Mark new items for animation
-        const newIds = new Set(newActivities.map(a => a.id));
+        const newIds = new Set(newActivities.map((a) => a.id));
         setNewItemIds((prev) => new Set([...prev, ...newIds]));
 
         // Clear new status after animation
         setTimeout(() => {
           setNewItemIds((prev) => {
             const next = new Set(prev);
-            newIds.forEach(id => next.delete(id));
+            newIds.forEach((id) => next.delete(id));
             return next;
           });
         }, 1000);
@@ -214,8 +229,8 @@ export function ActivityFeed() {
     // Merge realtime activities at the top, then initial data
     const combined = [...realtimeActivities, ...initial];
     // Remove duplicates by id
-    const unique = combined.filter((item, index, self) => 
-      index === self.findIndex((t) => t.id === item.id)
+    const unique = combined.filter(
+      (item, index, self) => index === self.findIndex((t) => t.id === item.id)
     );
     return unique.slice(0, 20);
   }, [initialActivities, realtimeActivities]);
@@ -283,9 +298,7 @@ export function ActivityFeed() {
               );
             })}
             {allActivities.length === 0 && (
-              <div className="text-center text-muted-foreground py-8">
-                No recent activity
-              </div>
+              <div className="text-center text-muted-foreground py-8">No recent activity</div>
             )}
           </div>
         </ScrollArea>

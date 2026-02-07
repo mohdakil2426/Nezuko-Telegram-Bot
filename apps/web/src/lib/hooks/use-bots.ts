@@ -68,9 +68,7 @@ export function useUpdateBot() {
         if (!old) return old;
         return {
           ...old,
-          bots: old.bots.map((bot) =>
-            bot.id === updatedBot.id ? updatedBot : bot
-          ),
+          bots: old.bots.map((bot) => (bot.id === updatedBot.id ? updatedBot : bot)),
         };
       });
     },

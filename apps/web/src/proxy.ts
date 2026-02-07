@@ -28,9 +28,7 @@ function isPublicRoute(pathname: string): boolean {
  */
 function shouldSkip(pathname: string): boolean {
   return (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.includes(".") // Static files like favicon.ico, images, etc.
+    pathname.startsWith("/_next") || pathname.startsWith("/api") || pathname.includes(".") // Static files like favicon.ico, images, etc.
   );
 }
 

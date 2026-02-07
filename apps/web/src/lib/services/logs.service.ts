@@ -34,9 +34,15 @@ export async function getLogs(limit = 100, level?: string): Promise<LogsResponse
     };
   }
 
-  const response = await apiClient.get<SuccessResponse<LogsResponse>>(ENDPOINTS.logs.list, {
+  // API returns: { status: "success", data: LogEntry[] }
+  const response = await apiClient.get<SuccessResponse<LogEntry[]>>(ENDPOINTS.logs.list, {
     params: { limit, level: level !== "all" ? level : undefined },
   });
-  return response.data;
-}
 
+  // Transform to expected LogsResponse format
+  const logs = response.data;
+  return {
+    items: logs,
+    total: logs.length,
+  };
+}

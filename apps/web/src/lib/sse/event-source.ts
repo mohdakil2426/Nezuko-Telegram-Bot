@@ -82,12 +82,7 @@ interface EventSourceOptions {
  * @returns Object with close method to disconnect
  */
 export function createEventSource(options: EventSourceOptions): { close: () => void } {
-  const {
-    onEvent,
-    onStateChange,
-    maxRetries = 10,
-    baseRetryDelay = 1000,
-  } = options;
+  const { onEvent, onStateChange, maxRetries = 10, baseRetryDelay = 1000 } = options;
 
   let eventSource: EventSource | null = null;
   let retryCount = 0;
@@ -137,7 +132,9 @@ export function createEventSource(options: EventSourceOptions): { close: () => v
         );
 
         retryCount++;
-        console.log(`[SSE] Reconnecting in ${Math.round(delay)}ms (attempt ${retryCount}/${maxRetries})`);
+        console.log(
+          `[SSE] Reconnecting in ${Math.round(delay)}ms (attempt ${retryCount}/${maxRetries})`
+        );
 
         retryTimeout = setTimeout(connect, delay);
       } else {

@@ -9,13 +9,7 @@
 import { useState } from "react";
 import { Bot, Plus, Power, Trash2, RefreshCw, AlertCircle } from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -68,17 +62,10 @@ export default function BotsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Bot Management</h1>
-          <p className="text-muted-foreground">
-            Add and manage your Telegram bots
-          </p>
+          <p className="text-muted-foreground">Add and manage your Telegram bots</p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => refetch()}
-            disabled={isPending}
-          >
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isPending}>
             <RefreshCw className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
           </Button>
           <AddBotDialog />
@@ -208,8 +195,8 @@ function BotRow({ bot }: { bot: BotType }) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete @{bot.bot_username}?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will remove the bot from your dashboard. Any linked groups
-                  will need to be reconfigured.
+                  This will remove the bot from your dashboard. Any linked groups will need to be
+                  reconfigured.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -299,9 +286,7 @@ function AddBotDialog() {
                 onChange={(e) => setToken(e.target.value)}
                 disabled={addMutation.isPending}
               />
-              <p className="text-xs text-muted-foreground">
-                Get this from @BotFather on Telegram
-              </p>
+              <p className="text-xs text-muted-foreground">Get this from @BotFather on Telegram</p>
             </div>
           </div>
 

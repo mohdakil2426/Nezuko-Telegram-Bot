@@ -22,13 +22,7 @@ import {
   WifiOff,
 } from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -126,7 +120,10 @@ function ConnectionStatus({
 }) {
   if (isPaused) {
     return (
-      <Badge variant="outline" className="gap-1 text-yellow-600 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30">
+      <Badge
+        variant="outline"
+        className="gap-1 text-yellow-600 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30"
+      >
         <Pause className="h-3 w-3" />
         Paused
       </Badge>
@@ -135,7 +132,10 @@ function ConnectionStatus({
 
   if (isConnected) {
     return (
-      <Badge variant="outline" className="gap-1 text-green-600 border-green-200 bg-green-50 dark:bg-green-950/30">
+      <Badge
+        variant="outline"
+        className="gap-1 text-green-600 border-green-200 bg-green-50 dark:bg-green-950/30"
+      >
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
@@ -147,7 +147,10 @@ function ConnectionStatus({
 
   if (isReconnecting) {
     return (
-      <Badge variant="outline" className="gap-1 text-yellow-600 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30">
+      <Badge
+        variant="outline"
+        className="gap-1 text-yellow-600 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30"
+      >
         <Loader2 className="h-3 w-3 animate-spin" />
         Reconnecting...
       </Badge>
@@ -170,34 +173,46 @@ function ConnectionStatus({
 export default function LogsPage() {
   const { events, isConnected, isReconnecting, connect, clearEvents } = useRealtimeLogs();
   const { data: initialLogs, isPending: isLoadingInitial, refetch } = useLogs(100);
-  
+
   const [isPaused, setIsPaused] = useState(false);
   const [levelFilter, setLevelFilter] = useState<LogLevel>("all");
   const processedEventCountRef = useRef(0);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Convert SSE events to log entries
-  const convertEventToLog = useCallback((event: { type: string; data: Record<string, unknown>; timestamp: string }): LogEntry | null => {
-    const data = event.data;
-    
-    return {
-      id: `rt-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      level: (data.level as string) || "info",
-      message: (data.message as string) || "Log entry",
-      timestamp: event.timestamp || new Date().toISOString(),
-      extra: data,
-    };
-  }, []);
+  const convertEventToLog = useCallback(
+    (event: {
+      type: string;
+      data: Record<string, unknown>;
+      timestamp: string;
+    }): LogEntry | null => {
+      const data = event.data;
+
+      return {
+        id: `rt-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        level: (data.level as string) || "info",
+        message: (data.message as string) || "Log entry",
+        timestamp: event.timestamp || new Date().toISOString(),
+        extra: data,
+      };
+    },
+    []
+  );
 
   // Convert initial logs to entries - using useMemo to avoid useEffect setState
   const initialLogEntries = useMemo(() => {
     if (!initialLogs?.items) return [];
-    return initialLogs.items.map((log: { id?: string; level?: string; message?: string; timestamp?: string }, index: number) => ({
-      id: log.id || `init-${index}`,
-      level: log.level || "info",
-      message: log.message || "Log entry",
-      timestamp: log.timestamp || new Date().toISOString(),
-    }));
+    return initialLogs.items.map(
+      (
+        log: { id?: string; level?: string; message?: string; timestamp?: string },
+        index: number
+      ) => ({
+        id: log.id || `init-${index}`,
+        level: log.level || "info",
+        message: log.message || "Log entry",
+        timestamp: log.timestamp || new Date().toISOString(),
+      })
+    );
   }, [initialLogs]);
 
   // Merge initial logs with real-time logs
@@ -215,7 +230,9 @@ export default function LogsPage() {
     requestAnimationFrame(() => {
       const newLogs: LogEntry[] = [];
       for (const event of newEvents) {
-        const logEntry = convertEventToLog(event as { type: string; data: Record<string, unknown>; timestamp: string });
+        const logEntry = convertEventToLog(
+          event as { type: string; data: Record<string, unknown>; timestamp: string }
+        );
         if (logEntry) {
           newLogs.push(logEntry);
         }
@@ -272,9 +289,7 @@ export default function LogsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Logs</h1>
-          <p className="text-muted-foreground">
-            Real-time system and verification logs.
-          </p>
+          <p className="text-muted-foreground">Real-time system and verification logs.</p>
         </div>
         <ConnectionStatus
           isConnected={isConnected}

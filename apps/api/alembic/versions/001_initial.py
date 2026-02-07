@@ -76,7 +76,9 @@ def upgrade() -> None:
         sa.Column("channel_id", sa.BigInteger(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.ForeignKeyConstraint(["group_id"], ["protected_groups.group_id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["channel_id"], ["enforced_channels.channel_id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["channel_id"], ["enforced_channels.channel_id"], ondelete="CASCADE"
+        ),
     )
     op.create_index("idx_group_channel_links_group", "group_channel_links", ["group_id"])
     op.create_index("idx_group_channel_links_channel", "group_channel_links", ["channel_id"])
@@ -180,7 +182,9 @@ def upgrade() -> None:
     op.create_table(
         "admin_logs",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
-        sa.Column("timestamp", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "timestamp", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.Column("level", sa.String(10), nullable=False),
         sa.Column("logger", sa.String(100), nullable=False),
         sa.Column("message", sa.Text(), nullable=False),

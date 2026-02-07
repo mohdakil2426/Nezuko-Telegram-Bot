@@ -37,9 +37,11 @@ logger = logging.getLogger(__name__)
 
 
 class HasChannelId(Protocol):
-    """Protocol for objects with a channel_id attribute."""
+    """Protocol for objects with channel_id and optional title attributes."""
 
     channel_id: int | str
+    title: str | None
+
 
 # Metrics counters for prometheus tracking
 _cache_hits = 0  # pylint: disable=invalid-name

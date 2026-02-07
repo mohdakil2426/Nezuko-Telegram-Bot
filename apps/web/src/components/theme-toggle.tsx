@@ -30,19 +30,28 @@ export function ThemeToggle() {
   const { setTheme, resolvedTheme } = useTheme();
   const mounted = useIsMounted();
 
+  // Don't render Radix components until mounted to avoid hydration mismatch
+  // Radix generates unique IDs that differ between server and client
+  if (!mounted) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton>
+            <div className="size-4" />
+            <span>Theme</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton tooltip="Toggle theme">
-              {mounted && resolvedTheme === "dark" ? (
-                <Moon className="size-4" />
-              ) : mounted ? (
-                <Sun className="size-4" />
-              ) : (
-                <div className="size-4" />
-              )}
+              {resolvedTheme === "dark" ? <Moon className="size-4" /> : <Sun className="size-4" />}
               <span>Theme</span>
             </SidebarMenuButton>
           </DropdownMenuTrigger>

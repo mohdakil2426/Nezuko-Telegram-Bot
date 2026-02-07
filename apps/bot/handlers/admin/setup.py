@@ -5,11 +5,11 @@ Allows group admins to setup channel verification.
 
 import logging
 
+from sqlalchemy.exc import SQLAlchemyError
 from telegram import Update
 from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
-from sqlalchemy.exc import SQLAlchemyError
 
 from apps.bot.core.database import get_session
 from apps.bot.database.crud import (

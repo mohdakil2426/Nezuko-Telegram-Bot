@@ -32,7 +32,15 @@
       "Bash(playwright-cli close:*)",
       "WebFetch(domain:localhost)",
       "Bash(playwright-cli console:*)",
-      "Bash(playwright-cli goto:*)"
+      "Bash(playwright-cli goto:*)",
+      "Bash(playwright-cli reload)",
+      "Bash(playwright-cli network:*)",
+      "Bash(bun run lint:*)",
+      "Bash(playwright-cli screenshot:*)",
+      "Bash(bun run build)",
+      "Bash(playwright-cli resize:*)",
+      "Bash(git -C \"C:\\\\Users\\\\akila\\\\OneDrive\\\\Desktop\\\\OSS\\\\WebsitesBots\\\\Telegram\\\\GroupManagerBot\\\\Nezuko-Telegram-Bot\" ls-files:*)",
+      "Bash(bunx prettier:*)"
     ]
   },
   "enabledPlugins": {

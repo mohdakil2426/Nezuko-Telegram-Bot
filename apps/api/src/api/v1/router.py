@@ -6,6 +6,7 @@ from .endpoints import (
     admins,
     analytics,
     audit,
+    auth,
     bots,
     channels,
     charts,
@@ -20,6 +21,9 @@ from .endpoints import (
 )
 
 api_router = APIRouter()
+
+# Authentication
+api_router.include_router(auth.router)
 
 # Bot management (multi-bot support via dashboard)
 api_router.include_router(bots.router)
