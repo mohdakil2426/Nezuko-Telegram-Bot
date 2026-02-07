@@ -27,7 +27,12 @@
       "Bash(alembic downgrade:*)",
       "Bash(alembic upgrade:*)",
       "Bash(powershell -Command \"\\(Get-Item ''apps/api/src/main.py''\\).LastWriteTime = Get-Date\")",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(playwright-cli open:*)",
+      "Bash(playwright-cli close:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(playwright-cli console:*)",
+      "Bash(playwright-cli goto:*)"
     ]
   },
   "enabledPlugins": {
