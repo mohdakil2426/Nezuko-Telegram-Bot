@@ -6,15 +6,19 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_client import Counter, Gauge, Histogram
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from .api.v1.router import api_router
 from .core.config import get_settings
 from .core.logging import configure_logging
 from .middleware.audit import AuditMiddleware
+from .middleware.db_metrics import DatabaseMetricsMiddleware
 from .middleware.error_handler import register_exception_handlers
 from .middleware.logging import RequestLoggingMiddleware
 from .middleware.rate_limit import setup_rate_limiting
 from .middleware.request_id import RequestIDMiddleware
+from .tasks.cleanup import setup_scheduler
 
 # Get settings first
 settings = get_settings()
@@ -77,8 +81,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         version="0.1.0",
         environment=settings.ENVIRONMENT,
     )
+
+    # Start background scheduler
+    scheduler = setup_scheduler()
+    scheduler.start()
+    logger.info("background_scheduler_started")
+
     yield
 
+    # Shutdown scheduler
+    scheduler.shutdown(wait=False)
+    logger.info("background_scheduler_stopped")
     logger.info("nezuko_admin_api_shutting_down")
 
 
@@ -93,6 +106,27 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.API_DEBUG else None,
 )
 
+# ─────────────────────────────────────────────────────────────────────────────────
+# Prometheus Metrics Setup
+# ─────────────────────────────────────────────────────────────────────────────────
+
+# Auto-instrument all endpoints with default metrics
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+
+# Custom business metrics
+verification_counter = Counter(
+    "nezuko_verifications_total",
+    "Total verifications",
+    ["status", "group_id", "bot_id"],
+)
+verification_latency = Histogram(
+    "nezuko_verification_duration_seconds",
+    "Verification latency",
+    buckets=[0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
+)
+active_bots = Gauge("nezuko_active_bots", "Number of active bot instances")
+db_pool_size = Gauge("nezuko_db_pool_size", "Database connection pool size")
+
 # Register Exception Handlers (Global Error Handling)
 register_exception_handlers(app)
 
@@ -103,10 +137,13 @@ setup_rate_limiting(app)
 app.include_router(api_router, prefix="/api/v1")
 
 # Middleware registration (Applied inside-out: Last added is First executed on Request)
-# The order below results in: Request -> CORS -> Security -> RequestID -> Logging -> Audit -> App
+# The order below results in: Request -> CORS -> Security -> RequestID -> Logging -> DBMetrics -> Audit -> App
 
-# 5. Audit (logs state-changing actions)
+# 6. Audit (logs state-changing actions)
 app.add_middleware(AuditMiddleware)
+
+# 5. Database Metrics (tracks query counts and N+1 detection)
+app.add_middleware(DatabaseMetricsMiddleware)
 
 # 4. Request Logging (logs access details)
 app.add_middleware(RequestLoggingMiddleware)

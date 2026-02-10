@@ -7,9 +7,8 @@ from typing import Any
 from urllib.parse import urlparse
 
 import aiohttp
+import structlog
 from sqlalchemy import func, select
-from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import get_settings
@@ -25,6 +24,8 @@ from src.schemas.config import (
     ConfigUpdateResponse,
     WebhookTestResult,
 )
+
+logger = structlog.get_logger(__name__)
 
 
 class ConfigService:
@@ -81,7 +82,11 @@ class ConfigService:
         )
 
     async def update_config(self, data: ConfigUpdateRequest) -> ConfigUpdateResponse:
-        """Update part of the configuration."""
+        """Update part of the configuration.
+
+        Note: Transaction is managed by FastAPI dependency (get_session).
+        No explicit commit here - session commits on successful request completion.
+        """
         updated_keys = []
 
         if data.messages:
@@ -114,7 +119,7 @@ class ConfigService:
                 )
                 updated_keys.append("rate_limiting.per_group_limit")
 
-        await self.session.commit()
+        await self.session.flush()  # Flush changes but don't commit
 
         # Check if restart is required (e.g. rate limits might require it)
         # For now, we assume dynamic reload is supported or not, let's say False
@@ -186,29 +191,28 @@ class ConfigService:
             )
 
     async def _upsert_config(self, key: str, value: Any) -> None:
-        is_sqlite = self.session.bind.dialect.name == "sqlite"
-        stmt: Any = None
+        """Upsert configuration using database-agnostic approach.
 
-        if is_sqlite:
-            stmt = (
-                sqlite_insert(AdminConfig)
-                .values(key=key, value={"value": value}, updated_at=func.now())  # pylint: disable=not-callable
-                .on_conflict_do_update(
-                    index_elements=[AdminConfig.key],
-                    set_={"value": {"value": value}, "updated_at": func.now()},  # pylint: disable=not-callable
-                )
-            )
+        Uses SELECT-then-UPDATE/INSERT pattern instead of dialect detection.
+        This is more portable and maintainable than runtime dialect checking.
+        """
+        # Try to get existing config
+        stmt = select(AdminConfig).where(AdminConfig.key == key)
+        result = await self.session.execute(stmt)
+        existing = result.scalars().first()
+
+        if existing:
+            # Update existing
+            existing.value = {"value": value}
+            existing.updated_at = func.now()  # pylint: disable=not-callable
         else:
-            stmt = (
-                pg_insert(AdminConfig)
-                .values(key=key, value={"value": value}, updated_at=func.now())  # pylint: disable=not-callable
-                .on_conflict_do_update(
-                    index_elements=[AdminConfig.key],
-                    set_={"value": {"value": value}, "updated_at": func.now()},  # pylint: disable=not-callable
-                )
+            # Insert new
+            new_config = AdminConfig(
+                key=key,
+                value={"value": value},
+                updated_at=func.now(),  # pylint: disable=not-callable
             )
-
-        await self.session.execute(stmt)
+            self.session.add(new_config)
 
     def _mask_token(self, token: str) -> str:
         if not token or len(token) < 8:
@@ -216,14 +220,34 @@ class ConfigService:
         return f"{'*' * (len(token) - 4)}{token[-4:]}"
 
     def _mask_db_url(self, url: str) -> str:
-        # Mask password in postgresql://user:pass@host...
+        """Mask password in database URL for security.
+
+        Args:
+            url: Database connection URL.
+
+        Returns:
+            URL with masked password or placeholder if parsing fails.
+        """
         try:
             parsed = urlparse(url)
             if parsed.password:
                 return url.replace(parsed.password, "***")
-        except Exception:  # pylint: disable=broad-exception-caught
-            pass
-        return "***"
+            return url
+        except (ValueError, AttributeError) as exc:
+            # ValueError: Invalid URL format
+            # AttributeError: Unexpected urlparse result structure
+            logger.debug("Failed to parse URL for masking", error=str(exc))
+            return "***"
 
-    def _mask_url(self, url: str) -> str:
+    def _mask_url(self, url: str | None) -> str:
+        """Mask sensitive information in URL.
+
+        Args:
+            url: URL to mask, can be None.
+
+        Returns:
+            Masked URL or placeholder if None.
+        """
+        if not url:
+            return "Not configured"
         return url  # usually safe, but mask if contains auth

@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import case, extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.cache import cached
 from src.models.api_call_log import ApiCallLog
 from src.models.bot import ProtectedGroup
 from src.models.verification_log import VerificationLog
@@ -45,6 +46,7 @@ def _get_date_range(period: str) -> tuple[datetime, datetime]:
 class ChartsService:
     """Service class for chart analytics queries."""
 
+    @cached("charts:verification_distribution", expire=120)
     async def get_verification_distribution(
         self, session: AsyncSession
     ) -> VerificationDistribution:
@@ -75,6 +77,7 @@ class ChartsService:
             total=row.total or 0,
         )
 
+    @cached("charts:cache_breakdown", expire=120)
     async def get_cache_breakdown(self, session: AsyncSession) -> CacheBreakdown:
         """
         Get cache hit vs API call breakdown for the last 7 days.
@@ -102,6 +105,7 @@ class ChartsService:
             hit_rate=round(hit_rate, 2),
         )
 
+    @cached("charts:groups_status", expire=120)
     async def get_groups_status(self, session: AsyncSession) -> GroupsStatusDistribution:
         """
         Get active vs inactive protected groups count.
@@ -121,6 +125,7 @@ class ChartsService:
             total=int(row.total or 0),
         )
 
+    @cached("charts:api_calls_distribution", expire=180)
     async def get_api_calls_distribution(self, session: AsyncSession) -> list[ApiCallsDistribution]:
         """
         Get Telegram API call distribution by method for the last 7 days.
@@ -157,6 +162,7 @@ class ChartsService:
             for row in rows
         ]
 
+    @cached("charts:hourly_activity", expire=120)
     async def get_hourly_activity(self, session: AsyncSession) -> list[HourlyActivity]:
         """
         Get 24-hour activity distribution.
@@ -205,6 +211,7 @@ class ChartsService:
 
         return activities
 
+    @cached("charts:latency_distribution", expire=180)
     async def get_latency_distribution(self, session: AsyncSession) -> list[LatencyBucket]:
         """
         Get latency bucket distribution for the last 7 days.
@@ -251,6 +258,9 @@ class ChartsService:
             for bucket in bucket_order
         ]
 
+    @cached(
+        "charts:top_groups", expire=300, key_builder=lambda _self, _session, limit=10: str(limit)
+    )
     async def get_top_groups(
         self, session: AsyncSession, limit: int = 10
     ) -> list[TopGroupPerformance]:
@@ -291,6 +301,11 @@ class ChartsService:
             for row in rows
         ]
 
+    @cached(
+        "charts:cache_hit_rate_trend",
+        expire=300,
+        key_builder=lambda _self, _session, period="30d": period,
+    )
     async def get_cache_hit_rate_trend(
         self, session: AsyncSession, period: str = "30d"
     ) -> CacheHitRateTrend:
@@ -348,6 +363,9 @@ class ChartsService:
             average_rate=round(average_rate, 2),
         )
 
+    @cached(
+        "charts:latency_trend", expire=300, key_builder=lambda _self, _session, period="30d": period
+    )
     async def get_latency_trend(self, session: AsyncSession, period: str = "30d") -> LatencyTrend:
         """
         Get average and p95 latency trend over time.
@@ -422,6 +440,7 @@ class ChartsService:
             current_avg=round(current_avg, 1),
         )
 
+    @cached("charts:bot_health", expire=120)
     async def get_bot_health(self, session: AsyncSession) -> BotHealthMetrics:
         """
         Calculate composite bot health score.
@@ -436,16 +455,23 @@ class ChartsService:
         """
         # Get cache breakdown for efficiency
         cache = await self.get_cache_breakdown(session)
-        cache_efficiency = cache.hit_rate
+        # Handle both dict (from cache) and Pydantic model (fresh query)
+        cache_efficiency = cache["hit_rate"] if isinstance(cache, dict) else cache.hit_rate
 
         # Get verification distribution for success/error rates
         verification = await self.get_verification_distribution(session)
-        success_rate = (
-            (verification.verified / verification.total * 100) if verification.total > 0 else 100.0
-        )
-        error_rate = (
-            (verification.error / verification.total * 100) if verification.total > 0 else 0.0
-        )
+        # Handle both dict (from cache) and Pydantic model (fresh query)
+        if isinstance(verification, dict):
+            v_verified = verification["verified"]
+            v_error = verification["error"]
+            v_total = verification["total"]
+        else:
+            v_verified = verification.verified
+            v_error = verification.error
+            v_total = verification.total
+
+        success_rate = (v_verified / v_total * 100) if v_total > 0 else 100.0
+        error_rate = (v_error / v_total * 100) if v_total > 0 else 0.0
 
         # Get average latency for latency score
         start_date, _ = _get_date_range("7d")

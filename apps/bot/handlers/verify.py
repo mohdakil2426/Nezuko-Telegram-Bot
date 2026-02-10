@@ -117,7 +117,7 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
             logger.warning("Failed to delete warning message: %s", e)
 
     except TelegramError as e:
-        logger.error("Telegram error in verify callback handler: %s", e)
+        logger.error("Telegram error in verify callback handler: %s", e, exc_info=True)
         try:
             if update.callback_query:
                 await update.callback_query.answer(
@@ -125,3 +125,5 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
                 )
         except TelegramError:
             pass
+    except Exception as e:
+        logger.error("Unexpected error in verify callback handler: %s", e, exc_info=True)

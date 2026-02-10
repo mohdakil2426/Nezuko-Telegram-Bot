@@ -140,9 +140,13 @@ class HeartbeatService:
             except asyncio.CancelledError:
                 break
             except (httpx.RequestError, OSError) as e:
-                logger.error("Error in heartbeat loop: %s", e)
+                logger.error("Error in heartbeat loop: %s", e, exc_info=True)
                 consecutive_failures += 1
                 await asyncio.sleep(5)  # Brief pause before retry
+            except Exception as e:
+                logger.error("Unexpected error in heartbeat loop: %s", e, exc_info=True)
+                consecutive_failures += 1
+                await asyncio.sleep(5)
 
     async def _send_heartbeat(self) -> bool:
         """Send a single heartbeat.

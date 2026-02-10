@@ -6,6 +6,12 @@ Provides async methods to interact with the Telegram Bot API.
 import logging
 
 import httpx
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from src.schemas.bot_instance import TelegramBotInfo
 
@@ -29,6 +35,11 @@ class TelegramAPIService:
     This is a stateless service - each method call is independent.
     """
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type((httpx.RequestError, httpx.TimeoutException)),
+    )
     async def get_bot_info(self, token: str) -> TelegramBotInfo:
         """Get bot information using the getMe API method.
 

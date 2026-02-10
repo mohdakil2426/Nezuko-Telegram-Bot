@@ -1,5 +1,7 @@
 """
 Async SQLAlchemy database session factory and connection management.
+
+PostgreSQL with Docker is required.
 """
 
 from collections.abc import AsyncGenerator
@@ -12,7 +14,6 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.pool import NullPool, StaticPool
 
 from apps.bot.config import config
 
@@ -30,29 +31,17 @@ def get_engine() -> AsyncEngine:
     global _engine
 
     if _engine is None:
-        # Determine if this is SQLite or PostgreSQL
-        is_sqlite = config.database_url.startswith("sqlite")
-
-        # Configure pooling based on database type
-        if is_sqlite:
-            # SQLite doesn't support connection pooling well
-            pool_class = StaticPool if ":memory:" in config.database_url else NullPool
-            _engine = create_async_engine(
-                config.database_url,
-                echo=config.is_development,  # Log SQL in development
-                poolclass=pool_class,
-                connect_args={"check_same_thread": False},
-            )
-        else:
-            # PostgreSQL with connection pooling
-            _engine = create_async_engine(
-                config.database_url,
-                echo=config.is_development,
-                pool_size=20,  # Max connections in pool
-                max_overflow=10,  # Max connections beyond pool_size
-                pool_pre_ping=True,  # Verify connections before use
-                pool_recycle=3600,  # Recycle connections after 1 hour
-            )
+        # PostgreSQL with connection pooling and timeouts
+        _engine = create_async_engine(
+            config.database_url,
+            echo=config.is_development,
+            pool_size=20,  # Max connections in pool
+            max_overflow=10,  # Max connections beyond pool_size
+            pool_timeout=30,  # Max seconds to wait for connection
+            pool_pre_ping=True,  # Verify connections before use
+            pool_recycle=3600,  # Recycle connections after 1 hour
+            connect_args={"timeout": 30, "command_timeout": 30},
+        )
 
     return _engine
 
@@ -90,9 +79,9 @@ async def get_session() -> AsyncGenerator[AsyncSession]:
         try:
             yield session
             await session.commit()
-        except Exception:
+        except Exception as exc:
             await session.rollback()
-            raise
+            raise exc from exc
 
 
 async def init_db():

@@ -27,18 +27,32 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
             process_time = time.perf_counter() - start_time
+            duration_ms = round(process_time * 1000, 2)
 
-            # Log successful request (or handled error)
-            logger.info(
-                "request_completed",
-                method=request.method,
-                path=request.url.path,
-                status_code=response.status_code,
-                duration_ms=round(process_time * 1000, 2),
-                ip=request.client.host if request.client else None,
-                user_agent=request.headers.get("user-agent"),
-                trace_id=trace_id,
-            )
+            # Log slow requests as WARNING (>1000ms)
+            if duration_ms > 1000:
+                logger.warning(
+                    "slow_request_detected",
+                    method=request.method,
+                    path=request.url.path,
+                    status_code=response.status_code,
+                    duration_ms=duration_ms,
+                    ip=request.client.host if request.client else None,
+                    user_agent=request.headers.get("user-agent"),
+                    trace_id=trace_id,
+                )
+            else:
+                # Log successful request (or handled error)
+                logger.info(
+                    "request_completed",
+                    method=request.method,
+                    path=request.url.path,
+                    status_code=response.status_code,
+                    duration_ms=duration_ms,
+                    ip=request.client.host if request.client else None,
+                    user_agent=request.headers.get("user-agent"),
+                    trace_id=trace_id,
+                )
 
             return response
 

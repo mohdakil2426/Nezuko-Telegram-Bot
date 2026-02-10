@@ -48,6 +48,8 @@ async def get_redis_client(redis_url: str | None = None) -> Redis | None:
                 socket_timeout=5,
                 retry_on_timeout=True,
                 health_check_interval=30,
+                max_connections=50,
+                retry_on_error=[RedisConnectionError],
             )
             # Test connection
             await cast(Awaitable[bool], _redis_client.ping())

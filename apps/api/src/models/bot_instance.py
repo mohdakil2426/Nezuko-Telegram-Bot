@@ -11,12 +11,13 @@ from sqlalchemy import BigInteger, Boolean, DateTime, Index, Integer, String, Te
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.models.base import Base
+from src.models.mixins import SoftDeleteMixin
 
 if TYPE_CHECKING:
     pass
 
 
-class BotInstance(Base):
+class BotInstance(Base, SoftDeleteMixin):
     """Database model for managed bot instances.
 
     Attributes:

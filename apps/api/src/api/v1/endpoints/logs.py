@@ -1,6 +1,6 @@
 """System logs retrieval endpoints."""
 
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 
@@ -14,9 +14,9 @@ router = APIRouter()
 
 @router.get("", response_model=SuccessResponse[list[dict[str, Any]]])
 async def get_logs(
-    limit: int = Query(100, le=1000),
+    limit: Annotated[int, Query(ge=1, le=1000)] = 100,
     level: str | None = None,
-    search: str | None = None,
+    search: Annotated[str | None, Query(max_length=100)] = None,
     current_user: AdminUser = Depends(get_current_active_user),
 ) -> SuccessResponse[list[dict[str, Any]]]:
     """

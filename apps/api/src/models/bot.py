@@ -47,6 +47,11 @@ class ProtectedGroup(Base):
         BigInteger,
         ForeignKey("owners.user_id", ondelete="CASCADE"),
     )
+    bot_instance_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("bot_instances.id", ondelete="CASCADE"),
+        nullable=True,
+    )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, default=dict)
@@ -81,6 +86,11 @@ class EnforcedChannel(Base):
     __tablename__ = "enforced_channels"
 
     channel_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    bot_instance_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("bot_instances.id", ondelete="CASCADE"),
+        nullable=True,
+    )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     username: Mapped[str | None] = mapped_column(String(255), nullable=True)
     invite_link: Mapped[str | None] = mapped_column(Text, nullable=True)

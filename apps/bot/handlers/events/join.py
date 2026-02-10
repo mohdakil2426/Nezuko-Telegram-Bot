@@ -109,6 +109,8 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
     except TelegramError as e:
-        logger.error("Telegram error in new member handler: %s", e)
+        logger.error("Telegram error in new member handler: %s", e, exc_info=True)
     except SQLAlchemyError as e:
-        logger.error("Database error in new member handler: %s", e)
+        logger.error("Database error in new member handler: %s", e, exc_info=True)
+    except Exception as e:
+        logger.error("Unexpected error in new member handler: %s", e, exc_info=True)

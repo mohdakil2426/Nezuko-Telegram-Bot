@@ -64,26 +64,15 @@ class BotSettings(BaseSettings):
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def set_default_database_url(cls, value: str | None) -> str:
-        """Set default database URL if not provided."""
+        """Set default database URL if not provided.
+
+        PostgreSQL with Docker is required.
+        Start with: docker run -d --name nezuko-postgres -e POSTGRES_USER=nezuko -e POSTGRES_PASSWORD=nezuko123 -e POSTGRES_DB=nezuko -p 5432:5432 postgres:17-alpine
+        """
         if value:
             return value
-        # Default to SQLite in storage/data/
-        base_dir = Path(__file__).resolve().parent.parent.parent
-        data_dir = base_dir / "storage" / "data"
-        data_dir.mkdir(parents=True, exist_ok=True)
-        return f"sqlite+aiosqlite:///{data_dir.as_posix()}/nezuko.db"
-
-    @field_validator("DATABASE_URL", mode="after")
-    @classmethod
-    def normalize_sqlite_path(cls, value: str) -> str:
-        """Normalize relative SQLite paths to absolute."""
-        if value and "sqlite" in value.lower() and ":///" in value:
-            prefix, _, path = value.partition(":///")
-            if path and path != ":memory:" and not Path(path).is_absolute():
-                abs_path = (_BOT_DIR / path).resolve()
-                abs_path.parent.mkdir(parents=True, exist_ok=True)
-                return f"{prefix}:///{abs_path.as_posix()}"
-        return value
+        # Default to PostgreSQL (Docker required)
+        return "postgresql+asyncpg://nezuko:nezuko123@localhost:5432/nezuko"
 
     @model_validator(mode="after")
     def validate_webhook_config(self) -> "BotSettings":
@@ -225,12 +214,30 @@ class BotSettings(BaseSettings):
             f"BotSettings(\n"
             f"  environment={self.environment},\n"
             f"  bot_mode={mode},\n"
-            f"  database_url={'***' if self.database_url else 'None'},\n"
-            f"  redis_url={'set' if self.redis_url else 'None'},\n"
-            f"  webhook_url={'set' if self.webhook_url else 'None'},\n"
+            f"  database_url=***REDACTED***,\n"
+            f"  redis_url=***REDACTED***,\n"
+            f"  webhook_url=***REDACTED***,\n"
+            f"  api_url=***REDACTED***,\n"
+            f"  encryption_key=***REDACTED***,\n"
             f"  polling={'webhooks' if self.use_webhooks else 'polling'}\n"
             f")"
         )
+
+    def model_dump_safe(self) -> dict:
+        """Dump config dict with secrets redacted for logging."""
+        data = self.model_dump()
+        sensitive_keys = {
+            "BOT_TOKEN",
+            "DATABASE_URL",
+            "WEBHOOK_SECRET",
+            "REDIS_URL",
+            "SENTRY_DSN",
+            "ENCRYPTION_KEY",
+        }
+        for key in sensitive_keys:
+            if data.get(key):
+                data[key] = "***REDACTED***"
+        return data
 
 
 # Global config instance (backwards compatible name)

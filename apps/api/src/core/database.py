@@ -13,32 +13,25 @@ from .config import get_settings
 
 settings = get_settings()
 
-# Determine if using SQLite
-_IS_SQLITE = "sqlite" in settings.DATABASE_URL.lower()
-
-# Build engine kwargs based on database type
+# PostgreSQL connection pooling configuration
 _engine_kwargs: dict[str, Any] = {
     "echo": settings.API_DEBUG,
     "future": True,
+    "pool_size": 20,
+    "max_overflow": 10,
+    "pool_timeout": 30,
+    "pool_recycle": 1800,
+    "pool_pre_ping": True,
+    "connect_args": {"timeout": 30, "command_timeout": 30},
 }
 
-if _IS_SQLITE:
-    # SQLite-specific settings (no pooling, no SSL)
-    _engine_kwargs["connect_args"] = {"check_same_thread": False}
-else:
-    # PostgreSQL-specific settings
-    _engine_kwargs.update(
-        {
-            "pool_size": 20,
-            "max_overflow": 10,
-            "pool_timeout": 30,
-            "pool_recycle": 1800,
-            "pool_pre_ping": True,
-        }
-    )
-    # Only use SSL for remote PostgreSQL (not localhost)
-    if "localhost" not in settings.DATABASE_URL:
-        _engine_kwargs["connect_args"] = {"ssl": "require"}
+# Use SSL for remote PostgreSQL (detect localhost variants)
+_db_url_lower = settings.DATABASE_URL.lower()
+_is_local = any(
+    host in _db_url_lower for host in ["localhost", "127.0.0.1", "::1", "localhost.localdomain"]
+)
+if not _is_local:
+    _engine_kwargs["connect_args"]["ssl"] = "require"
 
 # Create Async Engine
 engine = create_async_engine(settings.DATABASE_URL, **_engine_kwargs)

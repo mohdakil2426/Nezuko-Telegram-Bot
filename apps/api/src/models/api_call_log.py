@@ -5,7 +5,7 @@ This model tracks all Telegram API calls for analytics and performance monitorin
 
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, Index, Integer, String
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -26,6 +26,11 @@ class ApiCallLog(Base):
     __tablename__ = "api_call_log"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    bot_instance_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("bot_instances.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     method: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     user_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
@@ -38,8 +43,13 @@ class ApiCallLog(Base):
         index=True,
     )
 
-    # Composite index for time-based analytics queries
-    __table_args__ = (Index("idx_api_call_log_method_timestamp", "method", "timestamp"),)
+    # Composite indexes for time-based analytics queries
+    __table_args__ = (
+        Index("idx_api_call_log_method_timestamp", "method", "timestamp"),
+        Index("idx_api_call_log_timestamp_method", "timestamp", "method"),
+        Index("idx_api_call_log_bot_timestamp", "bot_instance_id", "timestamp"),
+        Index("idx_api_call_log_bot_method", "bot_instance_id", "method", "timestamp"),
+    )
 
     def __repr__(self) -> str:
         return f"<ApiCallLog id={self.id} method={self.method} success={self.success}>"

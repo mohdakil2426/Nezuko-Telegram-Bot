@@ -189,7 +189,9 @@ async def _verify_via_api(
             error_type=error_type,
         )
 
-        logger.error("Error checking membership for user %s in %s: %s", user_id, channel_id, e)
+        logger.error(
+            "Error checking membership for user %s in %s: %s", user_id, channel_id, e, exc_info=True
+        )
         record_error("telegram_error")
         record_verification_end(start_time, "error")
         await _log_result(
@@ -202,6 +204,10 @@ async def _verify_via_api(
             cached=False,
             error_type=error_type,
         )
+        return None
+    except Exception as e:
+        logger.error("Unexpected error in verification: %s", e, exc_info=True)
+        record_error("verification_error")
         return None
 
 

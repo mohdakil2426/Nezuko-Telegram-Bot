@@ -7,6 +7,7 @@ from sqlalchemy import asc, delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from src.core.cache import Cache
 from src.models.bot import GroupChannelLink, ProtectedGroup
 from src.schemas.group import GroupUpdateRequest
 
@@ -90,7 +91,11 @@ async def update_group(
     group: ProtectedGroup,
     data: GroupUpdateRequest,
 ) -> ProtectedGroup:
-    """Update group settings."""
+    """Update group settings.
+
+    Note: Transaction is managed by FastAPI dependency (get_session).
+    No explicit commit here - session commits on successful request completion.
+    """
     if data.enabled is not None:
         group.enabled = data.enabled
 
@@ -100,13 +105,23 @@ async def update_group(
     if data.params is not None:
         group.params = data.params
 
-    await session.commit()
+    await session.flush()  # Flush changes to generate IDs but don't commit
     await session.refresh(group)
+
+    # Invalidate dashboard and analytics caches
+    await Cache.delete_pattern("dashboard:*")
+    await Cache.delete_pattern("analytics:*")
+    await Cache.delete_pattern("charts:*")
+
     return group
 
 
 async def link_channel(session: AsyncSession, group_id: int, channel_id: int) -> GroupChannelLink:
-    """Link a channel to a group."""
+    """Link a channel to a group.
+
+    Note: Transaction is managed by FastAPI dependency (get_session).
+    No explicit commit here - session commits on successful request completion.
+    """
     # Check if link already exists
     stmt = select(GroupChannelLink).where(
         GroupChannelLink.group_id == group_id,
@@ -123,19 +138,35 @@ async def link_channel(session: AsyncSession, group_id: int, channel_id: int) ->
 
     link = GroupChannelLink(group_id=group_id, channel_id=channel_id)
     session.add(link)
-    await session.commit()
+    await session.flush()  # Flush changes to generate IDs but don't commit
     await session.refresh(link)
+
+    # Invalidate dashboard and analytics caches
+    await Cache.delete_pattern("dashboard:*")
+    await Cache.delete_pattern("analytics:*")
+    await Cache.delete_pattern("charts:*")
+
     return link
 
 
 async def unlink_channel(session: AsyncSession, group_id: int, channel_id: int) -> bool:
-    """Unlink a channel from a group."""
+    """Unlink a channel from a group.
+
+    Note: Transaction is managed by FastAPI dependency (get_session).
+    No explicit commit here - session commits on successful request completion.
+    """
     stmt = delete(GroupChannelLink).where(
         GroupChannelLink.group_id == group_id,
         GroupChannelLink.channel_id == channel_id,
     )
     result = await session.execute(stmt)
-    await session.commit()
+    await session.flush()  # Flush changes but don't commit
+
+    # Invalidate dashboard and analytics caches
+    await Cache.delete_pattern("dashboard:*")
+    await Cache.delete_pattern("analytics:*")
+    await Cache.delete_pattern("charts:*")
+
     return (
         bool(result.rowcount)
         if hasattr(result, "rowcount") and result.rowcount is not None

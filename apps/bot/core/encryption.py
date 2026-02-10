@@ -3,10 +3,11 @@
 Uses Fernet symmetric encryption - same key as API for token decryption.
 """
 
-import os
 from functools import lru_cache
 
 from cryptography.fernet import Fernet, InvalidToken
+
+from apps.bot.config import config
 
 
 class EncryptionError(Exception):
@@ -15,12 +16,12 @@ class EncryptionError(Exception):
 
 @lru_cache(maxsize=1)
 def get_fernet() -> Fernet | None:
-    """Get Fernet instance using ENCRYPTION_KEY from environment.
+    """Get Fernet instance using ENCRYPTION_KEY from config.
 
     Returns:
         Fernet instance if ENCRYPTION_KEY is configured, None otherwise.
     """
-    encryption_key = os.getenv("ENCRYPTION_KEY")
+    encryption_key = config.ENCRYPTION_KEY
     if not encryption_key:
         return None
     try:

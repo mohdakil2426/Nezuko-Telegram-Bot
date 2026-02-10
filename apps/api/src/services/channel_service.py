@@ -6,6 +6,7 @@ from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from src.core.cache import Cache
 from src.models.bot import EnforcedChannel, GroupChannelLink
 from src.schemas.channel import ChannelCreateRequest
 
@@ -140,7 +141,11 @@ async def get_channel(session: AsyncSession, channel_id: int) -> dict[str, Any] 
 
 
 async def create_channel(session: AsyncSession, data: ChannelCreateRequest) -> EnforcedChannel:
-    """Create a new channel."""
+    """Create a new channel.
+
+    Note: Transaction is managed by FastAPI dependency (get_session).
+    No explicit commit here - session commits on successful request completion.
+    """
     # Check if exists
     existing = await session.get(EnforcedChannel, data.channel_id)
     if existing:
@@ -159,6 +164,12 @@ async def create_channel(session: AsyncSession, data: ChannelCreateRequest) -> E
         )
         session.add(channel)
 
-    await session.commit()
+    await session.flush()  # Flush changes to generate IDs but don't commit
     await session.refresh(channel)
+
+    # Invalidate dashboard and analytics caches
+    await Cache.delete_pattern("dashboard:*")
+    await Cache.delete_pattern("analytics:*")
+    await Cache.delete_pattern("charts:*")
+
     return channel

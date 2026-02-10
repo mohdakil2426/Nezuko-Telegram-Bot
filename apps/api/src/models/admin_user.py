@@ -7,11 +7,13 @@ from sqlalchemy import BigInteger, Boolean, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
+from .mixins import SoftDeleteMixin
 
 
-class AdminUser(Base):
-    """
-    AdminUser model represents administrative users who can access the panel.
+class AdminUser(Base, SoftDeleteMixin):
+    """AdminUser model represents administrative users who can access the panel.
+
+    Includes soft delete functionality via SoftDeleteMixin for data retention.
     """
 
     __tablename__ = "admin_users"

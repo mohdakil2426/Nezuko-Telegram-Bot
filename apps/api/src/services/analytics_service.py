@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.cache import cached
 from src.models.verification_log import VerificationLog
 from src.schemas.analytics import (
     UserGrowthResponse,
@@ -19,6 +20,14 @@ from src.schemas.analytics import (
 
 
 class AnalyticsService:
+    @cached(
+        "analytics:user_growth",
+        expire=300,
+        key_builder=lambda _self,
+        _session,
+        period="30d",
+        granularity="day": f"{period}:{granularity}",
+    )
     async def get_user_growth(
         self,
         session: AsyncSession,
@@ -101,6 +110,14 @@ class AnalyticsService:
             },
         )
 
+    @cached(
+        "analytics:verification_trends",
+        expire=300,
+        key_builder=lambda _self,
+        _session,
+        period="7d",
+        granularity="hour": f"{period}:{granularity}",
+    )
     async def get_verification_trends(
         self,
         session: AsyncSession,
@@ -109,23 +126,42 @@ class AnalyticsService:
     ) -> VerificationTrendResponse:
         """
         Calculates verification success vs failure trends from real data.
+
+        Database Compatibility:
+        - PostgreSQL: Uses date_trunc() for efficient time bucketing
+        - SQLite: Uses date() for day-level grouping (hour grouping not natively supported)
         """
         now = datetime.now(UTC)
+
+        # Detect database dialect
+        dialect = session.bind.dialect.name if session.bind else "postgresql"
+
         if period == "24h":
             start_date = now - timedelta(hours=24)
             delta = timedelta(hours=1)
             date_format = "%Y-%m-%dT%H:00:00Z"
-            # Group by hour
-            time_grouper = func.strftime("%Y-%m-%dT%H:00:00Z", VerificationLog.timestamp)
+
+            # PostgreSQL: date_trunc for hourly grouping
+            if dialect == "postgresql":
+                time_grouper = func.date_trunc("hour", VerificationLog.timestamp)
+            else:
+                # SQLite: strftime for hourly grouping (fallback)
+                time_grouper = func.strftime("%Y-%m-%dT%H:00:00Z", VerificationLog.timestamp)
+
         elif period == "7d":
             start_date = now - timedelta(days=7)
             delta = timedelta(days=1)
             date_format = "%Y-%m-%d"
+
+            # Both databases: date() function works identically
             time_grouper = func.date(VerificationLog.timestamp)
+
         else:  # 30d or default
             start_date = now - timedelta(days=30)
             delta = timedelta(days=1)
             date_format = "%Y-%m-%d"
+
+            # Both databases: date() function works identically
             time_grouper = func.date(VerificationLog.timestamp)
 
         # Query verification counts grouped by time period and status
@@ -206,6 +242,7 @@ class AnalyticsService:
             },
         )
 
+    @cached("analytics:dashboard_verification_stats", expire=300)
     async def get_dashboard_verification_stats(
         self,
         session: AsyncSession,
@@ -246,6 +283,7 @@ class AnalyticsService:
             "success_rate": round(success_rate, 2),
         }
 
+    @cached("analytics:overview", expire=300)
     async def get_overview(
         self,
         session: AsyncSession,

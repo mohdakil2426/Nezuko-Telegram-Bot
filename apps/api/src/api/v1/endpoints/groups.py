@@ -3,12 +3,13 @@
 import math
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.v1.dependencies.session import get_current_session
 from src.core.cache import Cache
 from src.core.database import get_session
+from src.core.exceptions import ResourceNotFoundError
 from src.models.session import Session
 from src.schemas.base import PaginationMeta, SuccessResponse
 from src.schemas.group import (
@@ -27,9 +28,9 @@ router = APIRouter()
 @router.get("", response_model=GroupListResponse)
 async def list_groups(
     *,
-    page: int = Query(1, ge=1),
+    page: int = Query(1, ge=1, le=1000),
     per_page: int = Query(25, ge=1, le=100),
-    search: str | None = None,
+    search: Annotated[str | None, Query(max_length=100)] = None,
     status_filter: str = Query("all", alias="status", pattern="^(active|inactive|all)$"),
     sort_by: str = "created_at",
     sort_order: str = Query("desc", pattern="^(asc|desc)$"),
@@ -97,7 +98,7 @@ async def get_group_details(
 
     group = await group_service.get_group(session, group_id)
     if not group:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+        raise ResourceNotFoundError(resource="Group", identifier=str(group_id))
 
     linked_channels = [
         GroupChannelLinkSchema(
@@ -138,7 +139,7 @@ async def update_group(
     """
     group = await group_service.get_group(session, group_id)
     if not group:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+        raise ResourceNotFoundError(resource="Group", identifier=str(group_id))
 
     updated_group = await group_service.update_group(session, group, data)
 
@@ -184,7 +185,7 @@ async def link_channel(
     # Assuming group exists check inside service or here
     group = await group_service.get_group(session, group_id)
     if not group:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+        raise ResourceNotFoundError(resource="Group", identifier=str(group_id))
 
     await group_service.link_channel(session, group_id, data.channel_id)
     return SuccessResponse(data={"message": "Channel linked successfully"})
@@ -202,6 +203,8 @@ async def unlink_channel(
     """
     success = await group_service.unlink_channel(session, group_id, channel_id)
     if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Link not found")
+        raise ResourceNotFoundError(
+            resource="Channel Link", identifier=f"group={group_id}, channel={channel_id}"
+        )
 
     return SuccessResponse(data={"message": "Channel unlinked successfully"})

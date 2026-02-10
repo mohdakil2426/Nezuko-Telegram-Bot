@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, TIMESTAMP, ForeignKey, String, func
+from sqlalchemy import JSON, TIMESTAMP, ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -33,6 +33,12 @@ class AdminAuditLog(Base):
         TIMESTAMP(timezone=True),
         server_default=func.now(),
         index=True,
+    )
+
+    # Composite indexes for common query patterns
+    __table_args__ = (
+        Index("idx_admin_audit_log_action_timestamp", "action", "created_at"),
+        Index("idx_admin_audit_log_resource", "resource_type", "resource_id", "created_at"),
     )
 
     # Relationships

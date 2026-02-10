@@ -271,9 +271,9 @@ def circuit_protected(circuit: CircuitBreaker):
                 result = await func(*args, **kwargs)
                 circuit.record_success()
                 return result
-            except Exception:
+            except Exception as exc:
                 circuit.record_failure()
-                raise
+                raise exc from exc
 
         return wrapper
 

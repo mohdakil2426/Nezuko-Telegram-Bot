@@ -1,8 +1,11 @@
+import logging
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from ..manager import manager  # type: ignore
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.websocket("/ws/logs")
@@ -16,5 +19,8 @@ async def websocket_logs_endpoint(websocket: WebSocket) -> None:
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket, channel="logs")
-    except Exception:
+    except (RuntimeError, ValueError) as exc:
+        # RuntimeError: WebSocket already closed
+        # ValueError: Invalid message format
+        logger.warning("WebSocket error: %s", exc)
         manager.disconnect(websocket, channel="logs")

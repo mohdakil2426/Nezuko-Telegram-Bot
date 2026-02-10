@@ -16,6 +16,7 @@ Features:
 
 import logging
 import sys
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any
 
@@ -111,7 +112,12 @@ def configure_logging(
         log_dir = project_root / "storage" / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file = log_dir / "api.log"
-        file_handler = logging.FileHandler(log_file)
+        file_handler = RotatingFileHandler(
+            log_file,
+            maxBytes=50_000_000,  # 50MB
+            backupCount=10,
+            encoding="utf-8",
+        )
         file_handler.setLevel(level)
         handlers.append(file_handler)
 

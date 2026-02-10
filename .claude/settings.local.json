@@ -39,8 +39,12 @@
       "Bash(playwright-cli screenshot:*)",
       "Bash(bun run build)",
       "Bash(playwright-cli resize:*)",
-      "Bash(git -C \"C:\\\\Users\\\\akila\\\\OneDrive\\\\Desktop\\\\OSS\\\\WebsitesBots\\\\Telegram\\\\GroupManagerBot\\\\Nezuko-Telegram-Bot\" ls-files:*)",
-      "Bash(bunx prettier:*)"
+      "Bash(bunx prettier:*)",
+      "Bash(powershell:*)",
+      "Bash(pip install:*)",
+      "Bash(docker:*)",
+      "Bash(alembic revision:*)",
+      "Bash(redis-cli:*)"
     ]
   },
   "enabledPlugins": {

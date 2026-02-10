@@ -250,7 +250,7 @@ def main():
 
     except (KeyboardInterrupt, SystemExit):
         logger.info("Bot stopped")
-    except RuntimeError as e:
+    except Exception as e:
         logger.error("Fatal error: %s", e, exc_info=True)
         sys.exit(1)
 

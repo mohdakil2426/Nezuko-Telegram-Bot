@@ -1,5 +1,6 @@
 """Dashboard statistics and activity endpoints."""
 
+import asyncio
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -8,6 +9,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.v1.dependencies.auth import get_current_active_user
+from src.core.cache import Cache
 from src.core.database import get_session
 from src.models.admin_user import AdminUser
 from src.models.bot import EnforcedChannel, ProtectedGroup
@@ -26,18 +28,24 @@ async def get_dashboard_stats(
 ) -> Any:
     """
     Get dashboard statistics with real data.
+    Cached for 60 seconds to reduce database load.
     """
-    total_groups, total_channels = await _get_entity_counts(session)
+    # Check cache first
+    cache_key = "dashboard:stats"
+    cached = await Cache.get(cache_key)
+    if cached:
+        return SuccessResponse(data=DashboardStatsResponse(**cached))
 
     # Real verification stats from verification_log
     now = datetime.now(UTC)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = today_start - timedelta(days=7)
 
+    # Execute queries sequentially (same session cannot be used in parallel)
+    total_groups, total_channels = await _get_entity_counts(session)
     verifications_today, verifications_week = await _get_verification_counts(
         session, today_start, week_start
     )
-
     success_rate = await _get_success_rate(session, week_start)
     cache_hit_rate = await _get_cache_hit_rate(session, today_start)
 
@@ -45,17 +53,20 @@ async def get_dashboard_stats(
     uptime_tracker = get_uptime_tracker()
     bot_uptime_seconds = await uptime_tracker.get_uptime_seconds()
 
-    return SuccessResponse(
-        data=DashboardStatsResponse(
-            total_groups=int(total_groups),
-            total_channels=int(total_channels),
-            verifications_today=int(verifications_today),
-            verifications_week=int(verifications_week),
-            success_rate=round(success_rate, 2),
-            bot_uptime_seconds=int(bot_uptime_seconds),
-            cache_hit_rate=round(cache_hit_rate, 2),
-        )
+    response_data = DashboardStatsResponse(
+        total_groups=int(total_groups),
+        total_channels=int(total_channels),
+        verifications_today=int(verifications_today),
+        verifications_week=int(verifications_week),
+        success_rate=round(success_rate, 2),
+        bot_uptime_seconds=int(bot_uptime_seconds),
+        cache_hit_rate=round(cache_hit_rate, 2),
     )
+
+    # Cache for 60 seconds
+    await Cache.set(cache_key, response_data.model_dump(), expire=60)
+
+    return SuccessResponse(data=response_data)
 
 
 async def _get_entity_counts(session: AsyncSession) -> tuple[int, int]:
