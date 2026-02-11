@@ -50,6 +50,83 @@ async def get_all_enforced_channels_for_sync() -> list[EnforcedChannel]:
         return list(result.scalars().all())
 
 
+async def _sync_entity_count(
+    context: ContextTypes.DEFAULT_TYPE,
+    entity_id: int,
+    model_class: type,
+    id_column: str,
+    count_column: str,
+    entity_label: str,
+) -> bool:
+    """Sync a single entity's member/subscriber count from Telegram API.
+
+    Args:
+        context: Telegram bot context with bot instance
+        entity_id: Telegram chat ID of the entity
+        model_class: SQLAlchemy model class (ProtectedGroup or EnforcedChannel)
+        id_column: Name of the ID column on the model
+        count_column: Name of the count column to update
+        entity_label: Human-readable label for logging ("group" or "channel")
+
+    Returns:
+        True if sync succeeded, False if it failed
+    """
+    try:
+        count = await context.bot.get_chat_member_count(entity_id)
+
+        async with get_session() as session:
+            result = await session.execute(
+                select(model_class).where(
+                    getattr(model_class, id_column) == entity_id
+                )
+            )
+            db_entity = result.scalar_one_or_none()
+            if db_entity:
+                setattr(db_entity, count_column, count)
+                db_entity.last_sync_at = datetime.now(UTC)
+                await session.commit()
+
+        log_api_call_async(
+            method="getChatMemberCount",
+            chat_id=entity_id,
+            success=True,
+        )
+        await asyncio.sleep(INTER_REQUEST_DELAY)
+        return True
+
+    except RetryAfter as e:
+        retry_seconds = (
+            e.retry_after.total_seconds()
+            if isinstance(e.retry_after, timedelta)
+            else float(e.retry_after)
+        )
+        retry_wait = retry_seconds + 1.0
+        logger.warning(
+            "Rate limit syncing %s %s, waiting %.1fs",
+            entity_label,
+            entity_id,
+            retry_wait,
+        )
+        log_api_call_async(
+            method="getChatMemberCount",
+            chat_id=entity_id,
+            success=False,
+            error_type="RetryAfter",
+        )
+        await asyncio.sleep(retry_wait)
+        return False
+
+    except TelegramError as e:
+        logger.debug("Failed to sync %s %s: %s", entity_label, entity_id, e)
+        log_api_call_async(
+            method="getChatMemberCount",
+            chat_id=entity_id,
+            success=False,
+            error_type=type(e).__name__,
+        )
+        return False
+
+
 async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Sync member/subscriber counts from Telegram API.
@@ -75,61 +152,12 @@ async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
 
         for group in groups:
             group_id: int = group.group_id  # type: ignore[assignment]
-            try:
-                count = await context.bot.get_chat_member_count(group_id)
-
-                # Update in database
-                async with get_session() as session:
-                    # Re-fetch to avoid detached instance
-                    result = await session.execute(
-                        select(ProtectedGroup).where(ProtectedGroup.group_id == group.group_id)
-                    )
-                    db_group = result.scalar_one_or_none()
-                    if db_group:
-                        db_group.member_count = count
-                        db_group.last_sync_at = datetime.now(UTC)
-                        await session.commit()
-
-                # Log API call
-                log_api_call_async(
-                    method="getChatMemberCount",
-                    chat_id=group_id,
-                    success=True,
-                )
-
+            success = await _sync_entity_count(
+                context, group_id, ProtectedGroup, "group_id", "member_count", "group"
+            )
+            if success:
                 groups_synced += 1
-                await asyncio.sleep(INTER_REQUEST_DELAY)  # Rate limiting
-
-            except RetryAfter as e:
-                # Handle retry_after which can be int or timedelta
-                retry_seconds = (
-                    e.retry_after.total_seconds()
-                    if isinstance(e.retry_after, timedelta)
-                    else float(e.retry_after)
-                )
-                retry_wait = retry_seconds + 1.0
-                logger.warning(
-                    "Rate limit syncing group %s, waiting %.1fs",
-                    group_id,
-                    retry_wait,
-                )
-                log_api_call_async(
-                    method="getChatMemberCount",
-                    chat_id=group_id,
-                    success=False,
-                    error_type="RetryAfter",
-                )
-                await asyncio.sleep(retry_wait)
-                groups_failed += 1
-
-            except TelegramError as e:
-                logger.debug("Failed to sync group %s: %s", group_id, e)
-                log_api_call_async(
-                    method="getChatMemberCount",
-                    chat_id=group_id,
-                    success=False,
-                    error_type=type(e).__name__,
-                )
+            else:
                 groups_failed += 1
 
     except (OSError, RuntimeError) as e:
@@ -142,61 +170,12 @@ async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
 
         for channel in channels:
             channel_id: int = channel.channel_id  # type: ignore[assignment]
-            try:
-                count = await context.bot.get_chat_member_count(channel_id)
-
-                # Update in database
-                async with get_session() as session:
-                    # Re-fetch to avoid detached instance
-                    result = await session.execute(
-                        select(EnforcedChannel).where(EnforcedChannel.channel_id == channel_id)
-                    )
-                    db_channel = result.scalar_one_or_none()
-                    if db_channel:
-                        db_channel.subscriber_count = count
-                        db_channel.last_sync_at = datetime.now(UTC)
-                        await session.commit()
-
-                # Log API call
-                log_api_call_async(
-                    method="getChatMemberCount",
-                    chat_id=channel_id,
-                    success=True,
-                )
-
+            success = await _sync_entity_count(
+                context, channel_id, EnforcedChannel, "channel_id", "subscriber_count", "channel"
+            )
+            if success:
                 channels_synced += 1
-                await asyncio.sleep(INTER_REQUEST_DELAY)  # Rate limiting
-
-            except RetryAfter as e:
-                # Handle retry_after which can be int or timedelta
-                retry_seconds = (
-                    e.retry_after.total_seconds()
-                    if isinstance(e.retry_after, timedelta)
-                    else float(e.retry_after)
-                )
-                retry_wait = retry_seconds + 1.0
-                logger.warning(
-                    "Rate limit syncing channel %s, waiting %.1fs",
-                    channel_id,
-                    retry_wait,
-                )
-                log_api_call_async(
-                    method="getChatMemberCount",
-                    chat_id=channel_id,
-                    success=False,
-                    error_type="RetryAfter",
-                )
-                await asyncio.sleep(retry_wait)
-                channels_failed += 1
-
-            except TelegramError as e:
-                logger.debug("Failed to sync channel %s: %s", channel_id, e)
-                log_api_call_async(
-                    method="getChatMemberCount",
-                    chat_id=channel_id,
-                    success=False,
-                    error_type=type(e).__name__,
-                )
+            else:
                 channels_failed += 1
 
     except (OSError, RuntimeError) as e:

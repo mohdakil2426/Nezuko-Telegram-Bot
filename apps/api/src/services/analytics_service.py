@@ -2,9 +2,12 @@
 
 Queries real verification data from the database for analytics dashboards.
 Falls back to empty data (not mock data) when no verification logs exist.
+
+Database: PostgreSQL only (no SQLite fallbacks).
 """
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +23,8 @@ from src.schemas.analytics import (
 
 
 class AnalyticsService:
+    """Service for querying analytics data from PostgreSQL."""
+
     @cached(
         "analytics:user_growth",
         expire=300,
@@ -34,10 +39,17 @@ class AnalyticsService:
         period: str = "30d",
         granularity: str = "day",
     ) -> UserGrowthResponse:
-        """
-        Calculates unique user growth over time based on verification logs.
+        """Calculate unique user growth over time based on verification logs.
 
         Counts unique users who have been verified per day/period.
+
+        Args:
+            session: Database session.
+            period: Time period ('7d', '30d', '90d').
+            granularity: Data granularity ('day').
+
+        Returns:
+            UserGrowthResponse with series and summary.
         """
         # Calculate date range
         now = datetime.now(UTC)
@@ -50,31 +62,35 @@ class AnalyticsService:
         else:
             start_date = now - timedelta(days=30)
 
-        # Query unique users per day from verification_log
-        # Using date truncation to group by day
+        # PostgreSQL: Use date_trunc for precise day grouping
+        day_grouper = func.date_trunc("day", VerificationLog.timestamp)
+
         stmt = (
             select(
-                func.date(VerificationLog.timestamp).label("date"),
+                day_grouper.label("date"),
                 func.count(func.distinct(VerificationLog.user_id)).label("new_users"),
             )
             .where(
                 VerificationLog.timestamp >= start_date,
                 VerificationLog.status == "verified",
             )
-            .group_by(func.date(VerificationLog.timestamp))
-            .order_by(func.date(VerificationLog.timestamp))
+            .group_by(day_grouper)
+            .order_by(day_grouper)
         )
 
         result = await session.execute(stmt)
         rows = result.all()
 
         # Build series with cumulative total
-        series = []
+        series: list[UserGrowthSeries] = []
         cumulative_total = 0
         total_new = 0
 
         # Create a map of dates with data
-        date_data = {str(row.date): row.new_users for row in rows}
+        date_data: dict[str, int] = {}
+        for row in rows:
+            date_key = row.date.strftime("%Y-%m-%d") if hasattr(row.date, "strftime") else str(row.date)
+            date_data[date_key] = row.new_users
 
         # Generate all dates in range
         current = start_date
@@ -94,7 +110,7 @@ class AnalyticsService:
             current += timedelta(days=1)
 
         growth_rate = 0.0
-        if series and len(series) > 1 and series[0].total_users > 0:
+        if len(series) > 1 and series[0].total_users > 0:
             growth_rate = (
                 (series[-1].total_users - series[0].total_users) / series[0].total_users
             ) * 100
@@ -124,45 +140,37 @@ class AnalyticsService:
         period: str = "7d",
         granularity: str = "hour",
     ) -> VerificationTrendResponse:
-        """
-        Calculates verification success vs failure trends from real data.
+        """Calculate verification success vs failure trends from real data.
 
-        Database Compatibility:
-        - PostgreSQL: Uses date_trunc() for efficient time bucketing
-        - SQLite: Uses date() for day-level grouping (hour grouping not natively supported)
+        Uses PostgreSQL date_trunc() for efficient time bucketing.
+
+        Args:
+            session: Database session.
+            period: Time period ('24h', '7d', '30d').
+            granularity: Data granularity ('hour', 'day').
+
+        Returns:
+            VerificationTrendResponse with series and summary.
         """
         now = datetime.now(UTC)
-
-        # Detect database dialect
-        dialect = session.bind.dialect.name if session.bind else "postgresql"
 
         if period == "24h":
             start_date = now - timedelta(hours=24)
             delta = timedelta(hours=1)
             date_format = "%Y-%m-%dT%H:00:00Z"
-
-            # PostgreSQL: date_trunc for hourly grouping
-            if dialect == "postgresql":
-                time_grouper = func.date_trunc("hour", VerificationLog.timestamp)
-            else:
-                # SQLite: strftime for hourly grouping (fallback)
-                time_grouper = func.strftime("%Y-%m-%dT%H:00:00Z", VerificationLog.timestamp)
+            time_grouper = func.date_trunc("hour", VerificationLog.timestamp)
 
         elif period == "7d":
             start_date = now - timedelta(days=7)
             delta = timedelta(days=1)
             date_format = "%Y-%m-%d"
-
-            # Both databases: date() function works identically
-            time_grouper = func.date(VerificationLog.timestamp)
+            time_grouper = func.date_trunc("day", VerificationLog.timestamp)
 
         else:  # 30d or default
             start_date = now - timedelta(days=30)
             delta = timedelta(days=1)
             date_format = "%Y-%m-%d"
-
-            # Both databases: date() function works identically
-            time_grouper = func.date(VerificationLog.timestamp)
+            time_grouper = func.date_trunc("day", VerificationLog.timestamp)
 
         # Query verification counts grouped by time period and status
         stmt = (
@@ -188,9 +196,12 @@ class AnalyticsService:
         rows = result.all()
 
         # Create a map of time buckets with data
-        data_map = {}
+        data_map: dict[str, dict[str, int]] = {}
         for row in rows:
-            key = str(row.time_bucket)
+            if hasattr(row.time_bucket, "strftime"):
+                key = row.time_bucket.strftime(date_format)
+            else:
+                key = str(row.time_bucket)
             data_map[key] = {
                 "total": row.total or 0,
                 "successful": row.successful or 0,
@@ -198,7 +209,7 @@ class AnalyticsService:
             }
 
         # Generate all time buckets in range
-        series = []
+        series: list[VerificationTrendSeries] = []
         total_verifications = 0
         total_success = 0
         current = start_date
@@ -246,12 +257,14 @@ class AnalyticsService:
     async def get_dashboard_verification_stats(
         self,
         session: AsyncSession,
-    ) -> dict:
-        """
-        Get verification statistics for dashboard stats cards.
+    ) -> dict[str, Any]:
+        """Get verification statistics for dashboard stats cards.
+
+        Args:
+            session: Database session.
 
         Returns:
-            Dict with verifications_today, verifications_week, success_rate
+            Dict with verifications_today, verifications_week, success_rate.
         """
         now = datetime.now(UTC)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -287,13 +300,15 @@ class AnalyticsService:
     async def get_overview(
         self,
         session: AsyncSession,
-    ) -> dict:
-        """
-        Get analytics overview metrics for the analytics page.
+    ) -> dict[str, Any]:
+        """Get analytics overview metrics for the analytics page.
+
+        Args:
+            session: Database session.
 
         Returns:
             Dict with total_verifications, success_rate, avg_response_time_ms,
-            active_groups, active_channels, peak_hour, cache_efficiency
+            active_groups, active_channels, peak_hour, cache_efficiency.
         """
         # Import here to avoid circular imports
         from src.models.bot import EnforcedChannel, ProtectedGroup
@@ -305,55 +320,68 @@ class AnalyticsService:
         stmt_total = select(func.count()).where(VerificationLog.timestamp >= week_start)
         total_verifications = await session.scalar(stmt_total) or 0
 
-        # Success rate
-        stmt_success = select(
-            func.count().label("total"),
-            func.sum(case((VerificationLog.status == "verified", 1), else_=0)).label("successful"),
-        ).where(VerificationLog.timestamp >= week_start)
-
-        result = await session.execute(stmt_success)
-        row = result.one()
-        total = row.total or 0
-        successful = row.successful or 0
-        success_rate = (successful / total * 100) if total > 0 else 0.0
-
-        # Active groups count
-        stmt_groups = (
+        # Derived metrics via helpers
+        success_rate = await self._get_success_rate(session, week_start)
+        active_groups = await session.scalar(
             select(func.count()).select_from(ProtectedGroup).where(ProtectedGroup.enabled.is_(True))
-        )
-        active_groups = await session.scalar(stmt_groups) or 0
-
-        # Active channels count
-        stmt_channels = select(func.count()).select_from(EnforcedChannel)
-        active_channels = await session.scalar(stmt_channels) or 0
-
-        # Cache efficiency (percentage of cached verifications)
-        stmt_cache = select(
-            func.count().label("total"),
-            func.sum(case((VerificationLog.cached.is_(True), 1), else_=0)).label("cached"),
-        ).where(VerificationLog.timestamp >= week_start)
-
-        cache_result = await session.execute(stmt_cache)
-        cache_row = cache_result.one()
-        cache_total = cache_row.total or 0
-        cache_hits = cache_row.cached or 0
-        cache_efficiency = (cache_hits / cache_total * 100) if cache_total > 0 else 0.0
-
-        # Peak hour (most verifications) - simplified, defaults to 14:00 UTC
-        peak_hour = "14:00 UTC"
-
-        # Avg response time - placeholder (would need actual latency logging)
-        avg_response_time_ms = 100
+        ) or 0
+        active_channels = await session.scalar(
+            select(func.count()).select_from(EnforcedChannel)
+        ) or 0
+        cache_efficiency = await self._get_cache_efficiency(session, week_start)
+        peak_hour = await self._get_peak_hour(session, week_start)
 
         return {
             "total_verifications": total_verifications,
             "success_rate": round(success_rate, 1),
-            "avg_response_time_ms": avg_response_time_ms,
+            "avg_response_time_ms": 100,  # Placeholder until latency logging added
             "active_groups": active_groups,
             "active_channels": active_channels,
             "peak_hour": peak_hour,
             "cache_efficiency": round(cache_efficiency, 1),
         }
+
+    @staticmethod
+    async def _get_success_rate(session: AsyncSession, since: datetime) -> float:
+        """Calculate verification success rate percentage since a given time."""
+        stmt = select(
+            func.count().label("total"),
+            func.sum(case((VerificationLog.status == "verified", 1), else_=0)).label("successful"),
+        ).where(VerificationLog.timestamp >= since)
+        row = (await session.execute(stmt)).one()
+        total = row.total or 0
+        successful = row.successful or 0
+        return (successful / total * 100) if total > 0 else 0.0
+
+    @staticmethod
+    async def _get_cache_efficiency(session: AsyncSession, since: datetime) -> float:
+        """Calculate cache hit efficiency percentage since a given time."""
+        stmt = select(
+            func.count().label("total"),
+            func.sum(case((VerificationLog.cached.is_(True), 1), else_=0)).label("cached"),
+        ).where(VerificationLog.timestamp >= since)
+        row = (await session.execute(stmt)).one()
+        total = row.total or 0
+        hits = row.cached or 0
+        return (hits / total * 100) if total > 0 else 0.0
+
+    @staticmethod
+    async def _get_peak_hour(session: AsyncSession, since: datetime) -> str:
+        """Find the peak verification hour since a given time."""
+        stmt = (
+            select(
+                func.extract("hour", VerificationLog.timestamp).label("hour"),
+                func.count().label("count"),
+            )
+            .where(VerificationLog.timestamp >= since)
+            .group_by(func.extract("hour", VerificationLog.timestamp))
+            .order_by(func.count().desc())
+            .limit(1)
+        )
+        row = (await session.execute(stmt)).first()
+        if row and row.hour is not None:
+            return f"{int(row.hour):02d}:00 UTC"
+        return "N/A"
 
 
 analytics_service = AnalyticsService()

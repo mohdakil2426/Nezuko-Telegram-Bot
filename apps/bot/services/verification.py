@@ -205,7 +205,7 @@ async def _verify_via_api(
             error_type=error_type,
         )
         return None
-    except Exception as e:
+    except (RuntimeError, ValueError, OSError) as e:
         logger.error("Unexpected error in verification: %s", e, exc_info=True)
         record_error("verification_error")
         return None

@@ -14,8 +14,7 @@
         └───────────────┴─────────────────────┘
                         │
            ┌────────────┴────────────┐
-           │      PostgreSQL         │
-           │   (SQLite for dev)      │
+           │  PostgreSQL 17 (Docker) │
            └─────────────────────────┘
 ```
 
@@ -24,6 +23,7 @@
 ## Backend Patterns (Python)
 
 ### Async-First Architecture
+
 ```python
 # All I/O operations use async/await
 async def get_groups(session: AsyncSession) -> list[Group]:
@@ -32,6 +32,7 @@ async def get_groups(session: AsyncSession) -> list[Group]:
 ```
 
 ### Task Reference Pattern (RUF006)
+
 ```python
 # Store task references to prevent garbage collection
 _tasks: set[asyncio.Task] = set()
@@ -41,6 +42,7 @@ task.add_done_callback(_tasks.discard)
 ```
 
 ### SQLAlchemy 2.0 Queries
+
 ```python
 # Use select() style, not legacy ORM
 from sqlalchemy import select
@@ -49,6 +51,7 @@ result = await session.execute(stmt)
 ```
 
 ### Transaction Management
+
 ```python
 # Services use flush(), not commit()
 # FastAPI dependency manages transaction
@@ -59,6 +62,7 @@ async def update_item(session: AsyncSession, data: dict):
 ```
 
 ### Error Handling
+
 ```python
 # Specific exceptions with chains
 try:
@@ -68,24 +72,35 @@ except ValueError as exc:
     raise AppError("Operation failed") from exc
 ```
 
+### DML Result Access (CursorResult Pattern)
+
+```python
+# session.execute(delete/update) returns Result, but DML gives CursorResult
+from typing import cast
+from sqlalchemy import CursorResult, delete
+
+result = cast(CursorResult, await session.execute(
+    delete(Model).where(Model.timestamp < cutoff)
+))
+deleted_count = result.rowcount  # Now type-safe
+```
+
 ---
 
 ## Frontend Patterns (Next.js 16)
 
 ### Dynamic Route Parameters
+
 ```tsx
 // Next.js 16 requires Promise params
-export default function Page({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   return <div>ID: {id}</div>;
 }
 ```
 
 ### TanStack Query v5
+
 ```tsx
 // Use isPending, not isLoading
 const { data, isPending } = useQuery({
@@ -97,6 +112,7 @@ if (isPending) return <Skeleton />;
 ```
 
 ### Service Layer Pattern
+
 ```typescript
 // Mock/API abstraction
 import { dataService } from "@/services";
@@ -108,17 +124,19 @@ const stats = await dataService.getDashboardStats();
 ## Database Models
 
 ### Core Tables
-| Table | Purpose |
-|-------|---------|
-| `sessions` | Telegram auth sessions |
-| `bot_instances` | Registered bot tokens (encrypted) |
-| `protected_groups` | Groups with enforcement |
-| `enforced_channels` | Required channel subscriptions |
-| `verification_log` | All verification events |
-| `api_call_log` | API call tracking |
-| `admin_audit_log` | Admin action audit trail |
+
+| Table               | Purpose                           |
+| ------------------- | --------------------------------- |
+| `sessions`          | Telegram auth sessions            |
+| `bot_instances`     | Registered bot tokens (encrypted) |
+| `protected_groups`  | Groups with enforcement           |
+| `enforced_channels` | Required channel subscriptions    |
+| `verification_log`  | All verification events           |
+| `api_call_log`      | API call tracking                 |
+| `admin_audit_log`   | Admin action audit trail          |
 
 ### Key Indexes
+
 ```sql
 -- Composite indexes for analytics
 idx_verification_log_timestamp_status (timestamp, status)
@@ -163,6 +181,7 @@ Browser → Telegram Login Widget → POST /auth/telegram
 ## Real-Time Updates
 
 ### SSE Pattern
+
 ```typescript
 // Client subscribes to events
 const eventSource = new EventSource("/api/v1/events/stream");
@@ -173,6 +192,7 @@ eventSource.onmessage = (event) => {
 ```
 
 ### Bot Event Publishing
+
 ```python
 # Bot publishes verification events
 await event_publisher.publish({
@@ -186,14 +206,14 @@ await event_publisher.publish({
 
 ## Security Patterns
 
-| Pattern | Implementation |
-|---------|---------------|
-| Auth | Telegram Login + HMAC verification |
-| Sessions | HTTP-only cookies, 24h expiry |
-| Tokens | Fernet encryption at rest |
-| API | Rate limiting, request ID tracking |
-| Secrets | Environment variables, no hardcoding |
+| Pattern  | Implementation                               |
+| -------- | -------------------------------------------- |
+| Auth     | Telegram Login + HMAC verification           |
+| Sessions | HTTP-only cookies, 72h expiry (configurable) |
+| Tokens   | Fernet encryption at rest                    |
+| API      | Rate limiting, request ID tracking           |
+| Secrets  | Environment variables, no hardcoding         |
 
 ---
 
-_Last Updated: 2026-02-07_
+_Last Updated: 2026-02-10_

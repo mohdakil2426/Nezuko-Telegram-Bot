@@ -1,14 +1,14 @@
 """Bot management API endpoints.
 
 Allows the owner to add, view, update, and delete bot instances.
+No authentication required — owner identity from environment config.
 """
 
-import logging
-
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.v1.dependencies.session import CurrentSession
+from src.api.v1.dependencies.session import CurrentOwner
 from src.core.database import get_session
 from src.schemas.bot_instance import (
     BotCreate,
@@ -25,27 +25,43 @@ from src.services.bot_instance_service import (
 )
 from src.services.telegram_api import InvalidTokenError, TelegramAPIError, telegram_api
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/bots", tags=["Bot Management"])
 
 
-@router.get("", response_model=BotListResponse)
-async def list_bots(
-    session: CurrentSession,
+async def get_bot_service(
     db: AsyncSession = Depends(get_session),
-) -> BotListResponse:
-    """List all bots for the authenticated owner.
+) -> BotInstanceService:
+    """FastAPI dependency for BotInstanceService.
 
     Args:
-        session: Current authenticated session.
         db: Database session.
+
+    Returns:
+        Configured BotInstanceService instance.
+    """
+    return BotInstanceService(db)
+
+
+BotService = Depends(get_bot_service)
+
+
+@router.get("", response_model=BotListResponse)
+async def list_bots(
+    owner: CurrentOwner,
+    service: BotInstanceService = BotService,
+) -> BotListResponse:
+    """List all bots for the owner.
+
+    Args:
+        owner: Owner identity from config.
+        service: Bot instance service.
 
     Returns:
         BotListResponse with list of bots.
     """
-    service = BotInstanceService(db)
-    bots = await service.list_bots(session.telegram_id)
+    bots = await service.list_bots(owner.telegram_id)
 
     return BotListResponse(
         bots=[service.to_response(bot) for bot in bots],
@@ -56,8 +72,8 @@ async def list_bots(
 @router.post("", response_model=BotResponse, status_code=status.HTTP_201_CREATED)
 async def add_bot(
     bot_data: BotCreate,
-    session: CurrentSession,
-    db: AsyncSession = Depends(get_session),
+    owner: CurrentOwner,
+    service: BotInstanceService = BotService,
 ) -> BotResponse:
     """Add a new bot.
 
@@ -65,8 +81,8 @@ async def add_bot(
 
     Args:
         bot_data: Bot creation data with token.
-        session: Current authenticated session.
-        db: Database session.
+        owner: Owner identity from config.
+        service: Bot instance service.
 
     Returns:
         Created BotResponse.
@@ -74,10 +90,8 @@ async def add_bot(
     Raises:
         HTTPException: 400 for invalid token, 409 for duplicate.
     """
-    service = BotInstanceService(db)
-
     try:
-        bot = await service.add_bot(session.telegram_id, bot_data)
+        bot = await service.add_bot(owner.telegram_id, bot_data)
         return service.to_response(bot)
 
     except InvalidTokenError as exc:
@@ -97,7 +111,7 @@ async def add_bot(
             detail="Server configuration error. Please contact support.",
         ) from exc
     except TelegramAPIError as exc:
-        logger.error("Telegram API error: %s", exc)
+        logger.error("telegram_api_error", error=str(exc))
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Failed to verify bot with Telegram. Please try again.",
@@ -107,7 +121,6 @@ async def add_bot(
 @router.post("/verify", response_model=BotVerifyResponse)
 async def verify_bot_token(
     bot_data: BotCreate,
-    session: CurrentSession,  # Require authentication
 ) -> BotVerifyResponse:
     """Verify a bot token without saving it.
 
@@ -115,7 +128,6 @@ async def verify_bot_token(
 
     Args:
         bot_data: Bot data with token.
-        session: Current authenticated session.
 
     Returns:
         BotVerifyResponse with bot info.
@@ -134,7 +146,7 @@ async def verify_bot_token(
             detail="Invalid bot token. Please check and try again.",
         ) from exc
     except TelegramAPIError as exc:
-        logger.error("Telegram API error during verify: %s", exc)
+        logger.error("telegram_api_error_during_verify", error=str(exc))
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Failed to verify bot with Telegram. Please try again.",
@@ -144,23 +156,21 @@ async def verify_bot_token(
 @router.get("/{bot_id}", response_model=BotResponse)
 async def get_bot(
     bot_id: int,
-    session: CurrentSession,
-    db: AsyncSession = Depends(get_session),
+    owner: CurrentOwner,
+    service: BotInstanceService = BotService,
 ) -> BotResponse:
     """Get a single bot by ID.
 
     Args:
         bot_id: Internal bot instance ID.
-        session: Current authenticated session.
-        db: Database session.
+        owner: Owner identity from config.
+        service: Bot instance service.
 
     Returns:
         BotResponse.
     """
-    service = BotInstanceService(db)
-
     try:
-        bot = await service.get_bot(session.telegram_id, bot_id)
+        bot = await service.get_bot(owner.telegram_id, bot_id)
         return service.to_response(bot)
     except BotNotFoundError as exc:
         raise HTTPException(
@@ -173,24 +183,22 @@ async def get_bot(
 async def update_bot(
     bot_id: int,
     update_data: BotUpdate,
-    session: CurrentSession,
-    db: AsyncSession = Depends(get_session),
+    owner: CurrentOwner,
+    service: BotInstanceService = BotService,
 ) -> BotResponse:
     """Update a bot's status.
 
     Args:
         bot_id: Internal bot instance ID.
         update_data: Update data (is_active toggle).
-        session: Current authenticated session.
-        db: Database session.
+        owner: Owner identity from config.
+        service: Bot instance service.
 
     Returns:
         Updated BotResponse.
     """
-    service = BotInstanceService(db)
-
     try:
-        bot = await service.update_bot(session.telegram_id, bot_id, update_data)
+        bot = await service.update_bot(owner.telegram_id, bot_id, update_data)
         return service.to_response(bot)
     except BotNotFoundError as exc:
         raise HTTPException(
@@ -202,8 +210,8 @@ async def update_bot(
 @router.delete("/{bot_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_bot(
     bot_id: int,
-    session: CurrentSession,
-    db: AsyncSession = Depends(get_session),
+    owner: CurrentOwner,
+    service: BotInstanceService = BotService,
 ) -> None:
     """Delete a bot.
 
@@ -211,13 +219,11 @@ async def delete_bot(
 
     Args:
         bot_id: Internal bot instance ID.
-        session: Current authenticated session.
-        db: Database session.
+        owner: Owner identity from config.
+        service: Bot instance service.
     """
-    service = BotInstanceService(db)
-
     try:
-        await service.delete_bot(session.telegram_id, bot_id)
+        await service.delete_bot(owner.telegram_id, bot_id)
     except BotNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

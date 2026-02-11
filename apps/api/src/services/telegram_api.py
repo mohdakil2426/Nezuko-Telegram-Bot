@@ -1,11 +1,11 @@
 """Telegram Bot API client service.
 
 Provides async methods to interact with the Telegram Bot API.
+Reuses httpx.AsyncClient for connection pooling efficiency.
 """
 
-import logging
-
 import httpx
+import structlog
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -15,7 +15,7 @@ from tenacity import (
 
 from src.schemas.bot_instance import TelegramBotInfo
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 TELEGRAM_API_BASE = "https://api.telegram.org"
 REQUEST_TIMEOUT = 10.0  # seconds
@@ -32,8 +32,28 @@ class InvalidTokenError(TelegramAPIError):
 class TelegramAPIService:
     """Service for interacting with Telegram Bot API.
 
-    This is a stateless service - each method call is independent.
+    Reuses an httpx.AsyncClient for connection pooling.
     """
+
+    def __init__(self) -> None:
+        """Initialize with no HTTP client (lazy creation)."""
+        self._client: httpx.AsyncClient | None = None
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        """Get or create the HTTP client with connection pooling.
+
+        Returns:
+            Reusable httpx.AsyncClient instance.
+        """
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(timeout=REQUEST_TIMEOUT)
+        return self._client
+
+    async def close(self) -> None:
+        """Close the HTTP client and release connections."""
+        if self._client and not self._client.is_closed:
+            await self._client.aclose()
+            self._client = None
 
     @retry(
         stop=stop_after_attempt(3),
@@ -51,41 +71,34 @@ class TelegramAPIService:
 
         Raises:
             InvalidTokenError: If the token is invalid.
-            TelegramAPIError: For other API errors.
+            TelegramAPIError: For non-retryable API errors.
+            httpx.RequestError: For retryable network errors (handled by tenacity).
+            httpx.TimeoutException: For retryable timeouts (handled by tenacity).
         """
         url = f"{TELEGRAM_API_BASE}/bot{token}/getMe"
+        client = await self._get_client()
+        response = await client.get(url)
+        data = response.json()
 
-        try:
-            async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
-                response = await client.get(url)
-                data = response.json()
+        if not data.get("ok"):
+            error_code = data.get("error_code", 0)
+            description = data.get("description", "Unknown error")
 
-                if not data.get("ok"):
-                    error_code = data.get("error_code", 0)
-                    description = data.get("description", "Unknown error")
+            if error_code == 401 or "Unauthorized" in description:
+                raise InvalidTokenError("Invalid bot token")
 
-                    if error_code == 401 or "Unauthorized" in description:
-                        raise InvalidTokenError("Invalid bot token")
+            raise TelegramAPIError(f"Telegram API error: {description}")
 
-                    raise TelegramAPIError(f"Telegram API error: {description}")
-
-                result = data.get("result", {})
-                return TelegramBotInfo(
-                    id=result["id"],
-                    is_bot=result.get("is_bot", True),
-                    first_name=result["first_name"],
-                    username=result["username"],
-                    can_join_groups=result.get("can_join_groups"),
-                    can_read_all_group_messages=result.get("can_read_all_group_messages"),
-                    supports_inline_queries=result.get("supports_inline_queries"),
-                )
-
-        except httpx.TimeoutException as exc:
-            logger.error("Telegram API timeout: %s", exc)
-            raise TelegramAPIError("Connection to Telegram timed out") from exc
-        except httpx.RequestError as exc:
-            logger.error("Telegram API request error: %s", exc)
-            raise TelegramAPIError(f"Failed to connect to Telegram: {exc}") from exc
+        result = data.get("result", {})
+        return TelegramBotInfo(
+            id=result["id"],
+            is_bot=result.get("is_bot", True),
+            first_name=result["first_name"],
+            username=result["username"],
+            can_join_groups=result.get("can_join_groups"),
+            can_read_all_group_messages=result.get("can_read_all_group_messages"),
+            supports_inline_queries=result.get("supports_inline_queries"),
+        )
 
     async def verify_token(self, token: str) -> bool:
         """Verify if a bot token is valid.
@@ -95,16 +108,16 @@ class TelegramAPIService:
 
         Returns:
             True if valid, False otherwise.
+
+        Raises:
+            TelegramAPIError: For non-token-related errors.
         """
         try:
             await self.get_bot_info(token)
             return True
         except InvalidTokenError:
             return False
-        except TelegramAPIError:
-            # Other errors (network, etc.) - we can't determine validity
-            raise
 
 
-# Singleton instance for convenience
+# Module-level instance (consider FastAPI Depends for better testability)
 telegram_api = TelegramAPIService()

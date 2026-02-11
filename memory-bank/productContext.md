@@ -25,6 +25,7 @@ Nezuko acts as an **automated gatekeeper** that:
 ## User Experience
 
 ### For Group Members
+
 1. Join group → Immediately muted
 2. See message with "Join Channel" buttons
 3. Join required channel(s)
@@ -32,6 +33,7 @@ Nezuko acts as an **automated gatekeeper** that:
 5. Instantly unmuted and can chat
 
 ### For Administrators
+
 1. Add bot to group with admin rights
 2. Run `/protect @channelname` command
 3. Bot automatically enforces membership
@@ -41,37 +43,38 @@ Nezuko acts as an **automated gatekeeper** that:
 
 ## Dashboard Features
 
-| Page | Purpose |
-|------|---------|
+| Page          | Purpose                                           |
+| ------------- | ------------------------------------------------- |
 | **Dashboard** | Overview stats, verification chart, activity feed |
-| **Analytics** | Verification trends, growth metrics, performance |
-| **Groups** | Manage protected groups, view settings |
-| **Channels** | Manage enforced channels, link to groups |
-| **Bots** | Add/manage multiple bot instances |
-| **Logs** | Real-time log streaming with filters |
-| **Settings** | Theme, account info, preferences |
+| **Analytics** | Verification trends, growth metrics, performance  |
+| **Groups**    | Manage protected groups, view settings            |
+| **Channels**  | Manage enforced channels, link to groups          |
+| **Bots**      | Add/manage multiple bot instances                 |
+| **Logs**      | Real-time log streaming with filters              |
+| **Settings**  | Theme, account info, preferences                  |
 
 ---
 
 ## Authentication
 
 **Telegram Login Widget** (Owner-Only):
+
 - No external accounts needed
 - HMAC-SHA256 signature verification
 - Session-based with HTTP-only cookies
-- 24-hour session expiration
+- 72-hour session expiration (configurable via `SESSION_EXPIRY_HOURS`)
 
 ---
 
 ## Key Metrics
 
-| Metric | Target | Status |
-|--------|--------|--------|
+| Metric                     | Target | Status      |
+| -------------------------- | ------ | ----------- |
 | Verification Latency (p99) | <150ms | ✅ Achieved |
-| API Latency (p90) | <50ms | ✅ Achieved |
-| Uptime | 99.9% | ✅ On Track |
-| Dashboard Pages | 13 | ✅ Complete |
+| API Latency (p90)          | <50ms  | ✅ Achieved |
+| Uptime                     | 99.9%  | ✅ On Track |
+| Dashboard Pages            | 13     | ✅ Complete |
 
 ---
 
-_Last Updated: 2026-02-07_
+_Last Updated: 2026-02-10_

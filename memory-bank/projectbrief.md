@@ -7,6 +7,7 @@ Nezuko is a **production-ready Telegram bot platform** for automated channel mem
 ## Core Purpose
 
 Convert group participants into channel subscribers through automated verification, providing:
+
 - Instant membership enforcement on group join
 - Multi-channel subscription requirements
 - Real-time verification with inline buttons
@@ -16,14 +17,14 @@ Convert group participants into channel subscribers through automated verificati
 
 ## Tech Stack
 
-| Layer | Technologies |
-|-------|-------------|
-| **Bot** | Python 3.13, python-telegram-bot v22.6, AsyncIO |
-| **API** | FastAPI, SQLAlchemy 2.0, Pydantic V2 |
-| **Web** | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
-| **Database** | PostgreSQL (production), SQLite (development) |
-| **Auth** | Telegram Login Widget (owner-only) |
-| **Infrastructure** | Docker, Turborepo, Caddy |
+| Layer              | Technologies                                             |
+| ------------------ | -------------------------------------------------------- |
+| **Bot**            | Python 3.13, python-telegram-bot v22.6, AsyncIO          |
+| **API**            | FastAPI, SQLAlchemy 2.0, Pydantic V2                     |
+| **Web**            | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
+| **Database**       | PostgreSQL 17 (Docker required)                          |
+| **Auth**           | Telegram Login Widget (owner-only)                       |
+| **Infrastructure** | Docker, Turborepo, Caddy                                 |
 
 ---
 
@@ -50,6 +51,7 @@ nezuko-monorepo/
 ## Key Features
 
 ### Bot Core
+
 - Instant mute on group join until verified
 - Multi-channel enforcement (AND logic)
 - Leave detection with immediate revocation
@@ -57,6 +59,7 @@ nezuko-monorepo/
 - Prometheus metrics and structured logging
 
 ### Admin API
+
 - RESTful endpoints with Pydantic validation
 - Telegram Login Widget authentication
 - Session-based auth with HTTP-only cookies
@@ -64,6 +67,7 @@ nezuko-monorepo/
 - Real-time SSE event streaming
 
 ### Web Dashboard
+
 - 13 routes (dashboard, analytics, groups, channels, bots, logs, settings)
 - 70+ React components (shadcn/ui based)
 - TanStack Query for data fetching
@@ -74,20 +78,20 @@ nezuko-monorepo/
 
 ## Quality Standards
 
-| Tool | Target |
-|------|--------|
-| Ruff Check | 0 errors |
-| Pylint | 10.00/10 |
-| Pyrefly | 0 errors |
-| ESLint | 0 warnings |
-| TypeScript | 0 errors |
+| Tool       | Target     |
+| ---------- | ---------- |
+| Ruff Check | 0 errors   |
+| Pylint     | 10.00/10   |
+| Pyrefly    | 0 errors   |
+| ESLint     | 0 warnings |
+| TypeScript | 0 errors   |
 
 ---
 
 ## Current Status
 
-**Phase**: Production Ready (Phase 50+)
-**Last Updated**: 2026-02-07
+**Phase**: Production Ready (Phase 52+)
+**Last Updated**: 2026-02-10
 
 - Bot Core: Functional with verification logging
 - Admin API: All endpoints working

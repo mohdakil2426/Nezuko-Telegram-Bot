@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 # pylint: disable=too-many-branches, too-many-statements
-async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Handle "I have joined" button click (multi-tenant).
 
@@ -125,5 +125,5 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
                 )
         except TelegramError:
             pass
-    except Exception as e:
+    except (RuntimeError, ValueError, OSError) as e:
         logger.error("Unexpected error in verify callback handler: %s", e, exc_info=True)

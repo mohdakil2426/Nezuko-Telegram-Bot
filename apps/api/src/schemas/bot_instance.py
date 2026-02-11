@@ -50,7 +50,6 @@ class BotDetailResponse(BotResponse):
     """Detailed bot information including linked groups."""
 
     # linked_groups: list[str] = Field(default_factory=list, description="List of linked group names")
-    pass  # For now, same as BotResponse. Extend when group linking is implemented.
 
 
 class BotListResponse(BaseModel):

@@ -26,11 +26,11 @@ _engine_kwargs: dict[str, Any] = {
 }
 
 # Use SSL for remote PostgreSQL (detect localhost variants)
-_db_url_lower = settings.DATABASE_URL.lower()
-_is_local = any(
-    host in _db_url_lower for host in ["localhost", "127.0.0.1", "::1", "localhost.localdomain"]
+_DB_URL_LOWER = settings.DATABASE_URL.lower()
+_IS_LOCAL = any(
+    host in _DB_URL_LOWER for host in ["localhost", "127.0.0.1", "::1", "localhost.localdomain"]
 )
-if not _is_local:
+if not _IS_LOCAL:
     _engine_kwargs["connect_args"]["ssl"] = "require"
 
 # Create Async Engine

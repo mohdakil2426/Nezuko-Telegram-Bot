@@ -62,7 +62,7 @@ def validate_config() -> None:
             + "\n".join(f"  • {e}" for e in errors)
             + "\n\nPlease set the required environment variables.\n"
         )
-    elif errors:
+    if errors:
         # In development, just warn
         for error in errors:
             logger.warning("configuration_warning", message=error)

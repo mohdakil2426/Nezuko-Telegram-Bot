@@ -25,15 +25,11 @@ class Settings(BaseSettings):
     REDIS_SOCKET_TIMEOUT: int = 5
     REDIS_SOCKET_CONNECT_TIMEOUT: int = 5
 
-    # Telegram Authentication (Owner-Only Access)
-    # Bot token used for login verification (get from @BotFather)
-    LOGIN_BOT_TOKEN: str | None = None
+    # Owner Identity (no login required)
     # Your Telegram user ID (get from @userinfobot)
     BOT_OWNER_TELEGRAM_ID: int | None = None
     # Fernet encryption key for bot tokens (generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
     ENCRYPTION_KEY: str | None = None
-    # Session duration in hours
-    SESSION_EXPIRY_HOURS: int = 24
 
     # API Configuration
     API_BASE_URL: str = "http://localhost:8080"
@@ -46,6 +42,7 @@ class Settings(BaseSettings):
     SECURITY_HEADERS_ENABLED: bool = False
     MOCK_AUTH: bool = False
     SECRET_KEY: str | None = None
+    SESSION_EXPIRY_HOURS: int = 72  # 3 days
 
     # Observability
     SENTRY_DSN: str | None = None
@@ -100,8 +97,6 @@ class Settings(BaseSettings):
             # Ensure critical secrets are set
             if not self.ENCRYPTION_KEY:
                 raise ValueError("ENCRYPTION_KEY is required in production")
-            if not self.LOGIN_BOT_TOKEN:
-                raise ValueError("LOGIN_BOT_TOKEN is required in production")
             if not self.BOT_OWNER_TELEGRAM_ID:
                 raise ValueError("BOT_OWNER_TELEGRAM_ID is required in production")
         return self

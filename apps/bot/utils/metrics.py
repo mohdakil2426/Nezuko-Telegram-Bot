@@ -305,7 +305,7 @@ def timed_db_query(bot_id: int, query_type: str):
                 return result
             finally:
                 duration = time.perf_counter() - start
-                record_db_query(bot_id, query_type, duration)
+                record_db_query(query_type, duration, bot_id)
 
         return wrapper
 
@@ -331,7 +331,7 @@ def timed_cache_operation(bot_id: int, operation: str):
                 return result
             finally:
                 duration = time.perf_counter() - start
-                record_cache_operation(bot_id, operation, duration)
+                record_cache_operation(operation, duration, bot_id)
 
         return wrapper
 

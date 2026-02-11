@@ -5,16 +5,12 @@ Stores authenticated sessions for the owner-only dashboard access.
 
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, DateTime, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.config import get_settings
 from src.models.base import Base
-
-if TYPE_CHECKING:
-    pass
 
 
 def generate_session_id() -> str:

@@ -13,7 +13,7 @@ import httpx
 import structlog
 
 if TYPE_CHECKING:
-    pass
+    from collections.abc import Mapping  # noqa: F401
 
 logger = structlog.get_logger(__name__)
 
@@ -114,14 +114,14 @@ class EventPublisher:
                     subscriber_count=result.get("subscriber_count", 0),
                 )
                 return True
-            else:
-                logger.warning(
-                    "event_publish_failed",
-                    event_type=event_type,
-                    status_code=response.status_code,
-                    response=response.text[:200],
-                )
-                return False
+
+            logger.warning(
+                "event_publish_failed",
+                event_type=event_type,
+                status_code=response.status_code,
+                response=response.text[:200],
+            )
+            return False
 
         except httpx.RequestError as exc:
             logger.error(

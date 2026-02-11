@@ -1,6 +1,5 @@
 """Dashboard statistics and activity endpoints."""
 
-import asyncio
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -8,10 +7,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.v1.dependencies.auth import get_current_active_user
+from src.api.v1.dependencies.session import OwnerIdentity, get_owner_identity
 from src.core.cache import Cache
 from src.core.database import get_session
-from src.models.admin_user import AdminUser
 from src.models.bot import EnforcedChannel, ProtectedGroup
 from src.models.verification_log import VerificationLog
 from src.schemas.base import SuccessResponse
@@ -23,7 +21,7 @@ router = APIRouter()
 
 @router.get("/stats", response_model=SuccessResponse[DashboardStatsResponse])
 async def get_dashboard_stats(
-    current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
+    current_user: OwnerIdentity = Depends(get_owner_identity),  # pylint: disable=unused-argument
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     """
@@ -125,7 +123,7 @@ async def _get_cache_hit_rate(session: AsyncSession, today_start: datetime) -> f
 
 @router.get("/activity", response_model=SuccessResponse[ActivityResponse])
 async def get_dashboard_activity(
-    current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
+    current_user: OwnerIdentity = Depends(get_owner_identity),  # pylint: disable=unused-argument
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     """
@@ -169,7 +167,7 @@ async def get_dashboard_activity(
 
 @router.get("/chart-data")
 async def get_chart_data(
-    current_user: AdminUser = Depends(get_current_active_user),  # pylint: disable=unused-argument
+    current_user: OwnerIdentity = Depends(get_owner_identity),  # pylint: disable=unused-argument
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     """

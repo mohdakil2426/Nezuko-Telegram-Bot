@@ -1,7 +1,7 @@
 """Permission-based dependencies for owner-only access.
 
-Uses session-based authentication with Telegram Login Widget.
-Since the dashboard is now owner-only, most endpoints use `require_owner` directly.
+Since the dashboard is owner-only and authentication has been removed,
+all permission checks simply return the owner identity.
 This module is kept for API compatibility and future multi-user expansion.
 """
 
@@ -10,9 +10,8 @@ from typing import Any
 
 from fastapi import Depends
 
-from src.api.v1.dependencies.session import require_owner
+from src.api.v1.dependencies.session import OwnerIdentity, get_owner_identity
 from src.core.permissions import Permission, Role
-from src.models.session import Session
 
 __all__ = ["Permission", "Role", "require_permission", "require_role"]
 
@@ -23,16 +22,19 @@ def require_permission(permission: Permission) -> Callable[..., Any]:
     NOTE: In the current owner-only setup, the owner has all permissions.
     This function exists for API compatibility and future multi-user expansion.
 
-    For most endpoints, use `require_owner` from session.py instead.
+    Args:
+        permission: Required permission (currently unused — owner has all).
+
+    Returns:
+        FastAPI dependency function.
     """
 
     async def permission_checker(
-        session: Session = Depends(require_owner),
-    ) -> Session:
+        owner: OwnerIdentity = Depends(get_owner_identity),
+    ) -> OwnerIdentity:
         # Owner has all permissions in current implementation
-        # When multi-user is added, this will check against user roles
         _ = permission  # Currently unused - owner has all permissions
-        return session
+        return owner
 
     return permission_checker
 
@@ -43,13 +45,18 @@ def require_role(role: Role) -> Callable[..., Any]:
     NOTE: In the current owner-only setup, the owner is implicitly 'super_admin'.
     This function exists for API compatibility and future multi-user expansion.
 
-    For most endpoints, use `require_owner` from session.py instead.
+    Args:
+        role: Required role (currently unused — owner is super_admin).
+
+    Returns:
+        FastAPI dependency function.
     """
 
-    async def role_checker(session: Session = Depends(require_owner)) -> Session:
+    async def role_checker(
+        owner: OwnerIdentity = Depends(get_owner_identity),
+    ) -> OwnerIdentity:
         # Owner is implicitly super_admin in current implementation
-        # When multi-user is added, this will check against user roles
         _ = role  # Currently unused - owner has all roles
-        return session
+        return owner
 
     return role_checker

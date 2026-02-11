@@ -1,17 +1,17 @@
 """Distributed and local caching layer with graceful degradation."""
 
 import json
-import logging
 from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
+import structlog
 from redis.asyncio import Redis, from_url
 from redis.exceptions import RedisError
 
 from src.core.config import get_settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class Cache:
@@ -66,17 +66,14 @@ class Cache:
         """
         try:
             redis = cls.get_redis()
-            # Handle Pydantic models by converting to dict first
+            # Convert Pydantic models to dict before serializing
             if hasattr(value, "model_dump"):
-                val_str = json.dumps(value.model_dump())
-            elif isinstance(value, (dict, list)):
-                val_str = json.dumps(value)
-            else:
-                val_str = json.dumps(value)
+                value = value.model_dump()
+            val_str = json.dumps(value)
             await redis.set(key, val_str, ex=expire)
             return True
         except (RedisError, TypeError) as e:
-            logger.warning("Cache set error (key=%s): %s", key, e)
+            logger.warning("cache_set_error", key=key, error=str(e))
             return False
 
     @classmethod

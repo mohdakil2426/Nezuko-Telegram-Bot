@@ -5,10 +5,9 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.v1.dependencies.session import get_current_session
+from src.api.v1.dependencies.session import OwnerIdentity, get_owner_identity
 from src.core.database import get_session
 from src.core.exceptions import ResourceNotFoundError
-from src.models.session import Session
 from src.schemas.channel import (
     ChannelCreateRequest,
     ChannelDetailResponse,
@@ -22,11 +21,11 @@ router = APIRouter()
 
 @router.get("", response_model=ChannelListResponse)
 async def read_channels(
+    current_user: Annotated[OwnerIdentity, Depends(get_owner_identity)],
+    session: Annotated[AsyncSession, Depends(get_session)],
     page: Annotated[int, Query(ge=1, le=1000)] = 1,
     per_page: Annotated[int, Query(ge=1, le=100)] = 10,
     search: Annotated[str | None, Query(max_length=100)] = None,
-    current_user: Annotated[Session, Depends(get_current_session)] = None,
-    session: Annotated[AsyncSession, Depends(get_session)] = None,
 ) -> Any:
     """
     Retrieve channels with pagination.
@@ -42,8 +41,8 @@ async def read_channels(
 @router.post("", response_model=ChannelResponse)
 async def create_channel(
     channel_in: ChannelCreateRequest,
-    current_user: Annotated[Session, Depends(get_current_session)] = None,
-    session: Annotated[AsyncSession, Depends(get_session)] = None,
+    current_user: Annotated[OwnerIdentity, Depends(get_owner_identity)],
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     """
     Create or update a channel.
@@ -57,8 +56,8 @@ async def create_channel(
 @router.get("/{channel_id}", response_model=ChannelDetailResponse)
 async def read_channel(
     channel_id: int,
-    current_user: Annotated[Session, Depends(get_current_session)] = None,
-    session: Annotated[AsyncSession, Depends(get_session)] = None,
+    current_user: Annotated[OwnerIdentity, Depends(get_owner_identity)],
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Any:
     """
     Get channel by ID.

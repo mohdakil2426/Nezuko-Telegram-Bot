@@ -2,21 +2,21 @@
 
 This module defines scheduled background tasks for data retention policies:
 - Delete old verification logs (>90 days)
-- Delete expired sessions
 - Delete old API call logs (>30 days)
 
 Runs via APScheduler with proper error handling and logging.
 """
 
 from datetime import UTC, datetime, timedelta
+from typing import cast
 
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from sqlalchemy import delete
+from sqlalchemy import CursorResult, delete
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.core.database import async_session_factory
 from src.models.api_call_log import ApiCallLog
-from src.models.session import Session
 from src.models.verification_log import VerificationLog
 
 logger = structlog.get_logger(__name__)
@@ -32,8 +32,11 @@ async def cleanup_verification_logs() -> None:
 
     try:
         async with async_session_factory() as session:
-            result = await session.execute(
-                delete(VerificationLog).where(VerificationLog.timestamp < cutoff_date)
+            result = cast(
+                CursorResult,
+                await session.execute(
+                    delete(VerificationLog).where(VerificationLog.timestamp < cutoff_date)
+                ),
             )
             await session.commit()
 
@@ -43,38 +46,11 @@ async def cleanup_verification_logs() -> None:
                 deleted_count=deleted_count,
                 cutoff_date=cutoff_date.isoformat(),
             )
-    except Exception as e:
+    except (SQLAlchemyError, OSError) as e:
         logger.error(
             "verification_logs_cleanup_failed",
             error=str(e),
             cutoff_date=cutoff_date.isoformat(),
-        )
-
-
-async def cleanup_expired_sessions() -> None:
-    """Delete expired sessions.
-
-    Runs daily at 3:00 AM UTC. Removes sessions that have passed their
-    expiration time to free up database space.
-    """
-    now = datetime.now(UTC)
-
-    try:
-        async with async_session_factory() as session:
-            result = await session.execute(delete(Session).where(Session.expires_at < now))
-            await session.commit()
-
-            deleted_count = result.rowcount
-            logger.info(
-                "expired_sessions_cleanup_completed",
-                deleted_count=deleted_count,
-                timestamp=now.isoformat(),
-            )
-    except Exception as e:
-        logger.error(
-            "expired_sessions_cleanup_failed",
-            error=str(e),
-            timestamp=now.isoformat(),
         )
 
 
@@ -88,8 +64,9 @@ async def cleanup_api_call_logs() -> None:
 
     try:
         async with async_session_factory() as session:
-            result = await session.execute(
-                delete(ApiCallLog).where(ApiCallLog.timestamp < cutoff_date)
+            result = cast(
+                CursorResult,
+                await session.execute(delete(ApiCallLog).where(ApiCallLog.timestamp < cutoff_date)),
             )
             await session.commit()
 
@@ -99,7 +76,7 @@ async def cleanup_api_call_logs() -> None:
                 deleted_count=deleted_count,
                 cutoff_date=cutoff_date.isoformat(),
             )
-    except Exception as e:
+    except (SQLAlchemyError, OSError) as e:
         logger.error(
             "api_call_logs_cleanup_failed",
             error=str(e),
@@ -115,7 +92,6 @@ def setup_scheduler() -> AsyncIOScheduler:
 
     Scheduled Jobs:
         - cleanup_verification_logs: Daily at 2:00 AM UTC
-        - cleanup_expired_sessions: Daily at 3:00 AM UTC
         - cleanup_api_call_logs: Weekly (Sunday) at 4:00 AM UTC
     """
     scheduler = AsyncIOScheduler(timezone="UTC")
@@ -128,17 +104,6 @@ def setup_scheduler() -> AsyncIOScheduler:
         minute=0,
         id="cleanup_verification_logs",
         name="Cleanup Verification Logs (>90 days)",
-        replace_existing=True,
-    )
-
-    # Daily at 3:00 AM UTC - Delete expired sessions
-    scheduler.add_job(
-        cleanup_expired_sessions,
-        trigger="cron",
-        hour=3,
-        minute=0,
-        id="cleanup_expired_sessions",
-        name="Cleanup Expired Sessions",
         replace_existing=True,
     )
 
@@ -158,7 +123,6 @@ def setup_scheduler() -> AsyncIOScheduler:
         "scheduler_configured",
         jobs=[
             "cleanup_verification_logs (daily 2am)",
-            "cleanup_expired_sessions (daily 3am)",
             "cleanup_api_call_logs (weekly sun 4am)",
         ],
     )

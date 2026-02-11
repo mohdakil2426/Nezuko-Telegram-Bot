@@ -114,5 +114,5 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except TelegramError as e:
         logger.error("Telegram error in message handler: %s", e, exc_info=True)
-    except Exception as e:
+    except (RuntimeError, ValueError, OSError) as e:
         logger.error("Unexpected error in message handler: %s", e, exc_info=True)

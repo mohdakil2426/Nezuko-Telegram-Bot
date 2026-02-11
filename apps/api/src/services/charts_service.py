@@ -111,8 +111,8 @@ class ChartsService:
         Get active vs inactive protected groups count.
         """
         stmt = select(
-            func.sum(case((ProtectedGroup.enabled == True, 1), else_=0)).label("active"),  # noqa: E712
-            func.sum(case((ProtectedGroup.enabled == False, 1), else_=0)).label("inactive"),  # noqa: E712
+            func.sum(case((ProtectedGroup.enabled == True, 1), else_=0)).label("active"),  # noqa: E712  # pylint: disable=singleton-comparison
+            func.sum(case((ProtectedGroup.enabled == False, 1), else_=0)).label("inactive"),  # noqa: E712  # pylint: disable=singleton-comparison
             func.count().label("total"),
         ).select_from(ProtectedGroup)
 

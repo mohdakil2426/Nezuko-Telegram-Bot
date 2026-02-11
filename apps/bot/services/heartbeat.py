@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 import httpx
 
 if TYPE_CHECKING:
-    pass
+    from collections.abc import Mapping  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -139,14 +139,10 @@ class HeartbeatService:
 
             except asyncio.CancelledError:
                 break
-            except (httpx.RequestError, OSError) as e:
+            except (httpx.RequestError, OSError, RuntimeError, ValueError) as e:
                 logger.error("Error in heartbeat loop: %s", e, exc_info=True)
                 consecutive_failures += 1
                 await asyncio.sleep(5)  # Brief pause before retry
-            except Exception as e:
-                logger.error("Unexpected error in heartbeat loop: %s", e, exc_info=True)
-                consecutive_failures += 1
-                await asyncio.sleep(5)
 
     async def _send_heartbeat(self) -> bool:
         """Send a single heartbeat.
@@ -172,13 +168,13 @@ class HeartbeatService:
                     extra={"uptime": result.get("uptime_seconds")},
                 )
                 return True
-            else:
-                logger.warning(
-                    "Heartbeat failed: %d %s",
-                    response.status_code,
-                    response.text[:100],
-                )
-                return False
+
+            logger.warning(
+                "Heartbeat failed: %d %s",
+                response.status_code,
+                response.text[:100],
+            )
+            return False
 
         except httpx.RequestError as e:
             logger.warning("Heartbeat request failed: %s", e)
@@ -204,12 +200,12 @@ class HeartbeatService:
             if response.status_code == 200:
                 logger.info("Bot start recorded with API")
                 return True
-            else:
-                logger.warning(
-                    "Failed to record bot start: %d",
-                    response.status_code,
-                )
-                return False
+
+            logger.warning(
+                "Failed to record bot start: %d",
+                response.status_code,
+            )
+            return False
 
         except httpx.RequestError as e:
             logger.error("Failed to record bot start: %s", e)
@@ -234,12 +230,12 @@ class HeartbeatService:
             if response.status_code == 200:
                 logger.info("Bot stop recorded with API")
                 return True
-            else:
-                logger.warning(
-                    "Failed to record bot stop: %d",
-                    response.status_code,
-                )
-                return False
+
+            logger.warning(
+                "Failed to record bot stop: %d",
+                response.status_code,
+            )
+            return False
 
         except httpx.RequestError as e:
             logger.error("Failed to record bot stop: %s", e)

@@ -1,37 +1,17 @@
 """WebSocket endpoints for real-time features."""
 
-import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Query, WebSocket, status
+import structlog
+from fastapi import APIRouter, Query, WebSocket
 
 from src.core.config import get_settings
 from src.core.websocket import connection_manager, handle_websocket_logs
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 settings = get_settings()
-
-
-def validate_ws_token(token: str | None) -> str | None:
-    """Validate session token from WebSocket query parameter.
-
-    Note: WebSocket authentication uses session ID passed as query parameter.
-    In production, this should be the nezuko_session cookie value.
-    """
-    if not token:
-        return None
-
-    # For now, just check if token is provided
-    # Full session validation would require async DB call
-    # WebSocket auth is simplified as the main auth happens via HTTP cookies
-    if settings.MOCK_AUTH:
-        return "mock-user-id"
-
-    # Return token as user_id for logging purposes
-    # Real validation happens at connection time via session cookie
-    return token if len(token) > 10 else None
 
 
 @router.websocket("/logs")
@@ -39,11 +19,13 @@ async def websocket_logs_endpoint(
     websocket: WebSocket,
     token: Annotated[str | None, Query()] = None,
 ) -> None:
-    """
-    WebSocket endpoint for real-time log streaming.
+    """WebSocket endpoint for real-time log streaming.
+
+    Authentication has been removed. All connections are accepted.
+    In production, add proper authentication as needed.
 
     Query Parameters:
-        token: JWT authentication token (required for authenticated access)
+        token: Optional identifier for logging purposes.
 
     Client Messages:
         Filter logs: {"action": "filter", "level": "ERROR", "logger": "verification"}
@@ -53,15 +35,8 @@ async def websocket_logs_endpoint(
         Heartbeat: {"type": "heartbeat", "timestamp": "..."}
         Filter updated: {"type": "filter_updated", "filters": {...}}
     """
-    # Validate token (optional - allows unauthenticated connections in development)
-    user_id = validate_ws_token(token)
-
-    if settings.ENVIRONMENT == "production" and not user_id:
-        # In production, require authentication
-        await websocket.close(
-            code=status.WS_1008_POLICY_VIOLATION, reason="Authentication required"
-        )
-        return
+    # No authentication required — all connections accepted
+    user_id = token or "anonymous"
 
     # Handle the WebSocket connection
     await handle_websocket_logs(websocket, user_id)

@@ -15,13 +15,11 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from src.api.v1.dependencies.session import get_current_session
+from src.api.v1.dependencies.session import OwnerIdentity, get_owner_identity
 from src.core.events import EventBus, EventType
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
-
-    from src.models.session import Session
 
 logger = structlog.get_logger(__name__)
 
@@ -61,7 +59,7 @@ class PublishEventResponse(BaseModel):
 # =============================================================================
 
 
-async def event_generator(session: Session) -> AsyncIterator[str]:
+async def event_generator(owner: OwnerIdentity) -> AsyncIterator[str]:
     """Generate SSE events for a connected client.
 
     Args:
@@ -74,8 +72,7 @@ async def event_generator(session: Session) -> AsyncIterator[str]:
 
     logger.info(
         "sse_client_connected",
-        telegram_id=session.telegram_id,
-        username=session.telegram_username,
+        telegram_id=owner.telegram_id,
     )
 
     # Start heartbeat task
@@ -87,7 +84,7 @@ async def event_generator(session: Session) -> AsyncIterator[str]:
     except asyncio.CancelledError:
         logger.info(
             "sse_client_disconnected",
-            telegram_id=session.telegram_id,
+            telegram_id=owner.telegram_id,
         )
     finally:
         heartbeat_task.cancel()
@@ -118,12 +115,11 @@ async def heartbeat_loop(bus: EventBus) -> None:
     description="Connect to receive real-time events via Server-Sent Events.",
 )
 async def stream_events(
-    session: Session = Depends(get_current_session),
+    owner: OwnerIdentity = Depends(get_owner_identity),
 ) -> StreamingResponse:
     """Stream real-time events to the client.
 
-    Requires authentication via session cookie.
-    Events include:
+    No authentication required. Events include:
     - Activity updates
     - Verification events
     - Analytics updates
@@ -133,14 +129,8 @@ async def stream_events(
     Returns:
         StreamingResponse with text/event-stream content type.
     """
-    if session is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required for event stream",
-        )
-
     return StreamingResponse(
-        event_generator(session),
+        event_generator(owner),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -158,11 +148,11 @@ async def stream_events(
 )
 async def publish_event(
     request: PublishEventRequest = Body(...),
-    session: Session = Depends(get_current_session),
+    owner: OwnerIdentity = Depends(get_owner_identity),
 ) -> PublishEventResponse:
     """Publish an event to the SSE stream.
 
-    This endpoint allows the bot or other authenticated services to push
+    This endpoint allows the bot or other services to push
     real-time updates to all connected dashboard clients.
 
     Valid event types:
@@ -179,11 +169,6 @@ async def publish_event(
     Returns:
         Confirmation with subscriber count.
     """
-    if session is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required to publish events",
-        )
 
     # Validate event type
     try:
@@ -202,7 +187,7 @@ async def publish_event(
         "event_published",
         event_type=request.event_type,
         subscriber_count=bus.subscriber_count,
-        published_by=session.telegram_id,
+        published_by=owner.telegram_id,
     )
 
     return PublishEventResponse(
@@ -218,7 +203,7 @@ async def publish_event(
     description="Get the current status of the event stream.",
 )
 async def stream_status(
-    _session: Session = Depends(get_current_session),
+    _owner: OwnerIdentity = Depends(get_owner_identity),
 ) -> dict:
     """Get event stream status.
 
@@ -239,7 +224,7 @@ async def stream_status(
     description="Record a bot heartbeat for uptime tracking.",
 )
 async def bot_heartbeat(
-    session: Session = Depends(get_current_session),
+    owner: OwnerIdentity = Depends(get_owner_identity),
 ) -> dict:
     """Record a bot heartbeat.
 
@@ -249,11 +234,6 @@ async def bot_heartbeat(
     Returns:
         Acknowledgement with uptime info.
     """
-    if session is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required for bot heartbeat",
-        )
 
     from src.services.uptime_service import get_uptime_tracker
 
@@ -272,7 +252,7 @@ async def bot_heartbeat(
     description="Record that the bot has started.",
 )
 async def record_bot_start(
-    session: Session = Depends(get_current_session),
+    owner: OwnerIdentity = Depends(get_owner_identity),
 ) -> dict:
     """Record that the bot has started.
 
@@ -282,11 +262,6 @@ async def record_bot_start(
     Returns:
         Acknowledgement.
     """
-    if session is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-        )
 
     from src.services.uptime_service import get_uptime_tracker
 
@@ -297,7 +272,7 @@ async def record_bot_start(
     bus = await EventBus.get_instance()
     await bus.publish(EventType.BOT_STATUS, {"status": "online"})
 
-    logger.info("bot_started", recorded_by=session.telegram_id)
+    logger.info("bot_started", recorded_by=owner.telegram_id)
 
     return {"status": "started"}
 
@@ -308,7 +283,7 @@ async def record_bot_start(
     description="Record that the bot has stopped.",
 )
 async def record_bot_stop(
-    session: Session = Depends(get_current_session),
+    owner: OwnerIdentity = Depends(get_owner_identity),
 ) -> dict:
     """Record that the bot has stopped.
 
@@ -317,11 +292,6 @@ async def record_bot_stop(
     Returns:
         Acknowledgement.
     """
-    if session is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-        )
 
     from src.services.uptime_service import get_uptime_tracker
 
@@ -332,7 +302,7 @@ async def record_bot_stop(
     bus = await EventBus.get_instance()
     await bus.publish(EventType.BOT_STATUS, {"status": "offline"})
 
-    logger.info("bot_stopped", recorded_by=session.telegram_id)
+    logger.info("bot_stopped", recorded_by=owner.telegram_id)
 
     return {"status": "stopped"}
 
@@ -343,7 +313,7 @@ async def record_bot_stop(
     description="Get the current bot status and uptime.",
 )
 async def get_bot_status(
-    _session: Session = Depends(get_current_session),
+    _owner: OwnerIdentity = Depends(get_owner_identity),
 ) -> dict:
     """Get the current bot status.
 

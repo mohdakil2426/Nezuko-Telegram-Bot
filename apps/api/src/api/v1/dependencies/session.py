@@ -1,59 +1,40 @@
-"""Session-based authentication dependencies.
+"""Owner identity provider — no authentication required.
 
-Authentication has been removed - all endpoints are now open for development.
-In production, add proper authentication as needed.
+All endpoints are open. This dependency provides the owner's identity
+from the environment configuration (BOT_OWNER_TELEGRAM_ID) for API
+operations that need an owner reference (e.g., listing bots).
+
+No login, no session cookies, no token validation.
 """
 
-from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
 
-from src.core.database import get_session
-from src.models.session import Session
+from src.core.config import get_settings
 
 
-async def get_current_session(
-    db: AsyncSession = Depends(get_session),
-) -> Session:
-    """Return a mock session for development.
+class OwnerIdentity(BaseModel):
+    """Lightweight owner identity for API endpoints.
 
-    Authentication has been removed. This returns a mock session
-    to maintain API compatibility with existing endpoints.
+    Attributes:
+        telegram_id: The owner's Telegram user ID from config.
+    """
 
-    Args:
-        db: Database session (unused but kept for compatibility).
+    telegram_id: int
+
+
+async def get_owner_identity() -> OwnerIdentity:
+    """Provide the owner's identity from environment configuration.
 
     Returns:
-        Mock Session object for development.
+        OwnerIdentity with telegram_id from BOT_OWNER_TELEGRAM_ID.
     """
-    # Return a mock session for all requests (no auth required)
-    return Session(
-        id="dev-session-id",
-        telegram_id=123456789,
-        telegram_username="developer",
-        telegram_name="Developer",
-        telegram_photo_url=None,
-        expires_at=datetime.now(UTC).replace(year=2099),
-        created_at=datetime.now(UTC),
-    )
+    settings = get_settings()
+    owner_id = settings.BOT_OWNER_TELEGRAM_ID or 0
+    return OwnerIdentity(telegram_id=owner_id)
 
 
-async def require_owner(
-    session: Session = Depends(get_current_session),
-) -> Session:
-    """Return the current session (no owner check in dev mode).
-
-    Args:
-        session: Current session from get_current_session.
-
-    Returns:
-        Session object.
-    """
-    return session
-
-
-# Type alias for dependency injection
-CurrentSession = Annotated[Session, Depends(get_current_session)]
-OwnerSession = Annotated[Session, Depends(require_owner)]
+# Type alias for dependency injection in endpoints
+CurrentOwner = Annotated[OwnerIdentity, Depends(get_owner_identity)]

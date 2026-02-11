@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 # pylint: disable=too-many-locals, duplicate-code
-async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Immediately verify new members joining the group (multi-tenant).
 
@@ -61,10 +61,9 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.debug("Group %s not protected, skipping new member check", chat_id)
             return
 
-        new_members = update.message.new_chat_members
         logger.info(
             "Verifying %d new member(s) in group %s against %d channel(s)",
-            len(new_members),
+            len(human_members),
             chat_id,
             len(channels),
         )
@@ -112,5 +111,5 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error("Telegram error in new member handler: %s", e, exc_info=True)
     except SQLAlchemyError as e:
         logger.error("Database error in new member handler: %s", e, exc_info=True)
-    except Exception as e:
+    except (RuntimeError, ValueError, OSError) as e:
         logger.error("Unexpected error in new member handler: %s", e, exc_info=True)
