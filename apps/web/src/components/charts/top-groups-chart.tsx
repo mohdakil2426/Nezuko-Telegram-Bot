@@ -5,7 +5,6 @@
  * Shows top performing groups by verification count
  */
 
-import * as React from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,7 +88,7 @@ export function TopGroupsChart() {
               cursor={false}
               content={
                 <ChartTooltipContent
-                  formatter={(value, name, item) => (
+                  formatter={(value, _name, item) => (
                     <div className="flex flex-col gap-1">
                       <span className="font-medium">{item.payload.title}</span>
                       <span>{value.toLocaleString()} verifications</span>

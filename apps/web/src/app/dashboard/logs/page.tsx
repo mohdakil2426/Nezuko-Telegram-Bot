@@ -261,6 +261,7 @@ export default function LogsPage() {
 
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [isConnected, isReconnecting, refetch]);
 
   // Filter logs by level

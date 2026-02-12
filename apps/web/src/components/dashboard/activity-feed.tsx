@@ -244,6 +244,7 @@ export function ActivityFeed() {
 
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [isConnected, isReconnecting, refetch]);
 
   if (isPending) {

@@ -28,10 +28,9 @@ class AnalyticsService:
     @cached(
         "analytics:user_growth",
         expire=300,
-        key_builder=lambda _self,
-        _session,
-        period="30d",
-        granularity="day": f"{period}:{granularity}",
+        key_builder=lambda _self, _session, period="30d", granularity="day": (
+            f"{period}:{granularity}"
+        ),
     )
     async def get_user_growth(
         self,
@@ -89,7 +88,9 @@ class AnalyticsService:
         # Create a map of dates with data
         date_data: dict[str, int] = {}
         for row in rows:
-            date_key = row.date.strftime("%Y-%m-%d") if hasattr(row.date, "strftime") else str(row.date)
+            date_key = (
+                row.date.strftime("%Y-%m-%d") if hasattr(row.date, "strftime") else str(row.date)
+            )
             date_data[date_key] = row.new_users
 
         # Generate all dates in range
@@ -129,10 +130,9 @@ class AnalyticsService:
     @cached(
         "analytics:verification_trends",
         expire=300,
-        key_builder=lambda _self,
-        _session,
-        period="7d",
-        granularity="hour": f"{period}:{granularity}",
+        key_builder=lambda _self, _session, period="7d", granularity="hour": (
+            f"{period}:{granularity}"
+        ),
     )
     async def get_verification_trends(
         self,
@@ -322,12 +322,17 @@ class AnalyticsService:
 
         # Derived metrics via helpers
         success_rate = await self._get_success_rate(session, week_start)
-        active_groups = await session.scalar(
-            select(func.count()).select_from(ProtectedGroup).where(ProtectedGroup.enabled.is_(True))
-        ) or 0
-        active_channels = await session.scalar(
-            select(func.count()).select_from(EnforcedChannel)
-        ) or 0
+        active_groups = (
+            await session.scalar(
+                select(func.count())
+                .select_from(ProtectedGroup)
+                .where(ProtectedGroup.enabled.is_(True))
+            )
+            or 0
+        )
+        active_channels = (
+            await session.scalar(select(func.count()).select_from(EnforcedChannel)) or 0
+        )
         cache_efficiency = await self._get_cache_efficiency(session, week_start)
         peak_hour = await self._get_peak_hour(session, week_start)
 

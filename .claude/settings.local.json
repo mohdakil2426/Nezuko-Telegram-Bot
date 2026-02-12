@@ -26,7 +26,7 @@
       "Bash(tasklist:*)",
       "Bash(alembic downgrade:*)",
       "Bash(alembic upgrade:*)",
-      "Bash(powershell -Command \"\\(Get-Item ''apps/api/src/main.py''\\).LastWriteTime = Get-Date\")",
+      "Bash(powershell -Command:*)",
       "Bash(taskkill:*)",
       "Bash(playwright-cli open:*)",
       "Bash(playwright-cli close:*)",
@@ -44,7 +44,11 @@
       "Bash(pip install:*)",
       "Bash(docker:*)",
       "Bash(alembic revision:*)",
-      "Bash(redis-cli:*)"
+      "Bash(redis-cli:*)",
+      "Bash(ruff format:*)",
+      "Bash(pylint:*)",
+      "WebSearch",
+      "Bash(bun add:*)"
     ]
   },
   "enabledPlugins": {

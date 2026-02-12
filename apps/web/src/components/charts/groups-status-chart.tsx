@@ -5,7 +5,6 @@
  * Shows breakdown of active vs inactive groups
  */
 
-import * as React from "react";
 import { Pie, PieChart, Cell, Label } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

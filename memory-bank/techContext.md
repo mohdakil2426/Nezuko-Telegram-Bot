@@ -12,7 +12,6 @@
 | Pydantic            | 2.12+   | Data validation     |
 | Uvicorn             | 0.40+   | ASGI server         |
 | AsyncPG             | 0.31+   | PostgreSQL driver   |
-| AIOSQLite           | 0.22+   | SQLite driver (dev) |
 | Redis               | 7.1+    | Caching             |
 | Alembic             | 1.18+   | Migrations          |
 

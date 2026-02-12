@@ -1,4 +1,5 @@
 """WebSocket handler for real-time log streaming."""
+
 import logging
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect

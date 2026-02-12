@@ -23,9 +23,7 @@ async def register(
 ):
     """Register a new user."""
     # Check if email already exists
-    result = await db.execute(
-        select(models.User).where(models.User.email == user_in.email)
-    )
+    result = await db.execute(select(models.User).where(models.User.email == user_in.email))
     if result.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -56,15 +54,11 @@ async def login(
     but we use it for email.
     """
     # Find user by email (username field)
-    result = await db.execute(
-        select(models.User).where(models.User.email == form_data.username)
-    )
+    result = await db.execute(select(models.User).where(models.User.email == form_data.username))
     user = result.scalar_one_or_none()
 
     # Verify credentials
-    if not user or not service.verify_password(
-        form_data.password, user.hashed_password
-    ):
+    if not user or not service.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",

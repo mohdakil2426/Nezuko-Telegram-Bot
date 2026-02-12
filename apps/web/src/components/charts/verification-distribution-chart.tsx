@@ -5,7 +5,6 @@
  * Shows breakdown of verification outcomes: verified, restricted, error
  */
 
-import * as React from "react";
 import { Pie, PieChart, Cell } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

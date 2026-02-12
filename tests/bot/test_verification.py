@@ -18,9 +18,7 @@ async def test_check_membership_cache_hit(mock_context):
     """Test verification returns cached result without API call."""
     from apps.bot.services.verification import check_membership
 
-    with patch(
-        "apps.bot.services.verification.cache_get", new_callable=AsyncMock
-    ) as mock_cache:
+    with patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache:
         mock_cache.return_value = "1"  # Cached as member
 
         result = await check_membership(123, -1001234567890, mock_context)
@@ -37,12 +35,8 @@ async def test_check_membership_cache_miss_calls_api(mock_context):
     from apps.bot.services.verification import check_membership
 
     with (
-        patch(
-            "apps.bot.services.verification.cache_get", new_callable=AsyncMock
-        ) as mock_cache_get,
-        patch(
-            "apps.bot.services.verification.cache_set", new_callable=AsyncMock
-        ) as mock_cache_set,
+        patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache_get,
+        patch("apps.bot.services.verification.cache_set", new_callable=AsyncMock) as mock_cache_set,
     ):
         mock_cache_get.return_value = None  # Cache miss
 
@@ -65,12 +59,8 @@ async def test_check_membership_non_member(mock_context, mocker):
     mock_context.bot.get_chat_member = mocker.AsyncMock(return_value=member)
 
     with (
-        patch(
-            "apps.bot.services.verification.cache_get", new_callable=AsyncMock
-        ) as mock_cache_get,
-        patch(
-            "apps.bot.services.verification.cache_set", new_callable=AsyncMock
-        ),
+        patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache_get,
+        patch("apps.bot.services.verification.cache_set", new_callable=AsyncMock),
     ):
         mock_cache_get.return_value = None
 

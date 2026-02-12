@@ -76,9 +76,7 @@ async def _sync_entity_count(
 
         async with get_session() as session:
             result = await session.execute(
-                select(model_class).where(
-                    getattr(model_class, id_column) == entity_id
-                )
+                select(model_class).where(getattr(model_class, id_column) == entity_id)
             )
             db_entity = result.scalar_one_or_none()
             if db_entity:

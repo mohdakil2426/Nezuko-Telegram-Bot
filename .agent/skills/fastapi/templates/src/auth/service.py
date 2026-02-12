@@ -34,9 +34,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 def decode_token(token: str) -> dict | None:
     """Decode and verify a JWT token. Returns None if invalid."""
     try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
     except JWTError:
         return None

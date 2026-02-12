@@ -100,7 +100,8 @@ ignore-paths = [
     "node_modules",
     "apps/web",
     ".agent",
-    "apps/api/alembic/versions",   # Alembic auto-generated (naming conventions are standard)
+    "apps/api/alembic/versions",   # Alembic auto-generated
+    "apps/api/alembic/env.py",     # Alembic environment config (dynamic members)
 ]
 extension-pkg-allow-list = ["pydantic"]
 jobs = 0  # Auto-detect CPU cores for parallel processing
@@ -141,6 +142,7 @@ disable = [
     # ── Code style (handled by Ruff) ──
     "fixme",                           # Allow TODO comments
     "line-too-long",                   # Handled by ruff formatter
+    "unsubscriptable-object",          # SQLAlchemy 2.0 Mapped[...] false positive
 ]
 
 [tool.pylint.format]
@@ -160,6 +162,7 @@ max-statements = 60
 
 [tool.mypy]
 python_version = "3.13"
+strict = true
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
