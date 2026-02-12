@@ -61,7 +61,6 @@ COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code
 COPY --chown=nezuko:nezuko apps/bot/ ./apps/bot/
-COPY --chown=nezuko:nezuko alembic.ini ./
 
 # Create directories for data and logs in storage/
 RUN mkdir -p /app/storage/data /app/storage/logs && \

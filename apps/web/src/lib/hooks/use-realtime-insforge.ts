@@ -165,14 +165,17 @@ export function useInsForgeRealtime(
           if (result.ok) {
             subscribedChannelsRef.current.add(channel);
           } else {
-            console.error(`[InsForge Realtime] Failed to subscribe to ${channel}:`, result.error);
+            // Use warn instead of error — subscription failures are expected
+            // graceful degradation (channels may not be configured on InsForge)
+            // console.error triggers Next.js DevTools error overlay which is misleading
+            console.warn(`[InsForge Realtime] Channel "${channel}" unavailable — polling fallback active`);
           }
         }
       }
 
       setConnectionState("connected");
-    } catch (error) {
-      console.error("[InsForge Realtime] Connection failed:", error);
+    } catch {
+      console.warn("[InsForge Realtime] Connection unavailable — polling fallback active");
       setConnectionState("disconnected");
     }
   }, [channels]);
@@ -207,8 +210,8 @@ export function useInsForgeRealtime(
       setConnectionState("disconnected");
     };
 
-    const handleConnectError = (err: unknown) => {
-      console.error("[InsForge Realtime] Connection error:", err);
+    const handleConnectError = (_err: unknown) => {
+      console.warn("[InsForge Realtime] Connection interrupted — will retry automatically");
       setConnectionState("disconnected");
     };
 

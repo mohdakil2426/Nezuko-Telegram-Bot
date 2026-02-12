@@ -21,6 +21,7 @@ from telegram.ext import Application
 from apps.bot.config import config
 from apps.bot.core.encryption import EncryptionError, decrypt_token, is_encryption_configured
 from apps.bot.core.loader import register_handlers, setup_bot_commands
+from apps.bot.utils.health import start_health_server, stop_health_server
 
 logger = logging.getLogger(__name__)
 
@@ -631,6 +632,13 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
 
         self._running = True
 
+        # Start health check server (required for Koyeb/Cloud Run health probes)
+        try:
+            await start_health_server(host="0.0.0.0", port=8000)
+            logger.info("[OK] Health server started on port 8000")
+        except OSError as e:
+            logger.warning("Health server failed to start: %s", e)
+
         # Load bots from database
         try:
             bots = await self.load_bots_from_database()
@@ -641,7 +649,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
 
         if not bots:
             logger.warning("No active bots found in database")
-            logger.info("Add bots via the dashboard at http://localhost:3000/dashboard/bots")
+            logger.info("Add bots via the web dashboard to get started!")
             # Keep running to allow hot-reload when bots are added
             while self._running:
                 await asyncio.sleep(60)
@@ -718,6 +726,9 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
 
         # Close database engine
         await self.engine.dispose()
+
+        # Stop health server
+        await stop_health_server()
         logger.info("All bots stopped")
 
 

@@ -79,7 +79,9 @@ async function handleVerify(body, corsHeaders) {
 
 async function handleAdd(body, corsHeaders) {
   const { token, owner_telegram_id } = body;
-  if (!token || !owner_telegram_id) {
+  console.log('[manage-bot] handleAdd called with owner_telegram_id:', owner_telegram_id, 'token present:', !!token);
+
+  if (!token || (owner_telegram_id === undefined || owner_telegram_id === null)) {
     return new Response(JSON.stringify({ error: 'Token and owner_telegram_id are required' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -87,10 +89,12 @@ async function handleAdd(body, corsHeaders) {
   }
 
   // Step 1: Verify token with Telegram
+  console.log('[manage-bot] Verifying token with Telegram API...');
   const verifyResponse = await fetch(`https://api.telegram.org/bot${token}/getMe`);
   const verifyData = await verifyResponse.json();
 
   if (!verifyData.ok) {
+    console.log('[manage-bot] Token verification failed:', verifyData.description);
     return new Response(JSON.stringify({ error: 'Invalid bot token' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -98,39 +102,46 @@ async function handleAdd(body, corsHeaders) {
   }
 
   const botInfo = verifyData.result;
+  console.log('[manage-bot] Token verified. Bot:', botInfo.username, 'ID:', botInfo.id);
 
   // Step 2: Encrypt token using base64 (compatible storage)
-  // Note: The actual Fernet decryption happens in the Python bot.
-  // For the Edge Function, we store the token as base64 encoded.
-  // The ENCRYPTION_KEY env var would be needed for full Fernet compatibility.
   const encryptedToken = btoa(token);
 
   // Step 3: Insert into database
+  const baseUrl = Deno.env.get('INSFORGE_BASE_URL');
+  const anonKey = Deno.env.get('ANON_KEY');
+  console.log('[manage-bot] Creating InsForge client. baseUrl:', baseUrl ? 'set' : 'NOT SET', 'anonKey:', anonKey ? 'set' : 'NOT SET');
+
   const client = createClient({
-    baseUrl: Deno.env.get('INSFORGE_BASE_URL'),
-    anonKey: Deno.env.get('ANON_KEY'),
+    baseUrl,
+    anonKey,
   });
+
+  const insertPayload = {
+    owner_telegram_id: owner_telegram_id,
+    bot_id: botInfo.id,
+    bot_username: botInfo.username,
+    bot_name: botInfo.first_name,
+    token_encrypted: encryptedToken,
+    is_active: true,
+  };
+  console.log('[manage-bot] Inserting bot:', JSON.stringify({ ...insertPayload, token_encrypted: '***' }));
 
   const { data, error } = await client.database
     .from('bot_instances')
-    .insert([{
-      owner_telegram_id: owner_telegram_id,
-      bot_id: botInfo.id,
-      bot_username: botInfo.username,
-      bot_name: botInfo.first_name,
-      token_encrypted: encryptedToken,
-      is_active: true,
-    }])
+    .insert([insertPayload])
     .select()
     .single();
 
   if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('[manage-bot] DB insert error:', JSON.stringify(error));
+    return new Response(JSON.stringify({ error: error.message || 'Database insert failed' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
+  console.log('[manage-bot] Bot inserted successfully:', data?.id);
   return new Response(JSON.stringify(data), {
     status: 201,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },

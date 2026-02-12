@@ -74,10 +74,27 @@ async def update_active_groups_gauge():
 
 async def post_init(_application: Application) -> None:
     """Initialize database and other resources after app creation."""
+    db_available = False
+
+    # Database initialization (graceful degradation if unreachable)
     logger.info("Initializing database...")
-    await init_db()
-    set_db_connected(True)
-    logger.info("Database initialized successfully")
+    try:
+        await init_db()
+        set_db_connected(True)
+        db_available = True
+        logger.info("[OK] Database initialized successfully")
+    except (TimeoutError, OSError, ConnectionRefusedError) as e:
+        set_db_connected(False)
+        logger.warning(
+            "[WARN] Database connection failed: %s. "
+            "Bot will run WITHOUT database features (commands that "
+            "need DB will return fallback responses). "
+            "Check if port 5432 is accessible from your network.",
+            e,
+        )
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        set_db_connected(False)
+        logger.error("Database initialization failed unexpectedly: %s", e, exc_info=True)
 
     # Initialize Redis (graceful degradation if unavailable)
     logger.info("Initializing Redis cache...")
@@ -89,20 +106,23 @@ async def post_init(_application: Application) -> None:
         set_redis_connected(False)
         logger.warning("[WARN] Redis unavailable - running in degraded mode (direct API calls)")
 
-    # Update metrics
-    await update_active_groups_gauge()
+    # Update metrics (only if DB available)
+    if db_available:
+        await update_active_groups_gauge()
 
     # Setup bot command menus (shows commands when user types /)
     logger.info("Setting up command menus...")
     await setup_bot_commands(_application)
     logger.info("[OK] Command menus configured")
 
-    # Record bot start time for uptime tracking
-    await record_bot_start()
+    # Record bot start time for uptime tracking (only if DB available)
+    if db_available:
+        await record_bot_start()
 
-    # Schedule member count sync (every 15 minutes)
-    schedule_member_sync(_application)
-    logger.info("[OK] Analytics integration initialized")
+    # Schedule member count sync (every 15 minutes) - only if DB available
+    if db_available:
+        schedule_member_sync(_application)
+        logger.info("[OK] Analytics integration initialized")
 
     # Initialize InsForge workers (status writer & command worker)
     if config.insforge_database_url:
@@ -121,6 +141,12 @@ async def post_init(_application: Application) -> None:
             _command_worker = CommandWorker(_application.bot, bot_id, config.insforge_database_url)
             await _command_worker.start()
             logger.info("[OK] Command worker started for bot %d", bot_id)
+        except (TimeoutError, OSError, ConnectionRefusedError) as e:
+            logger.warning(
+                "[WARN] InsForge workers failed to start (port blocked?): %s. "
+                "Dashboard sync disabled.",
+                e,
+            )
         except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error("Failed to start InsForge workers: %s", e, exc_info=True)
     else:
