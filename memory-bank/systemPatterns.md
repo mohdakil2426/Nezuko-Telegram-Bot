@@ -35,6 +35,37 @@ graph TD
 
 ---
 
+## Hosting Architecture (Cloud)
+
+```mermaid
+graph TD
+    User((User))
+    
+    subgraph Frontend ["Vercel (Web)"]
+        Dashboard["Next.js Dashboard"]
+    end
+    
+    subgraph Backend ["Koyeb (Bot)"]
+        Container["Docker Container"]
+        BotManager["BotManager"]
+        Workers["Bot Instances"]
+    end
+    
+    subgraph Data ["InsForge (BaaS)"]
+        DB[(PostgreSQL)]
+        Fn["Edge Functions"]
+    end
+    
+    User -->|HTTPS| Dashboard
+    Dashboard -->|HTTPS| Fn
+    Dashboard -->|HTTPS| DB
+    
+    BotManager -->|Health Check| Container
+    Container -->|SQL Connection| DB
+```
+
+---
+
 ## Bot Patterns (Python)
 
 ### Async-First Architecture
@@ -155,4 +186,4 @@ Database triggers automatically push events to WebSocket channels.
 
 ---
 
-_Last Updated: 2026-02-12_
+_Last Updated: 2026-02-13_

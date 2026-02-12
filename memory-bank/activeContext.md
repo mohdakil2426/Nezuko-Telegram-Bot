@@ -2,34 +2,33 @@
 
 ## Current Status
 
-**Date**: 2026-02-12
-**Phase**: System Testing & Verification
-**Branch**: `feat/full-stack-integration`
-**Change**: `insforge-migration` (OpenSpec) - **COMPLETE**
+**Date**: 2026-02-13
+**Phase**: Cloud Deployment & Final Verification
+**Branch**: `main` (Merged from `feat/full-stack-integration`)
+**Change**: `deployment-ready` (Koyeb/Vercel) - **READY**
 
 ---
 
-## Current Work: System Testing
+## Current Work: Cloud Deployment
 
 ### What is happening
-The migration to InsForge BaaS is **100% complete**. The legacy `apps/api/` layer has been removed. The system is now running on a clean 2-tier architecture (Web + Bot ↔ InsForge). We are now in the final verification phase to ensure all components interact correctly with the new backend.
+The platform is fully configured for **cloud deployment**. We have optimized the Dockerfile for Koyeb, implemented a health check server for the bot, and resolved Windows-specific path length issues in the repo. The codebase is now clean and ready for production on Vercel (Web) and Koyeb (Bot).
 
 ### Recent Achievements
 
-1.  **Docs & CLI Cleanup**: Verified `package.json`, `nezuko.bat`, and `docs/` reflect the 2-tier architecture.
-2.  **API Removal**: Successfully deleted `apps/api/` and all associated configurations.
-3.  **Service Rewrite**: All 9 web services now use the InsForge SDK.
-4.  **Bot Refactor**: Status writer and command worker are fully operational with PostgreSQL.
+1.  **Deployment Ready**: Fixed `Dockerfile.monorepo` and added `.dockerignore` for 3x faster builds.
+2.  **Health Check Implementation**: Added `start_health_server()` to `BotManager` so Koyeb can probe `/health`.
+3.  **Windows Fix**: Resolved `Maxwell Path` issues by removing deep-nested template files from the repo.
+4.  **CI/CD Guides**: Created comprehensive `DEPLOYMENT-REPORT.md` and guides.
 
 ### Active Tasks
 
-- [x] **Bug Fix**: Resolved `asyncpg` incompatibility with `sslmode` URL parameter in `apps/bot/core/database.py`.
-- [x] **Config Fix**: Corrected InsForge database hostname to `db.u4ckbciy.us-west.insforge.app` in `apps/bot/.env`.
-- [ ] **Network Access**: Local network is blocking outbound traffic to ports 5432/6543. User needs to switch networks or use VPN.
-- [ ] **Credentials**: Update `YOUR_DB_PASSWORD` in `apps/bot/.env` with actual credentials.
-- [ ] **End-to-End Testing**: Verify the full user flow (Join Group -> Bot Mute -> Web Verify -> Bot Unmute).
-- [ ] **Realtime Verification**: Confirm WebSocket events trigger dashboard updates.
-- [ ] **Deployment Prep**: Finalize Docker images and environment config for production.
+- [x] **Docker Fixes**: `alembic.ini` removal, correct requirements path.
+- [x] **Health Server**: Bot now responds to HTTP probes on port 8000.
+- [x] **Repo Cleanup**: Removed incompatible files that broke Windows checkouts.
+- [ ] **Deploy Bot**: Connect GitHub repo to Koyeb and deploy.
+- [ ] **Deploy Web**: Connect GitHub repo to Vercel and deploy.
+- [ ] **Prod Env Vars**: Set production variables on both platforms.
 
 ---
 

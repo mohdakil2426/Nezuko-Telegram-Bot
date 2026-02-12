@@ -27,6 +27,8 @@
 | Tool | Purpose |
 | --- | --- |
 | **InsForge BaaS** | Managed PostgreSQL, Realtime, Storage, Edge Functions |
+| **Koyeb** | Bot Hosting (Docker/Python) - Free Tier |
+| **Vercel** | Web Hosting (Next.js) - Free Tier |
 | **Docker** | Bot containerization |
 | **Turborepo** | Monorepo management |
 | **Caddy** | Reverse proxy |
@@ -133,4 +135,4 @@ bun run format                  # Prettier + Tailwind Sort
 
 ---
 
-_Last Updated: 2026-02-12_
+_Last Updated: 2026-02-13_
