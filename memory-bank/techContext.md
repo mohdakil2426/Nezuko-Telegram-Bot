@@ -109,8 +109,9 @@ pytest                                               # Tests
 ```bash
 cd apps/web
 bun run lint                    # ESLint (0 warnings)
+bun run knip                    # Dead code check
 bun run build                   # TypeScript (0 errors)
-bunx prettier --write "src/**/*"
+bun run format                  # Prettier + Tailwind Sort
 ```
 
 ### Tool Configuration Files
@@ -121,6 +122,7 @@ bunx prettier --write "src/**/*"
 | **Pylint**  | `pyproject.toml` `[tool.pylint.*]` | disabled rules, max-locals=25, max-statements=60      |
 | **Pyrefly** | `pyrefly.toml`                     | search-path, ignore-missing-imports, project-includes |
 | **MyPy**    | `pyproject.toml` `[tool.mypy]`     | strict mode, plugin config                            |
+| **Knip**    | `apps/web/knip.json`               | Dead code detection (Web)                             |
 
 ### Pylint Disabled Rules (Rationale)
 

@@ -48,9 +48,15 @@
       "Bash(ruff format:*)",
       "Bash(pylint:*)",
       "WebSearch",
-      "Bash(bun add:*)"
+      "Bash(bun add:*)",
+      "mcp__insforge__fetch-docs",
+      "mcp__insforge__fetch-sdk-docs",
+      "mcp__insforge__get-backend-metadata"
     ]
   },
+  "enabledMcpjsonServers": [
+    "insforge"
+  ],
   "enabledPlugins": {
     "python-development@claude-code-workflows": true
   }
