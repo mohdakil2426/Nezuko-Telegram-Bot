@@ -5,6 +5,7 @@
 
 import { USE_MOCK } from "@/lib/api/config";
 import { insforge } from "@/lib/insforge";
+import { WebhookTestResult } from "./types";
 
 export interface ConfigEntry {
   key: string;
@@ -57,4 +58,15 @@ export async function setConfigValue(key: string, value: string): Promise<void> 
     .from("admin_config")
     .upsert({ key, value }, { onConflict: "key" });
   if (error) throw error;
+}
+
+/**
+ * Test a webhook URL
+ */
+export async function testWebhook(url: string): Promise<WebhookTestResult> {
+  const { data, error } = await insforge.functions.invoke("test-webhook", {
+    body: { url },
+  });
+  if (error) throw error;
+  return data as WebhookTestResult;
 }

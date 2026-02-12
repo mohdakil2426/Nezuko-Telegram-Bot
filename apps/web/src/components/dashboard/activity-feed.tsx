@@ -12,8 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useActivity } from "@/lib/hooks";
-import { useRealtimeActivity } from "@/lib/hooks/use-realtime";
+import { useActivity, useRealtimeActivity } from "@/lib/hooks";
 import type { ActivityItem } from "@/lib/services/types";
 
 /**

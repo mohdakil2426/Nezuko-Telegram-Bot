@@ -54,7 +54,8 @@
       "mcp__insforge__get-backend-metadata",
       "Bash(openspec:*)",
       "Bash(openspec status:*)",
-      "Bash(openspec instructions proposal:*)"
+      "Bash(openspec instructions proposal:*)",
+      "mcp__insforge__create-function"
     ]
   },
   "enabledMcpjsonServers": [

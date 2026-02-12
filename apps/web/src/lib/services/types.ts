@@ -423,3 +423,13 @@ export interface BotHealthMetrics {
   error_rate: number;
   overall_score: number;
 }
+
+/**
+ * Webhook test result
+ */
+export interface WebhookTestResult {
+  success: boolean;
+  status: number;
+  latency_ms: number;
+  error?: string;
+}

@@ -49,13 +49,12 @@ function Show-MainMenu {
     Write-Host "  ┌── 📦 SETUP & CONFIGURATION ──────────────────────────┐" -ForegroundColor Magenta
     Write-Host "  │    [1] 🏗️  First-Time Setup                          │" -ForegroundColor White
     Write-Host "  │    [2] 🔐 Security & Keys...                         │" -ForegroundColor White
-    Write-Host "  │    [3] 🗄️  Database...                                │" -ForegroundColor White
     Write-Host "  ├── 🚀 DEVELOPMENT ────────────────────────────────────┤" -ForegroundColor Green
-    Write-Host "  │    [4] ▶️  Start Services...                          │" -ForegroundColor White
-    Write-Host "  │    [5] ⏹️  Stop All Services                          │" -ForegroundColor White
+    Write-Host "  │    [3] ▶️  Start Services...                          │" -ForegroundColor White
+    Write-Host "  │    [4] ⏹️  Stop All Services                          │" -ForegroundColor White
     Write-Host "  ├── 🧹 UTILITIES ──────────────────────────────────────┤" -ForegroundColor Yellow
-    Write-Host "  │    [6] 🧼 Clean Artifacts...                         │" -ForegroundColor White
-    Write-Host "  │    [7] ♻️  Full Reset (Clean + Reinstall)             │" -ForegroundColor White
+    Write-Host "  │    [5] 🧼 Clean Artifacts...                         │" -ForegroundColor White
+    Write-Host "  │    [6] ♻️  Full Reset (Clean + Reinstall)             │" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
     Write-Host "  │    [0] ❌ Exit                                       │" -ForegroundColor White
     Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
@@ -113,14 +112,12 @@ function Show-StartMenu {
     Write-Host "▶️  START SERVICES" -ForegroundColor Green -NoNewline
     Write-Host "                               │" -ForegroundColor White
     Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  │    [1] 🚀 Start ALL (DB + Bot + API + Web)           │" -ForegroundColor White
+    Write-Host "  │    [1] 🚀 Start ALL (Bot + Web)                      │" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
     Write-Host "  │    [2] 🤖 Bot Only                                   │" -ForegroundColor White
-    Write-Host "  │    [3] 📡 API Only                                   │" -ForegroundColor White
-    Write-Host "  │    [4] 💻 Web Dashboard Only                         │" -ForegroundColor White
-    Write-Host "  │    [5] 🐘 Database Only (PostgreSQL Docker)         │" -ForegroundColor White
+    Write-Host "  │    [3] 💻 Web Dashboard Only                         │" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
-    Write-Host "  │    [6] ⏹️  Stop All Services                          │" -ForegroundColor White
+    Write-Host "  │    [4] ⏹️  Stop All Services                          │" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
     Write-Host "  │    [0] ⬅️  Back                                       │" -ForegroundColor White
     Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
@@ -203,40 +200,6 @@ function Invoke-SecurityMenu {
                 
                 $projectRoot = Get-ProjectRoot
                 
-                # Check API .env
-                $apiEnv = Join-Path $projectRoot "apps\api\.env"
-                $apiEnvExample = Join-Path $projectRoot "apps\api\.env.example"
-                Write-Host "  apps/api/.env: " -NoNewline
-                if (Test-Path $apiEnv) {
-                    Write-Host "✅ EXISTS" -ForegroundColor Green
-                }
-                else {
-                    Write-Host "❌ MISSING" -ForegroundColor Red -NoNewline
-                    if (Test-Path $apiEnvExample) {
-                        Write-Host " (copy from .env.example)" -ForegroundColor Gray
-                    }
-                    else {
-                        Write-Host ""
-                    }
-                }
-                
-                # Check Web .env.local
-                $webEnv = Join-Path $projectRoot "apps\web\.env.local"
-                $webEnvExample = Join-Path $projectRoot "apps\web\.env.example"
-                Write-Host "  apps/web/.env.local: " -NoNewline
-                if (Test-Path $webEnv) {
-                    Write-Host "✅ EXISTS" -ForegroundColor Green
-                }
-                else {
-                    Write-Host "❌ MISSING" -ForegroundColor Red -NoNewline
-                    if (Test-Path $webEnvExample) {
-                        Write-Host " (copy from .env.example)" -ForegroundColor Gray
-                    }
-                    else {
-                        Write-Host ""
-                    }
-                }
-                
                 # Check Bot .env
                 $botEnv = Join-Path $projectRoot "apps\bot\.env"
                 $botEnvExample = Join-Path $projectRoot "apps\bot\.env.example"
@@ -253,7 +216,7 @@ function Invoke-SecurityMenu {
                         Write-Host ""
                     }
                 }
-                
+
                 Write-Host ""
                 Wait-ForKeyPress
             }
@@ -411,22 +374,13 @@ function Invoke-StartMenu {
         $startScript = Join-Path $ScriptRoot "..\dev\start.ps1"
         
         switch ($choice) {
-            "1" { 
+            "1" {
                 Write-Host ""
-                Write-Host "  🚀 Starting ALL services (including Database)..." -ForegroundColor Green
+                Write-Host "  🚀 Starting ALL services..." -ForegroundColor Green
                 Write-Host ""
-                
-                # Start PostgreSQL Docker first
-                Write-Host "  [1/2] Starting PostgreSQL container..." -ForegroundColor Cyan
-                Start-PostgresContainer
-                
-                Start-Sleep -Seconds 2
-                
-                # Then start Bot + API + Web
-                Write-Host ""
-                Write-Host "  [2/2] Starting application services..." -ForegroundColor Cyan
+
                 & $startScript -Service "all"
-                Wait-ForKeyPress 
+                Wait-ForKeyPress
             }
             "2" {
                 Write-Host ""
@@ -436,23 +390,11 @@ function Invoke-StartMenu {
             }
             "3" {
                 Write-Host ""
-                Write-Host "  📡 Starting API..." -ForegroundColor Cyan
-                & $startScript -Service "api"
-                Wait-ForKeyPress
-            }
-            "4" {
-                Write-Host ""
                 Write-Host "  💻 Starting Web Dashboard..." -ForegroundColor Blue
                 & $startScript -Service "web"
                 Wait-ForKeyPress
             }
-            "5" {
-                Write-Host ""
-                Write-Host "  🐘 Starting PostgreSQL container..." -ForegroundColor Cyan
-                Start-PostgresContainer
-                Wait-ForKeyPress
-            }
-            "6" {
+            "4" {
                 Write-Host ""
                 Write-Host "  ⏹️  Stopping all services..." -ForegroundColor Red
                 $stopScript = Join-Path $ScriptRoot "..\dev\stop.ps1"
@@ -672,16 +614,15 @@ function Start-MainMenu {
             # Setup & Configuration
             "1" { Invoke-FirstTimeSetup; Wait-ForKeyPress }
             "2" { Invoke-SecurityMenu }
-            "3" { Invoke-DatabaseMenu }
-            
+
             # Development
-            "4" { Invoke-StartMenu }
-            "5" { Invoke-StopServices; Wait-ForKeyPress }
-            
+            "3" { Invoke-StartMenu }
+            "4" { Invoke-StopServices; Wait-ForKeyPress }
+
             # Utilities
-            "6" { Invoke-CleanMenu }
-            "7" { Invoke-FullReset; Wait-ForKeyPress }
-            
+            "5" { Invoke-CleanMenu }
+            "6" { Invoke-FullReset; Wait-ForKeyPress }
+
             # Exit
             "0" {
                 Write-Host ""

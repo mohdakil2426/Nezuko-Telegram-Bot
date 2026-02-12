@@ -51,8 +51,8 @@ class BotSettings(BaseSettings):
     # Dashboard mode - for decrypting bot tokens from database
     ENCRYPTION_KEY: str | None = None
 
-    # API URL for event publishing
-    API_URL: str = "http://localhost:8080"
+    # InsForge PostgreSQL URL (for bot workers - separate from local DATABASE_URL)
+    INSFORGE_DATABASE_URL: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -128,9 +128,9 @@ class BotSettings(BaseSettings):
         return self.ENCRYPTION_KEY
 
     @property
-    def api_url(self) -> str:
-        """Alias for API_URL for backwards compatibility."""
-        return self.API_URL
+    def insforge_database_url(self) -> str | None:
+        """Alias for INSFORGE_DATABASE_URL for backwards compatibility."""
+        return self.INSFORGE_DATABASE_URL
 
     @property
     def is_production(self) -> bool:
@@ -217,7 +217,7 @@ class BotSettings(BaseSettings):
             f"  database_url=***REDACTED***,\n"
             f"  redis_url=***REDACTED***,\n"
             f"  webhook_url=***REDACTED***,\n"
-            f"  api_url=***REDACTED***,\n"
+            f"  insforge_database_url=***REDACTED***,\n"
             f"  encryption_key=***REDACTED***,\n"
             f"  polling={'webhooks' if self.use_webhooks else 'polling'}\n"
             f")"
@@ -233,6 +233,7 @@ class BotSettings(BaseSettings):
             "REDIS_URL",
             "SENTRY_DSN",
             "ENCRYPTION_KEY",
+            "INSFORGE_DATABASE_URL",
         }
         for key in sensitive_keys:
             if data.get(key):

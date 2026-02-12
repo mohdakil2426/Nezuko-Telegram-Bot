@@ -50,7 +50,7 @@ class BotMetrics:
 
 
 @dataclass
-class BotInstance:
+class BotInstance:  # pylint: disable=too-many-instance-attributes
     """Runtime state for a bot instance."""
 
     config: Any  # BotConfig type
@@ -80,7 +80,7 @@ class BotConfig:
     is_active: bool
 
 
-class BotManager:
+class BotManager:  # pylint: disable=too-many-instance-attributes
     """Manages multiple bot instances from database.
 
     In dashboard mode, this class:

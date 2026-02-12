@@ -34,13 +34,24 @@ export {
   useBotHealthMetrics,
 } from "./use-charts";
 
-// Real-time enhanced chart hooks
+// InsForge Realtime hooks (replaces SSE)
 export {
+  useInsForgeRealtime,
+  useDashboardRealtime,
+  useLogsRealtime,
+  useCommandsRealtime,
   useRealtimeChart,
   useRealtimeVerificationChart,
   useRealtimeActivityChart,
   useRealtimeBotHealthChart,
-} from "./use-realtime-chart";
+  // Backward compatibility exports
+  useRealtime,
+  useRealtimeActivity,
+  useRealtimeAnalytics,
+  useRealtimeLogs,
+  type ConnectionState,
+  type RealtimeEvent,
+} from "./use-realtime-insforge";
 
 // Logs hooks
 export { useLogs } from "./use-logs";

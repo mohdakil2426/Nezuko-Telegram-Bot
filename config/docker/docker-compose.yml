@@ -24,11 +24,8 @@ services:
       - ../../apps/bot/.env
     environment:
       - ENVIRONMENT=${ENVIRONMENT:-development}
-      - DATABASE_URL=postgresql+asyncpg://nezuko:${POSTGRES_PASSWORD:-nezuko_secret}@postgres:5432/nezuko
       - REDIS_URL=redis://redis:6379/0
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
@@ -41,33 +38,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-
-  # ==========================================================
-  # PostgreSQL Database
-  # ==========================================================
-  postgres:
-    image: postgres:16-alpine
-    container_name: nezuko-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: nezuko
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nezuko_secret}
-      POSTGRES_DB: nezuko
-      PGDATA: /var/lib/postgresql/data/pgdata
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-      - ../../scripts/setup/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    networks:
-      - nezuko-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nezuko -d nezuko"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    # Uncomment to expose PostgreSQL for local debugging
-    # ports:
-    #   - "5432:5432"
 
   # ==========================================================
   # Redis Cache
@@ -103,8 +73,6 @@ networks:
 # Volumes
 # ==========================================================
 volumes:
-  postgres-data:
-    name: nezuko-postgres-data
   redis-data:
     name: nezuko-redis-data
   bot-logs:

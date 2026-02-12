@@ -26,7 +26,7 @@ Convert group participants into channel subscribers through automated verificati
 | **Auth**           | None (development mode, direct access)                   |
 | **Infrastructure** | Docker (bot only), Turborepo, Caddy                      |
 
-> **Architecture Change (Phase 54)**: Migrating from 3-tier (Web → FastAPI → PostgreSQL) to 2-tier (Web → InsForge BaaS + Bot → InsForge PostgreSQL). The entire `apps/api/` FastAPI layer is being removed and replaced with InsForge SDK direct queries.
+> **Architecture**: 2-tier (Web → InsForge BaaS + Bot → InsForge PostgreSQL). The `apps/api/` layer has been fully removed.
 
 ---
 
@@ -50,8 +50,6 @@ nezuko-monorepo/
 └── docs/             # Technical documentation
 ```
 
-> **Note**: `apps/api/` (~50 Python files) is being removed as part of InsForge migration. Backup at `docs/local/backup-2026-02-12-105223/apps/`.
-
 ---
 
 ## Key Features
@@ -71,9 +69,9 @@ nezuko-monorepo/
 - 10 pages (dashboard, analytics, groups, channels, bots, logs, settings)
 - 70+ React components (shadcn/ui based)
 - TanStack Query for data fetching
-- Real-time updates via InsForge WebSocket (replacing SSE)
+- Real-time updates via InsForge WebSocket
 - Dark/Light mode theming
-- Direct InsForge SDK queries (no intermediate API)
+- Direct InsForge SDK queries
 
 ### InsForge Backend
 
@@ -99,18 +97,18 @@ nezuko-monorepo/
 
 ## Current Status
 
-**Phase**: 54 - InsForge BaaS Migration (In Progress)
+**Phase**: 54 - InsForge BaaS Migration (Phase 9 - Documentation & Deployment)
 **Last Updated**: 2026-02-12
 
 - Phase 1 (Backup): Complete
-- Phase 2 (Infrastructure): Complete — 13 tables, 15 RPC functions, realtime, storage
-- Phase 3 (SDK Integration): Complete — @insforge/sdk@1.1.5, singleton client, env vars
-- Phase 4 (Service Rewrite): Complete — 9 services rewritten, auth stub, logger migrated
-- Phase 5 (Realtime Migration): Pending
-- Phase 6 (Bot Refactor): Pending
-- Phase 7 (Edge Functions): Pending
-- Phase 8 (API Removal): Pending
-- Phase 9 (Documentation & Deployment): Pending
+- Phase 2 (Infrastructure): Complete
+- Phase 3 (SDK Integration): Complete
+- Phase 4 (Service Rewrite): Complete
+- Phase 5 (Realtime Migration): Complete
+- Phase 6 (Bot Refactor): Complete
+- Phase 7 (Edge Functions): Complete
+- Phase 8 (API Removal): Complete
+- Phase 9 (Documentation & Deployment): In Progress
 
 ---
 

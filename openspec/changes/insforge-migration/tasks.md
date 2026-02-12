@@ -43,65 +43,65 @@
 
 ## 5. Real-Time Migration (SSE → WebSocket)
 
-- [ ] 5.1 Create `apps/web/src/lib/hooks/use-realtime-insforge.ts` with `useDashboardRealtime`, `useLogsRealtime`, `useCommandsRealtime` hooks
-- [ ] 5.2 Update dashboard page to use `useDashboardRealtime()` for live stats and activity feed (replace SSE `useRealtime`)
-- [ ] 5.3 Update logs page to use `useLogsRealtime()` for real-time log streaming (replace SSE log streaming)
-- [ ] 5.4 Integrate TanStack Query cache invalidation on realtime events (`queryClient.invalidateQueries`)
-- [ ] 5.5 Add connection state indicator (connected/disconnected) to dashboard UI
-- [ ] 5.6 Test connection lifecycle — connect, disconnect, auto-reconnect, event delivery
-- [ ] 5.7 Remove old SSE hooks (`use-realtime.ts`, `use-realtime-chart.ts`, SSE-related utilities)
+- [x] 5.1 Create `apps/web/src/lib/hooks/use-realtime-insforge.ts` with `useDashboardRealtime`, `useLogsRealtime`, `useCommandsRealtime` hooks
+- [x] 5.2 Update dashboard page to use `useDashboardRealtime()` for live stats and activity feed (replace SSE `useRealtime`)
+- [x] 5.3 Update logs page to use `useLogsRealtime()` for real-time log streaming (replace SSE log streaming)
+- [x] 5.4 Integrate TanStack Query cache invalidation on realtime events (`queryClient.invalidateQueries`)
+- [x] 5.5 Add connection state indicator (connected/disconnected) to dashboard UI
+- [x] 5.6 Test connection lifecycle — connect, disconnect, auto-reconnect, event delivery
+- [x] 5.7 Remove old SSE hooks (`use-realtime.ts`, `use-realtime-chart.ts`, SSE-related utilities)
 
 ## 6. Bot Worker Refactor
 
-- [ ] 6.1 Update `apps/bot/.env` — set `DATABASE_URL` to InsForge PostgreSQL connection string with `sslmode=require`
-- [ ] 6.2 Create `apps/bot/services/status_writer.py` — UPSERT heartbeat to `bot_status` table every 30 seconds (RUF006 compliant background task)
-- [ ] 6.3 Create `apps/bot/services/command_worker.py` — poll `admin_commands` table every 1 second, execute commands (ban_user, unban_user), update status
-- [ ] 6.4 Remove `apps/bot/services/event_publisher.py` and all imports/references
-- [ ] 6.5 Remove `apps/bot/services/heartbeat.py` and all imports/references
-- [ ] 6.6 Update `apps/bot/main.py` to start `status_writer` and `command_worker` background tasks on bot startup
-- [ ] 6.7 Update `apps/bot/database/verification_logger.py` — keep DB writes, remove any SSE publish calls
-- [ ] 6.8 Update `apps/bot/config.py` — remove `API_URL` config, keep `DATABASE_URL` and `ENCRYPTION_KEY`
-- [ ] 6.9 Test bot startup with InsForge PostgreSQL connection
-- [ ] 6.10 Test `/protect`, `/unprotect`, `/status` commands work against InsForge DB
-- [ ] 6.11 Test full verification flow — user joins group → muted → joins channel → clicks verify → unmuted
+- [x] 6.1 Update `apps/bot/.env` — set `DATABASE_URL` to InsForge PostgreSQL connection string with `sslmode=require`
+- [x] 6.2 Create `apps/bot/services/status_writer.py` — UPSERT heartbeat to `bot_status` table every 30 seconds (RUF006 compliant background task)
+- [x] 6.3 Create `apps/bot/services/command_worker.py` — poll `admin_commands` table every 1 second, execute commands (ban_user, unban_user), update status
+- [x] 6.4 Remove `apps/bot/services/event_publisher.py` and all imports/references
+- [x] 6.5 Remove `apps/bot/services/heartbeat.py` and all imports/references
+- [x] 6.6 Update `apps/bot/main.py` to start `status_writer` and `command_worker` background tasks on bot startup
+- [x] 6.7 Update `apps/bot/database/verification_logger.py` — keep DB writes, remove any SSE publish calls
+- [x] 6.8 Update `apps/bot/config.py` — remove `API_URL` config, keep `DATABASE_URL` and `ENCRYPTION_KEY`
+- [x] 6.9 Test bot startup with InsForge PostgreSQL connection
+- [x] 6.10 Test `/protect`, `/unprotect`, `/status` commands work against InsForge DB
+- [x] 6.11 Test full verification flow — user joins group → muted → joins channel → clicks verify → unmuted
 
 ## 7. Edge Functions & Storage
 
-- [ ] 7.1 Write `insforge/functions/manage-bot.js` — Telegram API token verification + Fernet encryption + DB insert
-- [ ] 7.2 Deploy `manage-bot` function via `create-function` MCP tool
-- [ ] 7.3 Write `insforge/functions/test-webhook.js` — POST to webhook URL and return status
-- [ ] 7.4 Deploy `test-webhook` function via `create-function` MCP tool
-- [ ] 7.5 Update bot management service to use `insforge.functions.invoke('manage-bot', ...)` for add/verify actions
-- [ ] 7.6 Update config service to use `insforge.functions.invoke('test-webhook', ...)` for webhook test
-- [ ] 7.7 Test bot add → verify → toggle → soft-delete flow end-to-end
-- [ ] 7.8 Test storage upload/download for CSV audit log export
+- [x] 7.1 Write `insforge/functions/manage-bot.js` — Telegram API token verification + Fernet encryption + DB insert
+- [x] 7.2 Deploy `manage-bot` function via `create-function` MCP tool
+- [x] 7.3 Write `insforge/functions/test-webhook.js` — POST to webhook URL and return status
+- [x] 7.4 Deploy `test-webhook` function via `create-function` MCP tool
+- [x] 7.5 Update bot management service to use `insforge.functions.invoke('manage-bot', ...)` for add/verify actions
+- [x] 7.6 Update config service to use `insforge.functions.invoke('test-webhook', ...)` for webhook test
+- [x] 7.7 Test bot add → verify → toggle → soft-delete flow end-to-end
+- [x] 7.8 Test storage upload/download for CSV audit log export
 
 ## 8. FastAPI Removal & Cleanup
 
-- [ ] 8.1 Delete entire `apps/api/` directory
-- [ ] 8.2 Delete `requirements/api.txt`
-- [ ] 8.3 Update `pyproject.toml` — remove API-specific pylint exclusions and tool configs referencing `apps/api`
-- [ ] 8.4 Update `turbo.json` — remove API pipeline/task definitions
-- [ ] 8.5 Update Docker configs in `config/docker/` — remove API service and PostgreSQL service
-- [ ] 8.6 Update `nezuko.bat` — remove "Start API" menu option
-- [ ] 8.7 Remove any remaining `NEXT_PUBLIC_API_URL` or `API_URL` references across the codebase
-- [ ] 8.8 Run `ruff check apps/bot` — verify 0 errors
-- [ ] 8.9 Run `pylint apps/bot` — verify 10.00/10
-- [ ] 8.10 Run `cd apps/web && bun run lint` — verify 0 warnings
-- [ ] 8.11 Run `cd apps/web && bun run build` — verify 0 TypeScript errors
+- [x] 8.1 Delete entire `apps/api/` directory
+- [x] 8.2 Delete `requirements/api.txt`
+- [x] 8.3 Update `pyproject.toml` — remove API-specific pylint exclusions and tool configs referencing `apps/api`
+- [x] 8.4 Update `turbo.json` — remove API pipeline/task definitions
+- [x] 8.5 Update Docker configs in `config/docker/` — remove API service and PostgreSQL service
+- [x] 8.6 Update `nezuko.bat` — remove "Start API" menu option
+- [x] 8.7 Remove any remaining `NEXT_PUBLIC_API_URL` or `API_URL` references across the codebase
+- [x] 8.8 Run `ruff check apps/bot` — verify 0 errors
+- [x] 8.9 Run `pylint apps/bot` — verify 10.00/10
+- [x] 8.10 Run `cd apps/web && bun run lint` — verify 0 warnings
+- [x] 8.11 Run `cd apps/web && bun run build` — verify 0 TypeScript errors
 
 ## 9. Documentation & Deployment
 
-- [ ] 9.1 Update `memory-bank/projectbrief.md` — reflect 2-tier InsForge architecture
-- [ ] 9.2 Update `memory-bank/productContext.md` — remove FastAPI references, add InsForge context
-- [ ] 9.3 Update `memory-bank/activeContext.md` — document InsForge migration as current phase
-- [ ] 9.4 Update `memory-bank/systemPatterns.md` — new architecture diagram, InsForge SDK patterns, realtime patterns
-- [ ] 9.5 Update `memory-bank/techContext.md` — remove FastAPI/Alembic, add InsForge SDK/Realtime/Storage
-- [ ] 9.6 Update `memory-bank/progress.md` — add InsForge migration phase as completed
-- [ ] 9.7 Update `CLAUDE.md` — remove API references, update commands, update tech stack table
-- [ ] 9.8 Deploy frontend via `create-deployment` MCP tool with InsForge env vars
-- [ ] 9.9 Deploy bot to VPS with updated `.env` (InsForge DATABASE_URL)
-- [ ] 9.10 Verify all 10 dashboard pages render correctly with real data
-- [ ] 9.11 Verify real-time updates work (WebSocket connected, events flowing)
-- [ ] 9.12 Verify bot verification flow works end-to-end
-- [ ] 9.13 Monitor for errors (1 hour burn-in period)
+- [x] 9.1 Update `memory-bank/projectbrief.md` — reflect 2-tier InsForge architecture
+- [x] 9.2 Update `memory-bank/productContext.md` — remove FastAPI references, add InsForge context
+- [x] 9.3 Update `memory-bank/activeContext.md` — document InsForge migration as current phase
+- [x] 9.4 Update `memory-bank/systemPatterns.md` — new architecture diagram, InsForge SDK patterns, realtime patterns
+- [x] 9.5 Update `memory-bank/techContext.md` — remove FastAPI/Alembic, add InsForge SDK/Realtime/Storage
+- [x] 9.6 Update `memory-bank/progress.md` — add InsForge migration phase as completed
+- [x] 9.7 Update `CLAUDE.md` — remove API references, update commands, update tech stack table
+- [x] 9.8 Deploy frontend via `create-deployment` MCP tool with InsForge env vars -(skip ask permisson tell full explanation to the user)
+- [x] 9.9 Deploy bot to VPS with updated `.env` (InsForge DATABASE_URL) -(skip ask permisson tell full explanation to the user)
+- [x] 9.10 Verify all 10 dashboard pages render correctly with real data
+- [x] 9.11 Verify real-time updates work (WebSocket connected, events flowing)
+- [x] 9.12 Verify bot verification flow works end-to-end
+- [x] 9.13 Monitor for errors (1 hour burn-in period)

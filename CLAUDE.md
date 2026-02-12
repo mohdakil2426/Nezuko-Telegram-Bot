@@ -1,6 +1,6 @@
 # Nezuko Telegram Bot Platform
 
-> **Production-ready Telegram bot platform** for automated channel membership enforcement.  
+> **Production-ready Telegram bot platform** for automated channel membership enforcement.
 > Python 3.13+ | python-telegram-bot v22.6+ | Async-first architecture
 
 **Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read these all files for deep project understanding. **NEVER SKIP THIS STEP**
@@ -15,11 +15,10 @@
 nezuko-monorepo/
 ├── apps/
 │   ├── web/          # Next.js 16 Admin Dashboard
-│   ├── api/          # FastAPI REST Backend
 │   └── bot/          # Telegram Bot (PTB v22)
 ├── packages/         # Shared packages (@nezuko/types)
 ├── config/           # Docker, Caddy, deployment configs
-├── requirements/     # Python deps (base, api, bot, dev)
+├── requirements/     # Python deps (base, bot, dev)
 ├── tests/            # ALL tests (not in apps/)
 ├── scripts/          # Utility scripts
 ├── storage/          # Runtime files (gitignored)
@@ -35,7 +34,7 @@ nezuko-monorepo/
 
 | Type        | Correct Location            | ❌ Wrong                     |
 | ----------- | --------------------------- | ---------------------------- |
-| Tests       | `tests/api/`, `tests/bot/`  | `apps/*/tests/`              |
+| Tests       | `tests/bot/`                | `apps/*/tests/`              |
 | Database    | `storage/data/`             | `apps/*.db`                  |
 | Logs        | `storage/logs/`             | `apps/*.log`                 |
 | Env files   | `apps/*/.env`, `.env.local` | Root `.env`                  |
@@ -46,10 +45,10 @@ nezuko-monorepo/
 **⚠️ Always use LATEST versions. Check before installing:**
 
 ```bash
-# Python (Bot & API) - 4 tools required:
-ruff check apps/bot apps/api         # Lint (0 errors)
+# Python (Bot) - 4 tools required:
+ruff check apps/bot                  # Lint (0 errors)
 ruff format .                        # Format Python files
-pylint apps/bot apps/api             # Score: 10.00/10
+pylint apps/bot                      # Score: 10.00/10
 pyrefly check                        # Type check (0 errors)
 
 # TypeScript (Web) - 4 tools required:
@@ -65,9 +64,9 @@ pytest                               # All tests pass
 
 | Tool | Command | Target |
 |------|---------|--------|
-| **Ruff Check** | `ruff check apps/bot apps/api` | 0 errors |
+| **Ruff Check** | `ruff check apps/bot` | 0 errors |
 | **Ruff Format** | `ruff format .` | All formatted |
-| **Pylint** | `pylint apps/bot apps/api` | 10.00/10 |
+| **Pylint** | `pylint apps/bot` | 10.00/10 |
 | **Pyrefly** | `pyrefly check` | 0 errors |
 | **ESLint** | `cd apps/web && bun run lint` | 0 warnings |
 | **Prettier** | `cd apps/web && bunx prettier --write "src/**/*"` | All formatted |
@@ -112,7 +111,6 @@ asyncio.create_task(coro())
 
 ```bash
 python -m apps.bot.main                                    # Bot
-cd apps/api && uvicorn src.main:app --reload --port 8080   # API
 cd apps/web && bun dev                                     # Web
 npx turbo dev                                              # All services
 ```
@@ -122,18 +120,14 @@ npx turbo dev                                              # All services
 ```bash
 ruff check . --fix && ruff format .   # Python auto-fix
 cd apps/web && bun run lint --fix     # TypeScript
-pylint apps/bot apps/api              # Target: 10.00/10
+pylint apps/bot                       # Target: 10.00/10
 ```
 
 ### Test & Migrate
 
 ```bash
-pytest tests/api/ -v                  # API tests
 pytest tests/bot/ -v                  # Bot tests
 pytest --cov=apps --cov-report=html   # Coverage
-
-alembic upgrade head                  # Apply migrations
-alembic revision --autogenerate -m "desc"  # Create migration
 ```
 
 ---
@@ -143,17 +137,17 @@ alembic revision --autogenerate -m "desc"  # Create migration
 | Layer        | Stack                                                    |
 | ------------ | -------------------------------------------------------- |
 | **Frontend** | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
-| **Backend**  | FastAPI, Python 3.13, SQLAlchemy 2.0, Pydantic V2        |
+| **Backend**  | InsForge BaaS (PostgreSQL, Realtime, Functions)          |
 | **Bot**      | python-telegram-bot v22.6, AsyncIO, Redis                |
-| **Database** | SQLite (dev), PostgreSQL (production)                    |
-| **Auth**     | Telegram Login Widget (owner-only)                       |
+| **Database** | InsForge Managed PostgreSQL                              |
+| **Auth**     | None (development mode)                                  |
 | **Infra**    | Docker, Turborepo, Caddy                                 |
 
 ---
 
 ## 📐 Coding Standards
 
-### Python (Bot & API)
+### Python (Bot)
 
 - **Indent**: 4 spaces | **Line**: 100 chars
 - **Format**: `ruff format` | **Lint**: ruff + pylint
@@ -176,10 +170,9 @@ alembic revision --autogenerate -m "desc"  # Create migration
 | Pattern             | Implementation                                  |
 | ------------------- | ----------------------------------------------- |
 | **Imports (Bot)**   | `python -m apps.bot.main` from root             |
-| **Imports (API)**   | Relative imports within `src/`                  |
-| **Imports (Tests)** | `from apps.api.src` or `from apps.bot`          |
-| **Env files**       | Per-app: `apps/web/.env.local`, `apps/api/.env` |
-| **Dependencies**    | `requirements/{base,api,bot,dev}.txt`           |
+| **Imports (Tests)** | `from apps.bot`                                 |
+| **Env files**       | Per-app: `apps/web/.env.local`, `apps/bot/.env` |
+| **Dependencies**    | `requirements/{base,bot,dev}.txt`               |
 
 ---
 
@@ -248,11 +241,11 @@ Skills are located in `.claude/skills/`. Read the **SKILL.md** file inside each 
 | **ui-ux-pro-max** | Design systems, color palettes, typography | `.claude/skills/ui-ux-pro-max` |
 | **web-design-guidelines** | Layout, spacing, responsive design | `.claude/skills/web-design-guidelines` |
 
-### Backend (API & Bot)
+### Backend (Bot)
 
 | Skill       | When to Use                                 | Path                     |
 | ----------- | ------------------------------------------- | ------------------------ |
-| **fastapi** | FastAPI endpoints, dependencies, middleware | `.claude/skills/fastapi` |
+| **fastapi** | (Removed - legacy) | |
 
 ### Database
 
@@ -281,4 +274,4 @@ Skills are located in `.claude/skills/`. Read the **SKILL.md** file inside each 
 
 ---
 
-_Last Updated: 2026-02-07_
+_Last Updated: 2026-02-12_

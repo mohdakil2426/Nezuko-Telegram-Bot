@@ -13,7 +13,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet("all", "web", "api", "bot")]
+    [ValidateSet("all", "web", "bot")]
     [string]$Service = "all"
 )
 
@@ -86,37 +86,6 @@ if ($Service -eq "all" -or $Service -eq "web") {
     Write-Log -Message "Starting Web Dashboard (bun dev)" -Category "DEV"
     $webCmd = "Set-Location '$ProjectRoot\apps\web'; Write-Host '  🌐 Web Dashboard - http://localhost:3000' -ForegroundColor Cyan; Write-Host ''; bun dev"
     Start-Process $PwshPath -ArgumentList "-NoExit", "-Command", $webCmd
-    Start-Sleep -Seconds 1
-}
-
-Start-Sleep -Seconds 2
-
-# Start API Server (FastAPI)
-# Start API Server (FastAPI)
-if ($Service -eq "all" -or $Service -eq "api") {
-    Write-Host "  [API] Starting Server..." -ForegroundColor Green
-    Write-Log -Message "Starting API Server (uvicorn)" -Category "DEV"
-    $venvActivate = Join-Path $ProjectRoot ".venv\Scripts\Activate.ps1"
-    $venvPython = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
-    $venvUvicorn = Join-Path $ProjectRoot ".venv\Scripts\uvicorn.exe"
-
-    if (Test-Path $venvUvicorn) {
-        # Use venv uvicorn directly (most reliable)
-        $apiCmd = "Set-Location '$ProjectRoot\apps\api'; Write-Host '  🔌 API Server - http://localhost:8080' -ForegroundColor Green; Write-Host ''; & '$venvUvicorn' src.main:app --reload --port 8080"
-    }
-    elseif (Test-Path $venvPython) {
-        # Fallback: use python -m uvicorn (works when uvicorn.exe not in PATH)
-        $apiCmd = "Set-Location '$ProjectRoot\apps\api'; Write-Host '  🔌 API Server - http://localhost:8080' -ForegroundColor Green; Write-Host ''; & '$venvPython' -m uvicorn src.main:app --reload --port 8080"
-    }
-    elseif (Test-Path $venvActivate) {
-        # Fallback: activate venv then run python -m uvicorn
-        $apiCmd = "Set-Location '$ProjectRoot\apps\api'; Write-Host '  🔌 API Server - http://localhost:8080' -ForegroundColor Green; Write-Host ''; & '$venvActivate'; python -m uvicorn src.main:app --reload --port 8080"
-    }
-    else {
-        # Last resort: system python
-        $apiCmd = "Set-Location '$ProjectRoot\apps\api'; Write-Host '  🔌 API Server - http://localhost:8080' -ForegroundColor Green; Write-Host ''; python -m uvicorn src.main:app --reload --port 8080"
-    }
-    Start-Process $PwshPath -ArgumentList "-NoExit", "-Command", $apiCmd
     Start-Sleep -Seconds 1
 }
 

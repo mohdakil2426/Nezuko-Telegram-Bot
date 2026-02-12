@@ -59,21 +59,14 @@ Nezuko acts as an **automated gatekeeper** that:
 
 **Current**: No authentication (development mode, direct dashboard access)
 
-**Previous**: Telegram Login Widget (owner-only) — removed during InsForge migration.
-
 **Future**: InsForge Auth + Row Level Security (RLS) policies when needed.
 
 ---
 
-## Data Architecture (InsForge Migration)
+## Data Architecture (2-Tier InsForge)
 
-### Before (3-tier)
-```
-Dashboard → FastAPI REST API → Docker PostgreSQL
-Bot → FastAPI (HTTP events) → Docker PostgreSQL
-```
+The platform uses a 2-tier architecture powered by InsForge BaaS:
 
-### After (2-tier)
 ```
 Dashboard → InsForge SDK (direct queries) → InsForge Managed PostgreSQL
 Bot → SQLAlchemy (direct connection) → InsForge Managed PostgreSQL
@@ -81,11 +74,10 @@ Dashboard ← InsForge Realtime (WebSocket) ← PostgreSQL Triggers
 ```
 
 Key benefits:
-- Eliminates ~50 Python API files
-- No self-managed database infrastructure
+- Direct database access via SDK and SQLAlchemy
 - Native WebSocket realtime (replaces custom SSE)
-- Cloud storage for exports
-- Edge Functions for server-side logic
+- Cloud storage for exports and assets
+- Edge Functions for server-side logic (token management)
 
 ---
 

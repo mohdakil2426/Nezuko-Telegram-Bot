@@ -10,8 +10,7 @@ import { CheckCircle, Clock, TrendingUp, Zap } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAnalyticsOverview } from "@/lib/hooks";
-import { useRealtimeAnalytics } from "@/lib/hooks/use-realtime";
+import { useAnalyticsOverview, useRealtimeAnalytics } from "@/lib/hooks";
 
 interface OverviewCardProps {
   title: string;

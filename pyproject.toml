@@ -32,7 +32,7 @@ Issues = "https://github.com/mohdakil2426/Nezuko-Telegram-Bot/issues"
 target-version = "py313"
 line-length = 100
 # Include both bot and api source directories
-src = ["apps/bot", "apps/api/src"]
+src = ["apps/bot"]
 exclude = [
     ".git",
     ".venv",
@@ -100,8 +100,6 @@ ignore-paths = [
     "node_modules",
     "apps/web",
     ".agent",
-    "apps/api/alembic/versions",   # Alembic auto-generated
-    "apps/api/alembic/env.py",     # Alembic environment config (dynamic members)
 ]
 extension-pkg-allow-list = ["pydantic"]
 jobs = 0  # Auto-detect CPU cores for parallel processing
@@ -195,7 +193,7 @@ filterwarnings = [
 # ═══════════════════════════════════════════════════════════════════════════════
 
 [tool.coverage.run]
-source = ["apps/bot", "apps/api/src"]
+source = ["apps/bot"]
 omit = [
     "**/migrations/*",
     "**/__pycache__/*",

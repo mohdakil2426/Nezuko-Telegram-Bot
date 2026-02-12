@@ -9,7 +9,7 @@
 import { Wifi, WifiOff, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useRealtime } from "@/lib/hooks/use-realtime";
+import { useRealtime } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 
 interface ConnectionStatusProps {

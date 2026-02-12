@@ -23,7 +23,6 @@ from apps.bot.core.cache import cache_delete, cache_get, cache_set, get_ttl_with
 from apps.bot.core.constants import CACHE_JITTER_PERCENT, NEGATIVE_CACHE_TTL, POSITIVE_CACHE_TTL
 from apps.bot.database.api_call_logger import log_api_call_async
 from apps.bot.database.verification_logger import log_verification
-from apps.bot.services.event_publisher import get_event_publisher
 from apps.bot.utils.metrics import (
     record_api_call,
     record_cache_hit,
@@ -261,21 +260,6 @@ async def _log_result(
         )
         _background_tasks.add(task)
         task.add_done_callback(_background_tasks.discard)
-
-    # Publish SSE event for real-time dashboard updates
-    publisher = get_event_publisher()
-    if publisher.enabled:
-        publisher.publish_background(
-            "verification",
-            {
-                "user_id": user_id,
-                "group_id": group_id,
-                "channel_id": channel_id_int,
-                "status": status,
-                "cached": cached,
-                "latency_ms": latency_ms,
-            },
-        )
 
 
 async def check_multi_membership(

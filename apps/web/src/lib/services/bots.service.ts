@@ -77,27 +77,24 @@ export async function listBots(): Promise<BotListResponse> {
 
 /**
  * Add a new bot. Uses Edge Function for token verification + encryption.
- * Placeholder until Edge Function is deployed in Phase 7.
  */
 export async function addBot(token: string): Promise<Bot> {
-  // Will use insforge.functions.invoke('manage-bot', ...) after Phase 7
-  const { data, error } = await insforge.database
-    .from("bot_instances")
-    .insert({ bot_token_encrypted: token, bot_username: "pending", bot_id: 0 })
-    .select()
-    .single();
+  const { data, error } = await insforge.functions.invoke("manage-bot", {
+    body: { action: "add", token, owner_telegram_id: 0 },
+  });
   if (error) throw error;
   return data as Bot;
 }
 
 /**
  * Verify a bot token without saving it.
- * Placeholder until Edge Function is deployed in Phase 7.
  */
 export async function verifyBotToken(token: string): Promise<BotVerifyResponse> {
-  // Will use insforge.functions.invoke('manage-bot', ...) after Phase 7
-  void token;
-  return { bot_id: 0, username: "pending", first_name: "Pending", is_valid: false };
+  const { data, error } = await insforge.functions.invoke("manage-bot", {
+    body: { action: "verify", token },
+  });
+  if (error) throw error;
+  return data as BotVerifyResponse;
 }
 
 /**

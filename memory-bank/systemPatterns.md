@@ -2,7 +2,7 @@
 
 ## Architecture Overview
 
-### Current (Transitioning to InsForge)
+### Current (InsForge BaaS)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -30,13 +30,6 @@
 │         │  Triggers → Realtime │                             │
 │         └───────────────────────┘                            │
 └──────────────────────────────────────────────────────────────┘
-```
-
-### Previous (Being Removed)
-
-```
-Web → FastAPI REST API → Docker PostgreSQL ← Bot
-         (apps/api/)        (self-hosted)
 ```
 
 ---
@@ -71,30 +64,7 @@ stmt = select(Model).where(Model.id == id)
 result = await session.execute(stmt)
 ```
 
-### Error Handling
-
-```python
-# Specific exceptions with chains
-try:
-    result = await operation()
-except ValueError as exc:
-    logger.error("Failed", exc_info=True)
-    raise AppError("Operation failed") from exc
-```
-
-### DML Result Access (CursorResult Pattern)
-
-```python
-from typing import cast
-from sqlalchemy import CursorResult, delete
-
-result = cast(CursorResult, await session.execute(
-    delete(Model).where(Model.timestamp < cutoff)
-))
-deleted_count = result.rowcount  # Now type-safe
-```
-
-### Bot-to-Dashboard Communication (NEW)
+### Bot-to-Dashboard Communication
 
 ```python
 # Bot writes directly to InsForge PostgreSQL tables
@@ -115,29 +85,7 @@ pending = await session.execute(
 
 ## Frontend Patterns (Next.js 16)
 
-### Dynamic Route Parameters
-
-```tsx
-// Next.js 16 requires Promise params
-export default function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  return <div>ID: {id}</div>;
-}
-```
-
-### TanStack Query v5
-
-```tsx
-// Use isPending, not isLoading
-const { data, isPending } = useQuery({
-  queryKey: ["groups"],
-  queryFn: fetchGroups,
-});
-
-if (isPending) return <Skeleton />;
-```
-
-### InsForge SDK Service Pattern (NEW)
+### InsForge SDK Service Pattern
 
 ```typescript
 // Service layer uses InsForge SDK directly (no fetch to API)
@@ -148,21 +96,12 @@ export async function getDashboardStats() {
   if (error) throw error;
   return data;
 }
-
-export async function getGroups(page: number, perPage: number) {
-  const { data, error, count } = await insforge.database
-    .from("protected_groups")
-    .select("*, group_channel_links(channel_id)", { count: "exact" })
-    .range((page - 1) * perPage, page * perPage - 1);
-  if (error) throw error;
-  return { data, total: count };
-}
 ```
 
-### InsForge Realtime Hooks (NEW)
+### InsForge Realtime Hooks
 
 ```typescript
-// WebSocket-based realtime (replaces SSE)
+// WebSocket-based realtime
 import { insforge } from "@/lib/insforge";
 
 export function useDashboardRealtime() {
@@ -179,57 +118,36 @@ export function useDashboardRealtime() {
 }
 ```
 
+### Edge Function Invocation
+
+```typescript
+// Invoke serverless functions securely
+const { data, error } = await insforge.functions.invoke('manage-bot', {
+  body: { action: 'verify', token: '...' }
+});
+```
+
 ---
 
 ## Database Schema (InsForge Managed PostgreSQL)
 
 ### 13 Tables
 
-| Table               | Purpose                                    |
-| ------------------- | ------------------------------------------ |
-| `owners`            | Bot owners (Telegram user IDs)             |
-| `bot_instances`     | Registered bot tokens (Fernet encrypted)   |
-| `protected_groups`  | Groups with verification enforcement       |
-| `enforced_channels` | Required channel subscriptions             |
+| Table | Purpose |
+| --- | --- |
+| `owners` | Bot owners (Telegram user IDs) |
+| `bot_instances` | Registered bot tokens (Fernet encrypted) |
+| `protected_groups` | Groups with verification enforcement |
+| `enforced_channels` | Required channel subscriptions |
 | `group_channel_links` | Many-to-many group↔channel relationships |
-| `admin_users`       | Dashboard admin accounts                   |
-| `admin_config`      | Key-value system configuration             |
-| `bot_status`        | Bot heartbeat/status (UPSERT pattern)      |
-| `admin_commands`    | Dashboard→Bot command queue                |
-| `verification_log`  | All verification events for analytics      |
-| `api_call_log`      | Telegram API call tracking                 |
-| `admin_logs`        | Application logs (structured)              |
-| `admin_audit_log`   | Admin action audit trail (with user join)  |
-
-### 15 PostgreSQL RPC Functions
-
-| Function | Purpose |
-| -------- | ------- |
-| `get_dashboard_stats` | Dashboard overview (7 metrics) |
-| `get_chart_data` | Verification time series |
-| `get_verification_trends` | Trends with period/granularity |
-| `get_user_growth` | User growth with cumulative totals |
-| `get_analytics_overview` | Analytics summary (6 metrics) |
-| `get_verification_distribution` | Pie chart data |
-| `get_cache_breakdown` | Donut chart data |
-| `get_groups_status` | Active vs inactive groups |
-| `get_api_calls_distribution` | API method breakdown |
-| `get_hourly_activity` | 24-hour activity pattern |
-| `get_latency_distribution` | Histogram buckets |
-| `get_top_groups` | Top N groups by verification count |
-| `get_cache_hit_rate_trend` | Cache rate time series |
-| `get_latency_trend` | Latency + p95 time series |
-| `get_bot_health` | Composite health score |
-
-### Key Indexes
-
-```sql
--- Composite indexes for analytics
-idx_verification_log_timestamp_status (timestamp, status)
-idx_verification_log_group_timestamp (group_id, timestamp)
-idx_admin_audit_log_action_timestamp (action, created_at)
-idx_admin_audit_log_resource (resource_type, resource_id, created_at)
-```
+| `admin_users` | Dashboard admin accounts |
+| `admin_config` | Key-value system configuration |
+| `bot_status` | Bot heartbeat/status (UPSERT pattern) |
+| `admin_commands` | Dashboard→Bot command queue |
+| `verification_log` | All verification events for analytics |
+| `api_call_log` | Telegram API call tracking |
+| `admin_logs` | Application logs (structured) |
+| `admin_audit_log` | Admin action audit trail |
 
 ### Realtime Triggers
 
@@ -238,19 +156,7 @@ idx_admin_audit_log_resource (resource_type, resource_id, created_at)
 | `notify_verification_event` | `verification_log` → `dashboard` | `verification` |
 | `notify_bot_status_event` | `bot_status` → `bot_status` | `status_changed` |
 | `notify_command_event` | `admin_commands` → `commands` | `command_updated` |
-| `notify_log_event` | `admin_logs` → `logs` | `new_log` (ERROR/WARNING/INFO only) |
-
----
-
-## Security Patterns
-
-| Pattern  | Implementation                               |
-| -------- | -------------------------------------------- |
-| Auth     | None (development mode)                      |
-| Tokens   | Fernet encryption at rest                    |
-| Secrets  | Environment variables, no hardcoding         |
-| DB       | InsForge managed PostgreSQL with SSL         |
-| Storage  | Private/public bucket separation             |
+| `notify_log_event` | `admin_logs` → `logs` | `new_log` |
 
 ---
 

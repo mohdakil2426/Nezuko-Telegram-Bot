@@ -22,9 +22,9 @@ from apps.bot.core.loader import register_handlers, setup_bot_commands
 from apps.bot.core.rate_limiter import create_rate_limiter
 from apps.bot.core.uptime import record_bot_start
 from apps.bot.database.crud import get_all_protected_groups
-from apps.bot.services.event_publisher import configure_event_publisher
-from apps.bot.services.heartbeat import configure_heartbeat_service, get_heartbeat_service
+from apps.bot.services.command_worker import CommandWorker
 from apps.bot.services.member_sync import schedule_member_sync
+from apps.bot.services.status_writer import StatusWriter
 from apps.bot.utils.health import stop_health_server
 
 # Phase 4: Monitoring imports
@@ -53,19 +53,12 @@ logging.basicConfig(
         logging.FileHandler(config.log_file, encoding="utf-8"),
     ],
 )
-# Add Postgres Handler (Real-time logs)
-_postgres_handler = None
-try:
-    from apps.bot.utils.postgres_logging import PostgresLogHandler
-
-    _postgres_handler = PostgresLogHandler()
-    _postgres_handler.setLevel(logging.INFO)  # Always send INFO+ to dashboard
-    logging.getLogger().addHandler(_postgres_handler)
-except (ImportError, ConnectionError, OSError, RuntimeError) as e:
-    # Use sys.stderr since logger may not be configured yet
-    sys.stderr.write(f"Postgres logger unavailable: {e}\n")
 
 logger = logging.getLogger(__name__)
+
+# Global worker instances
+_status_writer: StatusWriter | None = None  # pylint: disable=invalid-name
+_command_worker: CommandWorker | None = None  # pylint: disable=invalid-name
 
 
 async def update_active_groups_gauge():
@@ -111,41 +104,51 @@ async def post_init(_application: Application) -> None:
     schedule_member_sync(_application)
     logger.info("[OK] Analytics integration initialized")
 
-    # Initialize EventPublisher for real-time dashboard updates
-    # Configure with API URL from environment or default
-    api_url = getattr(config, "api_url", "http://localhost:8080")
-    configure_event_publisher(api_url, enabled=True)
-    logger.info("[OK] Event publisher configured for real-time updates")
+    # Initialize InsForge workers (status writer & command worker)
+    if config.insforge_database_url:
+        global _status_writer, _command_worker  # pylint: disable=global-statement
+        try:
+            # Get bot info for bot_id
+            bot_info = await _application.bot.get_me()
+            bot_id = bot_info.id
 
-    # Initialize HeartbeatService for uptime tracking
-    # Note: Session cookie needs to be set when available
-    configure_heartbeat_service(
-        api_base_url=api_url,
-        interval_seconds=30,
-    )
-    logger.info("[OK] Heartbeat service configured (requires authentication to start)")
+            # Start status writer
+            _status_writer = StatusWriter(bot_id, config.insforge_database_url)
+            await _status_writer.start()
+            logger.info("[OK] Status writer started for bot %d", bot_id)
+
+            # Start command worker
+            _command_worker = CommandWorker(_application.bot, bot_id, config.insforge_database_url)
+            await _command_worker.start()
+            logger.info("[OK] Command worker started for bot %d", bot_id)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error("Failed to start InsForge workers: %s", e, exc_info=True)
+    else:
+        logger.warning("INSFORGE_DATABASE_URL not set - bot workers disabled")
 
 
 async def post_shutdown(_application: Application) -> None:
     """Cleanup resources on shutdown."""
     logger.info("Shutting down gracefully...")
 
-    # Stop heartbeat service
-    try:
-        heartbeat = get_heartbeat_service()
-        await heartbeat.stop()
-    except (RuntimeError, OSError, asyncio.CancelledError) as e:
-        logger.warning("Error stopping heartbeat service: %s", e)
+    # Stop InsForge workers
+    # No need for global keyword here as we are only reading
+    if _status_writer:
+        try:
+            await _status_writer.stop()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.warning("Error stopping status writer: %s", e)
+    if _command_worker:
+        try:
+            await _command_worker.stop()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.warning("Error stopping command worker: %s", e)
 
     # Stop health server
     await stop_health_server()
 
     # Flush Sentry events
     sentry_flush(timeout=2)
-
-    # Close Postgres log handler
-    if _postgres_handler:
-        await _postgres_handler.close_async()
 
     # Close connections
     await close_redis_connection()

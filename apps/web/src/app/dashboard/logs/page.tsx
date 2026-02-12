@@ -34,8 +34,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRealtimeLogs } from "@/lib/hooks/use-realtime";
-import { useLogs } from "@/lib/hooks";
+import { useRealtimeLogs, useLogs } from "@/lib/hooks";
 
 type LogLevel = "all" | "info" | "warning" | "error";
 
