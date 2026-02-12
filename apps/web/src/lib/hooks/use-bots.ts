@@ -17,7 +17,7 @@ import {
   type Bot,
   type BotListResponse,
   type BotVerifyResponse,
-} from "@/lib/api/bots";
+} from "@/lib/services/bots.service";
 
 /**
  * Hook for listing all bots.
@@ -38,7 +38,6 @@ export function useAddBot() {
   return useMutation({
     mutationFn: (token: string) => addBot(token),
     onSuccess: () => {
-      // Invalidate bots list to trigger refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
     },
   });
@@ -63,7 +62,6 @@ export function useUpdateBot() {
     mutationFn: ({ botId, isActive }: { botId: number; isActive: boolean }) =>
       updateBot(botId, isActive),
     onSuccess: (updatedBot) => {
-      // Update the bot in the cache
       queryClient.setQueryData<BotListResponse>(queryKeys.bots.list(), (old) => {
         if (!old) return old;
         return {
@@ -84,7 +82,6 @@ export function useDeleteBot() {
   return useMutation({
     mutationFn: (botId: number) => deleteBot(botId),
     onSuccess: (_data, botId) => {
-      // Remove the bot from the cache
       queryClient.setQueryData<BotListResponse>(queryKeys.bots.list(), (old) => {
         if (!old) return old;
         return {

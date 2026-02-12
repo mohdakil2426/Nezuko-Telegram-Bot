@@ -74,8 +74,6 @@ export function GroupsDataTable({
   onDelete,
   onViewDetails,
 }: GroupsDataTableProps) {
-  "use no memo"; // Opt-out of React Compiler - TanStack Table not yet compatible
-
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});

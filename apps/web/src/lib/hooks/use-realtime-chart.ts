@@ -1,3 +1,4 @@
+/* eslint-disable react-compiler/react-compiler -- Will be replaced in Phase 5 (InsForge Realtime) */
 /**
  * Real-time Chart Hook
  * Combines TanStack Query with SSE for enhanced real-time chart updates.

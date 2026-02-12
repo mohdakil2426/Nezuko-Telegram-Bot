@@ -1,11 +1,10 @@
 /**
  * Charts Service
- * Handles data fetching for advanced chart components with mock/API toggle
+ * Handles data fetching for advanced chart components via InsForge SDK
  */
 
 import { USE_MOCK } from "@/lib/api/config";
-import { apiClient } from "@/lib/api/client";
-import { ENDPOINTS } from "@/lib/api/endpoints";
+import { insforge } from "@/lib/insforge";
 import type {
   VerificationDistribution,
   CacheBreakdown,
@@ -18,7 +17,6 @@ import type {
   LatencyTrend,
   BotHealthMetrics,
   TrendsParams,
-  SuccessResponse,
 } from "@/lib/services/types";
 import * as mockData from "@/lib/mock";
 
@@ -34,10 +32,9 @@ export async function getVerificationDistribution(): Promise<VerificationDistrib
     return mockData.getVerificationDistribution();
   }
 
-  const response = await apiClient.get<SuccessResponse<VerificationDistribution>>(
-    ENDPOINTS.charts.verificationDistribution
-  );
-  return response.data;
+  const { data, error } = await insforge.database.rpc("get_verification_distribution");
+  if (error) throw error;
+  return data as VerificationDistribution;
 }
 
 /**
@@ -48,10 +45,9 @@ export async function getCacheBreakdown(): Promise<CacheBreakdown> {
     return mockData.getCacheBreakdown();
   }
 
-  const response = await apiClient.get<SuccessResponse<CacheBreakdown>>(
-    ENDPOINTS.charts.cacheBreakdown
-  );
-  return response.data;
+  const { data, error } = await insforge.database.rpc("get_cache_breakdown");
+  if (error) throw error;
+  return data as CacheBreakdown;
 }
 
 /**
@@ -62,10 +58,9 @@ export async function getGroupsStatusDistribution(): Promise<GroupsStatusDistrib
     return mockData.getGroupsStatusDistribution();
   }
 
-  const response = await apiClient.get<SuccessResponse<GroupsStatusDistribution>>(
-    ENDPOINTS.charts.groupsStatus
-  );
-  return response.data;
+  const { data, error } = await insforge.database.rpc("get_groups_status");
+  if (error) throw error;
+  return data as GroupsStatusDistribution;
 }
 
 /**
@@ -76,10 +71,9 @@ export async function getApiCallsDistribution(): Promise<ApiCallsDistribution[]>
     return mockData.getApiCallsDistribution();
   }
 
-  const response = await apiClient.get<SuccessResponse<ApiCallsDistribution[]>>(
-    ENDPOINTS.charts.apiCalls
-  );
-  return response.data;
+  const { data, error } = await insforge.database.rpc("get_api_calls_distribution");
+  if (error) throw error;
+  return (Array.isArray(data) ? data : []) as ApiCallsDistribution[];
 }
 
 // =============================================================================
@@ -94,10 +88,9 @@ export async function getHourlyActivity(): Promise<HourlyActivity[]> {
     return mockData.getHourlyActivity();
   }
 
-  const response = await apiClient.get<SuccessResponse<HourlyActivity[]>>(
-    ENDPOINTS.charts.hourlyActivity
-  );
-  return response.data;
+  const { data, error } = await insforge.database.rpc("get_hourly_activity");
+  if (error) throw error;
+  return (Array.isArray(data) ? data : []) as HourlyActivity[];
 }
 
 /**
@@ -108,10 +101,9 @@ export async function getLatencyDistribution(): Promise<LatencyBucket[]> {
     return mockData.getLatencyDistribution();
   }
 
-  const response = await apiClient.get<SuccessResponse<LatencyBucket[]>>(
-    ENDPOINTS.charts.latencyDistribution
-  );
-  return response.data;
+  const { data, error } = await insforge.database.rpc("get_latency_distribution");
+  if (error) throw error;
+  return (Array.isArray(data) ? data : []) as LatencyBucket[];
 }
 
 /**
@@ -122,10 +114,11 @@ export async function getTopGroups(): Promise<TopGroupPerformance[]> {
     return mockData.getTopGroups();
   }
 
-  const response = await apiClient.get<SuccessResponse<TopGroupPerformance[]>>(
-    ENDPOINTS.charts.topGroups
-  );
-  return response.data;
+  const { data, error } = await insforge.database.rpc("get_top_groups", {
+    p_limit: 10,
+  });
+  if (error) throw error;
+  return (Array.isArray(data) ? data : []) as TopGroupPerformance[];
 }
 
 // =============================================================================
@@ -140,11 +133,26 @@ export async function getCacheHitRateTrend(params?: TrendsParams): Promise<Cache
     return mockData.getCacheHitRateTrend(params);
   }
 
-  const response = await apiClient.get<SuccessResponse<CacheHitRateTrend>>(
-    ENDPOINTS.charts.cacheHitRateTrend,
-    { params: params as Record<string, string | number | boolean | undefined> }
-  );
-  return response.data;
+  const period = params?.period ?? "30d";
+
+  const { data, error } = await insforge.database.rpc("get_cache_hit_rate_trend", {
+    p_period: period,
+  });
+  if (error) throw error;
+
+  const series = Array.isArray(data) ? data : [];
+  const rates = series.map((item: { hit_rate: number }) => item.hit_rate);
+  const avgRate = rates.length > 0 ? rates.reduce((a: number, b: number) => a + b, 0) / rates.length : 0;
+
+  return {
+    period,
+    series: series.map((item: { date: string; hit_rate: number }) => ({
+      date: item.date,
+      value: item.hit_rate,
+    })),
+    current_rate: rates.length > 0 ? rates[rates.length - 1] : 0,
+    average_rate: avgRate,
+  };
 }
 
 /**
@@ -155,11 +163,28 @@ export async function getLatencyTrend(params?: TrendsParams): Promise<LatencyTre
     return mockData.getLatencyTrend(params);
   }
 
-  const response = await apiClient.get<SuccessResponse<LatencyTrend>>(
-    ENDPOINTS.charts.latencyTrend,
-    { params: params as Record<string, string | number | boolean | undefined> }
-  );
-  return response.data;
+  const period = params?.period ?? "30d";
+
+  const { data, error } = await insforge.database.rpc("get_latency_trend", {
+    p_period: period,
+  });
+  if (error) throw error;
+
+  const series = Array.isArray(data) ? data : [];
+  const latencies = series.map((item: { avg_latency: number }) => item.avg_latency);
+  const currentAvg = latencies.length > 0 ? latencies[latencies.length - 1] : 0;
+
+  return {
+    period,
+    series: series.map(
+      (item: { date: string; avg_latency: number; p95_latency: number }) => ({
+        date: item.date,
+        avg_latency: item.avg_latency,
+        p95_latency: item.p95_latency,
+      }),
+    ),
+    current_avg: currentAvg,
+  };
 }
 
 // =============================================================================
@@ -174,8 +199,7 @@ export async function getBotHealthMetrics(): Promise<BotHealthMetrics> {
     return mockData.getBotHealthMetrics();
   }
 
-  const response = await apiClient.get<SuccessResponse<BotHealthMetrics>>(
-    ENDPOINTS.charts.botHealth
-  );
-  return response.data;
+  const { data, error } = await insforge.database.rpc("get_bot_health");
+  if (error) throw error;
+  return data as BotHealthMetrics;
 }

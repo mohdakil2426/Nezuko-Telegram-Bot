@@ -137,11 +137,14 @@ class Logger {
     }
 
     try {
-      // Use navigator.sendBeacon for non-blocking logging
-      if (isClient && "sendBeacon" in navigator) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-        const endpoint = `${apiUrl}/api/v1/logs/web`;
-        navigator.sendBeacon(endpoint, JSON.stringify(entry));
+      // Write to InsForge admin_logs table via SDK
+      if (isClient) {
+        const { insforge } = await import("@/lib/insforge");
+        await insforge.database.from("admin_logs").insert({
+          level: entry.level.toUpperCase(),
+          message: entry.message,
+          extra: entry.context ?? null,
+        });
       }
     } catch {
       // Silently fail - don't crash the app for logging issues

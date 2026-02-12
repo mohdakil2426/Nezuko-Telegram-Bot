@@ -51,7 +51,10 @@
       "Bash(bun add:*)",
       "mcp__insforge__fetch-docs",
       "mcp__insforge__fetch-sdk-docs",
-      "mcp__insforge__get-backend-metadata"
+      "mcp__insforge__get-backend-metadata",
+      "Bash(openspec:*)",
+      "Bash(openspec status:*)",
+      "Bash(openspec instructions proposal:*)"
     ]
   },
   "enabledMcpjsonServers": [

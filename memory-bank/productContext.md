@@ -57,12 +57,35 @@ Nezuko acts as an **automated gatekeeper** that:
 
 ## Authentication
 
-**Telegram Login Widget** (Owner-Only):
+**Current**: No authentication (development mode, direct dashboard access)
 
-- No external accounts needed
-- HMAC-SHA256 signature verification
-- Session-based with HTTP-only cookies
-- 72-hour session expiration (configurable via `SESSION_EXPIRY_HOURS`)
+**Previous**: Telegram Login Widget (owner-only) — removed during InsForge migration.
+
+**Future**: InsForge Auth + Row Level Security (RLS) policies when needed.
+
+---
+
+## Data Architecture (InsForge Migration)
+
+### Before (3-tier)
+```
+Dashboard → FastAPI REST API → Docker PostgreSQL
+Bot → FastAPI (HTTP events) → Docker PostgreSQL
+```
+
+### After (2-tier)
+```
+Dashboard → InsForge SDK (direct queries) → InsForge Managed PostgreSQL
+Bot → SQLAlchemy (direct connection) → InsForge Managed PostgreSQL
+Dashboard ← InsForge Realtime (WebSocket) ← PostgreSQL Triggers
+```
+
+Key benefits:
+- Eliminates ~50 Python API files
+- No self-managed database infrastructure
+- Native WebSocket realtime (replaces custom SSE)
+- Cloud storage for exports
+- Edge Functions for server-side logic
 
 ---
 
@@ -71,10 +94,9 @@ Nezuko acts as an **automated gatekeeper** that:
 | Metric                     | Target | Status      |
 | -------------------------- | ------ | ----------- |
 | Verification Latency (p99) | <150ms | ✅ Achieved |
-| API Latency (p90)          | <50ms  | ✅ Achieved |
+| Dashboard Pages            | 10     | ✅ Complete |
 | Uptime                     | 99.9%  | ✅ On Track |
-| Dashboard Pages            | 13     | ✅ Complete |
 
 ---
 
-_Last Updated: 2026-02-10_
+_Last Updated: 2026-02-12_

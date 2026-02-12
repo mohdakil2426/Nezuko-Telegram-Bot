@@ -1,12 +1,10 @@
 /**
  * Logs Service
- * API functions for fetching system logs
+ * API functions for fetching system logs via InsForge SDK
  */
 
 import { USE_MOCK } from "@/lib/api/config";
-import { apiClient } from "@/lib/api/client";
-import { ENDPOINTS } from "@/lib/api/endpoints";
-import type { SuccessResponse } from "@/lib/services/types";
+import { insforge } from "@/lib/insforge";
 import * as mockData from "@/lib/mock";
 
 export interface LogEntry {
@@ -27,22 +25,43 @@ export interface LogsResponse {
  */
 export async function getLogs(limit = 100, level?: string): Promise<LogsResponse> {
   if (USE_MOCK) {
-    // Return mock logs
     return {
       items: mockData.getRecentLogs(limit),
       total: limit,
     };
   }
 
-  // API returns: { status: "success", data: LogEntry[] }
-  const response = await apiClient.get<SuccessResponse<LogEntry[]>>(ENDPOINTS.logs.list, {
-    params: { limit, level: level !== "all" ? level : undefined },
-  });
+  let query = insforge.database
+    .from("admin_logs")
+    .select("*", { count: "exact" })
+    .order("timestamp", { ascending: false })
+    .limit(limit);
 
-  // Transform to expected LogsResponse format
-  const logs = response.data;
+  if (level && level !== "all") {
+    query = query.eq("level", level.toUpperCase());
+  }
+
+  const { data, error, count } = await query;
+  if (error) throw error;
+
+  const logs = (data ?? []).map(
+    (row: {
+      id: number;
+      level: string;
+      message: string;
+      timestamp: string;
+      extra: Record<string, unknown> | null;
+    }) => ({
+      id: String(row.id),
+      level: row.level,
+      message: row.message,
+      timestamp: row.timestamp,
+      extra: row.extra ?? undefined,
+    }),
+  );
+
   return {
     items: logs,
-    total: logs.length,
+    total: count ?? logs.length,
   };
 }

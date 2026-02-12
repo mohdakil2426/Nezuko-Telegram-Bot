@@ -4,7 +4,9 @@
 > **Created**: 2026-02-12
 > **Target**: Migrate from FastAPI Backend to InsForge BaaS
 > **Branch**: `feat/insforge-migration`
-> **Estimated Phases**: 8 (sequential, each independently deployable)
+> **Estimated Phases**: 6 (sequential, each independently deployable)
+> **Data Migration**: None (fresh database, project is in development)
+> **Authentication**: None (direct access, no login system)
 
 ---
 
@@ -16,24 +18,23 @@
 4. [What Gets Added](#4-what-gets-added)
 5. [What Stays Unchanged](#5-what-stays-unchanged)
 6. [Complete Feature Parity Matrix](#6-complete-feature-parity-matrix)
-7. [Database Schema Migration](#7-database-schema-migration)
-8. [Authentication Migration](#8-authentication-migration)
-9. [Real-Time Migration (SSE to WebSocket)](#9-real-time-migration-sse-to-websocket)
-10. [Data Layer Migration (Frontend)](#10-data-layer-migration-frontend)
-11. [Bot Worker Refactor](#11-bot-worker-refactor)
-12. [Storage Migration](#12-storage-migration)
-13. [Edge Functions (Complex Server Logic)](#13-edge-functions-complex-server-logic)
-14. [Deployment Strategy](#14-deployment-strategy)
-15. [Security Architecture](#15-security-architecture)
-16. [Implementation Phases](#16-implementation-phases)
-17. [Folder Structure (Post-Migration)](#17-folder-structure-post-migration)
-18. [Environment Variables (Post-Migration)](#18-environment-variables-post-migration)
-19. [Edge Cases and Risk Mitigation](#19-edge-cases-and-risk-mitigation)
-20. [Rollback Strategy](#20-rollback-strategy)
-21. [Testing Strategy](#21-testing-strategy)
-22. [Performance Considerations](#22-performance-considerations)
-23. [Monitoring and Observability](#23-monitoring-and-observability)
-24. [Migration Checklist](#24-migration-checklist)
+7. [Database Schema (Fresh)](#7-database-schema-fresh)
+8. [Real-Time Migration (SSE to WebSocket)](#8-real-time-migration-sse-to-websocket)
+9. [Data Layer Migration (Frontend)](#9-data-layer-migration-frontend)
+10. [Bot Worker Refactor](#10-bot-worker-refactor)
+11. [Storage Migration](#11-storage-migration)
+12. [Edge Functions (Complex Server Logic)](#12-edge-functions-complex-server-logic)
+13. [Deployment Strategy](#13-deployment-strategy)
+14. [Security Architecture](#14-security-architecture)
+15. [Implementation Phases](#15-implementation-phases)
+16. [Folder Structure (Post-Migration)](#16-folder-structure-post-migration)
+17. [Environment Variables (Post-Migration)](#17-environment-variables-post-migration)
+18. [Edge Cases and Risk Mitigation](#18-edge-cases-and-risk-mitigation)
+19. [Rollback Strategy](#19-rollback-strategy)
+20. [Testing Strategy](#20-testing-strategy)
+21. [Performance Considerations](#21-performance-considerations)
+22. [Monitoring and Observability](#22-monitoring-and-observability)
+23. [Migration Checklist](#23-migration-checklist)
 
 ---
 
@@ -63,11 +64,11 @@ Browser (Next.js 16) → InsForge BaaS (PostgreSQL + Auth + Realtime + Storage)
 ```
 
 - **InsForge Database** replaces all FastAPI CRUD endpoints (PostgREST API)
-- **InsForge Auth** replaces Telegram Login Widget (Email/OAuth - GitHub, Google)
+- **No Auth** - direct dashboard access (no login system, same as current)
 - **InsForge Realtime** replaces custom SSE (WebSocket pub/sub)
 - **InsForge Storage** replaces local file handling
 - **InsForge Functions** replaces complex server-side logic
-- **Row Level Security (RLS)** replaces API-level authorization
+- **No RLS** - all tables open access (development mode, no auth)
 - **Bot Worker** continues with SQLAlchemy but points to InsForge PostgreSQL
 
 ### What This Achieves
@@ -76,7 +77,7 @@ Browser (Next.js 16) → InsForge BaaS (PostgreSQL + Auth + Realtime + Storage)
 |--------|--------|-------|
 | **Backend code** | ~50 Python files (FastAPI) | 0 (removed) |
 | **Infrastructure** | Docker PostgreSQL + Redis + FastAPI | InsForge managed |
-| **Auth** | Custom (disabled) | Production OAuth (GitHub/Google) |
+| **Auth** | Custom (disabled) | None (direct access, no login) |
 | **Real-time** | Custom SSE (fragile) | Native WebSocket (resilient) |
 | **Deployment** | Docker Compose | `create-deployment` MCP |
 | **Maintenance** | High (3 services) | Low (2 services: Web + Bot) |
@@ -119,7 +120,7 @@ Browser (Next.js 16) → InsForge BaaS (PostgreSQL + Auth + Realtime + Storage)
 │    Dashboard + Auth          │    Enforcement Engine             │
 │                              │                                   │
 │  @insforge/sdk  ──────────┐  │  SQLAlchemy ──────────┐           │
-│  @insforge/nextjs (Auth)  │  │  (Direct DB conn)     │           │
+│  No Auth (direct access)  │  │  (Direct DB conn)     │           │
 │  Realtime WebSocket  ─────┤  │  Redis (Bot cache) ───┤           │
 │                           │  │                       │           │
 └───────────────────────────┼──┴───────────────────────┼───────────┘
@@ -128,8 +129,8 @@ Browser (Next.js 16) → InsForge BaaS (PostgreSQL + Auth + Realtime + Storage)
                     │         InsForge BaaS Platform            │
                     │                                          │
                     │  ┌──────────┐  ┌──────────┐  ┌────────┐ │
-                    │  │ PostgREST│  │   Auth   │  │Realtime│ │
-                    │  │   API    │  │ (OAuth)  │  │  (WS)  │ │
+                    │  │ PostgREST│  │  No Auth │  │Realtime│ │
+                    │  │   API    │  │ (Direct) │  │  (WS)  │ │
                     │  └────┬─────┘  └──────────┘  └────────┘ │
                     │       │                                  │
                     │  ┌────┴─────┐  ┌──────────┐  ┌────────┐ │
@@ -184,7 +185,7 @@ python-multipart, sse-starlette
 
 ```bash
 # Next.js (apps/web)
-bun add @insforge/sdk@latest @insforge/nextjs@latest
+bun add @insforge/sdk@latest
 ```
 
 ### New Files
@@ -192,10 +193,6 @@ bun add @insforge/sdk@latest @insforge/nextjs@latest
 | File | Purpose |
 |------|---------|
 | `apps/web/src/lib/insforge.ts` | InsForge SDK client singleton |
-| `apps/web/middleware.ts` | InsForge Auth middleware (route protection) |
-| `apps/web/src/app/api/auth/route.ts` | Auth API route handler (cookie sync) |
-| `apps/web/src/app/providers.tsx` | `InsforgeBrowserProvider` wrapper |
-| `apps/web/src/lib/hooks/use-insforge-auth.ts` | Auth hooks wrapping InsForge |
 | `apps/web/src/lib/hooks/use-realtime-insforge.ts` | Realtime WebSocket hooks |
 | `apps/web/src/lib/services/insforge/*.ts` | Service layer using InsForge SDK |
 | `insforge/migrations/*.sql` | Database schema SQL files |
@@ -207,7 +204,6 @@ bun add @insforge/sdk@latest @insforge/nextjs@latest
 | Component | Purpose |
 |-----------|---------|
 | InsForge PostgreSQL | Managed database with PostgREST |
-| InsForge Auth | OAuth (GitHub, Google) + email/password |
 | InsForge Realtime | WebSocket pub/sub for live updates |
 | InsForge Storage | File storage (bot exports, logs) |
 | InsForge Functions | Server-side logic (analytics aggregation, command execution) |
@@ -260,15 +256,9 @@ Every current feature mapped to its InsForge replacement:
 
 | Current Feature | Current Implementation | InsForge Replacement |
 |----------------|----------------------|---------------------|
-| Telegram Login Widget | `POST /auth/telegram` (disabled) | InsForge Auth (Email + GitHub/Google OAuth) |
-| Session cookies | `nezuko_session` HTTP-only | InsForge HTTP-only cookies via `@insforge/nextjs` |
-| Owner identity | `BOT_OWNER_TELEGRAM_ID` env var | InsForge Auth user with `role = 'owner'` |
-| Session expiry | 72h configurable | InsForge managed (auto-refresh) |
-| Route protection | None (no middleware) | `InsforgeMiddleware` in `middleware.ts` |
-| `useAuth()` hook | Queries `/api/auth/me` | `useAuth()` from `@insforge/nextjs` |
-| `useUser()` hook | N/A | `useUser()` from `@insforge/nextjs` |
-| `<SignedIn>` / `<SignedOut>` | N/A | From `@insforge/nextjs` |
-| Logout | `POST /auth/logout` | `insforge.auth.signOut()` |
+| Owner identity | `BOT_OWNER_TELEGRAM_ID` env var | **No auth** - direct dashboard access (development mode) |
+| Route protection | None (no middleware) | None (no middleware, all routes public) |
+| Logout | `POST /auth/logout` | N/A (no login system) |
 
 ### Dashboard
 
@@ -376,11 +366,11 @@ Every current feature mapped to its InsForge replacement:
 
 ---
 
-## 7. Database Schema Migration
+## 7. Database Schema (Fresh)
 
 ### Strategy
 
-All 12 existing tables are ported to InsForge PostgreSQL via raw SQL. The schema is split into ordered migration files.
+All tables are created fresh on InsForge PostgreSQL via raw SQL. No data migration needed - the project is in development with no production data. The schema is split into ordered migration files.
 
 ### Migration File: `insforge/migrations/001_core_tables.sql`
 
@@ -1057,76 +1047,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
-### Migration File: `insforge/migrations/005_security_policies.sql`
-
-```sql
--- ============================================================
--- 005: Row Level Security Policies
--- ============================================================
--- RLS ensures that only authenticated dashboard users can
--- read/write data. The bot uses a service role connection.
--- ============================================================
-
--- Enable RLS on all tables
-ALTER TABLE owners ENABLE ROW LEVEL SECURITY;
-ALTER TABLE bot_instances ENABLE ROW LEVEL SECURITY;
-ALTER TABLE protected_groups ENABLE ROW LEVEL SECURITY;
-ALTER TABLE enforced_channels ENABLE ROW LEVEL SECURITY;
-ALTER TABLE group_channel_links ENABLE ROW LEVEL SECURITY;
-ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE admin_config ENABLE ROW LEVEL SECURITY;
-ALTER TABLE bot_status ENABLE ROW LEVEL SECURITY;
-ALTER TABLE admin_commands ENABLE ROW LEVEL SECURITY;
-ALTER TABLE verification_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE api_call_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE admin_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE admin_audit_log ENABLE ROW LEVEL SECURITY;
-
--- ============================================================
--- Policy: Authenticated users can read all data
--- (Dashboard is owner-only, so all auth users are trusted)
--- ============================================================
-
--- Read-all policies for authenticated users
-CREATE POLICY "auth_read_owners" ON owners FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read_bots" ON bot_instances FOR SELECT TO authenticated USING (deleted_at IS NULL);
-CREATE POLICY "auth_read_groups" ON protected_groups FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read_channels" ON enforced_channels FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read_links" ON group_channel_links FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read_admin_users" ON admin_users FOR SELECT TO authenticated USING (deleted_at IS NULL);
-CREATE POLICY "auth_read_config" ON admin_config FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read_bot_status" ON bot_status FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read_commands" ON admin_commands FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read_vlog" ON verification_log FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read_aclog" ON api_call_log FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read_logs" ON admin_logs FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_read_audit" ON admin_audit_log FOR SELECT TO authenticated USING (true);
-
--- ============================================================
--- Policy: Authenticated users can write (admin actions)
--- ============================================================
-
--- Bot management
-CREATE POLICY "auth_write_bots" ON bot_instances FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_write_groups" ON protected_groups FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_write_channels" ON enforced_channels FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_write_links" ON group_channel_links FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_write_config" ON admin_config FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_write_commands" ON admin_commands FOR INSERT TO authenticated WITH CHECK (true);
-
--- ============================================================
--- Policy: Anonymous (anon) key has NO access
--- (prevents unauthenticated access to all data)
--- ============================================================
--- No policies for 'anon' role = zero access by default with RLS enabled.
-
--- ============================================================
--- Note: The Python bot uses a direct PostgreSQL connection
--- (service role), bypassing RLS entirely. This is by design.
--- ============================================================
-```
-
-### Migration File: `insforge/migrations/006_realtime_setup.sql`
+### Migration File: `insforge/migrations/005_realtime_setup.sql`
 
 ```sql
 -- ============================================================
@@ -1276,78 +1197,7 @@ CREATE TRIGGER update_bot_status_timestamp BEFORE UPDATE ON bot_status
 
 ---
 
-## 8. Authentication Migration
-
-### Current State
-
-- Telegram Login Widget (disabled in code)
-- Environment-based owner identity (`BOT_OWNER_TELEGRAM_ID`)
-- No actual authentication enforced
-- No middleware.ts
-
-### Target State
-
-InsForge Auth with Email + OAuth (GitHub, Google):
-
-**File: `apps/web/middleware.ts`**
-
-```typescript
-import { InsforgeMiddleware } from '@insforge/nextjs/middleware';
-
-export default InsforgeMiddleware({
-  baseUrl: process.env.NEXT_PUBLIC_INSFORGE_BASE_URL!,
-  publicRoutes: ['/', '/login'],    // Only root and login are public
-});
-
-export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
-};
-```
-
-**File: `apps/web/src/app/api/auth/route.ts`**
-
-```typescript
-import { createAuthRouteHandlers } from '@insforge/nextjs/api';
-
-const handlers = createAuthRouteHandlers({
-  baseUrl: process.env.NEXT_PUBLIC_INSFORGE_BASE_URL!,
-});
-
-export const POST = handlers.POST;
-export const GET = handlers.GET;
-export const DELETE = handlers.DELETE;
-```
-
-**File: `apps/web/src/app/providers.tsx`**
-
-```typescript
-'use client';
-import { InsforgeBrowserProvider } from '@insforge/nextjs';
-import { insforge } from '@/lib/insforge';
-
-export function InsforgeProvider({ children }: { children: React.ReactNode }) {
-  return (
-    <InsforgeBrowserProvider client={insforge} afterSignInUrl="/dashboard">
-      {children}
-    </InsforgeBrowserProvider>
-  );
-}
-```
-
-### Owner-Only Access Strategy
-
-Since the dashboard is owner-only, the first authenticated user is auto-assigned `owner` role:
-
-1. User signs in via InsForge Auth (GitHub/Google/email)
-2. On first login, an Edge Function creates an `admin_users` record with `role = 'owner'`
-3. Subsequent logins check `admin_users` table for the InsForge user ID
-4. Unauthorized users see "Access Denied" page
-
----
-
-## 9. Real-Time Migration (SSE to WebSocket)
+## 8. Real-Time Migration (SSE to WebSocket)
 
 ### Current SSE Architecture
 
@@ -1441,7 +1291,7 @@ export function useCommandsRealtime() {
 
 ---
 
-## 10. Data Layer Migration (Frontend)
+## 9. Data Layer Migration (Frontend)
 
 ### Service Layer Rewrite Strategy
 
@@ -1535,7 +1385,7 @@ export async function getGroups(params: GroupsParams): Promise<GroupListResponse
 
 ---
 
-## 11. Bot Worker Refactor
+## 10. Bot Worker Refactor
 
 ### Changes Required
 
@@ -1675,7 +1525,7 @@ def start_command_worker(bot_app) -> None:
 
 ---
 
-## 12. Storage Migration
+## 11. Storage Migration
 
 ### Storage Buckets to Create
 
@@ -1694,7 +1544,7 @@ const { data } = await insforge.storage.from('bot-exports').uploadAuto(csvBlob);
 
 ---
 
-## 13. Edge Functions (Complex Server Logic)
+## 12. Edge Functions (Complex Server Logic)
 
 ### Functions Needed
 
@@ -1772,7 +1622,7 @@ export default async function(req) {
 
 ---
 
-## 14. Deployment Strategy
+## 13. Deployment Strategy
 
 ### Frontend (Web Dashboard)
 
@@ -1814,17 +1664,20 @@ Applied via `run-raw-sql` MCP tool in order:
 
 ---
 
-## 15. Security Architecture
+## 14. Security Architecture
 
 ### Authentication Security
 
 | Layer | Mechanism |
 |-------|-----------|
-| **Route Protection** | `InsforgeMiddleware` blocks unauthenticated access |
-| **API Authorization** | InsForge JWT tokens in HTTP-only cookies |
-| **Database Access** | RLS policies enforce auth-only access |
-| **Bot Database** | Direct PostgreSQL connection (service role, bypasses RLS) |
-| **Token Encryption** | Bot tokens encrypted with Fernet (ENCRYPTION_KEY env var) |
+| **Route Protection** | None (direct access, no login - development mode) |
+| **API Authorization** | None (all InsForge queries use anon key) |
+| **Database Access** | No RLS (open access for development) |
+| **Bot Database** | Direct PostgreSQL connection (service role) |
+| **Token Encryption** | Fernet encryption at rest (ENCRYPTION_KEY env var) |
+
+> **Future**: When ready for production, add InsForge Auth + RLS policies.
+> The `005_security_policies.sql` migration file can be created at that time.
 
 ### Data Security
 
@@ -1832,10 +1685,8 @@ Applied via `run-raw-sql` MCP tool in order:
 |---------|----------|
 | **SQL Injection** | InsForge SDK parameterizes all queries |
 | **XSS** | React 19 auto-escapes, no `dangerouslySetInnerHTML` |
-| **CSRF** | InsForge Auth handles CSRF tokens automatically |
 | **Secrets** | Environment variables, never in code |
 | **Bot Tokens** | Fernet encryption at rest in database |
-| **RLS Bypass** | Only bot worker bypasses RLS (service role) |
 | **Sensitive Config** | `admin_config.is_sensitive` flag hides values |
 
 ### Network Security
@@ -1850,7 +1701,7 @@ Applied via `run-raw-sql` MCP tool in order:
 
 ---
 
-## 16. Implementation Phases
+## 15. Implementation Phases
 
 ### Phase 1: Infrastructure Setup (Day 1)
 
@@ -1859,31 +1710,17 @@ Applied via `run-raw-sql` MCP tool in order:
 - [ ] Run `download-template` MCP tool for Next.js
 - [ ] Run `get-backend-metadata` to get base URL and configuration
 - [ ] Run `get-anon-key` to generate anonymous JWT
-- [ ] Execute all 6 SQL migration files via `run-raw-sql`
+- [ ] Execute all 5 SQL migration files via `run-raw-sql`
 - [ ] Verify all tables exist with `get-table-schema`
 - [ ] Create storage buckets via `create-bucket` (bot-exports, bot-assets)
 - [ ] Test RPC functions manually
 
-### Phase 2: Authentication (Day 2)
-
-**Goal**: Replace custom auth with InsForge Auth
-
-- [ ] Install `@insforge/sdk` and `@insforge/nextjs`
-- [ ] Create `apps/web/src/lib/insforge.ts` (SDK client)
-- [ ] Create `apps/web/middleware.ts` (route protection)
-- [ ] Create `apps/web/src/app/api/auth/route.ts` (cookie sync)
-- [ ] Create `apps/web/src/app/providers.tsx` (InsforgeBrowserProvider)
-- [ ] Update root layout to wrap with InsforgeProvider
-- [ ] Replace `useAuth()` hook with InsForge `useAuth()`
-- [ ] Update login page (remove Telegram Widget, use InsForge redirect)
-- [ ] Test login flow (GitHub OAuth, email)
-- [ ] Create owner verification Edge Function
-- [ ] Remove old `apps/web/src/lib/api/auth.ts`
-
-### Phase 3: Data Layer - Core CRUD (Day 3-4)
+### Phase 2: Data Layer - Core CRUD (Day 2-3)
 
 **Goal**: Replace all fetch('/api/...') calls with InsForge SDK
 
+- [ ] Install `@insforge/sdk` in apps/web
+- [ ] Create `apps/web/src/lib/insforge.ts` (SDK client singleton)
 - [ ] Rewrite `dashboard.service.ts` → RPC calls
 - [ ] Rewrite `groups.service.ts` → direct queries
 - [ ] Rewrite `channels.service.ts` → direct queries
@@ -1891,11 +1728,12 @@ Applied via `run-raw-sql` MCP tool in order:
 - [ ] Rewrite `charts.service.ts` → RPC calls (10 functions)
 - [ ] Rewrite `logs.service.ts` → direct queries
 - [ ] Rewrite `api/bots.ts` → direct queries + Edge Function
+- [ ] Remove old auth hooks/services (no login system)
 - [ ] Update all TanStack Query hooks to use new services
 - [ ] Test every dashboard page for data correctness
 - [ ] Remove `NEXT_PUBLIC_API_URL` from env
 
-### Phase 4: Real-Time Migration (Day 5)
+### Phase 3: Real-Time Migration (Day 4)
 
 **Goal**: Replace SSE with InsForge Realtime WebSocket
 
@@ -1907,7 +1745,7 @@ Applied via `run-raw-sql` MCP tool in order:
 - [ ] Test event delivery (verification → dashboard update)
 - [ ] Remove old `use-realtime.ts` and `use-realtime-chart.ts`
 
-### Phase 5: Bot Worker Refactor (Day 6)
+### Phase 4: Bot Worker Refactor (Day 5)
 
 **Goal**: Remove API dependency from bot, add DB-direct patterns
 
@@ -1922,21 +1760,15 @@ Applied via `run-raw-sql` MCP tool in order:
 - [ ] Test `/protect`, `/unprotect`, `/status` commands
 - [ ] Test verification flow end-to-end
 
-### Phase 6: Edge Functions & Storage (Day 7)
+### Phase 5: Edge Functions, Storage & Cleanup (Day 6)
 
-**Goal**: Deploy Edge Functions for complex server logic
+**Goal**: Deploy Edge Functions, set up storage, remove FastAPI
 
 - [ ] Create and deploy `manage-bot` function
 - [ ] Create and deploy `test-webhook` function
 - [ ] Update bot management UI to use Edge Functions
 - [ ] Test bot add/verify/delete flow
-- [ ] Set up storage buckets (if not done in Phase 1)
 - [ ] Test file upload/download
-
-### Phase 7: Delete FastAPI & Cleanup (Day 8)
-
-**Goal**: Remove all FastAPI code and clean up
-
 - [ ] Delete entire `apps/api/` directory
 - [ ] Delete `requirements/api.txt`
 - [ ] Update `pyproject.toml` (remove API-specific configs)
@@ -1947,7 +1779,7 @@ Applied via `run-raw-sql` MCP tool in order:
 - [ ] Run all linters and type checkers
 - [ ] Run all remaining tests
 
-### Phase 8: Deployment & Verification (Day 9)
+### Phase 6: Deployment & Verification (Day 7)
 
 **Goal**: Deploy to production and verify everything works
 
@@ -1957,14 +1789,13 @@ Applied via `run-raw-sql` MCP tool in order:
 - [ ] Verify real-time updates work
 - [ ] Verify bot verification flow works
 - [ ] Verify analytics data is accurate
-- [ ] Verify auth flow (login/logout/protected routes)
 - [ ] Monitor for errors (1 hour burn-in)
 - [ ] Update CLAUDE.md with new architecture
 - [ ] Update memory-bank progress.md
 
 ---
 
-## 17. Folder Structure (Post-Migration)
+## 16. Folder Structure (Post-Migration)
 
 ```
 nezuko-monorepo/
@@ -1972,11 +1803,8 @@ nezuko-monorepo/
 │   ├── web/                          # Next.js 16 Dashboard
 │   │   ├── src/
 │   │   │   ├── app/
-│   │   │   │   ├── api/auth/route.ts # InsForge auth handlers
 │   │   │   │   ├── dashboard/        # All dashboard pages (unchanged)
-│   │   │   │   ├── login/            # Updated login page
-│   │   │   │   ├── layout.tsx        # Root layout with InsforgeProvider
-│   │   │   │   ├── providers.tsx     # InsforgeBrowserProvider
+│   │   │   │   ├── layout.tsx        # Root layout (unchanged)
 │   │   │   │   └── page.tsx          # Redirect to /dashboard
 │   │   │   ├── components/           # UI components (unchanged)
 │   │   │   ├── lib/
@@ -2038,7 +1866,7 @@ nezuko-monorepo/
 
 ---
 
-## 18. Environment Variables (Post-Migration)
+## 17. Environment Variables (Post-Migration)
 
 ### Web Dashboard (`apps/web/.env.local`)
 
@@ -2081,17 +1909,11 @@ SENTRY_DSN=<sentry-dsn>
 
 ---
 
-## 19. Edge Cases and Risk Mitigation
+## 18. Edge Cases and Risk Mitigation
 
 ### Data Migration (Existing Data)
 
-| Risk | Mitigation |
-|------|------------|
-| Existing PostgreSQL data loss | Export existing data before migration with `pg_dump` |
-| Schema mismatch | Run migration SQL on empty InsForge DB first, then import data |
-| BigInt compatibility | InsForge PostgreSQL supports BIGINT natively |
-| JSON/JSONB fields | Fully supported in InsForge PostgreSQL |
-| GIN indexes | Supported (InsForge uses standard PostgreSQL 17) |
+> **Not applicable** - Project is in development with no production data. All tables are created fresh on InsForge PostgreSQL.
 
 ### Bot Connectivity
 
@@ -2113,13 +1935,8 @@ SENTRY_DSN=<sentry-dsn>
 
 ### Authentication Edge Cases
 
-| Risk | Mitigation |
-|------|------------|
-| First user isn't the owner | Edge Function checks if `admin_users` is empty → first user = owner |
-| Token expiry during session | InsForge auto-refreshes tokens via HTTP-only cookies |
-| Multiple tabs | InsForge handles multi-tab session sync |
-| OAuth callback failure | InsForge handles retries; show error page with retry button |
-| Email verification delays | Use code-based verification (configured in InsForge backend) |
+> **Not applicable** - No login system. Dashboard has direct access (development mode).
+> When auth is added later, consider: first-user-is-owner pattern, token refresh, multi-tab sync, OAuth callback failures.
 
 ### Performance Edge Cases
 
@@ -2134,14 +1951,13 @@ SENTRY_DSN=<sentry-dsn>
 
 | Risk | Mitigation |
 |------|------------|
-| RLS bypass attempt | No `anon` policies defined; only `authenticated` role has access |
+| RLS bypass attempt | No RLS enabled (development mode) - add when auth is implemented |
 | Bot token exposure | Fernet encryption at rest; never sent to frontend |
 | Injection via bot data | All InsForge SDK queries are parameterized |
-| Privilege escalation | `role` column in `admin_users` checked server-side |
 
 ---
 
-## 20. Rollback Strategy
+## 19. Rollback Strategy
 
 ### Per-Phase Rollback
 
@@ -2150,13 +1966,11 @@ Each phase is independently rollbackable:
 | Phase | Rollback Action |
 |-------|----------------|
 | Phase 1 (Infra) | Drop all InsForge tables; no frontend impact |
-| Phase 2 (Auth) | Revert middleware.ts, restore old auth hooks |
-| Phase 3 (Data) | Revert service files to fetch('/api/...') pattern |
-| Phase 4 (Realtime) | Revert to SSE hooks |
-| Phase 5 (Bot) | Restore EventPublisher, HeartbeatService; revert DATABASE_URL |
-| Phase 6 (Functions) | Revert bot management to direct API calls |
-| Phase 7 (Cleanup) | Git restore `apps/api/` directory |
-| Phase 8 (Deploy) | Redeploy previous version |
+| Phase 2 (Data) | Revert service files to fetch('/api/...') pattern |
+| Phase 3 (Realtime) | Revert to SSE hooks |
+| Phase 4 (Bot) | Restore EventPublisher, HeartbeatService; revert DATABASE_URL |
+| Phase 5 (Functions+Cleanup) | Git restore `apps/api/`; revert bot management to direct API calls |
+| Phase 6 (Deploy) | Redeploy previous version |
 
 ### Full Rollback
 
@@ -2168,17 +1982,16 @@ git checkout main  # Return to pre-migration state
 
 ### Data Rollback
 
-```bash
-# Export InsForge data before any destructive changes
-pg_dump -h <insforge-host> -U <user> -d <db> > backup.sql
+No data rollback needed - fresh database with no production data. If needed during development:
 
-# Restore to local Docker PostgreSQL
-psql -h localhost -U nezuko -d nezuko < backup.sql
+```bash
+# Re-run migration SQL files to recreate schema
+# All data is development/test data only
 ```
 
 ---
 
-## 21. Testing Strategy
+## 20. Testing Strategy
 
 ### Unit Tests (Bot)
 
@@ -2188,7 +2001,7 @@ Existing bot tests in `tests/bot/` remain unchanged. The bot's interface (SQLAlc
 
 | Test | What to Verify |
 |------|---------------|
-| Auth flow | Login → redirect → dashboard → logout |
+| Auth flow | N/A (no login system - direct access) |
 | Dashboard data | All 7 stat cards show correct numbers |
 | Groups CRUD | List, search, filter, update, link/unlink channels |
 | Channels CRUD | List, search, create |
@@ -2202,14 +2015,14 @@ Existing bot tests in `tests/bot/` remain unchanged. The bot's interface (SQLAlc
 
 Use Playwright (existing skill) to test:
 
-1. Full auth flow (sign up → verify email → sign in → dashboard)
+1. Dashboard loads with correct data (no auth needed - direct access)
 2. Bot management lifecycle (add → activate → deactivate → delete)
 3. Real-time updates (trigger verification → see dashboard update)
 4. Navigation through all 10 routes
 
 ---
 
-## 22. Performance Considerations
+## 21. Performance Considerations
 
 ### Database Query Performance
 
@@ -2241,7 +2054,7 @@ Use Playwright (existing skill) to test:
 
 ---
 
-## 23. Monitoring and Observability
+## 22. Monitoring and Observability
 
 ### Dashboard Monitoring (Post-Migration)
 
@@ -2264,12 +2077,10 @@ Use Playwright (existing skill) to test:
 
 ---
 
-## 24. Migration Checklist
+## 23. Migration Checklist
 
 ### Pre-Migration
 
-- [ ] Export existing PostgreSQL data (`pg_dump`)
-- [ ] Document current API response formats for verification
 - [ ] Ensure all tests pass on current codebase
 - [ ] Create `feat/insforge-migration` branch
 - [ ] Read all InsForge SDK documentation (fetch-docs MCP)
@@ -2277,20 +2088,17 @@ Use Playwright (existing skill) to test:
 ### During Migration
 
 - [ ] Phase 1: Infrastructure setup and schema creation
-- [ ] Phase 2: Authentication migration
-- [ ] Phase 3: Data layer migration (all services)
-- [ ] Phase 4: Real-time migration (SSE → WebSocket)
-- [ ] Phase 5: Bot worker refactor
-- [ ] Phase 6: Edge Functions deployment
-- [ ] Phase 7: FastAPI removal and cleanup
-- [ ] Phase 8: Production deployment and verification
+- [ ] Phase 2: Data layer migration (all services)
+- [ ] Phase 3: Real-time migration (SSE → WebSocket)
+- [ ] Phase 4: Bot worker refactor
+- [ ] Phase 5: Edge Functions, storage & FastAPI removal
+- [ ] Phase 6: Deployment and verification
 
 ### Post-Migration
 
 - [ ] All 10 dashboard pages functional
 - [ ] Real-time updates working (WebSocket)
 - [ ] Bot verification flow working end-to-end
-- [ ] Auth flow working (login/logout/protected routes)
 - [ ] All charts displaying correct data
 - [ ] Logs streaming in real-time
 - [ ] Bot management (add/verify/toggle/delete) working

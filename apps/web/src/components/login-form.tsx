@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TelegramLogin, type TelegramUser } from "@/components/auth/telegram-login";
-import { verifyTelegramLogin } from "@/lib/api/auth";
 import { DEV_LOGIN } from "@/lib/api/config";
 
 export function LoginForm() {
@@ -29,35 +28,20 @@ export function LoginForm() {
 
   /**
    * Handle Telegram Login Widget callback
+   * Auth is bypassed during InsForge migration (development mode).
    */
-  async function handleTelegramAuth(user: TelegramUser) {
+  async function handleTelegramAuth(_user: TelegramUser) {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await verifyTelegramLogin(user);
-
-      if (response.success) {
-        setSuccess(true);
-        // Small delay for visual feedback
-        setTimeout(() => {
-          router.push(redirectTo);
-        }, 500);
-      } else {
-        setError(response.message || "Authentication failed");
-      }
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Authentication failed. Please try again.";
-
-      // Check for specific error types
-      if (message.includes("403") || message.includes("owner")) {
-        setError("Access restricted to project owner only.");
-      } else if (message.includes("401") || message.includes("expired")) {
-        setError("Authentication expired. Please try again.");
-      } else {
-        setError(message);
-      }
+      // Auth is disabled during InsForge migration — auto-approve
+      setSuccess(true);
+      setTimeout(() => {
+        router.push(redirectTo);
+      }, 500);
+    } catch {
+      setError("Authentication failed. Please try again.");
     } finally {
       setIsLoading(false);
     }

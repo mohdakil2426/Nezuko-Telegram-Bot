@@ -2,25 +2,46 @@
 
 ## Architecture Overview
 
+### Current (Transitioning to InsForge)
+
 ```
-┌─────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────┐
 │                     NEZUKO PLATFORM                          │
-├───────────────┬───────────────┬─────────────────────────────┤
-│   apps/web    │   apps/api    │        apps/bot             │
-│  (Next.js 16) │  (FastAPI)    │  (python-telegram-bot)      │
-│   Dashboard   │   REST API    │   Enforcement Engine        │
-└───────┬───────┴───────┬───────┴─────────────┬───────────────┘
-        │               │                     │
-        └───────────────┴─────────────────────┘
-                        │
-           ┌────────────┴────────────┐
-           │  PostgreSQL 17 (Docker) │
-           └─────────────────────────┘
+├──────────────────────────┬───────────────────────────────────┤
+│      apps/web            │          apps/bot                 │
+│    (Next.js 16)          │   (python-telegram-bot)           │
+│   Dashboard + SDK        │   Enforcement Engine              │
+└──────────┬───────────────┴───────────────┬───────────────────┘
+           │                               │
+           │  InsForge SDK                 │  SQLAlchemy (asyncpg)
+           │  (TypeScript)                 │  (Python)
+           ▼                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│              InsForge BaaS Platform                          │
+│  ┌──────────┐ ┌───────────┐ ┌─────────┐ ┌───────────────┐    │
+│  │ Database │ │ Realtime  │ │ Storage │ │ Edge Functions│    │
+│  │ PostgREST│ │ WebSocket │ │  Blobs  │ │  Serverless   │    │
+│  └────┬─────┘ └─────┬─────┘ └────┬────┘ └───────┬───────┘    │
+│       └─────────────┼────────────┘              │            │
+│                     ▼                           │            │
+│         ┌───────────────────────┐               │            │
+│         │  PostgreSQL (Managed) │◄──────────────┘            │
+│         │  13 tables, 15 RPCs  │                             │
+│         │  Triggers → Realtime │                             │
+│         └───────────────────────┘                            │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Previous (Being Removed)
+
+```
+Web → FastAPI REST API → Docker PostgreSQL ← Bot
+         (apps/api/)        (self-hosted)
 ```
 
 ---
 
-## Backend Patterns (Python)
+## Bot Patterns (Python)
 
 ### Async-First Architecture
 
@@ -50,17 +71,6 @@ stmt = select(Model).where(Model.id == id)
 result = await session.execute(stmt)
 ```
 
-### Transaction Management
-
-```python
-# Services use flush(), not commit()
-# FastAPI dependency manages transaction
-async def update_item(session: AsyncSession, data: dict):
-    item.value = data["value"]
-    await session.flush()  # Not commit()
-    await session.refresh(item)
-```
-
 ### Error Handling
 
 ```python
@@ -75,7 +85,6 @@ except ValueError as exc:
 ### DML Result Access (CursorResult Pattern)
 
 ```python
-# session.execute(delete/update) returns Result, but DML gives CursorResult
 from typing import cast
 from sqlalchemy import CursorResult, delete
 
@@ -83,6 +92,23 @@ result = cast(CursorResult, await session.execute(
     delete(Model).where(Model.timestamp < cutoff)
 ))
 deleted_count = result.rowcount  # Now type-safe
+```
+
+### Bot-to-Dashboard Communication (NEW)
+
+```python
+# Bot writes directly to InsForge PostgreSQL tables
+# PostgreSQL triggers fire realtime.publish() automatically
+
+# Status Writer: UPSERT heartbeat every 30 seconds
+await session.execute(
+    insert(BotStatus).values(...).on_conflict_do_update(...)
+)
+
+# Command Worker: Poll admin_commands every 1 second
+pending = await session.execute(
+    select(AdminCommand).where(AdminCommand.status == 'pending')
+)
 ```
 
 ---
@@ -111,29 +137,89 @@ const { data, isPending } = useQuery({
 if (isPending) return <Skeleton />;
 ```
 
-### Service Layer Pattern
+### InsForge SDK Service Pattern (NEW)
 
 ```typescript
-// Mock/API abstraction
-import { dataService } from "@/services";
-const stats = await dataService.getDashboardStats();
+// Service layer uses InsForge SDK directly (no fetch to API)
+import { insforge } from "@/lib/insforge";
+
+export async function getDashboardStats() {
+  const { data, error } = await insforge.database.rpc("get_dashboard_stats");
+  if (error) throw error;
+  return data;
+}
+
+export async function getGroups(page: number, perPage: number) {
+  const { data, error, count } = await insforge.database
+    .from("protected_groups")
+    .select("*, group_channel_links(channel_id)", { count: "exact" })
+    .range((page - 1) * perPage, page * perPage - 1);
+  if (error) throw error;
+  return { data, total: count };
+}
+```
+
+### InsForge Realtime Hooks (NEW)
+
+```typescript
+// WebSocket-based realtime (replaces SSE)
+import { insforge } from "@/lib/insforge";
+
+export function useDashboardRealtime() {
+  useEffect(() => {
+    const subscription = insforge.realtime
+      .channel("dashboard")
+      .on("verification", (event) => {
+        queryClient.invalidateQueries(["dashboard"]);
+      })
+      .subscribe();
+
+    return () => { subscription.unsubscribe(); };
+  }, []);
+}
 ```
 
 ---
 
-## Database Models
+## Database Schema (InsForge Managed PostgreSQL)
 
-### Core Tables
+### 13 Tables
 
-| Table               | Purpose                           |
-| ------------------- | --------------------------------- |
-| `sessions`          | Telegram auth sessions            |
-| `bot_instances`     | Registered bot tokens (encrypted) |
-| `protected_groups`  | Groups with enforcement           |
-| `enforced_channels` | Required channel subscriptions    |
-| `verification_log`  | All verification events           |
-| `api_call_log`      | API call tracking                 |
-| `admin_audit_log`   | Admin action audit trail          |
+| Table               | Purpose                                    |
+| ------------------- | ------------------------------------------ |
+| `owners`            | Bot owners (Telegram user IDs)             |
+| `bot_instances`     | Registered bot tokens (Fernet encrypted)   |
+| `protected_groups`  | Groups with verification enforcement       |
+| `enforced_channels` | Required channel subscriptions             |
+| `group_channel_links` | Many-to-many group↔channel relationships |
+| `admin_users`       | Dashboard admin accounts                   |
+| `admin_config`      | Key-value system configuration             |
+| `bot_status`        | Bot heartbeat/status (UPSERT pattern)      |
+| `admin_commands`    | Dashboard→Bot command queue                |
+| `verification_log`  | All verification events for analytics      |
+| `api_call_log`      | Telegram API call tracking                 |
+| `admin_logs`        | Application logs (structured)              |
+| `admin_audit_log`   | Admin action audit trail (with user join)  |
+
+### 15 PostgreSQL RPC Functions
+
+| Function | Purpose |
+| -------- | ------- |
+| `get_dashboard_stats` | Dashboard overview (7 metrics) |
+| `get_chart_data` | Verification time series |
+| `get_verification_trends` | Trends with period/granularity |
+| `get_user_growth` | User growth with cumulative totals |
+| `get_analytics_overview` | Analytics summary (6 metrics) |
+| `get_verification_distribution` | Pie chart data |
+| `get_cache_breakdown` | Donut chart data |
+| `get_groups_status` | Active vs inactive groups |
+| `get_api_calls_distribution` | API method breakdown |
+| `get_hourly_activity` | 24-hour activity pattern |
+| `get_latency_distribution` | Histogram buckets |
+| `get_top_groups` | Top N groups by verification count |
+| `get_cache_hit_rate_trend` | Cache rate time series |
+| `get_latency_trend` | Latency + p95 time series |
+| `get_bot_health` | Composite health score |
 
 ### Key Indexes
 
@@ -141,66 +227,18 @@ const stats = await dataService.getDashboardStats();
 -- Composite indexes for analytics
 idx_verification_log_timestamp_status (timestamp, status)
 idx_verification_log_group_timestamp (group_id, timestamp)
+idx_admin_audit_log_action_timestamp (action, created_at)
+idx_admin_audit_log_resource (resource_type, resource_id, created_at)
 ```
 
----
+### Realtime Triggers
 
-## Authentication Flow
-
-```
-Browser → Telegram Login Widget → POST /auth/telegram
-                                       ↓
-                              Verify HMAC-SHA256
-                                       ↓
-                              Check owner_id match
-                                       ↓
-                              Create session + cookie
-                                       ↓
-                              Set nezuko_session cookie
-```
-
----
-
-## API Endpoint Structure
-
-```
-/api/v1/
-├── auth/telegram      # Telegram login
-├── dashboard/         # Stats, activity
-├── analytics/         # Trends, metrics
-├── groups/            # CRUD operations
-├── channels/          # CRUD operations
-├── bots/              # Bot management
-├── logs/              # Log retrieval
-├── events/stream      # SSE endpoint
-└── health             # Health check
-```
-
----
-
-## Real-Time Updates
-
-### SSE Pattern
-
-```typescript
-// Client subscribes to events
-const eventSource = new EventSource("/api/v1/events/stream");
-eventSource.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  queryClient.invalidateQueries(["dashboard"]);
-};
-```
-
-### Bot Event Publishing
-
-```python
-# Bot publishes verification events
-await event_publisher.publish({
-    "type": "verification",
-    "user_id": user_id,
-    "status": "verified"
-})
-```
+| Trigger | Table → Channel | Event |
+| ------- | --------------- | ----- |
+| `notify_verification_event` | `verification_log` → `dashboard` | `verification` |
+| `notify_bot_status_event` | `bot_status` → `bot_status` | `status_changed` |
+| `notify_command_event` | `admin_commands` → `commands` | `command_updated` |
+| `notify_log_event` | `admin_logs` → `logs` | `new_log` (ERROR/WARNING/INFO only) |
 
 ---
 
@@ -208,12 +246,12 @@ await event_publisher.publish({
 
 | Pattern  | Implementation                               |
 | -------- | -------------------------------------------- |
-| Auth     | Telegram Login + HMAC verification           |
-| Sessions | HTTP-only cookies, 72h expiry (configurable) |
+| Auth     | None (development mode)                      |
 | Tokens   | Fernet encryption at rest                    |
-| API      | Rate limiting, request ID tracking           |
 | Secrets  | Environment variables, no hardcoding         |
+| DB       | InsForge managed PostgreSQL with SSL         |
+| Storage  | Private/public bucket separation             |
 
 ---
 
-_Last Updated: 2026-02-10_
+_Last Updated: 2026-02-12_

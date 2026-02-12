@@ -3,64 +3,48 @@
 /**
  * Auth Hook
  *
- * React Query hook for managing authentication state.
- * Provides current user info and auth actions.
+ * Stub for development mode — no authentication system active.
+ * Will be replaced with InsForge Auth when auth is re-enabled.
  */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { getCurrentUser, logout as logoutApi, type SessionUser } from "@/lib/api/auth";
-import { queryKeys } from "@/lib/query-keys";
+/**
+ * Session user info (stub)
+ */
+export interface SessionUser {
+  telegram_id: number;
+  username: string | null;
+  first_name: string;
+  last_name: string | null;
+  photo_url: string | null;
+}
 
 /**
  * Hook for accessing current user authentication state.
- *
- * @returns Current user data, loading state, and auth actions
+ * Returns a dev user in development mode (no auth system active).
  */
 export function useAuth() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
-  // Query current user
-  const {
-    data: user,
-    isPending: isLoading,
-    error,
-    refetch,
-  } = useQuery<SessionUser | null>({
-    queryKey: queryKeys.auth.me,
-    queryFn: getCurrentUser,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: false, // Don't retry on 401 - auth checks can fail often
-  });
-
-  // Logout mutation
-  const logoutMutation = useMutation({
-    mutationFn: logoutApi,
-    onSuccess: () => {
-      // Clear all queries
-      queryClient.clear();
-      // Redirect to login
-      router.push("/login");
-    },
-  });
+  const devUser: SessionUser = {
+    telegram_id: 0,
+    username: "dev",
+    first_name: "Developer",
+    last_name: null,
+    photo_url: null,
+  };
 
   return {
-    /** Current authenticated user or null */
-    user,
-    /** True if authentication check is in progress */
-    isLoading,
-    /** True if user is authenticated */
-    isAuthenticated: !!user,
-    /** Error from auth check */
-    error,
-    /** Refetch current user */
-    refetch,
-    /** Logout the current user */
-    logout: logoutMutation.mutate,
-    /** True if logout is in progress */
-    isLoggingOut: logoutMutation.isPending,
+    /** Current authenticated user (dev stub) */
+    user: devUser,
+    /** Auth check is never loading */
+    isLoading: false,
+    /** Always authenticated in dev mode */
+    isAuthenticated: true,
+    /** No error */
+    error: null,
+    /** Refetch is a no-op */
+    refetch: () => Promise.resolve({ data: devUser, status: "success" as const }),
+    /** Logout is a no-op */
+    logout: () => {},
+    /** Never logging out */
+    isLoggingOut: false,
   };
 }
-
-export type { SessionUser };

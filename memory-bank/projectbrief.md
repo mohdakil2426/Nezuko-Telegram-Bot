@@ -20,11 +20,13 @@ Convert group participants into channel subscribers through automated verificati
 | Layer              | Technologies                                             |
 | ------------------ | -------------------------------------------------------- |
 | **Bot**            | Python 3.13, python-telegram-bot v22.6, AsyncIO          |
-| **API**            | FastAPI, SQLAlchemy 2.0, Pydantic V2                     |
 | **Web**            | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
-| **Database**       | PostgreSQL 17 (Docker required)                          |
-| **Auth**           | Telegram Login Widget (owner-only)                       |
-| **Infrastructure** | Docker, Turborepo, Caddy                                 |
+| **Backend (BaaS)** | InsForge (managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions) |
+| **Database**       | InsForge Managed PostgreSQL (cloud)                      |
+| **Auth**           | None (development mode, direct access)                   |
+| **Infrastructure** | Docker (bot only), Turborepo, Caddy                      |
+
+> **Architecture Change (Phase 54)**: Migrating from 3-tier (Web → FastAPI → PostgreSQL) to 2-tier (Web → InsForge BaaS + Bot → InsForge PostgreSQL). The entire `apps/api/` FastAPI layer is being removed and replaced with InsForge SDK direct queries.
 
 ---
 
@@ -33,18 +35,22 @@ Convert group participants into channel subscribers through automated verificati
 ```
 nezuko-monorepo/
 ├── apps/
-│   ├── api/          # FastAPI REST Backend (~50 Python files)
 │   ├── bot/          # Telegram Bot (~25 Python files)
 │   └── web/          # Next.js Dashboard (~120 TypeScript files)
+├── insforge/         # InsForge migration files & Edge Functions
+│   ├── migrations/   # SQL migration files (001-005)
+│   └── functions/    # Edge Functions (manage-bot, test-webhook)
 ├── packages/         # Shared packages (@nezuko/types, config)
 ├── config/           # Docker, Caddy, deployment configs
-├── requirements/     # Python deps (base, api, bot, dev)
+├── requirements/     # Python deps (base, bot, dev)
 ├── tests/            # Centralized test suite
 ├── scripts/          # Development & utility scripts
 ├── storage/          # Runtime files (gitignored)
 ├── memory-bank/      # Project documentation
 └── docs/             # Technical documentation
 ```
+
+> **Note**: `apps/api/` (~50 Python files) is being removed as part of InsForge migration. Backup at `docs/local/backup-2026-02-12-105223/apps/`.
 
 ---
 
@@ -56,23 +62,26 @@ nezuko-monorepo/
 - Multi-channel enforcement (AND logic)
 - Leave detection with immediate revocation
 - Interactive inline verification buttons
-- Prometheus metrics and structured logging
-
-### Admin API
-
-- RESTful endpoints with Pydantic validation
-- Telegram Login Widget authentication
-- Session-based auth with HTTP-only cookies
-- Audit logging for all admin actions
-- Real-time SSE event streaming
+- Verification logging directly to InsForge PostgreSQL
+- Status writer (heartbeat via DB UPSERT)
+- Command worker (polls admin_commands table)
 
 ### Web Dashboard
 
-- 13 routes (dashboard, analytics, groups, channels, bots, logs, settings)
+- 10 pages (dashboard, analytics, groups, channels, bots, logs, settings)
 - 70+ React components (shadcn/ui based)
 - TanStack Query for data fetching
-- Real-time updates via SSE
+- Real-time updates via InsForge WebSocket (replacing SSE)
 - Dark/Light mode theming
+- Direct InsForge SDK queries (no intermediate API)
+
+### InsForge Backend
+
+- 13 database tables with proper indexes
+- 15 PostgreSQL RPC functions for analytics/charts
+- 4 realtime triggers (verification, bot_status, commands, logs)
+- 2 storage buckets (bot-exports private, bot-assets public)
+- Edge Functions for bot token management and webhook testing
 
 ---
 
@@ -90,14 +99,18 @@ nezuko-monorepo/
 
 ## Current Status
 
-**Phase**: Production Ready (Phase 52+)
-**Last Updated**: 2026-02-10
+**Phase**: 54 - InsForge BaaS Migration (In Progress)
+**Last Updated**: 2026-02-12
 
-- Bot Core: Functional with verification logging
-- Admin API: All endpoints working
-- Dashboard: All 13 pages functional
-- Authentication: Telegram Login integrated
-- Database: PostgreSQL with migrations applied
+- Phase 1 (Backup): Complete
+- Phase 2 (Infrastructure): Complete — 13 tables, 15 RPC functions, realtime, storage
+- Phase 3 (SDK Integration): Complete — @insforge/sdk@1.1.5, singleton client, env vars
+- Phase 4 (Service Rewrite): Complete — 9 services rewritten, auth stub, logger migrated
+- Phase 5 (Realtime Migration): Pending
+- Phase 6 (Bot Refactor): Pending
+- Phase 7 (Edge Functions): Pending
+- Phase 8 (API Removal): Pending
+- Phase 9 (Documentation & Deployment): Pending
 
 ---
 

@@ -2,40 +2,50 @@
 
 ## Technology Stack
 
-### Backend (Python 3.13)
+### Bot (Python 3.13)
 
 | Package             | Version | Purpose             |
 | ------------------- | ------- | ------------------- |
-| FastAPI             | 0.128+  | REST API framework  |
 | python-telegram-bot | 22.6+   | Telegram Bot API    |
 | SQLAlchemy          | 2.0+    | Async ORM           |
 | Pydantic            | 2.12+   | Data validation     |
-| Uvicorn             | 0.40+   | ASGI server         |
 | AsyncPG             | 0.31+   | PostgreSQL driver   |
 | Redis               | 7.1+    | Caching             |
-| Alembic             | 1.18+   | Migrations          |
+
+> **Removed**: FastAPI, Uvicorn, Alembic, sse-starlette (all part of `apps/api/` which is being deleted)
 
 ### Frontend (TypeScript)
 
-| Package        | Version | Purpose         |
-| -------------- | ------- | --------------- |
-| Next.js        | 16.1+   | React framework |
-| React          | 19.2+   | UI library      |
-| TypeScript     | 5.9+    | Type safety     |
-| Tailwind CSS   | 4.1+    | Styling         |
-| TanStack Query | 5.90+   | Data fetching   |
-| shadcn/ui      | Latest  | UI components   |
-| Recharts       | 3.7+    | Charts          |
+| Package        | Version | Purpose                  |
+| -------------- | ------- | ------------------------ |
+| Next.js        | 16.1+   | React framework          |
+| React          | 19.2+   | UI library               |
+| TypeScript     | 5.9+    | Type safety              |
+| Tailwind CSS   | 4.1+    | Styling                  |
+| TanStack Query | 5.90+   | Data fetching            |
+| shadcn/ui      | Latest  | UI components            |
+| Recharts       | 3.7+    | Charts                   |
+| @insforge/sdk  | Latest  | InsForge BaaS client     |
 
 ### Infrastructure
 
-| Tool          | Purpose             |
-| ------------- | ------------------- |
-| Docker        | Containerization    |
-| Turborepo     | Monorepo management |
-| Caddy         | Reverse proxy       |
-| PostgreSQL 17 | Production database |
-| Bun           | Package manager     |
+| Tool             | Purpose                        |
+| ---------------- | ------------------------------ |
+| InsForge BaaS    | Managed PostgreSQL, Realtime, Storage, Edge Functions |
+| Docker           | Bot containerization           |
+| Turborepo        | Monorepo management            |
+| Caddy            | Reverse proxy                  |
+| Bun              | Package manager (web)          |
+
+### InsForge BaaS Services
+
+| Service        | Purpose                                    |
+| -------------- | ------------------------------------------ |
+| Database       | PostgREST API over managed PostgreSQL      |
+| Realtime       | WebSocket pub/sub with DB triggers         |
+| Storage        | File upload/download (2 buckets)           |
+| Edge Functions | Serverless functions (bot mgmt, webhooks)  |
+| Base URL       | `https://u4ckbciy.us-west.insforge.app`    |
 
 ---
 
@@ -48,33 +58,38 @@
 pip install -r requirements/base.txt -r requirements/dev.txt
 cd apps/web && bun install
 
-# Start services
+# Start services (2-tier: Web + Bot)
 python -m apps.bot.main          # Bot (from root)
-cd apps/api && uvicorn src.main:app --reload --port 8080
 cd apps/web && bun dev           # Web (port 3000)
 ```
+
+> **No longer needed**: `cd apps/api && uvicorn src.main:app` — API layer removed
 
 ### Environment Files
 
 | App | File                  | Template                |
 | --- | --------------------- | ----------------------- |
-| API | `apps/api/.env`       | `apps/api/.env.example` |
 | Bot | `apps/bot/.env`       | `apps/bot/.env.example` |
 | Web | `apps/web/.env.local` | `apps/web/.env.example` |
+
+> **Removed**: `apps/api/.env` — API layer removed
 
 ### Required Environment Variables
 
 ```bash
-# API (.env)
-LOGIN_BOT_TOKEN=<telegram-bot-token>
-BOT_OWNER_TELEGRAM_ID=<your-telegram-id>
+# Bot (.env)
+BOT_TOKEN=<telegram-bot-token>
+DATABASE_URL=postgresql+asyncpg://<user>:<pass>@<insforge-host>:<port>/<db>?sslmode=require
 ENCRYPTION_KEY=<fernet-key>
-DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/nezuko
+REDIS_URL=redis://localhost:6379/0
 
 # Web (.env.local)
-NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_INSFORGE_BASE_URL=https://u4ckbciy.us-west.insforge.app
+NEXT_PUBLIC_INSFORGE_ANON_KEY=<insforge-anon-key>
 NEXT_PUBLIC_LOGIN_BOT_USERNAME=YourBotUsername
 ```
+
+> **Removed**: `NEXT_PUBLIC_API_URL` — no longer points to FastAPI
 
 ---
 
@@ -96,12 +111,12 @@ Each tool has a specific role — **no overlap, no gaps**:
 ### Python CLI Commands
 
 ```bash
-# All from project root
-ruff check apps/bot apps/api                        # Lint (0 errors)
-ruff format .                                       # Format
-pylint apps/bot apps/api --rcfile=pyproject.toml     # Score (10.00/10)
-.venv/Scripts/python.exe -m pyrefly check            # Types (0 errors)
-pytest                                               # Tests
+# All from project root (only apps/bot after API removal)
+ruff check apps/bot                             # Lint (0 errors)
+ruff format .                                   # Format
+pylint apps/bot --rcfile=pyproject.toml          # Score (10.00/10)
+.venv/Scripts/python.exe -m pyrefly check       # Types (0 errors)
+pytest                                           # Tests
 ```
 
 ### TypeScript CLI Commands
@@ -121,20 +136,7 @@ bun run format                  # Prettier + Tailwind Sort
 | **Ruff**    | `pyproject.toml` `[tool.ruff]`     | target-version, line-length, rule selection           |
 | **Pylint**  | `pyproject.toml` `[tool.pylint.*]` | disabled rules, max-locals=25, max-statements=60      |
 | **Pyrefly** | `pyrefly.toml`                     | search-path, ignore-missing-imports, project-includes |
-| **MyPy**    | `pyproject.toml` `[tool.mypy]`     | strict mode, plugin config                            |
 | **Knip**    | `apps/web/knip.json`               | Dead code detection (Web)                             |
-
-### Pylint Disabled Rules (Rationale)
-
-| Rule                  | Reason                               |
-| --------------------- | ------------------------------------ |
-| `import-error`        | Delegated to Ruff + Pyrefly          |
-| `no-name-in-module`   | Alembic dynamic imports              |
-| `missing-*-docstring` | Pydantic schemas self-documenting    |
-| `too-many-arguments`  | FastAPI dependency injection         |
-| `not-callable`        | SQLAlchemy func.\* false positives   |
-| `cyclic-import`       | SQLAlchemy models ↔ database pattern |
-| `duplicate-code`      | Bot/API share model patterns         |
 
 ### VS Code IDE Configuration
 
@@ -149,34 +151,38 @@ All 3 tools configured in `.vscode/settings.json`:
 
 ## Database
 
-### PostgreSQL with Docker (Required)
+### InsForge Managed PostgreSQL (Cloud)
 
-```bash
-# Start PostgreSQL container
-docker run -d --name nezuko-postgres \
-  -e POSTGRES_USER=nezuko \
-  -e POSTGRES_PASSWORD=nezuko123 \
-  -e POSTGRES_DB=nezuko \
-  -p 5432:5432 postgres:17-alpine
+- **Base URL**: `https://u4ckbciy.us-west.insforge.app`
+- **Tables**: 13 (created via `insforge/migrations/001-005.sql`)
+- **RPC Functions**: 15 (analytics + charts)
+- **Realtime Triggers**: 4 (verification, bot_status, commands, logs)
+- **Auto-update Triggers**: 8 (updated_at on all relevant tables)
+- **Schema managed via**: Raw SQL migration files in `insforge/migrations/`
 
-# Apply migrations
-cd apps/api && alembic upgrade head
-```
+> **Removed**: Docker PostgreSQL, Alembic migrations — replaced by InsForge managed DB
 
-**Note**: SQLite is no longer supported. PostgreSQL with Docker is required for both development and production.
+### Storage Buckets
+
+| Bucket        | Visibility | Purpose               |
+| ------------- | ---------- | --------------------- |
+| `bot-exports` | Private    | CSV exports, backups  |
+| `bot-assets`  | Public     | Bot avatars, media    |
 
 ---
 
 ## File Locations
 
-| Type        | Location                   |
-| ----------- | -------------------------- |
-| Tests       | `tests/api/`, `tests/bot/` |
-| Database    | `storage/data/`            |
-| Logs        | `storage/logs/`            |
-| Python deps | `requirements/*.txt`       |
-| Docker      | `config/docker/`           |
+| Type           | Location                   |
+| -------------- | -------------------------- |
+| Tests          | `tests/bot/`               |
+| Logs           | `storage/logs/`            |
+| Python deps    | `requirements/*.txt`       |
+| Docker         | `config/docker/`           |
+| SQL Migrations | `insforge/migrations/`     |
+| Edge Functions | `insforge/functions/`      |
+| Pre-migration backup | `docs/local/backup-2026-02-12-105223/` |
 
 ---
 
-_Last Updated: 2026-02-10_
+_Last Updated: 2026-02-12_
