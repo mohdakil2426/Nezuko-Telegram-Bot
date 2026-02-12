@@ -1,18 +1,16 @@
 /**
  * Channels Service
- * Handles data fetching with mock/API toggle
+ * Handles data fetching via InsForge SDK with mock fallback
  */
 
 import { USE_MOCK } from "@/lib/api/config";
-import { apiClient } from "@/lib/api/client";
-import { ENDPOINTS } from "@/lib/api/endpoints";
+import { insforge } from "@/lib/insforge";
 import type {
   Channel,
   ChannelDetail,
   ChannelListResponse,
   ChannelsParams,
   ChannelCreateRequest,
-  SuccessResponse,
 } from "@/lib/services/types";
 import * as mockData from "@/lib/mock";
 
@@ -24,33 +22,81 @@ export async function getChannels(params?: ChannelsParams): Promise<ChannelListR
     return mockData.getChannels(params);
   }
 
-  return apiClient.get<ChannelListResponse>(ENDPOINTS.channels.list, {
-    params: params as Record<string, string | number | boolean | undefined>,
-  });
+  const page = params?.page ?? 1;
+  const perPage = params?.per_page ?? 10;
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
+
+  let query = insforge.database
+    .from("enforced_channels")
+    .select("*", { count: "exact" });
+
+  if (params?.search) {
+    query = query.ilike("title", `%${params.search}%`);
+  }
+
+  const sortBy = params?.sort_by ?? "created_at";
+  const sortOrder = params?.sort_order ?? "desc";
+  query = query.order(sortBy, { ascending: sortOrder === "asc" });
+
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
+  if (error) throw error;
+
+  const totalItems = count ?? 0;
+
+  return {
+    status: "success",
+    data: (data ?? []) as Channel[],
+    meta: {
+      page,
+      per_page: perPage,
+      total_items: totalItems,
+      total_pages: Math.ceil(totalItems / perPage),
+    },
+  };
 }
 
 /**
- * Get single channel by ID
+ * Get single channel by ID with linked groups
  */
 export async function getChannel(id: number): Promise<ChannelDetail | null> {
   if (USE_MOCK) {
     return mockData.getChannel(id);
   }
 
-  const response = await apiClient.get<SuccessResponse<ChannelDetail>>(
-    ENDPOINTS.channels.detail(id)
-  );
-  return response.data;
+  const { data, error } = await insforge.database
+    .from("enforced_channels")
+    .select("*, group_channel_links(group_id, protected_groups(title))")
+    .eq("channel_id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+
+  const links = (data.group_channel_links ?? []) as Array<{
+    group_id: number;
+    protected_groups: { title: string | null } | null;
+  }>;
+
+  const linkedGroups = links.map((link) => ({
+    group_id: link.group_id,
+    title: link.protected_groups?.title ?? null,
+  }));
+
+  return {
+    ...data,
+    linked_groups: linkedGroups,
+  } as ChannelDetail;
 }
 
 /**
  * Create a new channel
  */
-export async function createChannel(data: ChannelCreateRequest): Promise<Channel> {
+export async function createChannel(input: ChannelCreateRequest): Promise<Channel> {
   if (USE_MOCK) {
-    // Mock create - return new channel
     return {
-      ...data,
+      ...input,
       created_at: new Date().toISOString(),
       updated_at: null,
       subscriber_count: 0,
@@ -58,8 +104,13 @@ export async function createChannel(data: ChannelCreateRequest): Promise<Channel
     };
   }
 
-  const response = await apiClient.post<SuccessResponse<Channel>>(ENDPOINTS.channels.create, data);
-  return response.data;
+  const { data, error } = await insforge.database
+    .from("enforced_channels")
+    .insert(input)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Channel;
 }
 
 /**
@@ -67,9 +118,12 @@ export async function createChannel(data: ChannelCreateRequest): Promise<Channel
  */
 export async function deleteChannel(id: number): Promise<void> {
   if (USE_MOCK) {
-    // Mock delete - just simulate success
     return;
   }
 
-  await apiClient.delete(ENDPOINTS.channels.delete(id));
+  const { error } = await insforge.database
+    .from("enforced_channels")
+    .delete()
+    .eq("channel_id", id);
+  if (error) throw error;
 }

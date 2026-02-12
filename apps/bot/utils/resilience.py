@@ -187,10 +187,10 @@ def exponential_backoff(
 
 def async_retry(
     max_attempts: int = 3,
-    exceptions: tuple = (Exception,),
+    exceptions: tuple[type[Exception], ...] = (Exception,),
     base_delay: float = 1.0,
     max_delay: float = 30.0,
-    on_retry: Callable | None = None,
+    on_retry: Callable[[int, Exception], None] | None = None,
 ):
     """
     Decorator for async functions with retry logic.
@@ -271,9 +271,9 @@ def circuit_protected(circuit: CircuitBreaker):
                 result = await func(*args, **kwargs)
                 circuit.record_success()
                 return result
-            except Exception:
+            except Exception as exc:
                 circuit.record_failure()
-                raise
+                raise exc from exc
 
         return wrapper
 

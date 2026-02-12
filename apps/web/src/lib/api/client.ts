@@ -1,6 +1,9 @@
 /**
  * Typed API Client
- * Fetch wrapper with error handling and type safety
+ * Fetch wrapper with error handling, type safety, and session-based authentication
+ *
+ * Authentication is handled via HTTP-only cookies (nezuko_session),
+ * which are automatically included in requests via credentials: "include"
  */
 
 import { API_URL, REQUEST_TIMEOUT } from "./config";
@@ -25,6 +28,7 @@ export class ApiError extends Error {
 interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
   timeout?: number;
+  skipAuth?: boolean;
 }
 
 /**
@@ -71,9 +75,12 @@ async function fetchWithTimeout(
 
 /**
  * Core request function
+ *
+ * Authentication is handled via HTTP-only session cookies.
+ * We include credentials: "include" to send cookies with cross-origin requests.
  */
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { params, timeout = REQUEST_TIMEOUT, ...fetchOptions } = options;
+  const { params, timeout = REQUEST_TIMEOUT, skipAuth = false, ...fetchOptions } = options;
 
   const url = buildUrl(endpoint, params);
 
@@ -81,6 +88,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     url,
     {
       ...fetchOptions,
+      // Include cookies for session-based authentication
+      credentials: skipAuth ? "omit" : "include",
       headers: {
         "Content-Type": "application/json",
         ...fetchOptions.headers,
@@ -88,6 +97,14 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     },
     timeout
   );
+
+  // Handle 401 Unauthorized - redirect to login
+  if (response.status === 401) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    throw new ApiError(response.status, "Unauthorized - Session expired");
+  }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);

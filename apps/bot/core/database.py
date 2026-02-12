@@ -1,10 +1,14 @@
 """
 Async SQLAlchemy database session factory and connection management.
+
+PostgreSQL with Docker is required.
 """
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
+from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -12,7 +16,6 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.pool import NullPool, StaticPool
 
 from apps.bot.config import config
 
@@ -30,29 +33,36 @@ def get_engine() -> AsyncEngine:
     global _engine
 
     if _engine is None:
-        # Determine if this is SQLite or PostgreSQL
-        is_sqlite = config.database_url.startswith("sqlite")
+        # Parse database URL to handle sslmode for asyncpg
+        url_obj = make_url(config.database_url)
+        connect_args: dict[str, Any] = {"timeout": 30, "command_timeout": 30}
 
-        # Configure pooling based on database type
-        if is_sqlite:
-            # SQLite doesn't support connection pooling well
-            pool_class = StaticPool if ":memory:" in config.database_url else NullPool
-            _engine = create_async_engine(
-                config.database_url,
-                echo=config.is_development,  # Log SQL in development
-                poolclass=pool_class,
-                connect_args={"check_same_thread": False},
-            )
-        else:
-            # PostgreSQL with connection pooling
-            _engine = create_async_engine(
-                config.database_url,
-                echo=config.is_development,
-                pool_size=20,  # Max connections in pool
-                max_overflow=10,  # Max connections beyond pool_size
-                pool_pre_ping=True,  # Verify connections before use
-                pool_recycle=3600,  # Recycle connections after 1 hour
-            )
+        # Check if sslmode is in query parameters
+        if "sslmode" in url_obj.query:
+            ssl_mode = url_obj.query["sslmode"]
+
+            # Create new query dict without sslmode
+            new_query = dict(url_obj.query)
+            del new_query["sslmode"]
+
+            # Update URL object
+            url_obj = url_obj.set(query=new_query)
+
+            # Add ssl to connect_args if needed
+            if ssl_mode in ("require", "verify-full"):
+                connect_args["ssl"] = "require"
+
+        # PostgreSQL with connection pooling and timeouts
+        _engine = create_async_engine(
+            url_obj,
+            echo=config.is_development,
+            pool_size=20,  # Max connections in pool
+            max_overflow=10,  # Max connections beyond pool_size
+            pool_timeout=30,  # Max seconds to wait for connection
+            pool_pre_ping=True,  # Verify connections before use
+            pool_recycle=3600,  # Recycle connections after 1 hour
+            connect_args=connect_args,
+        )
 
     return _engine
 
@@ -90,9 +100,9 @@ async def get_session() -> AsyncGenerator[AsyncSession]:
         try:
             yield session
             await session.commit()
-        except Exception:
+        except Exception as exc:
             await session.rollback()
-            raise
+            raise exc from exc
 
 
 async def init_db():

@@ -14,6 +14,8 @@ Features:
 
 import logging
 import sys
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from typing import Any
 
 import structlog
@@ -70,15 +72,33 @@ def configure_logging(json_format: bool | None = None) -> None:
         structlog.processors.UnicodeDecoder(),
     ]
 
+    # Get project root for log file
+    project_root = Path(__file__).resolve().parent.parent.parent.parent
+    log_dir = project_root / "storage" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "bot.log"
+
     if json_format:
         # Production: JSON format for log aggregation (Loki, ELK, etc.)
-        processors = [*shared_processors, structlog.processors.format_exc_info, structlog.processors.JSONRenderer()]
+        processors = [
+            *shared_processors,
+            structlog.processors.format_exc_info,
+            structlog.processors.JSONRenderer(),
+        ]
 
         # Configure stdlib logging for JSON as well
         logging.basicConfig(
             format="%(message)s",
             level=logging.INFO,
-            handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler("bot.log")],
+            handlers=[
+                logging.StreamHandler(sys.stdout),
+                RotatingFileHandler(
+                    log_file,
+                    maxBytes=50_000_000,  # 50MB
+                    backupCount=10,
+                    encoding="utf-8",
+                ),
+            ],
         )
     else:
         # Development: Pretty console output
@@ -88,7 +108,15 @@ def configure_logging(json_format: bool | None = None) -> None:
         logging.basicConfig(
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             level=logging.DEBUG,
-            handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler("bot.log")],
+            handlers=[
+                logging.StreamHandler(sys.stdout),
+                RotatingFileHandler(
+                    log_file,
+                    maxBytes=50_000_000,  # 50MB
+                    backupCount=10,
+                    encoding="utf-8",
+                ),
+            ],
         )
 
     # Configure structlog

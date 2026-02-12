@@ -8,6 +8,7 @@ Operational Features:
 - Sentry error tracking
 """
 
+import asyncio
 import logging
 import sys
 
@@ -19,7 +20,11 @@ from apps.bot.core.cache import close_redis_connection, get_redis_client
 from apps.bot.core.database import close_db, get_session, init_db
 from apps.bot.core.loader import register_handlers, setup_bot_commands
 from apps.bot.core.rate_limiter import create_rate_limiter
+from apps.bot.core.uptime import record_bot_start
 from apps.bot.database.crud import get_all_protected_groups
+from apps.bot.services.command_worker import CommandWorker
+from apps.bot.services.member_sync import schedule_member_sync
+from apps.bot.services.status_writer import StatusWriter
 from apps.bot.utils.health import stop_health_server
 
 # Phase 4: Monitoring imports
@@ -48,18 +53,12 @@ logging.basicConfig(
         logging.FileHandler(config.log_file, encoding="utf-8"),
     ],
 )
-# Add Postgres Handler (Real-time logs)
-postgres_handler = None
-try:
-    from apps.bot.utils.postgres_logging import PostgresLogHandler
-
-    postgres_handler = PostgresLogHandler()
-    postgres_handler.setLevel(logging.INFO)  # Always send INFO+ to dashboard
-    logging.getLogger().addHandler(postgres_handler)
-except Exception as e:  # pylint: disable=broad-exception-caught
-    print(f"Failed to initialize Postgres logger: {e}")
 
 logger = logging.getLogger(__name__)
+
+# Global worker instances
+_status_writer: StatusWriter | None = None  # pylint: disable=invalid-name
+_command_worker: CommandWorker | None = None  # pylint: disable=invalid-name
 
 
 async def update_active_groups_gauge():
@@ -75,10 +74,27 @@ async def update_active_groups_gauge():
 
 async def post_init(_application: Application) -> None:
     """Initialize database and other resources after app creation."""
+    db_available = False
+
+    # Database initialization (graceful degradation if unreachable)
     logger.info("Initializing database...")
-    await init_db()
-    set_db_connected(True)
-    logger.info("Database initialized successfully")
+    try:
+        await init_db()
+        set_db_connected(True)
+        db_available = True
+        logger.info("[OK] Database initialized successfully")
+    except (TimeoutError, OSError, ConnectionRefusedError) as e:
+        set_db_connected(False)
+        logger.warning(
+            "[WARN] Database connection failed: %s. "
+            "Bot will run WITHOUT database features (commands that "
+            "need DB will return fallback responses). "
+            "Check if port 5432 is accessible from your network.",
+            e,
+        )
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        set_db_connected(False)
+        logger.error("Database initialization failed unexpectedly: %s", e, exc_info=True)
 
     # Initialize Redis (graceful degradation if unavailable)
     logger.info("Initializing Redis cache...")
@@ -90,28 +106,75 @@ async def post_init(_application: Application) -> None:
         set_redis_connected(False)
         logger.warning("[WARN] Redis unavailable - running in degraded mode (direct API calls)")
 
-    # Update metrics
-    await update_active_groups_gauge()
+    # Update metrics (only if DB available)
+    if db_available:
+        await update_active_groups_gauge()
 
     # Setup bot command menus (shows commands when user types /)
     logger.info("Setting up command menus...")
     await setup_bot_commands(_application)
     logger.info("[OK] Command menus configured")
 
+    # Record bot start time for uptime tracking (only if DB available)
+    if db_available:
+        await record_bot_start()
+
+    # Schedule member count sync (every 15 minutes) - only if DB available
+    if db_available:
+        schedule_member_sync(_application)
+        logger.info("[OK] Analytics integration initialized")
+
+    # Initialize InsForge workers (status writer & command worker)
+    if config.insforge_database_url:
+        global _status_writer, _command_worker  # pylint: disable=global-statement
+        try:
+            # Get bot info for bot_id
+            bot_info = await _application.bot.get_me()
+            bot_id = bot_info.id
+
+            # Start status writer
+            _status_writer = StatusWriter(bot_id, config.insforge_database_url)
+            await _status_writer.start()
+            logger.info("[OK] Status writer started for bot %d", bot_id)
+
+            # Start command worker
+            _command_worker = CommandWorker(_application.bot, bot_id, config.insforge_database_url)
+            await _command_worker.start()
+            logger.info("[OK] Command worker started for bot %d", bot_id)
+        except (TimeoutError, OSError, ConnectionRefusedError) as e:
+            logger.warning(
+                "[WARN] InsForge workers failed to start (port blocked?): %s. "
+                "Dashboard sync disabled.",
+                e,
+            )
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error("Failed to start InsForge workers: %s", e, exc_info=True)
+    else:
+        logger.warning("INSFORGE_DATABASE_URL not set - bot workers disabled")
+
 
 async def post_shutdown(_application: Application) -> None:
     """Cleanup resources on shutdown."""
     logger.info("Shutting down gracefully...")
+
+    # Stop InsForge workers
+    # No need for global keyword here as we are only reading
+    if _status_writer:
+        try:
+            await _status_writer.stop()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.warning("Error stopping status writer: %s", e)
+    if _command_worker:
+        try:
+            await _command_worker.stop()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.warning("Error stopping command worker: %s", e)
 
     # Stop health server
     await stop_health_server()
 
     # Flush Sentry events
     sentry_flush(timeout=2)
-
-    # Close Postgres log handler
-    if postgres_handler:
-        await postgres_handler.close_async()
 
     # Close connections
     await close_redis_connection()
@@ -123,7 +186,7 @@ def main():
     """Main entry point with mode detection."""
     try:
         # Validate configuration
-        config.validate()
+        config.check_config()
 
         # Initialize Sentry (if configured)
         init_sentry()
@@ -131,12 +194,31 @@ def main():
         # Record bot start time for metrics
         set_bot_start_time()
 
+        # Check for dashboard mode (no BOT_TOKEN = read from database)
+        if config.dashboard_mode:
+            logger.info("=" * 60)
+            logger.info("Nezuko - Dashboard Mode (Multi-Bot)")
+            logger.info("=" * 60)
+            logger.info("Environment: %s", config.environment)
+            logger.info("Database: %s", config.database_url.split("://", maxsplit=1)[0])
+            logger.info("=" * 60)
+
+            # Run bot manager
+            from apps.bot.core.bot_manager import bot_manager
+
+            try:
+                asyncio.run(bot_manager.run())
+            except KeyboardInterrupt:
+                asyncio.run(bot_manager.shutdown())
+            return
+
+        # Standalone mode - single bot from .env
         logger.info("=" * 60)
         logger.info("Nezuko - The Ultimate All-In-One Bot")
         logger.info("=" * 60)
         logger.info("Environment: %s", config.environment)
         logger.info("Mode: %s", "WEBHOOK" if config.use_webhooks else "POLLING")
-        logger.info("Database: %s", config.database_url.split("://")[0])
+        logger.info("Database: %s", config.database_url.split("://", maxsplit=1)[0])
         logger.info("Redis: %s", "Enabled" if config.redis_url else "Disabled (degraded mode)")
         logger.info("Sentry: %s", "Enabled" if config.sentry_dsn else "Disabled")
         logger.info("Health: http://localhost:8000/health")
@@ -146,6 +228,8 @@ def main():
         # Build application with rate limiter
         # Note: python-telegram-bot manages its own event loop internally,
         # so we use synchronous run_polling() instead of asyncio.run()
+        # Type assertion - config.bot_token is guaranteed non-None here (not dashboard_mode)
+        assert config.bot_token is not None, "BOT_TOKEN required in standalone mode"
         application = (
             Application.builder()
             .token(config.bot_token)
@@ -195,7 +279,7 @@ def main():
 
     except (KeyboardInterrupt, SystemExit):
         logger.info("Bot stopped")
-    except RuntimeError as e:
+    except (OSError, RuntimeError, ValueError, ImportError, AttributeError) as e:
         logger.error("Fatal error: %s", e, exc_info=True)
         sys.exit(1)
 

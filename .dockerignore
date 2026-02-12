@@ -51,6 +51,22 @@ docs
 memory-bank
 openspec
 .agent
+.agents
+.gemini
+.next-docs
+.cursor
+
+# Node / Web (not needed for bot container)
+apps/web
+apps/api
+node_modules
+packages
+.next
+bun.lockb
+turbo.json
+
+# InsForge functions (deployed separately)
+insforge
 
 # Development files
 *.log

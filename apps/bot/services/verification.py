@@ -7,12 +7,13 @@ and graceful fallback to Telegram API on cache miss.
 
 Integrated with Prometheus metrics for operational monitoring.
 Integrated with verification logging for analytics.
+Integrated with EventPublisher for real-time dashboard updates.
 """
 
 import asyncio
 import logging
 import time
-from typing import Any
+from typing import Protocol
 
 from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
@@ -20,6 +21,7 @@ from telegram.ext import ContextTypes
 
 from apps.bot.core.cache import cache_delete, cache_get, cache_set, get_ttl_with_jitter
 from apps.bot.core.constants import CACHE_JITTER_PERCENT, NEGATIVE_CACHE_TTL, POSITIVE_CACHE_TTL
+from apps.bot.database.api_call_logger import log_api_call_async
 from apps.bot.database.verification_logger import log_verification
 from apps.bot.utils.metrics import (
     record_api_call,
@@ -31,6 +33,14 @@ from apps.bot.utils.metrics import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class HasChannelId(Protocol):
+    """Protocol for objects with channel_id and optional title attributes."""
+
+    channel_id: int | str
+    title: str | None
+
 
 # Metrics counters for prometheus tracking
 _cache_hits = 0  # pylint: disable=invalid-name
@@ -138,9 +148,21 @@ async def _verify_via_api(
     channel_id_int: int,
 ) -> bool | None:
     """Helper to verify via API. Returns True/False or None on error."""
+    api_start = time.perf_counter()
     try:
         record_api_call("getChatMember")
         member = await context.bot.get_chat_member(chat_id=channel_id, user_id=user_id)
+        api_latency_ms = int((time.perf_counter() - api_start) * 1000)
+
+        # Log API call to database
+        log_api_call_async(
+            method="getChatMember",
+            chat_id=channel_id_int,
+            user_id=user_id,
+            success=True,
+            latency_ms=api_latency_ms,
+        )
+
         is_member = member.status in [
             ChatMemberStatus.MEMBER,
             ChatMemberStatus.ADMINISTRATOR,
@@ -153,12 +175,38 @@ async def _verify_via_api(
         )
         return is_member
     except TelegramError as e:
-        logger.error("Error checking membership for user %s in %s: %s", user_id, channel_id, e)
+        api_latency_ms = int((time.perf_counter() - api_start) * 1000)
+        error_type = type(e).__name__
+
+        # Log failed API call to database
+        log_api_call_async(
+            method="getChatMember",
+            chat_id=channel_id_int,
+            user_id=user_id,
+            success=False,
+            latency_ms=api_latency_ms,
+            error_type=error_type,
+        )
+
+        logger.error(
+            "Error checking membership for user %s in %s: %s", user_id, channel_id, e, exc_info=True
+        )
         record_error("telegram_error")
         record_verification_end(start_time, "error")
         await _log_result(
-            user_id, group_id, channel_id_int, start_time, wall_start, "error", cached=False
+            user_id,
+            group_id,
+            channel_id_int,
+            start_time,
+            wall_start,
+            "error",
+            cached=False,
+            error_type=error_type,
         )
+        return None
+    except (RuntimeError, ValueError, OSError) as e:
+        logger.error("Unexpected error in verification: %s", e, exc_info=True)
+        record_error("verification_error")
         return None
 
 
@@ -186,8 +234,10 @@ async def _log_result(
     wall_start: float,
     status: str,
     cached: bool,
+    error_type: str | None = None,
 ):
-    """Helper to log verification result and metrics."""
+    """Helper to log verification result, metrics, and publish SSE event."""
+    latency_ms = int((time.perf_counter() - wall_start) * 1000)
 
     if status == "error":
         # Metrics already recorded in exception handler for error
@@ -195,8 +245,8 @@ async def _log_result(
     else:
         record_verification_end(start_time, status)
 
+    # Log to database
     if group_id is not None:
-        latency_ms = int((time.perf_counter() - wall_start) * 1000)
         task = asyncio.create_task(
             log_verification(
                 user_id=user_id,
@@ -205,6 +255,7 @@ async def _log_result(
                 status=status,
                 latency_ms=latency_ms,
                 cached=cached,
+                error_type=error_type,
             )
         )
         _background_tasks.add(task)
@@ -213,10 +264,10 @@ async def _log_result(
 
 async def check_multi_membership(
     user_id: int,
-    channels: list[Any],
+    channels: list[HasChannelId],
     context: ContextTypes.DEFAULT_TYPE,
     group_id: int | None = None,
-) -> list[Any]:
+) -> list[HasChannelId]:
     """
     Check membership in multiple channels.
 

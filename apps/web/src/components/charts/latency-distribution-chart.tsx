@@ -5,7 +5,6 @@
  * Shows distribution of response latencies across buckets
  */
 
-import * as React from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

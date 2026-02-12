@@ -1,175 +1,115 @@
-# Project Brief: Nezuko - The Ultimate All-In-One Telegram Ecosystem
+# Project Brief: Nezuko Telegram Bot Platform
 
-## 🌟 Vision & North Star
+## Overview
 
-Nezuko is not just a bot; it is a **high-assurance community acceleration platform**. Our North Star is to provide community managers with an "invisible" but powerful automated moderator that bridges the gap between massive group engagement and focused channel growth. We envision a world where community growth is a byproduct of high-quality interaction, enforced seamlessly by intelligent, non-intrusive automation.
+Nezuko is a **production-ready Telegram bot platform** for automated channel membership enforcement. It enables community managers to automatically require users to join specified channels before participating in groups.
 
-## 🚀 Mission Statement
+## Core Purpose
 
-To build the most performant, secure, and user-friendly Telegram management ecosystem by leveraging the bleeding edge of asynchronous Python, modern React architecture, and cloud-native infrastructure.
+Convert group participants into channel subscribers through automated verification, providing:
 
----
-
-## 🎯 Primary Objectives
-
-### 1. Growth Through Enforcement
-
-- **The Conversion Engine**: Convert every active group participant into a channel subscriber with a 100% enforcement rate.
-- **Multi-Channel Logic**: Support complex "AND" / "OR" linking scenarios where users must subscribe to a network of channels.
-
-### 2. Operational Superiority
-
-- **Sub-100ms Latency**: Target a p95 verification timeframe indistinguishable from native Telegram responsiveness.
-- **Massive Scalability**: Orchestrate thousands of "Tenants" (Group-Channel links) on a single unified backend.
-
-### 3. Developer & Admin Delight
-
-- **Zero-Config Onboarding**: Bot owners can go from "Add to Group" to "Fully Protected" in under 10 seconds via `/protect`.
-- **Premium Web Experience**: Dashboard that feels like enterprise SaaS, not a hobbyist tool.
+- Instant membership enforcement on group join
+- Multi-channel subscription requirements
+- Real-time verification with inline buttons
+- Administrative dashboard for monitoring
 
 ---
 
-## 👥 Stakeholders
+## Tech Stack
 
-| Stakeholder | Primary Need | Value Delivered |
-|:------------|:-------------|:----------------|
-| **Community Managers** | Audience Growth | Automated subscriber acquisition from group chats |
-| **Moderators** | Spam Control | Automated muting of unverified or non-compliant users |
-| **End Users** | Group Access | Clear, interactive guidance on how to gain permission quickly |
-| **Bot Owners** | System Overview | Detailed analytics, log streaming, and RBAC management |
+| Layer              | Technologies                                             |
+| ------------------ | -------------------------------------------------------- |
+| **Bot**            | Python 3.13, python-telegram-bot v22.6, AsyncIO          |
+| **Web**            | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
+| **Backend (BaaS)** | InsForge (managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions) |
+| **Database**       | InsForge Managed PostgreSQL (cloud)                      |
+| **Auth**           | None (development mode, direct access)                   |
+| **Infrastructure** | Docker (bot only), Turborepo, Caddy                      |
 
----
-
-## 🛠️ Feature Roadmap
-
-### Phase A: The Bot Core (Foundation) ✅
-
-- [x] **Asynchronous Handler Engine**: Processing updates in parallel using MTProto
-- [x] **Smart Join/Leave Detection**: Real-time permission revocation
-- [x] **Interactive Inline Verification**: One-click "Join -> Verify -> Chat" flow
-- [x] **Hybrid Caching Implementation**: Redis 7 and local LRU for p99 performance
-
-### Phase B: The Admin API (Intelligence) ✅
-
-- [x] **FastAPI REST Backbone**: Pydantic V2 validated endpoints
-- [x] **Supabase Auth Integration**: Industry-standard secure identity (JWT)
-- [x] **RBAC Management**: Owner, Admin, and Viewer roles with granular scoping
-- [x] **Audit Logging System**: Immutable record of every administrative action
-- [x] **Database-Agnostic Models**: Supabase Postgres or SQLite for all environments
-
-### Phase C: Dashboard & Analytics (Visualization) ✅
-
-- [x] **Next.js 16 Web Interface**: Server Components and Streaming
-- [x] **Supabase Realtime Streams**: Live logs via `postgres_changes`
-- [x] **Verification Analytics**: Recharts-driven growth and conversion visualization
-- [x] **Database Browser**: Direct inspection of system state from the UI
-- [x] **Supabase Authentication Flow**: Login, sync, and session management
-
-### Phase D: Advanced Management (Configuration) 🚧
-
-- [x] **Global Settings Form**: Manage messages, rate limits, and security keys
-- [x] **Webhook Management**: High-availability production delivery configuration
-- [ ] **i18n Support**: Multi-language translation system for bot messages
-- [ ] **Community Marketplace**: Template sharing for protection settings
-- [ ] **Mobile Responsive Sidebar**: Hamburger menu for mobile devices
+> **Architecture**: 2-tier (Web → InsForge BaaS + Bot → InsForge PostgreSQL). The `apps/api/` layer has been fully removed.
 
 ---
 
-## 📈 Success Metrics
-
-### Technical Performance (SLAs)
-
-| Metric | Target | Status |
-|:-------|:-------|:-------|
-| **Uptime** | 99.9% | ✅ On Track |
-| **API Latency (p90)** | <50ms | ✅ Achieved |
-| **Pylint Score** | 10.00/10 | ✅ Achieved |
-| **Pyrefly Errors** | 0 | ✅ Zero Errors |
-| **Supabase Auth** | Working | ✅ Integrated |
-| **Local Dev Setup** | <5 min | ✅ Achieved |
-| **Auth Tests** | 6/6 | ✅ All Passed |
-| **UI Pages** | 9/9 | ✅ All Working |
-| **Security Tests** | 3/3 | ✅ All Passed |
-
----
-
-## 🎨 Branding & Identity
-
-- **Theme**: Cyber-Aesthetic / Noir. Deep blacks, vibrant purple accents (#9333ea), neon highlights.
-- **Tone**: Empowerment, Precision, and Mystery. The bot is a "Silent Guardian."
-- **Typography**: Inter (UI), JetBrains Mono (Codes/Metrics), Outfit (Headings).
-
----
-
-## 🔐 Compliance & Security
-
-- **OWASP 2025 Standard**: Strict adherence to web security practices.
-- **Data Privacy**: Minimalistic data collection (Telegram IDs + Supabase Metadata only).
-- **Encryption**: TLS 1.3 in transit, SCRAM-SHA-256 for Postgres at rest.
-- **API Protection**: 401 Unauthorized for unauthenticated requests.
-
----
-
-## 🤝 Project Governance
-
-- **Version Control**: Semantic Versioning (SemVer) 2.0.
-- **Documentation**: Structured in `docs/` directory with comprehensive guides.
-- **Branching Strategy**: Trunk-based development with strict PR reviews.
-
----
-
-## 📁 Project Structure
+## Monorepo Structure
 
 ```
 nezuko-monorepo/
 ├── apps/
-│   ├── web/          # Next.js 16 Admin Dashboard
-│   ├── api/          # FastAPI REST Backend
-│   └── bot/          # Telegram Bot (PTB v22.6)
-├── packages/         # Shared packages
-├── config/docker/    # Docker configuration
-├── scripts/          # Utility scripts
-├── storage/          # Runtime files (GITIGNORED)
-├── docs/             # Public documentation
-├── memory-bank/      # AI context (internal)
-└── tests/            # Test suites
+│   ├── bot/          # Telegram Bot (~25 Python files)
+│   └── web/          # Next.js Dashboard (~120 TypeScript files)
+├── insforge/         # InsForge migration files & Edge Functions
+│   ├── migrations/   # SQL migration files (001-005)
+│   └── functions/    # Edge Functions (manage-bot, test-webhook)
+├── packages/         # Shared packages (@nezuko/types, config)
+├── config/           # Docker, Caddy, deployment configs
+├── requirements/     # Python deps (base, bot, dev)
+├── tests/            # Centralized test suite
+├── scripts/          # Development & utility scripts
+├── storage/          # Runtime files (gitignored)
+├── memory-bank/      # Project documentation
+└── docs/             # Technical documentation
 ```
 
 ---
 
-## 📋 Quick Reference
+## Key Features
 
-### Local Development Commands
+### Bot Core
 
-```bash
-# API
-cd apps/api
-python -m uvicorn src.main:app --port 8080 --reload
+- Instant mute on group join until verified
+- Multi-channel enforcement (AND logic)
+- Leave detection with immediate revocation
+- Interactive inline verification buttons
+- Verification logging directly to InsForge PostgreSQL
+- Status writer (heartbeat via DB UPSERT)
+- Command worker (polls admin_commands table)
 
-# Web
-cd apps/web
-bun dev
+### Web Dashboard
 
-# Bot
-cd apps/bot
-python main.py
-```
+- 10 pages (dashboard, analytics, groups, channels, bots, logs, settings)
+- 70+ React components (shadcn/ui based)
+- TanStack Query for data fetching
+- Real-time updates via InsForge WebSocket
+- Dark/Light mode theming
+- Direct InsForge SDK queries
 
-### Test Credentials
+### InsForge Backend
 
-| User | Email | Password | Role |
-|------|-------|----------|------|
-| Admin | admin@nezuko.bot | Admin@123 | super_admin |
-
-### Key Documentation
-
-| Topic | Location |
-|-------|----------|
-| Full Docs | `docs/README.md` |
-| Tech Stack | `docs/architecture/tech-stack.md` |
-| Architecture | `docs/architecture/README.md` |
-| Contributing | `docs/contributing/README.md` |
+- 13 database tables with proper indexes
+- 15 PostgreSQL RPC functions for analytics/charts
+- 4 realtime triggers (verification, bot_status, commands, logs)
+- 2 storage buckets (bot-exports private, bot-assets public)
+- Edge Functions for bot token management and webhook testing
 
 ---
 
-*Last Updated: 2026-01-28*
+## Quality Standards
+
+| Tool       | Target     |
+| ---------- | ---------- |
+| Ruff Check | 0 errors   |
+| Pylint     | 10.00/10   |
+| Pyrefly    | 0 errors   |
+| ESLint     | 0 warnings |
+| TypeScript | 0 errors   |
+
+---
+
+## Current Status
+
+**Phase**: 54 - InsForge BaaS Migration (Complete)
+**Last Updated**: 2026-02-12
+
+- Phase 1 (Backup): Complete
+- Phase 2 (Infrastructure): Complete
+- Phase 3 (SDK Integration): Complete
+- Phase 4 (Service Rewrite): Complete
+- Phase 5 (Realtime Migration): Complete
+- Phase 6 (Bot Refactor): Complete
+- Phase 7 (Edge Functions): Complete
+- Phase 8 (API Removal): Complete
+- Phase 9 (Documentation & Deployment): Complete
+
+---
+
+_This document is the foundation for all project context._

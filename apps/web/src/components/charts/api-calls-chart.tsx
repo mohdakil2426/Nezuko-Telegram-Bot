@@ -5,7 +5,6 @@
  * Shows breakdown of API calls by method
  */
 
-import * as React from "react";
 import { Pie, PieChart, Cell } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,7 +99,7 @@ export function ApiCallsChart() {
             </Pie>
             <ChartLegend
               content={<ChartLegendContent nameKey="name" />}
-              className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/3 [&>*]:justify-center"
+              className="-translate-y-2 flex-wrap gap-2 *:basis-1/3 *:justify-center"
             />
           </PieChart>
         </ChartContainer>

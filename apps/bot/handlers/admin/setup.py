@@ -5,6 +5,7 @@ Allows group admins to setup channel verification.
 
 import logging
 
+from sqlalchemy.exc import SQLAlchemyError
 from telegram import Update
 from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
@@ -190,7 +191,7 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Protection activated: group=%s, channel=%s, admin=%s", group_id, channel_id, user_id
         )
 
-    except TelegramError as e:
+    except (TelegramError, SQLAlchemyError) as e:
         logger.error("Error setting up protection: %s", e, exc_info=True)
         response = await update.message.reply_text(
             "❌ Database error while setting up protection.\nPlease try again or contact support."

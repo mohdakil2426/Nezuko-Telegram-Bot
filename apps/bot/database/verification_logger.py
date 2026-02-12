@@ -40,8 +40,9 @@ class VerificationLog(Base):
     )  # 'verified', 'restricted', 'error'
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     cached: Mapped[bool] = mapped_column(Boolean, default=False)
+    error_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     timestamp: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
         index=True,
     )
@@ -67,6 +68,7 @@ async def log_verification(
     status: str,
     latency_ms: int | None = None,
     cached: bool = False,
+    error_type: str | None = None,
 ) -> None:
     """
     Log a verification event to the database.
@@ -82,6 +84,7 @@ async def log_verification(
         status: Verification status ('verified', 'restricted', 'error')
         latency_ms: Time taken for verification in milliseconds
         cached: Whether the result came from cache
+        error_type: Type of error if status is 'error'
     """
     try:
         async with get_session() as session:
@@ -92,6 +95,7 @@ async def log_verification(
                 status=status,
                 latency_ms=latency_ms,
                 cached=cached,
+                error_type=error_type,
                 timestamp=datetime.now(UTC),
             )
             session.add(log_entry)
@@ -116,6 +120,7 @@ async def log_verification_async(
     status: str,
     latency_ms: int | None = None,
     cached: bool = False,
+    error_type: str | None = None,
 ) -> asyncio.Task[None]:
     """
     Fire-and-forget version that creates a background task.
@@ -123,7 +128,7 @@ async def log_verification_async(
     Returns the task for optional monitoring/testing.
     """
     task = asyncio.create_task(
-        log_verification(user_id, group_id, channel_id, status, latency_ms, cached)
+        log_verification(user_id, group_id, channel_id, status, latency_ms, cached, error_type)
     )
     return task
 

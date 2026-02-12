@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 # pylint: disable=too-many-branches, too-many-statements
-async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Handle "I have joined" button click (multi-tenant).
 
@@ -72,7 +72,10 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
 
         # Re-check membership in all channels
         missing_channels = await check_multi_membership(
-            user_id=user_id, channels=channels, context=context
+            user_id=user_id,
+            channels=channels,
+            context=context,
+            group_id=chat_id,  # Required for verification logging to database
         )
 
         # If still missing channels, show error
@@ -114,7 +117,7 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
             logger.warning("Failed to delete warning message: %s", e)
 
     except TelegramError as e:
-        logger.error("Telegram error in verify callback handler: %s", e)
+        logger.error("Telegram error in verify callback handler: %s", e, exc_info=True)
         try:
             if update.callback_query:
                 await update.callback_query.answer(
@@ -122,3 +125,5 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
                 )
         except TelegramError:
             pass
+    except (RuntimeError, ValueError, OSError) as e:
+        logger.error("Unexpected error in verify callback handler: %s", e, exc_info=True)

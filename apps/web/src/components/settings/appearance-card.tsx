@@ -5,12 +5,23 @@
  * Theme selection and display preferences
  */
 
+import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { Moon, Sun, Monitor } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Use useSyncExternalStore to avoid hydration mismatch with Radix UI
+const emptySubscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
+
+function useIsMounted() {
+  return useSyncExternalStore(emptySubscribe, getSnapshot, getServerSnapshot);
+}
 
 interface ThemeOption {
   value: string;
@@ -42,6 +53,29 @@ const themeOptions: ThemeOption[] = [
 
 export function AppearanceCard() {
   const { theme, setTheme } = useTheme();
+  const mounted = useIsMounted();
+
+  // Render skeleton until mounted to avoid Radix UI hydration mismatch
+  if (!mounted) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+          <CardDescription>Customize how the dashboard looks and feels.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-3">
+            <Label>Theme</Label>
+            <div className="grid gap-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-[72px] w-full rounded-lg" />
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

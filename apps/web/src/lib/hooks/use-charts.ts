@@ -1,12 +1,19 @@
 /**
  * Charts Hooks
  * React Query hooks for advanced chart data fetching
+ *
+ * All hooks include refetchInterval for real-time updates.
+ * TanStack Query v5 patterns - using isPending, refetchIntervalInBackground.
  */
 
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 import * as chartsService from "@/lib/services/charts.service";
 import type { TrendsParams } from "@/lib/services/types";
+
+// Shared refresh interval for charts (60 seconds)
+const CHART_REFETCH_INTERVAL = 60 * 1000;
+const CHART_STALE_TIME = 30 * 1000;
 
 // =============================================================================
 // Donut Chart Hooks
@@ -19,7 +26,9 @@ export function useVerificationDistribution() {
   return useQuery({
     queryKey: queryKeys.charts.verificationDistribution(),
     queryFn: chartsService.getVerificationDistribution,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: CHART_STALE_TIME,
+    refetchInterval: CHART_REFETCH_INTERVAL,
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -30,7 +39,9 @@ export function useCacheBreakdown() {
   return useQuery({
     queryKey: queryKeys.charts.cacheBreakdown(),
     queryFn: chartsService.getCacheBreakdown,
-    staleTime: 1000 * 60 * 5,
+    staleTime: CHART_STALE_TIME,
+    refetchInterval: CHART_REFETCH_INTERVAL,
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -41,7 +52,9 @@ export function useGroupsStatusDistribution() {
   return useQuery({
     queryKey: queryKeys.charts.groupsStatus(),
     queryFn: chartsService.getGroupsStatusDistribution,
-    staleTime: 1000 * 60 * 5,
+    staleTime: CHART_STALE_TIME,
+    refetchInterval: CHART_REFETCH_INTERVAL,
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -52,7 +65,9 @@ export function useApiCallsDistribution() {
   return useQuery({
     queryKey: queryKeys.charts.apiCalls(),
     queryFn: chartsService.getApiCallsDistribution,
-    staleTime: 1000 * 60 * 5,
+    staleTime: CHART_STALE_TIME,
+    refetchInterval: CHART_REFETCH_INTERVAL,
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -67,7 +82,9 @@ export function useHourlyActivity() {
   return useQuery({
     queryKey: queryKeys.charts.hourlyActivity(),
     queryFn: chartsService.getHourlyActivity,
-    staleTime: 1000 * 60 * 5,
+    staleTime: CHART_STALE_TIME,
+    refetchInterval: CHART_REFETCH_INTERVAL,
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -78,7 +95,9 @@ export function useLatencyDistribution() {
   return useQuery({
     queryKey: queryKeys.charts.latencyDistribution(),
     queryFn: chartsService.getLatencyDistribution,
-    staleTime: 1000 * 60 * 5,
+    staleTime: CHART_STALE_TIME,
+    refetchInterval: CHART_REFETCH_INTERVAL,
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -89,7 +108,9 @@ export function useTopGroups() {
   return useQuery({
     queryKey: queryKeys.charts.topGroups(),
     queryFn: chartsService.getTopGroups,
-    staleTime: 1000 * 60 * 5,
+    staleTime: CHART_STALE_TIME,
+    refetchInterval: CHART_REFETCH_INTERVAL,
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -104,7 +125,9 @@ export function useCacheHitRateTrend(params?: TrendsParams) {
   return useQuery({
     queryKey: queryKeys.charts.cacheHitRateTrend(params as Record<string, unknown>),
     queryFn: () => chartsService.getCacheHitRateTrend(params),
-    staleTime: 1000 * 60 * 5,
+    staleTime: CHART_STALE_TIME,
+    refetchInterval: CHART_REFETCH_INTERVAL,
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -115,7 +138,9 @@ export function useLatencyTrend(params?: TrendsParams) {
   return useQuery({
     queryKey: queryKeys.charts.latencyTrend(params as Record<string, unknown>),
     queryFn: () => chartsService.getLatencyTrend(params),
-    staleTime: 1000 * 60 * 5,
+    staleTime: CHART_STALE_TIME,
+    refetchInterval: CHART_REFETCH_INTERVAL,
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -130,6 +155,8 @@ export function useBotHealthMetrics() {
   return useQuery({
     queryKey: queryKeys.charts.botHealth(),
     queryFn: chartsService.getBotHealthMetrics,
-    staleTime: 1000 * 60 * 5,
+    staleTime: CHART_STALE_TIME,
+    refetchInterval: CHART_REFETCH_INTERVAL,
+    refetchIntervalInBackground: true,
   });
 }

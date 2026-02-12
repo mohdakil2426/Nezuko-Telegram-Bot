@@ -7,6 +7,7 @@ membership in all linked channels.
 
 import logging
 
+from sqlalchemy.exc import SQLAlchemyError
 from telegram import Update
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 # pylint: disable=too-many-locals, duplicate-code
-async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Immediately verify new members joining the group (multi-tenant).
 
@@ -60,10 +61,9 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.debug("Group %s not protected, skipping new member check", chat_id)
             return
 
-        new_members = update.message.new_chat_members
         logger.info(
             "Verifying %d new member(s) in group %s against %d channel(s)",
-            len(new_members),
+            len(human_members),
             chat_id,
             len(channels),
         )
@@ -78,7 +78,10 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             # Check membership in all linked channels
             missing_channels = await check_multi_membership(
-                user_id=user_id, channels=channels, context=context
+                user_id=user_id,
+                channels=channels,
+                context=context,
+                group_id=chat_id,  # Required for verification logging to database
             )
 
             # If verified in all channels, welcome silently
@@ -105,4 +108,8 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
     except TelegramError as e:
-        logger.error("Telegram error in new member handler: %s", e)
+        logger.error("Telegram error in new member handler: %s", e, exc_info=True)
+    except SQLAlchemyError as e:
+        logger.error("Database error in new member handler: %s", e, exc_info=True)
+    except (RuntimeError, ValueError, OSError) as e:
+        logger.error("Unexpected error in new member handler: %s", e, exc_info=True)

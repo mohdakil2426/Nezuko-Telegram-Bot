@@ -67,7 +67,6 @@ if ($DryRun) {
 $allowedNodeModulePaths = @(
     "node_modules",
     "apps\web\node_modules",
-    "apps\api\node_modules", 
     "apps\bot\node_modules",
     "packages\types\node_modules",
     "packages\config\node_modules"
@@ -79,10 +78,6 @@ $allowedNodeModulePaths = @(
 
 $cachePaths = @(
     # Python caches
-    "apps\api\.ruff_cache",
-    "apps\api\.pytest_cache",
-    "apps\api\.mypy_cache",
-    "apps\api\htmlcov",
     "apps\bot\.ruff_cache",
     "apps\bot\.pytest_cache",
     "apps\bot\.mypy_cache",

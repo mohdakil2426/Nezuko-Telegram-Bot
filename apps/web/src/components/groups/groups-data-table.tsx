@@ -74,8 +74,6 @@ export function GroupsDataTable({
   onDelete,
   onViewDetails,
 }: GroupsDataTableProps) {
-  "use no memo"; // Opt-out of React Compiler - TanStack Table not yet compatible
-
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -120,8 +118,8 @@ export function GroupsDataTable({
     return (
       <div className="w-full">
         <div className="flex items-center py-4">
-          <Skeleton className="h-10 w-[250px]" />
-          <Skeleton className="ml-auto h-10 w-[100px]" />
+          <Skeleton className="h-10 w-62.5" />
+          <Skeleton className="ml-auto h-10 w-25" />
         </div>
         <div className="rounded-md border p-4">
           <TableSkeleton rows={pageSize} />

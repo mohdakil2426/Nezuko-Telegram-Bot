@@ -33,3 +33,25 @@ export {
   useLatencyTrend,
   useBotHealthMetrics,
 } from "./use-charts";
+
+// InsForge Realtime hooks (replaces SSE)
+export {
+  useInsForgeRealtime,
+  useDashboardRealtime,
+  useLogsRealtime,
+  useCommandsRealtime,
+  useRealtimeChart,
+  useRealtimeVerificationChart,
+  useRealtimeActivityChart,
+  useRealtimeBotHealthChart,
+  // Backward compatibility exports
+  useRealtime,
+  useRealtimeActivity,
+  useRealtimeAnalytics,
+  useRealtimeLogs,
+  type ConnectionState,
+  type RealtimeEvent,
+} from "./use-realtime-insforge";
+
+// Logs hooks
+export { useLogs } from "./use-logs";

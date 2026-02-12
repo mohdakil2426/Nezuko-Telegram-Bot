@@ -32,13 +32,14 @@ Issues = "https://github.com/mohdakil2426/Nezuko-Telegram-Bot/issues"
 target-version = "py313"
 line-length = 100
 # Include both bot and api source directories
-src = ["apps/bot", "apps/api/src"]
+src = ["apps/bot"]
 exclude = [
     ".git",
     ".venv",
     "venv",
     "__pycache__",
     "migrations",
+    "alembic/versions",  # Alembic auto-generated migration files
     ".agent",
     "scripts",
     "node_modules",
@@ -103,33 +104,43 @@ ignore-paths = [
 extension-pkg-allow-list = ["pydantic"]
 jobs = 0  # Auto-detect CPU cores for parallel processing
 load-plugins = []
+# Tell Pylint about dynamic members from SQLAlchemy/Alembic
+generated-members = ["alembic.context.*", "alembic.op.*"]
 
 [tool.pylint.messages_control]
 disable = [
-    # Documentation (handled separately)
-    "missing-module-docstring",
-    "missing-class-docstring",
-    "missing-function-docstring",
-    # Naming (project conventions)
-    "invalid-name",
-    # Design patterns
-    "too-few-public-methods",
+    # ── Documentation (selectively enforced) ──
+    "missing-module-docstring",        # Checked by Ruff D100 if enabled
+    "missing-class-docstring",         # Pydantic schemas are self-documenting
+    "missing-function-docstring",      # Middleware dispatch, simple helpers
+
+    # ── Naming ──
+    "invalid-name",                    # Alembic env.py constants follow Alembic convention
+
+    # ── Design patterns (framework-driven) ──
+    "too-few-public-methods",          # Pydantic models, FastAPI schemas
     "too-many-arguments",              # FastAPI endpoints have many dependencies
     "too-many-positional-arguments",   # Same as above
-    "too-many-locals",                 # Complex analytics functions
-    "too-many-instance-attributes",    # Pydantic models
-    # False positives
+    "too-many-instance-attributes",    # Bot manager classes need many attrs
+
+    # ── Import resolution (handled by Ruff F + Pyrefly) ──
+    "import-error",                    # Pylint runs from global Python; Ruff + Pyrefly cover imports
+    "no-name-in-module",              # Alembic context/op not detectable statically
+
+    # ── False positives ──
     "not-callable",                    # SQLAlchemy func.* false positives
-    "duplicate-code",                  # Bot/API share models (architectural)
+    "duplicate-code",                  # Bot/API share model patterns (architectural)
     "cyclic-import",                   # SQLAlchemy pattern (models <-> database)
-    # Framework patterns
+
+    # ── Framework patterns ──
     "import-outside-toplevel",         # Lazy imports for performance/circular deps
     "unused-argument",                 # Framework callbacks often have unused args
     "redefined-outer-name",            # pytest fixtures redefine names
-    # Code quality
+
+    # ── Code style (handled by Ruff) ──
     "fixme",                           # Allow TODO comments
     "line-too-long",                   # Handled by ruff formatter
-    "broad-exception-caught",          # Sometimes needed for resilience
+    "unsubscriptable-object",          # SQLAlchemy 2.0 Mapped[...] false positive
 ]
 
 [tool.pylint.format]
@@ -137,7 +148,7 @@ max-line-length = 100
 
 [tool.pylint.design]
 max-args = 10
-max-locals = 20
+max-locals = 25
 max-returns = 8
 max-branches = 15
 max-statements = 60
@@ -149,6 +160,7 @@ max-statements = 60
 
 [tool.mypy]
 python_version = "3.13"
+strict = true
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
@@ -181,7 +193,7 @@ filterwarnings = [
 # ═══════════════════════════════════════════════════════════════════════════════
 
 [tool.coverage.run]
-source = ["apps/bot", "apps/api/src"]
+source = ["apps/bot"]
 omit = [
     "**/migrations/*",
     "**/__pycache__/*",

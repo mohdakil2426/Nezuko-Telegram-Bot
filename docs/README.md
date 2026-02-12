@@ -8,17 +8,16 @@ Welcome to the Nezuko documentation. This guide covers everything you need to ge
 
 ## 📖 Documentation
 
-| Section                                            | Description                                      |
+| Section | Description |
 | -------------------------------------------------- | ------------------------------------------------ |
-| [**Getting Started**](./getting-started/README.md) | Quick setup guides for all components            |
-| [**Architecture**](./architecture/README.md)       | System design, data flow, and component diagrams |
-| [**Tech Stack**](./architecture/tech-stack.md)     | Complete technology reference                    |
-| [**API Reference**](./api/README.md)               | FastAPI endpoints, schemas, and authentication   |
-| [**Bot Reference**](./bot/README.md)               | Telegram bot commands, handlers, and events      |
-| [**Web Dashboard**](./web/README.md)               | Admin panel components, routing, and state       |
-| [**Database**](./database/README.md)               | Schema, models, migrations, and queries          |
-| [**Deployment**](./deployment/README.md)           | Docker, production setup, and CI/CD              |
-| [**Contributing**](./contributing/README.md)       | Development workflow and coding standards        |
+| [**Getting Started**](./getting-started/README.md) | Quick setup guides for all components |
+| [**Architecture**](./architecture/README.md) | System design, data flow, and component diagrams |
+| [**Tech Stack**](./architecture/tech-stack.md) | Complete technology reference |
+| [**Bot Reference**](./bot/README.md) | Telegram bot commands, handlers, and events |
+| [**Web Dashboard**](./web/README.md) | Admin panel components, routing, and state |
+| [**Database**](./database/README.md) | Schema, models, and migrations |
+| [**Deployment**](./deployment/README.md) | Docker, production setup, and CI/CD |
+| [**Contributing**](./contributing/README.md) | Development workflow and coding standards |
 
 ---
 
@@ -37,9 +36,6 @@ docs/
 │   ├── diagrams.md             # All Mermaid diagrams
 │   ├── folder-structure.md     # Project organization
 │   └── horizontal-scaling.md   # Scaling strategies
-│
-├── api/                         # API documentation
-│   └── README.md               # Complete API reference
 │
 ├── bot/                         # Bot documentation
 │   └── README.md               # Commands, handlers, verification
@@ -63,9 +59,10 @@ docs/
 
 ### Prerequisites
 
-- Node.js 20+ with Bun
+- Node.js 20+
 - Python 3.13+
 - Git
+- InsForge Account
 
 ### Installation
 
@@ -74,37 +71,38 @@ docs/
 git clone https://github.com/mohdakil2426/Nezuko-Telegram-Bot.git
 cd Nezuko-Telegram-Bot
 
-# Install dependencies (use the unified CLI)
-./nezuko.bat  # Select option 4
-
-# Or install directly
-pip install -r requirements.txt
+# Install dependencies
+# Web (Next.js)
+cd apps/web
 bun install
+
+# Bot (Python)
+cd ../../apps/bot
+pip install -r requirements.txt
 ```
 
 ### Run Development Servers
 
 ```bash
-# Option 1: Interactive menu
-./nezuko.bat
+# Web Dashboard
+cd apps/web
+bun dev
 
-# Option 2: Direct commands
-./scripts/dev/start.ps1    # Start all services
-./scripts/dev/stop.ps1     # Stop all services
+# Bot
+cd apps/bot
+python -m main
 ```
 
 ---
 
 ## 📂 Key Directories
 
-| Directory       | Purpose                                |
+| Directory | Purpose |
 | --------------- | -------------------------------------- |
-| `apps/api/`     | FastAPI REST backend                   |
-| `apps/bot/`     | Telegram bot application               |
-| `apps/web/`     | Next.js admin dashboard                |
-| `requirements/` | Modular Python dependencies            |
-| `storage/`      | Runtime files (databases, logs, cache) |
-| `scripts/`      | CLI utilities and automation           |
+| `apps/bot/` | Telegram bot application |
+| `apps/web/` | Next.js admin dashboard |
+| `storage/` | Runtime files (logs, cache) |
+| `scripts/` | CLI utilities and automation |
 
 ---
 
@@ -119,13 +117,12 @@ bun install
 
 ## 📋 Version Information
 
-| Component     | Version |
+| Component | Version |
 | ------------- | ------- |
-| Bot Core      | v1.0.0  |
-| API           | v0.1.0  |
-| Web Dashboard | v0.1.0  |
-| Documentation | v1.0.0  |
+| Bot Core | v1.0.0 |
+| Web Dashboard | v1.0.0 |
+| Documentation | v1.0.0 |
 
 ---
 
-_Last Updated: 2026-02-05_
+_Last Updated: 2026-02-12_

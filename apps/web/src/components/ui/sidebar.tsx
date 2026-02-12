@@ -1,3 +1,4 @@
+/* eslint-disable react-compiler/react-compiler -- shadcn/ui vendor component */
 "use client";
 
 import * as React from "react";

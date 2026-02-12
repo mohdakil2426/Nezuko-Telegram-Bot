@@ -5,7 +5,6 @@
  * Shows overall bot health with multiple metrics
  */
 
-import * as React from "react";
 import { RadialBar, RadialBarChart, PolarAngleAxis, ResponsiveContainer } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

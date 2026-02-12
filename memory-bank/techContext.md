@@ -1,375 +1,136 @@
-# Technical Context: Nezuko - Stack, Infrastructure & Ecosystem
+# Technical Context: Stack & Development
 
-## 🚀 Technology Stack Overview
+## Technology Stack
 
-Nezuko is built on a "Precision First" philosophy, selecting the most stable yet advanced versions of every library in the ecosystem.
+### Bot (Python 3.13)
+| Package | Version | Purpose |
+| --- | --- | --- |
+| python-telegram-bot | 22.6+ | Telegram Bot API |
+| SQLAlchemy | 2.0+ | Async ORM |
+| Pydantic | 2.12+ | Data validation |
+| AsyncPG | 0.31+ | PostgreSQL driver |
+| Redis | 7.1+ | Caching |
 
-> **Full Reference**: See `docs/architecture/tech-stack.md` for complete version matrix and feature details.
-
----
-
-## 📦 Core Stack Summary
-
-| Layer              | Technologies                                                               |
-| ------------------ | -------------------------------------------------------------------------- |
-| **Frontend**       | Next.js 16, React 19, TypeScript 5.8+, Tailwind v4, shadcn/ui (web + web1) |
-| **Backend API**    | FastAPI 0.128+, Python 3.13, SQLAlchemy 2.0, Pydantic V2                   |
-| **Bot Engine**     | python-telegram-bot v22.6, AsyncIO                                         |
-| **Database**       | PostgreSQL 15+ (Supabase), Unified SQLite (Local Dev)                      |
-| **Infrastructure** | Docker, Turborepo, Caddy                                                   |
-
----
-
-## 🟢 Frontend Stack
-
-Nezuko has two frontend applications:
-
-### apps/web (Premium Custom Dashboard)
-
-The original dashboard with custom premium UI components, animations, and effects.
-
-| Technology   | Version | Purpose                                     |
-| ------------ | ------- | ------------------------------------------- |
-| Next.js      | 16.1.4  | React meta-framework with App Router        |
-| React        | 19.2.3  | UI component library with Compiler          |
-| TypeScript   | 5.9.3   | Type-safe JavaScript                        |
-| Bun          | 1.3.6+  | Package manager and runtime                 |
-| Tailwind CSS | 4.1.x   | Utility-first CSS (`@theme` inline pattern) |
-| shadcn/ui    | Latest  | Base primitives (~40%)                      |
-| Motion       | 12.29+  | Animation library (Framer Motion ~65%)      |
-| Lucide React | 0.563+  | Icon library                                |
-| Recharts     | 3.7+    | Charting library                            |
-| Sonner       | 2.0+    | Toast notifications                         |
-
-### apps/web1 (Pure shadcn/ui Dashboard) ✨ NEW
-
-A pure shadcn/ui dashboard with minimal custom code. Uses standard shadcn patterns for maintainability.
-
-| Technology     | Version | Purpose                                         |
-| -------------- | ------- | ----------------------------------------------- |
-| Next.js        | 16.1.6  | React meta-framework with App Router            |
-| React          | 19.2.3  | UI component library with Compiler              |
-| TypeScript     | 5.8.3   | Type-safe JavaScript                            |
-| Bun            | 1.3.6+  | Package manager and runtime                     |
-| Tailwind CSS   | 4.1.11  | Utility-first CSS                               |
-| shadcn/ui      | Latest  | **100% shadcn components** (New York style)     |
-| TanStack Query | 5.76.2  | Server state management                         |
-| TanStack Table | 8.21.3  | Data tables with sorting, filtering, pagination |
-| Recharts       | 2.15.3  | Charting (via shadcn chart component)           |
-| Lucide React   | 0.513.0 | Icon library                                    |
-| next-themes    | 0.4.6   | Dark/light mode                                 |
-
-**Key Differences from apps/web:**
-
-- 100% shadcn/ui components (no custom TiltCard, MagneticButton, etc.)
-- Uses shadcn sidebar-07 pattern (collapsible icon sidebar)
-- Mock data layer with service abstraction (`NEXT_PUBLIC_USE_MOCK=true`)
-- Centralized query keys pattern for React Query
-- No Supabase auth (standalone mock-first development)
-
-### Technology Usage Estimates (as of 2026-02-03)
-
-| Technology            | apps/web | apps/web1 |
-| :-------------------- | :------: | :-------: |
-| **Tailwind CSS**      |   100%   |   100%    |
-| **Lucide React**      |   100%   |   100%    |
-| **shadcn/ui**         |   ~40%   | **100%**  |
-| **Custom Premium UI** |   ~60%   |    0%     |
-| **Framer Motion**     |   ~65%   |    0%     |
-
-### State & Data Management (Both Dashboards)
-
-| Technology      | Version | Purpose                 |
-| --------------- | ------- | ----------------------- |
-| TanStack Query  | 5.90+   | Server state management |
-| Zustand         | 5.0+    | Client state management |
-| React Hook Form | 7.71+   | Form handling           |
-| Zod             | 4.3+    | Schema validation       |
-
-### Key Patterns (Next.js 16)
-
-```typescript
-// ✅ Async route params (Next.js 16)
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-}
-
-// ✅ TanStack Query v5
-const { data, isPending } = useQuery({
-  queryKey: ["groups"],
-  queryFn: fetchGroups,
-});
-
-// ✅ Theme System (See System Patterns)
-const { resolvedTheme } = useTheme(); // Mode
-const { accentHex } = useThemeConfig(); // Config
-```
-
----
-
-## 🔵 Backend API Stack (apps/api)
-
-### Core Framework
-
-| Technology | Version | Purpose                      |
-| ---------- | ------- | ---------------------------- |
-| Python     | 3.13+   | Programming language         |
-| FastAPI    | 0.128+  | Modern async web framework   |
-| Uvicorn    | 0.40+   | ASGI server                  |
-| Pydantic   | 2.12+   | Data validation and settings |
-
-### Database & ORM
-
-| Technology | Version | Purpose                   |
-| ---------- | ------- | ------------------------- |
-| SQLAlchemy | 2.0+    | Async ORM                 |
-| AsyncPG    | 0.31+   | PostgreSQL async driver   |
-| AIOSQLite  | 0.22+   | SQLite async driver (dev) |
-| Alembic    | 1.18.3+ | Database migrations       |
-| Redis      | 7.1+    | Caching and pub/sub       |
-
-### Key Patterns (SQLAlchemy 2.0)
-
-```python
-# ✅ Use select() style queries (SQLAlchemy 2.0)
-from sqlalchemy import select
-
-async def get_groups(session: AsyncSession):
-    result = await session.execute(
-        select(ProtectedGroup).where(ProtectedGroup.is_active == True)
-    )
-    return result.scalars().all()
-
-# ✅ Pydantic V2 model_validator
-@model_validator(mode='after')
-def validate_channel(self) -> 'GroupCreate':
-    return self
-```
-
----
-
-## 🤖 Bot Engine Stack (apps/bot)
-
-### Core
-
-| Technology          | Version | Purpose                  |
-| ------------------- | ------- | ------------------------ |
-| Python              | 3.13+   | Programming language     |
-| python-telegram-bot | 22.6+   | Telegram Bot API wrapper |
-| AIOHTTP             | 3.13+   | Async HTTP client        |
-| HTTPX               | 0.28+   | Modern HTTP client       |
+### Frontend (TypeScript)
+| Package | Version | Purpose |
+| --- | --- | --- |
+| Next.js | 16.1+ | React framework |
+| React | 19.2+ | UI library |
+| TypeScript | 5.9+ | Type safety |
+| Tailwind CSS | 4.1+ | Styling |
+| TanStack Query | 5.90+ | Data fetching |
+| shadcn/ui | Latest | UI components |
+| Recharts | 3.7+ | Charts |
+| @insforge/sdk | Latest | InsForge BaaS client |
 
 ### Infrastructure
-
-- Shared SQLAlchemy models with API
-- Shared Redis cache layer
-- Prometheus metrics integration
-- Unified SQLite database (`storage/data/nezuko.db`)
-
----
-
-## 🔑 Authentication Architecture
-
-### Supabase Auth Flow
-
-1. **Web Client** → `supabase.auth.signInWithPassword` → **Supabase Auth**
-2. **Web Client** → Receives `access_token` (JWT) stored in HTTP-only cookie
-3. **Proxy (proxy.ts)** → Verifies session using `getSession()`
-4. **API Requests** → Sends `Authorization: Bearer <jwt>`
-5. **API** → Verifies JWT signature using `SUPABASE_JWT_SECRET`
-
-### Critical Package Versions
-
-| Package                 | Required Version | Notes                             |
-| ----------------------- | ---------------- | --------------------------------- |
-| `@supabase/ssr`         | `^0.8.0`         | ⚠️ v0.1.0 has cookie parsing bugs |
-| `@supabase/supabase-js` | `^2.93.1`        | Latest stable                     |
+| Tool | Purpose |
+| --- | --- |
+| **InsForge BaaS** | Managed PostgreSQL, Realtime, Storage, Edge Functions |
+| **Docker** | Bot containerization |
+| **Turborepo** | Monorepo management |
+| **Caddy** | Reverse proxy |
+| **Bun** | Package manager (web) |
 
 ---
 
-## 📄 Database Schema Reference
+## Development Setup
 
-### Model: `AdminUser`
-
-| Column         | Type          | Notes                     |
-| :------------- | :------------ | :------------------------ |
-| `id`           | `String(36)`  | Primary Key, UUID         |
-| `supabase_uid` | `String(36)`  | Unique, Indexed (Auth ID) |
-| `email`        | `String(255)` | Unique                    |
-| `role`         | `String(20)`  | Default: "viewer"         |
-| `is_active`    | `Boolean`     | Default: True             |
-| `telegram_id`  | `BigInteger`  | Nullable, Unique          |
-
-### Model: `AdminAuditLog`
-
-| Column          | Type         | Notes        |
-| :-------------- | :----------- | :----------- |
-| `id`            | `String(36)` | Primary Key  |
-| `user_id`       | `String(36)` | FK, Nullable |
-| `action`        | `String(50)` | Required     |
-| `resource_type` | `String(50)` | Required     |
-| `old_value`     | `JSON`       | Nullable     |
-| `new_value`     | `JSON`       | Nullable     |
-
-### Real-time Logging: `admin_logs`
-
-| Column      | Type        | Notes             |
-| :---------- | :---------- | :---------------- |
-| `id`        | `UUID`      | PK                |
-| `level`     | `VARCHAR`   | INFO, ERROR, WARN |
-| `message`   | `TEXT`      | Log content       |
-| `metadata`  | `JSONB`     | Context data      |
-| `timestamp` | `TIMESTAMP` | Event time        |
-
----
-
-## 🛠️ Development Setup
-
-### Quick Start (For Humans)
-
-> **Note**: `nezuko.bat` CLI menu is for humans. AI agents should use direct commands below.
+### Quick Start
 
 ```bash
-# Launch unified CLI menu (humans only)
-.\nezuko.bat
+# Install dependencies
+pip install -r requirements/base.txt -r requirements/dev.txt
+cd apps/web && bun install
 
-# Direct commands (for AI agents)
-.\scripts\dev\start.ps1    # Start services
-.\scripts\dev\stop.ps1     # Stop services
+# Start services (Parallel)
+python -m apps.bot.main          # Bot (from root)
+cd apps/web && bun dev           # Web (port 3000)
 ```
 
-### Logging System
+### Environment Files
 
-All scripts write to `scripts/logs/nezuko-YYYY-MM-DD.log`:
+| App | File | Template |
+| --- | --- | --- |
+| Bot | `apps/bot/.env` | `apps/bot/.env.example` |
+| Web | `apps/web/.env.local` | `apps/web/.env.example` |
+
+### Required Environment Variables
 
 ```bash
-# View recent logs
-Get-Content scripts/logs/nezuko-*.log -Tail 50
+# Bot (.env)
+BOT_TOKEN=<telegram-bot-token>
+DATABASE_URL=postgresql+asyncpg://<user>:<pass>@<insforge-host>:<port>/<db>?sslmode=require
+ENCRYPTION_KEY=<fernet-key>
+REDIS_URL=redis://localhost:6379/0
 
-# Log format
-[2026-01-28 17:49:26] [INFO] [PYTHON] COMMAND: pip install -r requirements.txt
-[2026-01-28 17:49:26] [SUCCESS] [PYTHON] Installed from requirements.txt
-```
-
-| Feature        | Behavior                                  |
-| -------------- | ----------------------------------------- |
-| **Rotation**   | Daily (new file each day)                 |
-| **Mode**       | Append-only (never overwrites)            |
-| **Retention**  | Logs never auto-deleted                   |
-| **Categories** | INSTALL, CLEAN, DEV, PYTHON, NODE, SYSTEM |
-
-### Manual Commands (if needed)
-
-```bash
-# Terminal 1 - Web Dashboard
-cd apps/web && bun dev     # Runs on localhost:3000
-
-# Terminal 2 - API Server
-cd apps/api && uvicorn src.main:app --reload --port 8080
-
-# Terminal 3 - Bot (IMPORTANT: Run from project root!)
-python -m apps.bot.main    # ✅ Correct
-# cd apps/bot && python main.py  # ❌ Wrong - breaks imports!
-```
-
-### First-Time Setup
-
-```bash
-./nezuko.bat  # Then select option 4
-# Or directly:
-./scripts/setup/install.ps1
-```
-
-### Python Dependencies Structure
-
-```
-requirements/
-├── base.txt       # Shared dependencies (SQLAlchemy, Redis, Pydantic)
-├── api.txt        # API-specific (FastAPI, Uvicorn)
-├── bot.txt        # Bot-specific (python-telegram-bot)
-├── dev.txt        # Development tools (pytest, ruff, mypy)
-├── prod-api.txt   # Production API (base + api)
-└── prod-bot.txt   # Production Bot (base + bot)
-```
-
-| Command                                    | Purpose                |
-| ------------------------------------------ | ---------------------- |
-| `pip install -r requirements.txt`          | Development (all deps) |
-| `pip install -r requirements/prod-api.txt` | Production API         |
-| `pip install -r requirements/prod-bot.txt` | Production Bot         |
-
-### Storage Directory
-
-```
-storage/
-├── cache/         # Redis fallback cache
-├── data/          # SQLite databases (nezuko.db)
-├── logs/          # Application logs (bot.log)
-└── uploads/       # User-uploaded files
-```
-
-### Environment Variables
-
-```bash
-# apps/api/.env
-SUPABASE_URL=https://<project>.supabase.co
-SUPABASE_ANON_KEY=<public-anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<private-service-key>
-SUPABASE_JWT_SECRET=<jwt-secret>
-DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db  # Local dev
-MOCK_AUTH=true  # Enable mock auth for local dev
-
-# apps/web/.env.local
-NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<public-anon-key>
-NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
-
-# apps/web1/.env.local
-NEXT_PUBLIC_API_URL=http://localhost:8080
-NEXT_PUBLIC_USE_MOCK=true  # Enable mock data layer
+# Web (.env.local)
+NEXT_PUBLIC_INSFORGE_BASE_URL=https://u4ckbciy.us-west.insforge.app
+NEXT_PUBLIC_INSFORGE_ANON_KEY=<insforge-anon-key>
+NEXT_PUBLIC_LOGIN_BOT_USERNAME=YourBotUsername
 ```
 
 ---
 
-## 🔐 Test Credentials (Development)
+## Code Quality Tools
 
-| User  | Email            | Password  | Role        |
-| ----- | ---------------- | --------- | ----------- |
-| Admin | admin@nezuko.bot | Admin@123 | super_admin |
+### Tool Responsibility Matrix
 
----
+| Concern | Primary Tool | Notes |
+| --- | --- | --- |
+| Linting (style, logic) | **Ruff** | Covers F, E, W, I, UP, B, SIM, RUF rules |
+| Formatting | **Ruff** | Auto-format on save via VS Code |
+| Import checking | **Ruff** (F) + **Pyrefly** | Pylint `import-error` disabled |
+| Type checking | **Pyrefly** | Runs from venv Python |
+| Code quality scoring | **Pylint** | Score target: 10.00/10 |
 
-## 🔧 Code Quality Tools
+### Python CLI Commands
 
-### Python
+```bash
+# All from project root
+ruff check apps/bot                             # Lint (0 errors)
+ruff format .                                   # Format
+pylint apps/bot --rcfile=pyproject.toml          # Score (10.00/10)
+.venv/Scripts/python.exe -m pyrefly check       # Types (0 errors)
+pytest                                           # Tests
+```
 
-| Tool            | Purpose                                            |
-| --------------- | -------------------------------------------------- |
-| Ruff 0.14.14+   | Fast linter and formatter (RUF, PERF, ASYNC rules) |
-| Pylint 4.0.4+   | Static code analysis (target: 10.00/10)            |
-| Pyrefly 0.50.1+ | Type checking (target: 0 errors)                   |
-| Pytest 9.0.2+   | Testing framework                                  |
+### TypeScript CLI Commands
 
-### TypeScript
-
-| Tool            | Purpose         |
-| --------------- | --------------- |
-| ESLint 9.18+    | Linting         |
-| Prettier 3.4+   | Code formatting |
-| TypeScript 5.9+ | Type checking   |
-
----
-
-## 📚 Documentation Reference
-
-| Topic             | Location                          |
-| ----------------- | --------------------------------- |
-| Tech Stack (Full) | `docs/architecture/tech-stack.md` |
-| Architecture      | `docs/architecture/README.md`     |
-| API Reference     | `docs/api/README.md`              |
-| Bot Reference     | `docs/bot/README.md`              |
-| Deployment        | `docs/deployment/README.md`       |
+```bash
+cd apps/web
+bun run lint                    # ESLint (0 warnings)
+bun run knip                    # Dead code check
+bun run build                   # TypeScript (0 errors)
+bun run format                  # Prettier + Tailwind Sort
+```
 
 ---
 
-_Last Updated: 2026-02-03_
+## Database (InsForge Managed PostgreSQL)
+
+-   **Base URL**: `https://u4ckbciy.us-west.insforge.app`
+-   **Hostname**: `db.u4ckbciy.us-west.insforge.app` (Port 5432 or 6543)
+-   **Driver**: `asyncpg` (Python) - Requires `ssl="require"` in `connect_args`, NOT `sslmode` in URL.
+-   **Tables**: 13 (created via `insforge/migrations/001-005.sql`)
+-   **RPC Functions**: 15 (analytics + charts)
+-   **Realtime Triggers**: 4 (verification, bot_status, commands, logs)
+-   **Schema managed via**: Raw SQL migration files in `insforge/migrations/`
+
+---
+
+## File Locations
+
+| Type | Location |
+| --- | --- |
+| Tests | `tests/bot/` |
+| Logs | `storage/logs/` |
+| Python deps | `requirements/*.txt` |
+| Docker | `config/docker/` |
+| SQL Migrations | `insforge/migrations/` |
+| Edge Functions | `insforge/functions/` |
+| Pre-migration backup | `docs/local/backup-2026-02-12-105223/` |
+
+---
+
+_Last Updated: 2026-02-12_

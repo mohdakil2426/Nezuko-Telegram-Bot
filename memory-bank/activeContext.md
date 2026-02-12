@@ -1,201 +1,78 @@
-# Active Context: Phase 39 - Web Migration Complete
+# Active Context: Current State
 
 ## Current Status
 
-**Phase 39 COMPLETE** - Migrated from custom `apps/web` to pure shadcn/ui dashboard.
-**Focus**: Replaced premium custom UI with maintainable pure shadcn/ui dashboard.
-
-### Recent Achievements (2026-02-03)
-
-| Item                          | Status      | Description                                         |
-| :---------------------------- | :---------- | :-------------------------------------------------- |
-| **Phase 37: Web1 Dashboard**  | ✅ Complete | Pure shadcn/ui dashboard with 26 components         |
-| **Phase 38: Advanced Charts** | ✅ Complete | 10 new charts for analytics visualization           |
-| **Phase 39: Web Migration**   | ✅ Complete | Deleted old web, renamed web1 → web                 |
-| **Chart Type Definitions**    | ✅ Complete | 10 TypeScript interfaces for chart data             |
-| **Mock Data Generators**      | ✅ Complete | Realistic mock data for all chart types             |
-| **Chart Service Layer**       | ✅ Complete | Service with mock/API toggle                        |
-| **React Query Hooks**         | ✅ Complete | 10 custom hooks for fetching chart data             |
-| **Chart Components**          | ✅ Complete | Donut, Bar, Line, Radial chart components           |
-| **Analytics Tabbed Layout**   | ✅ Complete | 4 tabs: Overview, Performance, Distribution, Trends |
-| **Lint Fixes**                | ✅ Complete | Fixed React hooks rules, unused imports             |
+**Date**: 2026-02-12
+**Phase**: System Testing & Verification
+**Branch**: `feat/full-stack-integration`
+**Change**: `insforge-migration` (OpenSpec) - **COMPLETE**
 
 ---
 
-## Key Changes Summary
+## Current Work: System Testing
 
-### New Charts Directory: `apps/web/src/components/charts/`
+### What is happening
+The migration to InsForge BaaS is **100% complete**. The legacy `apps/api/` layer has been removed. The system is now running on a clean 2-tier architecture (Web + Bot ↔ InsForge). We are now in the final verification phase to ensure all components interact correctly with the new backend.
 
-10 new chart components using native shadcn/ui charts (Recharts).
+### Recent Achievements
 
-### Charts Structure
+1.  **Docs & CLI Cleanup**: Verified `package.json`, `nezuko.bat`, and `docs/` reflect the 2-tier architecture.
+2.  **API Removal**: Successfully deleted `apps/api/` and all associated configurations.
+3.  **Service Rewrite**: All 9 web services now use the InsForge SDK.
+4.  **Bot Refactor**: Status writer and command worker are fully operational with PostgreSQL.
 
-```
-apps/web/src/components/charts/
-├── index.ts                              # Barrel exports
-├── verification-distribution-chart.tsx   # Donut: Verified/Restricted/Error
-├── cache-breakdown-chart.tsx             # Donut: Cache hits vs API calls
-├── groups-status-chart.tsx               # Donut: Active vs Inactive groups
-├── api-calls-chart.tsx                   # Donut: API method distribution
-├── hourly-activity-chart.tsx             # Bar: 24-hour activity
-├── latency-distribution-chart.tsx        # Bar: Latency buckets
-├── top-groups-chart.tsx                  # Bar: Top groups by verifications
-├── cache-hit-rate-trend-chart.tsx        # Line: Cache hit rate over time
-├── latency-trend-chart.tsx               # Line: Avg/P95 latency trend
-└── bot-health-chart.tsx                  # Radial: Bot health score gauge
-```
+### Active Tasks
 
-### Data Layer Files
-
-```
-apps/web/src/lib/
-├── services/
-│   ├── types.ts              # +10 chart interfaces
-│   ├── charts.service.ts     # NEW: Chart service layer
-│   └── index.ts              # +chartsService export
-├── hooks/
-│   ├── use-charts.ts         # NEW: 10 React Query hooks
-│   └── index.ts              # +chart hooks export
-├── mock/
-│   ├── charts.mock.ts        # NEW: Mock data generators
-│   └── index.ts              # +mock generators export
-├── api/
-│   └── endpoints.ts          # +charts.* endpoints
-└── query-keys.ts             # +charts.* keys
-```
-
-### Analytics Page: 4-Tab Layout
-
-| Tab          | Charts Displayed                                  |
-| :----------- | :------------------------------------------------ |
-| Overview     | Overview Cards, Verification Trends, User Growth  |
-| Performance  | Bot Health, Latency Trend, Latency Distribution   |
-| Distribution | Verification, Cache, Groups Status, API Calls     |
-| Trends       | Cache Hit Rate Trend, Hourly Activity, Top Groups |
-
-### Component Structure (Existing)
-
-```
-apps/web/src/components/
-├── ui/                      # 26 shadcn components
-├── dashboard/               # Dashboard-specific
-│   ├── stat-cards.tsx
-│   ├── verification-chart.tsx
-│   ├── activity-feed.tsx
-│   └── index.ts
-├── groups/                  # Groups page
-│   ├── groups-columns.tsx
-│   ├── groups-data-table.tsx
-│   ├── groups-page-content.tsx
-│   └── index.ts
-├── channels/                # Channels page
-│   ├── channels-columns.tsx
-│   ├── channels-data-table.tsx
-│   ├── channels-page-content.tsx
-│   └── index.ts
-├── analytics/               # Analytics page
-│   ├── overview-cards.tsx
-│   ├── verification-trends-chart.tsx
-│   ├── user-growth-chart.tsx
-│   ├── analytics-page-content.tsx
-│   └── index.ts
-├── settings/                # Settings page
-│   ├── appearance-card.tsx
-│   ├── account-info-card.tsx
-│   ├── settings-page-content.tsx
-│   └── index.ts
-├── login-form.tsx           # Login form component
-├── app-sidebar.tsx          # Main sidebar (sidebar-07)
-├── nav-main.tsx             # Navigation items
-├── nav-user.tsx             # User dropdown
-├── brand-logo.tsx           # Nezuko branding
-├── theme-toggle.tsx         # Light/Dark/System
-└── site-header.tsx          # Header with breadcrumbs
-```
-
-### App Routes
-
-```
-apps/web/src/app/
-├── layout.tsx               # Root layout with providers
-├── page.tsx                 # Redirects to /dashboard
-├── not-found.tsx            # Custom 404 page
-├── login/
-│   └── page.tsx             # Login page
-└── dashboard/
-    ├── layout.tsx           # Dashboard layout (sidebar + header)
-    ├── page.tsx             # Main dashboard
-    ├── analytics/page.tsx
-    ├── channels/page.tsx
-    ├── groups/page.tsx
-    └── settings/page.tsx
-```
-
-### Data Architecture
-
-```
-Component → Hook → Service → (Mock or API) → Response
-```
-
-- **Mock mode**: `NEXT_PUBLIC_USE_MOCK=true` in `.env.local`
-- **API mode**: Set `NEXT_PUBLIC_USE_MOCK=false` and configure `NEXT_PUBLIC_API_URL`
-
-### Key Fixes Applied
-
-1. **Breadcrumb Hydration**: `BreadcrumbSeparator` moved to sibling position
-2. **React Compiler**: Added `"use no memo"` directive for TanStack Table components
-3. **ESLint**: Inline disable for `react-hooks/incompatible-library` rule
+- [x] **Bug Fix**: Resolved `asyncpg` incompatibility with `sslmode` URL parameter in `apps/bot/core/database.py`.
+- [x] **Config Fix**: Corrected InsForge database hostname to `db.u4ckbciy.us-west.insforge.app` in `apps/bot/.env`.
+- [ ] **Network Access**: Local network is blocking outbound traffic to ports 5432/6543. User needs to switch networks or use VPN.
+- [ ] **Credentials**: Update `YOUR_DB_PASSWORD` in `apps/bot/.env` with actual credentials.
+- [ ] **End-to-End Testing**: Verify the full user flow (Join Group -> Bot Mute -> Web Verify -> Bot Unmute).
+- [ ] **Realtime Verification**: Confirm WebSocket events trigger dashboard updates.
+- [ ] **Deployment Prep**: Finalize Docker images and environment config for production.
 
 ---
 
-## Build Verification
+## Migration Summary (Completed)
+
+| Phase | Description | Status |
+| :---- | :---------- | :----- |
+| **1. Pre-Migration Backup** | Backup `apps/` to `docs/local/` | **Complete** |
+| **2. Infrastructure Setup** | Tables, RPC functions, realtime, storage | **Complete** |
+| **3. SDK Integration** | Install SDK, create client, env vars | **Complete** |
+| **4. Data Layer Rewrite** | Rewrite 9 service files, hooks, auth | **Complete** |
+| **5. Realtime Migration** | SSE → WebSocket hooks | **Complete** |
+| **6. Bot Worker Refactor** | status_writer, command_worker | **Complete** |
+| **7. Edge Functions** | manage-bot, test-webhook | **Complete** |
+| **8. API Removal & Cleanup** | Delete `apps/api/`, update configs | **Complete** |
+| **9. Docs & Deployment** | Update memory-bank, deploy | **Complete** |
+
+---
+
+## Key Credentials
+
+- **InsForge Base URL**: `https://u4ckbciy.us-west.insforge.app`
+- **Anon Key**: Stored in `apps/web/.env.local`
+- **Backup Location**: `docs/local/backup-2026-02-12-105223/apps/`
+
+---
+
+## Architecture (2-Tier)
 
 ```
-$ bun run lint
-$ eslint
-(no output = 0 errors, 0 warnings)
-
-$ bun run build
-✓ Compiled successfully in 4.2s
-✓ Generating static pages (10/10)
-
-Routes:
-○ /
-○ /_not-found
-○ /dashboard
-○ /dashboard/analytics
-○ /dashboard/channels
-○ /dashboard/groups
-○ /dashboard/settings
-○ /login
+Web Dashboard (Next.js) ──► InsForge SDK ──► InsForge BaaS
+                                                 ▲
+Bot Engine (Python) ──────► SQLAlchemy ──────────┘
 ```
 
 ---
 
-## Test Credentials
+## Next Steps
 
-| User  | Email            | Password  | Role        |
-| :---- | :--------------- | :-------- | :---------- |
-| Admin | admin@nezuko.bot | Admin@123 | super_admin |
-
----
-
-## Commands Reference
-
-```bash
-# Development
-cd apps/web && bun dev
-
-# Lint check
-cd apps/web && bun run lint
-
-# Build verification
-cd apps/web && bun run build
-
-# Add shadcn component
-cd apps/web && bunx shadcn@latest add <component-name>
-```
+1.  Run full test suite (`pytest` + `bun run test`).
+2.  Manual QA of the verification flow.
+3.  Merge `feat/full-stack-integration` to `main`.
 
 ---
 
-_Last Updated: 2026-02-03 21:30 IST_
+_Last Updated: 2026-02-12_
