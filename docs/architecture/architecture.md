@@ -27,6 +27,7 @@ Nezuko is built on the **InsForge Platform**, leveraging a serverless, event-dri
                 │     │                                             │
                 │     │             InsForge Platform               │
                 │     │                                             │
+                │     │                                             │
                 └────►│  ┌────────────┐  ┌────────────┐  ┌───────┐  │
                       │  │ PostgreSQL │  │    Auth    │  │ Redis │  │
                       │  └────────────┘  └────────────┘  └───────┘  │

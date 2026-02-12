@@ -6,7 +6,9 @@ PostgreSQL with Docker is required.
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
+from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -31,16 +33,35 @@ def get_engine() -> AsyncEngine:
     global _engine
 
     if _engine is None:
+        # Parse database URL to handle sslmode for asyncpg
+        url_obj = make_url(config.database_url)
+        connect_args: dict[str, Any] = {"timeout": 30, "command_timeout": 30}
+
+        # Check if sslmode is in query parameters
+        if "sslmode" in url_obj.query:
+            ssl_mode = url_obj.query["sslmode"]
+
+            # Create new query dict without sslmode
+            new_query = dict(url_obj.query)
+            del new_query["sslmode"]
+
+            # Update URL object
+            url_obj = url_obj.set(query=new_query)
+
+            # Add ssl to connect_args if needed
+            if ssl_mode in ("require", "verify-full"):
+                connect_args["ssl"] = "require"
+
         # PostgreSQL with connection pooling and timeouts
         _engine = create_async_engine(
-            config.database_url,
+            url_obj,
             echo=config.is_development,
             pool_size=20,  # Max connections in pool
             max_overflow=10,  # Max connections beyond pool_size
             pool_timeout=30,  # Max seconds to wait for connection
             pool_pre_ping=True,  # Verify connections before use
             pool_recycle=3600,  # Recycle connections after 1 hour
-            connect_args={"timeout": 30, "command_timeout": 30},
+            connect_args=connect_args,
         )
 
     return _engine

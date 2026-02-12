@@ -16,9 +16,7 @@
     "test": "turbo test",
     "type-check": "turbo type-check",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
-    "clean": "turbo clean && rm -rf node_modules",
-    "db:migrate": "cd apps/api && alembic upgrade head",
-    "db:generate": "cd apps/api && alembic revision --autogenerate"
+    "clean": "turbo clean && rm -rf node_modules"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.1",

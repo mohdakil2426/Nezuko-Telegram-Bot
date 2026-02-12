@@ -55,7 +55,15 @@
       "Bash(openspec:*)",
       "Bash(openspec status:*)",
       "Bash(openspec instructions proposal:*)",
-      "mcp__insforge__create-function"
+      "mcp__insforge__create-function",
+      "mcp__insforge__get-table-schema",
+      "Bash(bun dev)",
+      "Skill(playwright-cli)",
+      "Bash(pytest:*)",
+      "Bash(nslookup:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "mcp__insforge__get-container-logs",
+      "mcp__insforge__run-raw-sql"
     ]
   },
   "enabledMcpjsonServers": [

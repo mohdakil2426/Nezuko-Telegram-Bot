@@ -116,7 +116,7 @@ export function LoginForm() {
               cornerRadius={8}
             />
 
-            <p className="text-xs text-muted-foreground text-center max-w-[250px]">
+            <p className="text-xs text-muted-foreground text-center max-w-62.5">
               Only the project owner can access this dashboard. Your Telegram ID will be verified.
             </p>
           </div>

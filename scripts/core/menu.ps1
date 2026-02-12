@@ -36,7 +36,7 @@ function Show-Banner {
     Write-Host "                   ║" -ForegroundColor Cyan
     Write-Host "  ║                                                      ║" -ForegroundColor Cyan
     Write-Host "  ╠══════════════════════════════════════════════════════╣" -ForegroundColor Cyan
-    Write-Host "  ║   Telegram Bot Platform • Admin Dashboard • API      ║" -ForegroundColor DarkGray
+    Write-Host "  ║   Telegram Bot Platform • Admin Dashboard            ║" -ForegroundColor DarkGray
     Write-Host "  ╚══════════════════════════════════════════════════════╝" -ForegroundColor Cyan
     Write-Host ""
 }
@@ -74,27 +74,6 @@ function Show-SecurityMenu {
     Write-Host "  │                                                      │" -ForegroundColor White
     Write-Host "  │    [1] 🔑 Generate Encryption Key (Fernet)           │" -ForegroundColor White
     Write-Host "  │    [2] 📋 Check .env Files Status                    │" -ForegroundColor White
-    Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
-    Write-Host "  │    [0] ⬅️  Back                                       │" -ForegroundColor White
-    Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
-    Write-Host ""
-}
-
-function Show-DatabaseMenu {
-    <#
-    .SYNOPSIS
-        Displays the database tools submenu.
-    #>
-    Write-Host ""
-    Write-Host "  ┌──────────────────────────────────────────────────────┐" -ForegroundColor White
-    Write-Host "  │  " -ForegroundColor White -NoNewline
-    Write-Host "🗄️  DATABASE" -ForegroundColor Cyan -NoNewline
-    Write-Host "                                    │" -ForegroundColor White
-    Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  │    [1] 🐘 Start PostgreSQL (Docker)                  │" -ForegroundColor White
-    Write-Host "  │    [2] 🛑 Stop PostgreSQL (Docker)                   │" -ForegroundColor White
-    Write-Host "  │    [3] ⬆️  Run Migrations (Alembic)                   │" -ForegroundColor White
-    Write-Host "  │    [4] 🌱 Seed Test Data                             │" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
     Write-Host "  │    [0] ⬅️  Back                                       │" -ForegroundColor White
     Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
@@ -182,9 +161,9 @@ function Invoke-SecurityMenu {
     while ($true) {
         Show-Banner
         Show-SecurityMenu
-        
+
         $choice = Read-Host "  Enter choice"
-        
+
         switch ($choice) {
             "1" {
                 Write-Host ""
@@ -197,9 +176,9 @@ function Invoke-SecurityMenu {
                 Write-Host ""
                 Write-Host "  📋 Checking .env files status..." -ForegroundColor Cyan
                 Write-Host ""
-                
+
                 $projectRoot = Get-ProjectRoot
-                
+
                 # Check Bot .env
                 $botEnv = Join-Path $projectRoot "apps\bot\.env"
                 $botEnvExample = Join-Path $projectRoot "apps\bot\.env.example"
@@ -218,134 +197,6 @@ function Invoke-SecurityMenu {
                 }
 
                 Write-Host ""
-                Wait-ForKeyPress
-            }
-            "0" { return }
-            default {
-                Write-Host "  ⚠️  Invalid choice. Please try again." -ForegroundColor Yellow
-                Start-Sleep -Seconds 1
-            }
-        }
-    }
-}
-
-function Invoke-DatabaseMenu {
-    <#
-    .SYNOPSIS
-        Database tools submenu handler.
-    #>
-    while ($true) {
-        Show-Banner
-        Show-DatabaseMenu
-        
-        $choice = Read-Host "  Enter choice"
-        $projectRoot = Get-ProjectRoot
-        $venvPython = Join-Path $projectRoot ".venv\Scripts\python.exe"
-        
-        switch ($choice) {
-            "1" {
-                # Start PostgreSQL via Docker
-                Write-Host ""
-                Write-Host "  🐘 Starting PostgreSQL container..." -ForegroundColor Cyan
-                Write-Host ""
-                
-                # Check if container exists
-                $containerExists = docker ps -a --filter "name=nezuko-postgres" --format "{{.Names}}" 2>$null
-                
-                if ($containerExists -eq "nezuko-postgres") {
-                    # Container exists, just start it
-                    Write-Host "  Container exists, starting..." -ForegroundColor Gray
-                    docker start nezuko-postgres
-                }
-                else {
-                    # Create new container
-                    Write-Host "  Creating new PostgreSQL container..." -ForegroundColor Gray
-                    docker run -d `
-                        --name nezuko-postgres `
-                        -e POSTGRES_USER=nezuko `
-                        -e POSTGRES_PASSWORD=nezuko123 `
-                        -e POSTGRES_DB=nezuko `
-                        -p 5432:5432 `
-                        postgres:17-alpine
-                }
-                
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Host ""
-                    Write-Host "  ✅ PostgreSQL started!" -ForegroundColor Green
-                    Write-Host ""
-                    Write-Host "  Connection: postgresql://nezuko:nezuko123@localhost:5432/nezuko" -ForegroundColor Gray
-                }
-                else {
-                    Write-Host ""
-                    Write-Host "  ❌ Failed to start PostgreSQL" -ForegroundColor Red
-                }
-                Wait-ForKeyPress
-            }
-            "2" {
-                # Stop PostgreSQL
-                Write-Host ""
-                Write-Host "  🛑 Stopping PostgreSQL container..." -ForegroundColor Yellow
-                docker stop nezuko-postgres 2>$null
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Host "  ✅ PostgreSQL stopped!" -ForegroundColor Green
-                }
-                else {
-                    Write-Host "  ℹ️  Container not running or doesn't exist" -ForegroundColor Gray
-                }
-                Wait-ForKeyPress
-            }
-            "3" {
-                # Run Alembic migrations
-                Write-Host ""
-                Write-Host "  ⬆️  Running Alembic migrations..." -ForegroundColor Cyan
-                Write-Host ""
-                
-                $apiDir = Join-Path $projectRoot "apps\api"
-                Push-Location $apiDir
-                
-                if (Test-Path $venvPython) {
-                    # Use venv python with alembic module
-                    & $venvPython -m alembic upgrade head
-                }
-                else {
-                    # Fallback to system alembic
-                    alembic upgrade head
-                }
-                
-                Pop-Location
-                
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Host ""
-                    Write-Host "  ✅ Migrations applied successfully!" -ForegroundColor Green
-                }
-                Wait-ForKeyPress
-            }
-            "4" {
-                # Seed test data
-                Write-Host ""
-                Write-Host "  🌱 Seeding test data..." -ForegroundColor Cyan
-                Write-Host ""
-                
-                $seedScript = Join-Path $projectRoot "scripts\db\seed.py"
-                
-                if (Test-Path $seedScript) {
-                    Push-Location $projectRoot
-                    if (Test-Path $venvPython) {
-                        & $venvPython $seedScript
-                    }
-                    else {
-                        python $seedScript
-                    }
-                    Pop-Location
-                    
-                    if ($LASTEXITCODE -eq 0) {
-                        Write-Host ""
-                        Write-Host "  ✅ Test data seeded!" -ForegroundColor Green
-                    }
-                }
-                else {
-                    Write-Host "  ❌ Seed script not found: $seedScript" -ForegroundColor Red
-                }
                 Wait-ForKeyPress
             }
             "0" { return }

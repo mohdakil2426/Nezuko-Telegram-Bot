@@ -17,7 +17,7 @@ This guide will walk you through setting up the Nezuko platform using InsForge.
 
 ## Prerequisites
 
-- **Node.js 20+**
+- **Node.js 20+** (Bun recommended)
 - **Python 3.13+**
 - **InsForge Account**: [Create one here](https://insforge.app)
 
@@ -42,7 +42,7 @@ cd Nezuko-Telegram-Bot
 ```bash
 # Frontend
 cd apps/web
-npm install
+bun install
 
 # Bot
 cd ../bot
@@ -76,7 +76,7 @@ INSFORGE_SERVICE_KEY=your-service-role-key  # For admin access
 
 ```bash
 cd apps/web
-npm run dev
+bun dev
 # Access at http://localhost:3000
 ```
 

@@ -73,24 +73,22 @@ if ($Suite -eq "") {
     Write-Host "  Available test suites:" -ForegroundColor White
     Write-Host ""
     Write-Host "    [1] 🧪 All Tests" -ForegroundColor White
-    Write-Host "    [2] 🔬 Edge Cases" -ForegroundColor White
-    Write-Host "    [3] 📡 Handlers" -ForegroundColor White
-    Write-Host "    [4] ⚙️  Services" -ForegroundColor White
+    Write-Host "    [2] 📡 Handlers" -ForegroundColor White
+    Write-Host "    [3] ⚙️  Services" -ForegroundColor White
     Write-Host ""
     Write-Host "  Usage:" -ForegroundColor Gray
     Write-Host "    .\run.ps1 -Suite all           # Run all tests" -ForegroundColor Gray
     Write-Host "    .\run.ps1 -Suite handlers -v   # Verbose handler tests" -ForegroundColor Gray
     Write-Host "    .\run.ps1 -Suite all -Coverage # With coverage report" -ForegroundColor Gray
     Write-Host ""
-    
-    $choice = Read-Host "  Select suite (1-4, or Enter to cancel)"
-    
+
+    $choice = Read-Host "  Select suite (1-3, or Enter to cancel)"
+
     switch ($choice) {
         "1" { $Suite = "all" }
-        "2" { $Suite = "edge" }
-        "3" { $Suite = "handlers" }
-        "4" { $Suite = "services" }
-        default { 
+        "2" { $Suite = "handlers" }
+        "3" { $Suite = "services" }
+        default {
             Write-Host "  Cancelled." -ForegroundColor Gray
             Pop-Location
             exit 0
@@ -103,10 +101,6 @@ switch ($Suite) {
     "all" {
         Write-Host "  🧪 Running all tests..." -ForegroundColor Green
         # No filter needed
-    }
-    "edge" {
-        Write-Host "  🔬 Running edge case tests..." -ForegroundColor Green
-        $pytestArgs = @("tests/api/test_edge_cases.py") + $pytestArgs[1..($pytestArgs.Length - 1)]
     }
     "handlers" {
         Write-Host "  📡 Running handler tests..." -ForegroundColor Green

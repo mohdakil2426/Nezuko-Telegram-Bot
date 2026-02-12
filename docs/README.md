@@ -8,16 +8,16 @@ Welcome to the Nezuko documentation. This guide covers everything you need to ge
 
 ## 📖 Documentation
 
-| Section                                            | Description                                      |
+| Section | Description |
 | -------------------------------------------------- | ------------------------------------------------ |
-| [**Getting Started**](./getting-started/README.md) | Quick setup guides for all components            |
-| [**Architecture**](./architecture/README.md)       | System design, data flow, and component diagrams |
-| [**Tech Stack**](./architecture/tech-stack.md)     | Complete technology reference                    |
-| [**Bot Reference**](./bot/README.md)               | Telegram bot commands, handlers, and events      |
-| [**Web Dashboard**](./web/README.md)               | Admin panel components, routing, and state       |
-| [**Database**](./database/README.md)               | Schema, models, migrations, and queries          |
-| [**Deployment**](./deployment/README.md)           | Docker, production setup, and CI/CD              |
-| [**Contributing**](./contributing/README.md)       | Development workflow and coding standards        |
+| [**Getting Started**](./getting-started/README.md) | Quick setup guides for all components |
+| [**Architecture**](./architecture/README.md) | System design, data flow, and component diagrams |
+| [**Tech Stack**](./architecture/tech-stack.md) | Complete technology reference |
+| [**Bot Reference**](./bot/README.md) | Telegram bot commands, handlers, and events |
+| [**Web Dashboard**](./web/README.md) | Admin panel components, routing, and state |
+| [**Database**](./database/README.md) | Schema, models, and migrations |
+| [**Deployment**](./deployment/README.md) | Docker, production setup, and CI/CD |
+| [**Contributing**](./contributing/README.md) | Development workflow and coding standards |
 
 ---
 
@@ -72,27 +72,37 @@ git clone https://github.com/mohdakil2426/Nezuko-Telegram-Bot.git
 cd Nezuko-Telegram-Bot
 
 # Install dependencies
-npm install
+# Web (Next.js)
+cd apps/web
+bun install
+
+# Bot (Python)
+cd ../../apps/bot
 pip install -r requirements.txt
 ```
 
 ### Run Development Servers
 
 ```bash
-# Start all services
-npm run dev
+# Web Dashboard
+cd apps/web
+bun dev
+
+# Bot
+cd apps/bot
+python -m main
 ```
 
 ---
 
 ## 📂 Key Directories
 
-| Directory       | Purpose                                |
+| Directory | Purpose |
 | --------------- | -------------------------------------- |
-| `apps/bot/`     | Telegram bot application               |
-| `apps/web/`     | Next.js admin dashboard                |
-| `storage/`      | Runtime files (logs, cache)            |
-| `scripts/`      | CLI utilities and automation           |
+| `apps/bot/` | Telegram bot application |
+| `apps/web/` | Next.js admin dashboard |
+| `storage/` | Runtime files (logs, cache) |
+| `scripts/` | CLI utilities and automation |
 
 ---
 
@@ -107,13 +117,12 @@ npm run dev
 
 ## 📋 Version Information
 
-| Component     | Version |
+| Component | Version |
 | ------------- | ------- |
-| Bot Core      | v1.0.0  |
-| API           | v0.1.0  |
-| Web Dashboard | v0.1.0  |
-| Documentation | v1.0.0  |
+| Bot Core | v1.0.0 |
+| Web Dashboard | v1.0.0 |
+| Documentation | v1.0.0 |
 
 ---
 
-_Last Updated: 2026-02-05_
+_Last Updated: 2026-02-12_

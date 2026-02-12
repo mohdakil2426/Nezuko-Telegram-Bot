@@ -117,8 +117,8 @@ export function ChannelsDataTable({
     return (
       <div className="w-full">
         <div className="flex items-center py-4">
-          <Skeleton className="h-10 w-[250px]" />
-          <Skeleton className="ml-auto h-10 w-[100px]" />
+          <Skeleton className="h-10 w-62.5" />
+          <Skeleton className="ml-auto h-10 w-25" />
         </div>
         <div className="rounded-md border p-4">
           <TableSkeleton rows={pageSize} />

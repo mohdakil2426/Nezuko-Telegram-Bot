@@ -14,7 +14,6 @@ The Nezuko bot enforces channel membership in Telegram groups. When enabled, use
 4. [Event Handlers](#event-handlers)
 5. [Verification Flow](#verification-flow)
 6. [Configuration](#configuration)
-7. [Metrics & Monitoring](#metrics--monitoring)
 
 ---
 
@@ -42,7 +41,7 @@ The Nezuko bot enforces channel membership in Telegram groups. When enabled, use
 │     protected        user            verification      clicks   │
 │     group            immediately     button            button   │
 │                                                                  │
-│       👤              🔇               📲              ✅        │
+│       👤              🔇               🔇               ✅        │
 │       │               │                │               │        │
 │       ▼               ▼                ▼               ▼        │
 │  ┌─────────┐    ┌─────────┐     ┌─────────────┐  ┌──────────┐  │
@@ -74,18 +73,18 @@ The Nezuko bot enforces channel membership in Telegram groups. When enabled, use
 ```bash
 # 1. Configure environment
 cp apps/bot/.env.example apps/bot/.env
-# Edit apps/bot/.env with your BOT_TOKEN
+# Edit apps/bot/.env with your BOT_TOKEN and INSFORGE credentials
 
 # 2. Run the bot
 cd apps/bot
-python main.py
+python -m main
 ```
 
 ### Setup in Telegram
 
 1. **Add bot to your GROUP** as Admin
    - Grant "Restrict Members" permission
-   
+
 2. **Add bot to your CHANNEL** as Admin
    - No special permissions needed
 
@@ -136,22 +135,22 @@ Triggered when a user joins a protected group.
 
 async def on_chat_member_updated(update: Update, context: CallbackContext):
     """Handle new member joins."""
-    
-    # 1. Check if group is protected
+
+    # 1. Check if group is protected (via InsForge)
     group = await get_protected_group(chat_id)
     if not group or not group.enabled:
         return
-    
+
     # 2. Get required channels
     channels = await get_enforced_channels(chat_id)
-    
+
     # 3. Restrict the user
     await context.bot.restrict_chat_member(
         chat_id=chat_id,
         user_id=user_id,
         permissions=ChatPermissions(can_send_messages=False)
     )
-    
+
     # 4. Send verification button
     await context.bot.send_message(
         chat_id=chat_id,
@@ -172,52 +171,30 @@ Triggered when user clicks the "Verify" button.
 
 async def on_verify_callback(update: Update, context: CallbackContext):
     """Handle verification button click."""
-    
+
     query = update.callback_query
     user_id = int(query.data.split("_")[1])
-    
+
     # Security: Ensure user is clicking their own button
     if query.from_user.id != user_id:
         await query.answer("This button is not for you!", show_alert=True)
         return
-    
+
     # Check membership in all required channels
     for channel in channels:
         member = await context.bot.get_chat_member(channel.channel_id, user_id)
         if member.status in ("left", "kicked"):
             await query.answer("You haven't joined all channels!", show_alert=True)
             return
-    
+
     # Unrestrict the user
     await context.bot.restrict_chat_member(
         chat_id=chat_id,
         user_id=user_id,
         permissions=ChatPermissions(can_send_messages=True, ...)
     )
-    
+
     await query.answer("✅ Verified! You can now chat.")
-```
-
-### `ChatMemberUpdated` - Leave Handler
-
-Triggered when a user leaves a required channel.
-
-```python
-# apps/bot/handlers/events/left.py
-
-async def on_channel_left(update: Update, context: CallbackContext):
-    """Handle user leaving required channel."""
-    
-    # Find all groups where this channel is enforced
-    groups = await get_groups_for_channel(channel_id)
-    
-    for group in groups:
-        # Re-restrict the user
-        await context.bot.restrict_chat_member(
-            chat_id=group.group_id,
-            user_id=user_id,
-            permissions=ChatPermissions(can_send_messages=False)
-        )
 ```
 
 ---
@@ -231,8 +208,7 @@ sequenceDiagram
     participant U as User
     participant T as Telegram
     participant B as Bot
-    participant C as Cache
-    participant D as Database
+    participant D as InsForge DB
 
     Note over U,D: User Joins Protected Group
     T->>B: ChatMemberUpdated (join)
@@ -240,37 +216,25 @@ sequenceDiagram
     D-->>B: Config (enabled, channels)
     B->>T: Restrict user (mute)
     B->>T: Send verification message + buttons
-    
+
     Note over U,D: User Clicks Verify
     U->>T: Click "Verify" button
     T->>B: CallbackQuery (verify_123)
     B->>B: Validate callback_data
-    B->>C: Check cached verification
-    C-->>B: Cache miss
-    
+
     loop For each required channel
         B->>T: getChatMember(channel, user)
         T-->>B: Member status
     end
-    
+
     alt All channels joined
         B->>T: Unrestrict user (unmute)
-        B->>C: Cache verification (5 min)
         B->>D: Log verification
         B->>T: Answer callback "Verified!"
     else Missing channels
         B->>T: Answer callback "Join all channels first!"
     end
 ```
-
-### States
-
-| State | Description | User Permissions |
-|-------|-------------|------------------|
-| `PENDING` | Just joined, not verified | Cannot send messages |
-| `VERIFYING` | Clicked verify, checking membership | Cannot send messages |
-| `VERIFIED` | All channels joined | Full permissions |
-| `EXPIRED` | Left required channel | Restricted again |
 
 ---
 
@@ -284,16 +248,9 @@ sequenceDiagram
 # Required
 BOT_TOKEN=your_telegram_bot_token
 
-# Database
-DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/nezuko
-# Or SQLite for development:
-# DATABASE_URL=sqlite+aiosqlite:///./storage/data/nezuko.db
-
-# Cache (Optional - graceful fallback)
-REDIS_URL=redis://localhost:6379/0
-
-# Monitoring (Optional)
-SENTRY_DSN=your_sentry_dsn
+# InsForge
+INSFORGE_URL=https://your-app.region.insforge.app
+INSFORGE_SERVICE_KEY=your_service_role_key
 
 # Settings
 ENVIRONMENT=development  # or production
@@ -305,141 +262,10 @@ WEBHOOK_SECRET=your_secret_token
 PORT=8000
 ```
 
-### Group Parameters
-
-Groups can have custom parameters stored in `params` JSON field:
-
-```python
-{
-    "welcome_message": "Welcome to our community!",
-    "kick_timeout": 300,        # Kick unverified after 5 min
-    "notify_admins": True,      # Notify group admins
-    "log_verifications": True   # Log all verifications
-}
-```
-
----
-
-## Metrics & Monitoring
-
-### Prometheus Metrics
-
-The bot exposes Prometheus metrics at `/metrics`:
-
-| Metric | Type | Description |
-|--------|------|-------------|
-| `bot_verifications_total` | Counter | Total verifications by status |
-| `bot_verification_latency_seconds` | Histogram | Verification latency |
-| `bot_cache_hits_total` | Counter | Cache hit count |
-| `bot_cache_misses_total` | Counter | Cache miss count |
-| `bot_active_groups` | Gauge | Currently protected groups |
-| `bot_telegram_api_calls_total` | Counter | Telegram API calls |
-| `bot_telegram_api_errors_total` | Counter | Telegram API errors |
-
-### Health Endpoints
-
-```bash
-# Full health check
-curl http://localhost:8000/health
-
-# Liveness probe (Kubernetes)
-curl http://localhost:8000/live
-
-# Readiness probe (Kubernetes)
-curl http://localhost:8000/ready
-```
-
-### Logging
-
-Structured JSON logging with structlog:
-
-```json
-{
-  "event": "verification_success",
-  "user_id": 123456789,
-  "group_id": -1001234567890,
-  "channels_checked": 2,
-  "latency_ms": 45,
-  "timestamp": "2026-01-27T12:00:00Z"
-}
-```
-
----
-
-## Error Handling
-
-### Common Errors
-
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `Bot is not admin` | Missing admin rights | Re-add bot as admin |
-| `Can't restrict admin` | User is group admin | Admins are exempt |
-| `Channel not accessible` | Bot not in channel | Add bot to channel |
-| `Flood limited` | Too many API calls | Automatic retry with backoff |
-
-### Error Codes
-
-| Code | Description |
-|------|-------------|
-| `ENF_001` | Bot not admin in group |
-| `ENF_002` | Bot not admin in channel |
-| `ENF_003` | Cannot restrict user (likely admin) |
-| `TG_001` | Telegram API timeout |
-| `TG_002` | Rate limited by Telegram |
-
----
-
-## Advanced Usage
-
-### Multi-Channel Enforcement
-
-Require membership in multiple channels:
-
-```bash
-/protect @Channel1 @Channel2 @Channel3
-```
-
-Users must join ALL channels to be verified.
-
-### Custom Welcome Messages
-
-```python
-# Set via params
-{
-    "welcome_message": """
-Welcome to {group_name}! 🎉
-
-To chat here, please:
-1️⃣ Join our channel: @OfficialChannel
-2️⃣ Click the "Verify" button below
-
-Questions? Contact @admin
-"""
-}
-```
-
-### Webhook Mode (Production)
-
-For production, use webhook mode instead of polling:
-
-```bash
-# In .env
-WEBHOOK_URL=https://your-domain.com/webhook
-WEBHOOK_SECRET=very_secret_token
-
-# The bot will automatically switch to webhook mode
-python main.py
-```
-
 ---
 
 ## Related Documentation
 
-- [**API Reference**](../api/README.md) - REST API endpoints
 - [**Web Dashboard**](../web/README.md) - Admin panel guide
 - [**Architecture**](../architecture/README.md) - System design overview
 - [**Database**](../database/README.md) - Database schema and models
-
----
-
-*See also: [Architecture](../architecture/README.md) | [API Reference](../api/README.md)*

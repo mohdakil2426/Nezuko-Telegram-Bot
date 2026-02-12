@@ -327,7 +327,7 @@ export default function LogsPage() {
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select value={levelFilter} onValueChange={(v) => setLevelFilter(v as LogLevel)}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-35">
                   <SelectValue placeholder="Filter by level" />
                 </SelectTrigger>
                 <SelectContent>
@@ -401,7 +401,7 @@ export default function LogsPage() {
               </div>
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-semibold">No logs yet</h3>
-                <p className="text-sm text-muted-foreground max-w-[300px]">
+                <p className="text-sm text-muted-foreground max-w-75">
                   {levelFilter !== "all"
                     ? `No ${levelFilter} logs found. Try changing the filter.`
                     : "Logs will appear here as they are generated."}
@@ -410,7 +410,7 @@ export default function LogsPage() {
             </div>
           ) : (
             /* Logs List - Using ScrollArea for virtualization-like behavior */
-            <ScrollArea className="h-[500px]" ref={scrollAreaRef}>
+            <ScrollArea className="h-125" ref={scrollAreaRef}>
               <div className="space-y-1 font-mono text-sm">
                 {filteredLogs.map((log, index) => {
                   const Icon = getLogIcon(log.level);
