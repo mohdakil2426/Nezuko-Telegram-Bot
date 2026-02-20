@@ -6,8 +6,7 @@
   "author": "Nezuko Team",
   "license": "MIT",
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/*"
   ],
   "scripts": {
     "dev": "turbo dev",

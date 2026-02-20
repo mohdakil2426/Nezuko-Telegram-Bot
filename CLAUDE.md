@@ -38,7 +38,7 @@ nezuko-monorepo/
 | Database    | `storage/data/`             | `apps/*.db`                  |
 | Logs        | `storage/logs/`             | `apps/*.log`                 |
 | Env files   | `apps/*/.env`, `.env.local` | Root `.env`                  |
-| Python deps | `requirements/*.txt`        | Root `requirements.txt` only |
+| Python deps | `requirements.txt`        | Root `requirements.txt` only |
 
 ### Code Quality (ZERO TOLERANCE)
 

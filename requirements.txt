@@ -1,22 +1,49 @@
 # ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                    NEZUKO - ROOT REQUIREMENTS                                 ║
-# ║                                                                               ║
-# ║  Development: Installs ALL dependencies (API + Bot + Dev Tools)               ║
-# ║  Command: pip install -r requirements.txt                                     ║
+# ║                    NEZUKO BOT - PRODUCTION DEPENDENCIES                      ║
+# ║                                                                              ║
+# ║  Single source of truth for all Python dependencies                          ║
+# ║  Command: pip install -r requirements.txt                                    ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
-#
-# ┌─────────────────────────────────────────────────────────────────────────────┐
-# │  USAGE GUIDE                                                                │
-# ├─────────────────────────────────────────────────────────────────────────────┤
-# │  Development (full):     pip install -r requirements.txt                    │
-# │  Production API:         pip install -r requirements/prod-api.txt           │
-# │  Production Bot:         pip install -r requirements/prod-bot.txt           │
-# │  CI/CD Testing:          pip install -r requirements.txt                    │
-# └─────────────────────────────────────────────────────────────────────────────┘
 
-# All production dependencies
--r requirements/prod-api.txt
--r requirements/prod-bot.txt
+# ─────────────────────────────────────────────────────────────────────────────────
+# Telegram Bot Framework
+# ─────────────────────────────────────────────────────────────────────────────────
+python-telegram-bot[rate-limiter]>=22.6    # Telegram Bot API wrapper
 
-# Development tools (testing, linting, type checking)
--r requirements/dev.txt
+# ─────────────────────────────────────────────────────────────────────────────────
+# Database & ORM
+# ─────────────────────────────────────────────────────────────────────────────────
+sqlalchemy[asyncio]>=2.0.46
+asyncpg>=0.31.0                    # PostgreSQL async driver
+aiosqlite>=0.22.1                  # SQLite async driver (development)
+alembic>=1.18.3                    # Database migrations
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# Cache & Storage
+# ─────────────────────────────────────────────────────────────────────────────────
+redis>=7.1.0                       # Redis cache client
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# Authentication & Security
+# ─────────────────────────────────────────────────────────────────────────────────
+pyjwt>=2.11.0                      # JWT token handling
+cryptography>=45.0.0               # Fernet encryption for bot tokens
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# HTTP & Async
+# ─────────────────────────────────────────────────────────────────────────────────
+aiohttp>=3.13.3                    # Async HTTP client
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# Validation & Configuration
+# ─────────────────────────────────────────────────────────────────────────────────
+pydantic>=2.12.5                   # Data validation
+pydantic-settings>=2.12.0          # Settings management
+python-dotenv>=1.2.1               # Environment file loading
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# Observability
+# ─────────────────────────────────────────────────────────────────────────────────
+structlog>=25.5.0                  # Structured logging
+prometheus-client>=0.24.1          # Prometheus metrics
+sentry-sdk>=2.51.0                 # Error tracking

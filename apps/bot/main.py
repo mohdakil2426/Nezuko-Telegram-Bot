@@ -25,7 +25,7 @@ from apps.bot.database.crud import get_all_protected_groups
 from apps.bot.services.command_worker import CommandWorker
 from apps.bot.services.member_sync import schedule_member_sync
 from apps.bot.services.status_writer import StatusWriter
-from apps.bot.utils.health import stop_health_server
+from apps.bot.utils.health import start_health_server, stop_health_server
 
 # Phase 4: Monitoring imports
 from apps.bot.utils.metrics import (
@@ -105,6 +105,15 @@ async def post_init(_application: Application) -> None:
     else:
         set_redis_connected(False)
         logger.warning("[WARN] Redis unavailable - running in degraded mode (direct API calls)")
+
+    # Start health check server (Standalone mode)
+    # In dashboard mode, this is handled by bot_manager.py
+    if not config.dashboard_mode:
+        try:
+            await start_health_server(host="0.0.0.0", port=8000)
+            logger.info("[OK] Health server started on port 8000")
+        except OSError as e:
+            logger.warning("Health server failed to start: %s", e)
 
     # Update metrics (only if DB available)
     if db_available:

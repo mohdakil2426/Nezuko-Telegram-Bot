@@ -1,9 +1,12 @@
 # ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                    NEZUKO - DEVELOPMENT DEPENDENCIES                         ║
+# ║                    NEZUKO BOT - DEVELOPMENT DEPENDENCIES                     ║
 # ║                                                                              ║
 # ║  Testing, linting, and development tools                                     ║
-# ║  Last Updated: January 31, 2026                                              ║
+# ║  Command: pip install -r requirements-dev.txt                                ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
+
+# Install production dependencies first
+-r requirements.txt
 
 # ─────────────────────────────────────────────────────────────────────────────────
 # Testing Framework
@@ -18,5 +21,5 @@ pytest-mock>=3.15.1                # Mock fixtures
 # ─────────────────────────────────────────────────────────────────────────────────
 ruff>=0.14.14                      # Fast linter and formatter
 pylint>=4.0.4                      # Code analysis
-pyrefly>=0.50.1                    # Meta's Python type checker (Pyre successor)
+pyrefly>=0.50.1                    # Meta's Python type checker
 mypy>=1.19.1                       # Static type checker (alternative)

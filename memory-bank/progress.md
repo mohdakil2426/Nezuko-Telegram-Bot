@@ -31,6 +31,8 @@
 
 ### Completed
 
+-   **Legacy Cleanup**: Removed `apps/api` (legacy), `nezuko.bat`, `nezuko.sh`, and old documentation.
+-   **Security**: Fixed `manage-bot` Edge Function with proper Fernet encryption.
 -   **Deployment Config**: Optimized `Dockerfile.monorepo` for cloud builds.
 -   **Health Analysis**: Implemented `start_health_server()` for bot status checks.
 -   **CI/CD**: Documented deployment process in `DEPLOYMENT-REPORT.md`.

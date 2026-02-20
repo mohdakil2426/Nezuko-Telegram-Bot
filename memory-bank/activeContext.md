@@ -16,13 +16,16 @@ The platform is fully configured for **cloud deployment**. We have optimized the
 
 ### Recent Achievements
 
-1.  **Deployment Ready**: Fixed `Dockerfile.monorepo` and added `.dockerignore` for 3x faster builds.
-2.  **Health Check Implementation**: Added `start_health_server()` to `BotManager` so Koyeb can probe `/health`.
-3.  **Windows Fix**: Resolved `Maxwell Path` issues by removing deep-nested template files from the repo.
-4.  **CI/CD Guides**: Created comprehensive `DEPLOYMENT-REPORT.md` and guides.
+1.  **Final Polish**: Cleaned up legacy API code, scripts (`nezuko.bat/sh`), and documentation.
+2.  **Security Fix**: Implemented Fernet encryption in `manage-bot` Edge Function for secure token storage.
+3.  **Deployment Ready**: Fixed `Dockerfile.monorepo` and added `.dockerignore` for 3x faster builds.
+4.  **Health Check**: Added `start_health_server()` to `BotManager` for Koyeb probes.
+5.  **Windows Fix**: Resolved `Maxwell Path` issues by removing deep-nested template files.
 
 ### Active Tasks
 
+- [x] **Legacy Cleanup**: Removed `apps/api`, old scripts, and confusing docs.
+- [x] **Edge Function**: Fixed `manage-bot` encryption and error handling.
 - [x] **Docker Fixes**: `alembic.ini` removal, correct requirements path.
 - [x] **Health Server**: Bot now responds to HTTP probes on port 8000.
 - [x] **Repo Cleanup**: Removed incompatible files that broke Windows checkouts.
