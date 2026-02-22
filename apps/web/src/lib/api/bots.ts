@@ -5,7 +5,7 @@
  */
 
 import { insforge } from "../insforge";
-import { apiClient } from "./client"; // fallback/types only
+
 
 /**
  * Bot instance response from API

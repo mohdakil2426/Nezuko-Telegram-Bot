@@ -13,6 +13,7 @@ from typing import Any
 
 import asyncpg
 from telegram import Bot
+from telegram.error import TelegramError
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class CommandWorker:
         self._database_url = database_url
         self._pool: asyncpg.Pool | None = None
         self._running = False
-        self._poll_interval = 1  # seconds
+        self._stop_event = asyncio.Event()
 
     async def start(self) -> None:
         """Start the command worker background task."""
@@ -44,7 +45,7 @@ class CommandWorker:
             self._database_url, min_size=1, max_size=2, ssl="require"
         )
         self._running = True
-        task = asyncio.create_task(self._poll_loop())
+        task = asyncio.create_task(self._listen_loop())
         _tasks.add(task)
         task.add_done_callback(_tasks.discard)
         logger.info("Command worker started for bot %d", self._bot_id)
@@ -52,18 +53,48 @@ class CommandWorker:
     async def stop(self) -> None:
         """Stop the command worker."""
         self._running = False
+        self._stop_event.set()
         if self._pool:
             await self._pool.close()
         logger.info("Command worker stopped for bot %d", self._bot_id)
 
-    async def _poll_loop(self) -> None:
-        """Poll for pending commands."""
+    async def _listen_loop(self) -> None:
+        """Listen for pending commands using PostgreSQL NOTIFY."""
+        backoff = 1.0
         while self._running:
             try:
-                await self._process_pending_commands()
-            except Exception:  # pylint: disable=broad-exception-caught
-                logger.exception("Error processing commands")
-            await asyncio.sleep(self._poll_interval)
+                if not self._pool:
+                    break
+                async with self._pool.acquire() as conn:
+                    # Listen for notifications
+                    await conn.add_listener("new_admin_command", self._on_notify)
+
+                    # Process any that were missed
+                    await asyncio.wait_for(self._process_pending_commands(), timeout=10.0)
+
+                    backoff = 1.0  # Reset backoff on success
+
+                    # Hold connection open
+                    await self._stop_event.wait()
+            except (asyncpg.exceptions.PostgresError, OSError, TimeoutError):
+                logger.exception("Error in command listen loop")
+                if self._running:
+                    await asyncio.sleep(backoff)
+                    backoff = min(backoff * 2, 60.0)
+
+    def _on_notify(self, conn: asyncpg.Connection, pid: int, channel: str, payload: str) -> None:
+        """Handle PostgreSQL NOTIFY events."""
+        if payload == str(self._bot_id):
+            task = asyncio.create_task(self._process_pending_commands_safe())
+            _tasks.add(task)
+            task.add_done_callback(_tasks.discard)
+
+    async def _process_pending_commands_safe(self) -> None:
+        """Wrapper to call process_pending_commands safely."""
+        try:
+            await asyncio.wait_for(self._process_pending_commands(), timeout=15.0)
+        except (asyncpg.exceptions.PostgresError, OSError, ValueError, TypeError) as e:
+            logger.error("Error processing commands from notify: %s", e)
 
     async def _process_pending_commands(self) -> None:
         """Fetch and execute pending commands for this bot."""
@@ -104,7 +135,7 @@ class CommandWorker:
             else:
                 raise ValueError(f"Unknown command: {command_type}")
             await self._update_status(command_id, "completed", {"success": True})
-        except Exception as exc:  # pylint: disable=broad-exception-caught
+        except (ValueError, TypeError, KeyError, TelegramError) as exc:
             logger.exception("Command %d failed", command_id)
             await self._update_status(command_id, "failed", {"error": str(exc)})
 
@@ -136,9 +167,15 @@ class CommandWorker:
         """
         if not self._pool:
             return
-        await self._pool.execute(
-            "UPDATE admin_commands SET status = $1, result = $2::jsonb WHERE id = $3",
-            status,
-            json.dumps(result),
-            command_id,
-        )
+        try:
+            await asyncio.wait_for(
+                self._pool.execute(
+                    "UPDATE admin_commands SET status = $1, result = $2::jsonb WHERE id = $3",
+                    status,
+                    json.dumps(result),
+                    command_id,
+                ),
+                timeout=5.0
+            )
+        except (asyncpg.exceptions.PostgresError, OSError, TimeoutError) as e:
+            logger.error("Failed to update command %d status: %s", command_id, e)

@@ -52,18 +52,25 @@ class StatusWriter:
         """Stop the status writer and mark bot as offline."""
         self._running = False
         if self._pool:
-            await self._write_status("offline")
+            try:
+                await asyncio.wait_for(self._write_status("offline"), timeout=5.0)
+            except (TimeoutError, asyncpg.exceptions.PostgresError, OSError) as e:
+                logger.warning("Failed to write offline status: %s", e)
             await self._pool.close()
         logger.info("Status writer stopped for bot %d", self._bot_id)
 
     async def _write_loop(self) -> None:
         """Periodically write status to database."""
+        backoff = 1.0
         while self._running:
             try:
-                await self._write_status("online")
-            except Exception:  # pylint: disable=broad-exception-caught
+                await asyncio.wait_for(self._write_status("online"), timeout=5.0)
+                backoff = 1.0  # reset on success
+                await asyncio.sleep(self._interval)
+            except (TimeoutError, asyncpg.exceptions.PostgresError, OSError):
                 logger.exception("Failed to write bot status")
-            await asyncio.sleep(self._interval)
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 60.0)
 
     async def _write_status(self, status: str) -> None:
         """UPSERT bot status to InsForge PostgreSQL.

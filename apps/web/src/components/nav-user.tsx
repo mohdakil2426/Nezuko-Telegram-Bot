@@ -50,7 +50,7 @@ function getInitials(name: string): string {
 
 export function NavUser({ user: fallbackUser }: NavUserProps) {
   const { isMobile } = useSidebar();
-  const { user: authUser, isLoading, logout, isLoggingOut } = useAuth();
+  const { user: authUser, isPending, logout, isLoggingOut } = useAuth();
 
   // Use authenticated user if available, otherwise fallback
   const displayUser = authUser
@@ -81,7 +81,7 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={displayUser.avatar} alt={displayUser.name} />
                 <AvatarFallback className="rounded-lg">
-                  {isLoading ? (
+                  {isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     getInitials(displayUser.name)

@@ -12,7 +12,9 @@ import asyncio
 import logging
 import sys
 
+from sqlalchemy.exc import SQLAlchemyError
 from telegram import Update
+from telegram.error import TelegramError
 from telegram.ext import Application
 
 from apps.bot.config import config
@@ -92,7 +94,7 @@ async def post_init(_application: Application) -> None:
             "Check if port 5432 is accessible from your network.",
             e,
         )
-    except Exception as e:  # pylint: disable=broad-exception-caught
+    except (SQLAlchemyError, RuntimeError, ValueError) as e:
         set_db_connected(False)
         logger.error("Database initialization failed unexpectedly: %s", e, exc_info=True)
 
@@ -156,7 +158,7 @@ async def post_init(_application: Application) -> None:
                 "Dashboard sync disabled.",
                 e,
             )
-        except Exception as e:  # pylint: disable=broad-exception-caught
+        except (TelegramError, RuntimeError, ValueError) as e:
             logger.error("Failed to start InsForge workers: %s", e, exc_info=True)
     else:
         logger.warning("INSFORGE_DATABASE_URL not set - bot workers disabled")
@@ -171,12 +173,12 @@ async def post_shutdown(_application: Application) -> None:
     if _status_writer:
         try:
             await _status_writer.stop()
-        except Exception as e:  # pylint: disable=broad-exception-caught
+        except (RuntimeError, TimeoutError) as e:
             logger.warning("Error stopping status writer: %s", e)
     if _command_worker:
         try:
             await _command_worker.stop()
-        except Exception as e:  # pylint: disable=broad-exception-caught
+        except (RuntimeError, TimeoutError) as e:
             logger.warning("Error stopping command worker: %s", e)
 
     # Stop health server

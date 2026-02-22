@@ -47,7 +47,7 @@ export function ChannelsPageContent() {
   return (
     <ChannelsDataTable
       data={data?.data ?? []}
-      isLoading={isPending}
+      isPending={isPending}
       onDelete={handleDelete}
       onViewDetails={handleViewDetails}
     />

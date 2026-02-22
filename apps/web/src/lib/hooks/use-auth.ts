@@ -35,7 +35,7 @@ export function useAuth() {
     /** Current authenticated user (dev stub) */
     user: devUser,
     /** Auth check is never loading */
-    isLoading: false,
+    isPending: false,
     /** Always authenticated in dev mode */
     isAuthenticated: true,
     /** No error */

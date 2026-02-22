@@ -14,8 +14,10 @@ from pathlib import Path
 from typing import Any
 
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from telegram import Update
+from telegram.error import TelegramError
 from telegram.ext import Application
 
 from apps.bot.config import config
@@ -277,7 +279,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
             logger.info("Started bot: @%s", bot_config.bot_username)
             return True
 
-        except Exception as e:  # pylint: disable=broad-except
+        except (ValueError, TypeError, RuntimeError, TelegramError) as e:
             logger.error("Failed to start bot @%s: %s", bot_config.bot_username, e, exc_info=True)
             return False
 
@@ -323,7 +325,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
             logger.info("Polling cancelled for @%s", bot_config.bot_username)
             if bot_instance:
                 bot_instance.status = BotStatus.STOPPED
-        except Exception as e:  # pylint: disable=broad-except
+        except (TelegramError, RuntimeError, OSError) as e:
             # Error isolation - log and mark as crashed
             error_msg = f"{type(e).__name__}: {e}"
             logger.error(
@@ -377,7 +379,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
             instance.status = BotStatus.CRASHED
             try:
                 error = str(instance.task.exception())
-            except Exception:  # pylint: disable=broad-except
+            except (asyncio.CancelledError, asyncio.InvalidStateError):
                 error = "Task completed without exception"
             logger.warning("Bot id=%d task crashed: %s", bot_id, error)
             return {"status": "crashed", "error": error}
@@ -392,7 +394,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         try:
             await asyncio.wait_for(instance.application.bot.get_me(), timeout=5.0)
             return {"status": "healthy"}
-        except Exception as e:  # pylint: disable=broad-except
+        except (TimeoutError, TelegramError, OSError) as e:
             logger.warning("Bot id=%d Telegram API check failed: %s", bot_id, e)
             return {"status": "degraded", "error": str(e)}
 
@@ -439,7 +441,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
             except asyncio.CancelledError:
                 logger.info("Health monitor cancelled")
                 break
-            except Exception as e:  # pylint: disable=broad-except
+            except (TelegramError, SQLAlchemyError, RuntimeError, OSError) as e:
                 logger.error("Error in health monitor: %s", e, exc_info=True)
 
     async def restart_bot(self, bot_id: int) -> dict:
@@ -511,7 +513,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         try:
             await bot_instance.application.stop()
             await bot_instance.application.shutdown()
-        except Exception as e:  # pylint: disable=broad-except
+        except (TelegramError, RuntimeError) as e:
             logger.error("Error during bot shutdown before restart: %s", e)
 
         # Remove from instances
@@ -570,7 +572,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
             del self.bot_instances[bot_id]
             logger.info("Stopped bot id=%d", bot_id)
             return True
-        except Exception as e:  # pylint: disable=broad-except
+        except (TelegramError, RuntimeError, OSError) as e:
             logger.error("Error stopping bot %d: %s", bot_id, e, exc_info=True)
             return False
 
@@ -613,7 +615,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
                     stopped += 1
                 else:
                     failed += 1
-            except Exception as e:  # pylint: disable=broad-except
+            except (TelegramError, RuntimeError, OSError) as e:
                 logger.error("Error stopping bot %d: %s", bot_id, e)
                 failed += 1
 
@@ -659,7 +661,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
                     for bot in new_bots:
                         if bot.id not in self.bot_instances:
                             await self.start_bot(bot)
-                except Exception as e:  # pylint: disable=broad-except
+                except (EncryptionError, SQLAlchemyError, OSError) as e:
                     logger.error("Error checking for new bots: %s", e)
             return
 
@@ -706,7 +708,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
                 logger.info("Bot removed/deactivated: id=%d", bot_id)
                 await self.stop_bot(bot_id)
 
-        except Exception as e:  # pylint: disable=broad-except
+        except (EncryptionError, SQLAlchemyError, OSError) as e:
             logger.error("Error syncing bots: %s", e)
 
     async def shutdown(self) -> None:

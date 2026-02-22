@@ -41,7 +41,7 @@ import { createGroupsColumns, type GroupsColumnsProps } from "./groups-columns";
 
 interface GroupsDataTableProps extends GroupsColumnsProps {
   data: Group[];
-  isLoading?: boolean;
+  isPending?: boolean;
   pageSize?: number;
 }
 
@@ -68,7 +68,7 @@ function TableSkeleton({ rows = 5 }: { rows?: number }) {
 
 export function GroupsDataTable({
   data,
-  isLoading = false,
+  isPending = false,
   pageSize = 10,
   onToggleProtection,
   onDelete,
@@ -114,7 +114,7 @@ export function GroupsDataTable({
     },
   });
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="w-full">
         <div className="flex items-center py-4">

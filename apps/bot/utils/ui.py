@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
 from apps.bot.core.constants import CALLBACK_VERIFY
@@ -82,6 +83,6 @@ async def send_verification_warning(
             chat_id=chat_id, text=text, reply_markup=reply_markup, parse_mode="HTML"
         )
         return message.message_id
-    except Exception as e:  # pylint: disable=broad-exception-caught
+    except TelegramError as e:
         logger.error("Failed to send verification warning: %s", e)
         return None

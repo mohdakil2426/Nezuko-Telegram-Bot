@@ -41,7 +41,7 @@ import { createChannelsColumns, type ChannelsColumnsProps } from "./channels-col
 
 interface ChannelsDataTableProps extends ChannelsColumnsProps {
   data: Channel[];
-  isLoading?: boolean;
+  isPending?: boolean;
   pageSize?: number;
 }
 
@@ -69,7 +69,7 @@ function TableSkeleton({ rows = 5 }: { rows?: number }) {
 
 export function ChannelsDataTable({
   data,
-  isLoading = false,
+  isPending = false,
   pageSize = 10,
   onDelete,
   onViewDetails,
@@ -113,7 +113,7 @@ export function ChannelsDataTable({
     },
   });
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="w-full">
         <div className="flex items-center py-4">

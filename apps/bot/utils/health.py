@@ -58,7 +58,7 @@ async def check_database() -> dict:
         set_db_connected(True)
 
         return {"healthy": True, "latency_ms": round(latency_ms, 2)}
-    except (ConnectionError, TimeoutError, OSError, Exception) as e:  # pylint: disable=broad-exception-caught
+    except (ConnectionError, TimeoutError, OSError, ValueError, RuntimeError) as e:
         logger.error("Database health check failed: %s", e)
         set_db_connected(False)
         return {"healthy": False, "error": str(e)}

@@ -39,11 +39,11 @@ Nezuko acts as an **automated gatekeeper** that:
 
 ---
 
-## Dashboard Features
+## Dashboard Features (Staggered Motion UI)
 
 | Page | Purpose |
 | --- | --- |
-| **Dashboard** | Overview stats, verification chart, activity feed. |
+| **Dashboard** | Overview stats, animated verification charts, activity feeds. |
 | **Analytics** | Verification trends, growth metrics, performance. |
 | **Groups** | Manage protected groups, view settings. |
 | **Channels** | Manage enforced channels, link to groups. |
@@ -88,4 +88,4 @@ Dashboard ← InsForge Realtime (WebSocket) ← PostgreSQL Triggers
 
 ---
 
-_Last Updated: 2026-02-12_
+_Last Updated: 2026-02-20_

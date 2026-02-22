@@ -109,6 +109,13 @@ The bot communicates with the dashboard exclusively through the **Database**.
 2.  **Command Execution**: Bot polls the `admin_commands` table (status='pending') every 1 second.
 3.  **Logging**: Bot writes to `verification_log` and `admin_logs`.
 
+### Error Segregation & Isolation
+
+Never use bare `except Exception:` blocks inside the core polling systems.
+- Natively catch `TelegramError` for SDK interactions.
+- Catch `asyncpg.exceptions.PostgresError` exclusively for DB bound loops.
+- Fallback strictly to standard `ValueError` or `RuntimeError`.
+
 ---
 
 ## Frontend Patterns (Next.js 16)
@@ -186,4 +193,4 @@ Database triggers automatically push events to WebSocket channels.
 
 ---
 
-_Last Updated: 2026-02-13_
+_Last Updated: 2026-02-20_

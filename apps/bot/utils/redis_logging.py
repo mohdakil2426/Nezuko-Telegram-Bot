@@ -5,6 +5,7 @@ import logging
 from datetime import UTC, datetime
 
 from redis import Redis
+from redis.exceptions import RedisError
 
 from apps.bot.config import config
 
@@ -24,7 +25,7 @@ class RedisLogHandler(logging.Handler):
         try:
             if config.redis_url:
                 self.redis = Redis.from_url(config.redis_url, decode_responses=True)
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (RedisError, ConnectionError, OSError, ValueError):
             self.redis = None
 
     def emit(self, record):
@@ -59,7 +60,7 @@ class RedisLogHandler(logging.Handler):
             pipeline.lpush(history_key, json_entry)
             pipeline.ltrim(history_key, 0, 9999)
             pipeline.execute()
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (RedisError, ConnectionError, OSError):
             # If we fail to log to Redis, ensure we don't crash the app
             self.handleError(record)
 

@@ -62,7 +62,7 @@ export function GroupsPageContent() {
   return (
     <GroupsDataTable
       data={data?.data ?? []}
-      isLoading={isPending}
+      isPending={isPending}
       onToggleProtection={handleToggleProtection}
       onDelete={handleDelete}
       onViewDetails={handleViewDetails}

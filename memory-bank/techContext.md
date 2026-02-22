@@ -22,6 +22,7 @@
 | shadcn/ui | Latest | UI components |
 | Recharts | 3.7+ | Charts |
 | @insforge/sdk | Latest | InsForge BaaS client |
+| motion | 12.27+ | UI/UX React Micro-Animations |
 
 ### Infrastructure
 | Tool | Purpose |
@@ -135,4 +136,4 @@ bun run format                  # Prettier + Tailwind Sort
 
 ---
 
-_Last Updated: 2026-02-13_
+_Last Updated: 2026-02-20_
