@@ -1,3 +1,5 @@
+"use client"
+
 /**
  * Dashboard Page
  * Main dashboard with stats, chart, activity feed, and quick insights
