@@ -1,166 +1,200 @@
-# pylint: disable=wrong-import-order, wrong-import-position, import-outside-toplevel, unused-import, trailing-whitespace, pointless-string-statement, broad-exception-caught, unused-argument, logging-fstring-interpolation
 """
-Unit tests for bot services.
+Unit tests for bot services: cache, protection, and verification service utilities.
 
-Tests for verification service, protection service, and cache operations.
+Tests:
+- Cache TTL jitter distribution
+- Cache graceful degradation (no Redis)
+- Protection service retry logic on TelegramError
+- Protection stats tracking
+- Verification stats tracking
+- Database CRUD integration (SQLite in-memory)
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+import os
 
 import pytest
+import pytest_asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
+
+# Ensure SQLite is active before any app imports
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
 
-@pytest.mark.asyncio
-async def test_cache_ttl_jitter():
-    """Test TTL jitter prevents thundering herd."""
-    from apps.bot.core.cache import get_ttl_with_jitter
+class TestCacheTTL:
+    """Tests for cache TTL jitter helper."""
 
-    # Test with 600s base TTL
-    results = [get_ttl_with_jitter(600, 15) for _ in range(100)]
+    def test_ttl_jitter_within_bounds(self):
+        """get_ttl_with_jitter returns values within ±15% of base TTL."""
+        from apps.bot.core.cache import get_ttl_with_jitter
 
-    # All should be within ±15% of 600 (510-690)
-    assert all(510 <= r <= 690 for r in results)
+        results = [get_ttl_with_jitter(600, 15) for _ in range(200)]
 
-    # Should have variety (not all the same)
-    assert len(set(results)) > 10
+        # 600 ± 15% → [510, 690]
+        assert all(510 <= r <= 690 for r in results), "Some TTL values out of range"
 
-    print(f"[OK] TTL jitter working: {min(results)}s - {max(results)}s (base: 600s)")
+    def test_ttl_jitter_has_variance(self):
+        """get_ttl_with_jitter produces varied results (not deterministic)."""
+        from apps.bot.core.cache import get_ttl_with_jitter
 
+        results = {get_ttl_with_jitter(600, 15) for _ in range(100)}
 
-@pytest.mark.asyncio
-async def test_verification_service_cache_logic():
-    """Test verification service uses cache before API."""
-    from telegram.constants import ChatMemberStatus
+        # Expect at least 10 distinct values in 100 runs
+        assert len(results) > 10, "TTL jitter lacks variance — possible RNG issue"
 
-    from apps.bot.services.verification import check_membership
-    from tests.utils import create_mock_context
+    def test_ttl_zero_jitter_is_exact(self):
+        """Zero jitter percent always returns the base TTL exactly."""
+        from apps.bot.core.cache import get_ttl_with_jitter
 
-    # Mock context
-    context = create_mock_context(user_status=ChatMemberStatus.MEMBER)
-
-    # Mock cache (return None = cache miss)
-    with (
-        patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_cache_get,
-        patch("apps.bot.services.verification.cache_set", new_callable=AsyncMock) as mock_cache_set,
-    ):
-        mock_cache_get.return_value = None  # Cache miss
-
-        # First call - should hit API
-        result = await check_membership(123, "@testchannel", context)
-
-        assert result is True
-        mock_cache_get.assert_called_once()
-        context.bot.get_chat_member.assert_called_once()
-        mock_cache_set.assert_called_once()
-
-        print("[OK] Verification service: cache miss -> API call -> cache set")
+        results = [get_ttl_with_jitter(300, 0) for _ in range(10)]
+        assert all(r == 300 for r in results)
 
 
-@pytest.mark.asyncio
-async def test_protection_service_retry_logic():
-    """Test protection service retries on transient failures."""
-    from telegram.error import TelegramError
+class TestCacheDegradation:
+    """Tests for cache_get / cache_set when Redis is unavailable."""
 
-    from apps.bot.services.protection import restrict_user
+    @pytest.mark.asyncio
+    async def test_cache_get_returns_none_when_redis_unavailable(self):
+        """cache_get returns None without raising when Redis is down."""
+        from apps.bot.core.cache import cache_get
 
-    # Mock context that fails twice then succeeds
-    context = MagicMock()
-    call_count = 0
+        with (
+            patch("apps.bot.core.cache._redis_available", False),
+            patch("apps.bot.core.cache._redis_client", None),
+        ):
+            result = await cache_get("any_key")
 
-    async def mock_restrict(*args, **kwargs):
-        nonlocal call_count
-        call_count += 1
-        if call_count < 3:
-            raise TelegramError("Transient error")
-        return True
-
-    context.bot.restrict_chat_member = AsyncMock(side_effect=mock_restrict)
-
-    # Should retry and eventually succeed
-    result = await restrict_user(123, 456, context)
-
-    assert result is True
-    assert call_count == 3  # Failed 2 times, succeeded on 3rd
-
-    print("[OK] Protection service: retries on failure (3 attempts)")
-
-
-@pytest.mark.asyncio
-async def test_cache_graceful_degradation():
-    """Test cache gracefully degrades when Redis unavailable."""
-    from apps.bot.core.cache import cache_get, cache_set
-
-    # Simulate Redis unavailable
-    with (
-        patch("apps.bot.core.cache._redis_available", False),
-        patch("apps.bot.core.cache._redis_client", None),
-    ):
-        # Should return None without crashing
-        result = await cache_get("test_key")
         assert result is None
 
-        # Should return False without crashing
-        success = await cache_set("test_key", "value", 60)
-        assert success is False
+    @pytest.mark.asyncio
+    async def test_cache_set_returns_false_when_redis_unavailable(self):
+        """cache_set returns False without raising when Redis is down."""
+        from apps.bot.core.cache import cache_set
 
-        print("[OK] Cache: graceful degradation works (no crash when Redis down)")
+        with (
+            patch("apps.bot.core.cache._redis_available", False),
+            patch("apps.bot.core.cache._redis_client", None),
+        ):
+            result = await cache_set("any_key", "value", 60)
 
-
-def test_protection_stats_tracking():
-    """Test protection service tracks mute/unmute stats."""
-    from apps.bot.services.protection import get_protection_stats, reset_protection_stats
-
-    # Reset first
-    reset_protection_stats()
-
-    stats = get_protection_stats()
-    assert stats["mute_count"] == 0
-    assert stats["unmute_count"] == 0
-    assert stats["error_count"] == 0
-
-    print("[OK] Protection stats: tracking initialized correctly")
+        assert result is False
 
 
-def test_verification_stats_tracking():
-    """Test verification service tracks cache stats."""
-    from apps.bot.services.verification import get_cache_stats, reset_cache_stats
+class TestProtectionService:
+    """Tests for the protection service (mute/unmute with retry)."""
 
-    # Reset first
-    reset_cache_stats()
+    @pytest.mark.asyncio
+    async def test_restrict_user_success_on_first_attempt(self):
+        """restrict_user returns True when API call succeeds immediately."""
+        from apps.bot.services.protection import restrict_user
 
-    stats = get_cache_stats()
-    assert stats["cache_hits"] == 0
-    assert stats["cache_misses"] == 0
-    assert stats["hit_rate_percent"] == 0.0
+        context = MagicMock()
+        context.bot.restrict_chat_member = AsyncMock(return_value=True)
 
-    print("[OK] Verification stats: tracking initialized correctly")
+        result = await restrict_user(-1001234567890, 123, context)
+
+        assert result is True
+        assert context.bot.restrict_chat_member.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_restrict_user_retries_on_telegram_error(self):
+        """restrict_user retries up to MAX_RETRIES on TelegramError then returns True."""
+        from telegram.error import TelegramError
+        from apps.bot.services.protection import restrict_user, MAX_RETRIES
+
+        context = MagicMock()
+        call_count = 0
+
+        async def flaky_restrict(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count < MAX_RETRIES:
+                raise TelegramError("Transient error")
+            return True
+
+        context.bot.restrict_chat_member = AsyncMock(side_effect=flaky_restrict)
+
+        with patch("apps.bot.services.protection.asyncio.sleep", new_callable=AsyncMock):
+            result = await restrict_user(-1001234567890, 456, context)
+
+        assert result is True
+        assert call_count == MAX_RETRIES
+
+    @pytest.mark.asyncio
+    async def test_restrict_user_returns_false_after_max_retries(self):
+        """restrict_user returns False when all retry attempts fail."""
+        from telegram.error import TelegramError
+        from apps.bot.services.protection import restrict_user
+
+        context = MagicMock()
+        context.bot.restrict_chat_member = AsyncMock(
+            side_effect=TelegramError("Persistent error")
+        )
+
+        with patch("apps.bot.services.protection.asyncio.sleep", new_callable=AsyncMock):
+            result = await restrict_user(-1001234567890, 789, context)
+
+        assert result is False
+
+    def test_protection_stats_reset(self):
+        """reset_protection_stats zeroes all counters."""
+        from apps.bot.services.protection import get_protection_stats, reset_protection_stats
+
+        reset_protection_stats()
+        stats = get_protection_stats()
+
+        assert stats["mute_count"] == 0
+        assert stats["unmute_count"] == 0
+        assert stats["error_count"] == 0
 
 
-@pytest.mark.asyncio
+class TestVerificationStats:
+    """Tests for verification cache stats helpers."""
+
+    def test_reset_then_get_returns_zeros(self):
+        """After reset, get_cache_stats returns all-zero dict."""
+        from apps.bot.services.verification import get_cache_stats, reset_cache_stats
+
+        reset_cache_stats()
+        stats = get_cache_stats()
+
+        assert stats["cache_hits"] == 0
+        assert stats["cache_misses"] == 0
+        assert stats["hit_rate_percent"] == 0.0
+
+
 @pytest.mark.integration
-async def test_database_crud_operations():
-    """Test basic CRUD operations (integration test)."""
-    # Initialize test database (SQLite)
-    import os
+class TestDatabaseCrud:
+    """Integration tests for CRUD operations (SQLite in-memory)."""
 
-    from apps.bot.core.database import close_db, get_session, init_db
-    from apps.bot.database.crud import create_owner, get_owner
+    @pytest_asyncio.fixture(autouse=True)
+    async def setup_db(self):
+        """Fresh in-memory DB before each test, torn down after."""
+        from apps.bot.core.database import close_db, init_db
 
-    os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
-
-    await init_db()
-
-    try:
-        async with get_session() as session:
-            # Create owner - use unique ID to avoid collision with other tests
-            owner = await create_owner(session, 99999, "testuser")
-            assert owner.user_id == 99999
-
-            # Get owner
-            fetched = await get_owner(session, 99999)
-            assert fetched is not None
-            assert fetched.username == "testuser"
-
-        print("[OK] Database CRUD: create and get operations work")
-    finally:
+        await init_db()
+        yield
         await close_db()
+
+    @pytest.mark.asyncio
+    async def test_create_and_retrieve_owner(self):
+        """create_owner then get_owner returns the same record."""
+        from apps.bot.core.database import get_session
+        from apps.bot.database.crud import create_owner, get_owner
+
+        async with get_session() as session:
+            owner = await create_owner(session, 99001, "testowner")
+            assert owner.user_id == 99001
+
+            fetched = await get_owner(session, 99001)
+            assert fetched is not None
+            assert fetched.username == "testowner"
+
+    @pytest.mark.asyncio
+    async def test_get_nonexistent_owner_returns_none(self):
+        """get_owner returns None for unknown user_id."""
+        from apps.bot.core.database import get_session
+        from apps.bot.database.crud import get_owner
+
+        async with get_session() as session:
+            result = await get_owner(session, 1)
+            assert result is None

@@ -1,30 +1,8 @@
-version: '3.8'
-
 services:
-  # ==========================================================
-  # PostgreSQL Database (Local Development)
-  # ==========================================================
-  postgres:
-    image: postgres:17-alpine
-    container_name: nezuko-postgres-local
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: nezuko
-      POSTGRES_PASSWORD: nezuko123
-      POSTGRES_DB: nezuko
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-data-local:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nezuko -d nezuko"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # ==========================================================
+  # ==========================================================================
   # Redis Cache (Local Development)
-  # ==========================================================
+  # Start with: docker compose -f docker-compose.local.yml up -d
+  # ==========================================================================
   redis:
     image: redis:7-alpine
     container_name: nezuko-redis-local
@@ -41,5 +19,4 @@ services:
       retries: 5
 
 volumes:
-  postgres-data-local:
   redis-data-local:

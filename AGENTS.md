@@ -5,21 +5,22 @@
 
 **Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read these all files for deep project understanding. **NEVER SKIP THIS STEP**
 
-**⚠️ RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, and best practice documented below. No exceptions, no shortcuts. Violations lead to broken builds, security issues, and technical debt. nad most imp project pattern existng ui consistancy work accourding to project.
+**⚠️ RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, and best practice documented below. No exceptions, no shortcuts. Violations lead to broken builds, security issues, hard coding, and technical debt. and most importantly project pattern, existing ui style consistancy to insure all ui changes alligned with project, and respect all the rules and guidelines documented below.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-nezuko-monorepo/
+nezuko/
 ├── apps/
-│   ├── web/          # Next.js 16 Admin Dashboard
-│   ├── api/          # FastAPI REST Backend
-│   └── bot/          # Telegram Bot (PTB v22)
-├── packages/         # Shared packages (@nezuko/types)
+│   ├── web/          # Next.js 16 Admin Dashboard (~120 TS files)
+│   └── bot/          # Telegram Bot (PTB v22, ~25 Python files)
+├── insforge/         # InsForge migration files & Edge Functions
+│   ├── migrations/   # SQL migration files (001-005)
+│   └── functions/    # Edge Functions (manage-bot, test-webhook)
+├── openspec/         # OpenSpec change management artifacts
 ├── config/           # Docker, Caddy, deployment configs
-├── requirements/     # Python deps (base, api, bot, dev)
 ├── tests/            # ALL tests (not in apps/)
 ├── scripts/          # Utility scripts
 ├── apps/bot/logs/    # Bot runtime logs (gitignored)
@@ -33,24 +34,25 @@ nezuko-monorepo/
 
 ### File Locations (NEVER Violate)
 
-| Type        | Correct Location            | ❌ Wrong                     |
-| ----------- | --------------------------- | ---------------------------- |
-| Tests       | `tests/api/`, `tests/bot/`  | `apps/*/tests/`              |
-| Database    | Docker local port 5432      | `apps/*.db`                  |
-| Logs        | `apps/bot/logs/`            | `apps/*.log`                 |
-| Env files   | `apps/*/.env`, `.env.local` | Root `.env`                  |
-| Python deps | `requirements/*.txt`        | Root `requirements.txt` only |
+| Type        | Correct Location                       | ❌ Wrong                      |
+| ----------- | -------------------------------------- | ----------------------------- |
+| Tests       | `tests/bot/`                           | `apps/*/tests/`               |
+| Database    | InsForge managed PostgreSQL (cloud)    | Local sqlite or `apps/*.db`   |
+| Migrations  | `insforge/migrations/*.sql`            | `alembic/versions/`           |
+| Logs        | `apps/bot/logs/`                       | `apps/*.log`                  |
+| Env files   | `apps/bot/.env`, `apps/web/.env.local` | Root `.env`                   |
+| Python deps | `requirements.txt`, `requirements-dev.txt` | `requirements/*.txt`      |
 
 ### Code Quality (ZERO TOLERANCE)
 
 **⚠️ Always use LATEST versions. Check before installing:**
 
 ```bash
-# Python (Bot & API) - 3 tools required:
-ruff check apps/bot apps/api         # Lint (0 errors)
+# Python (Bot) - 3 tools required:
+ruff check apps/bot                  # Lint (0 errors)
 ruff format --check .                # Format check
-pylint apps/bot apps/api             # Score: 10.00/10
-pyrefly check                        # Type check (0 errors)
+pylint apps/bot --rcfile=pyproject.toml  # Score: 10.00/10
+.venv/Scripts/python.exe -m pyrefly check  # Type check (0 errors)
 
 # TypeScript (Web):
 cd apps/web && bun run lint          # ESLint (0 warnings)
@@ -97,56 +99,53 @@ asyncio.create_task(coro())
 ### Run Services
 
 ```bash
-python -m apps.bot.main                                    # Bot
-cd apps/api && uvicorn src.main:app --reload --port 8080   # API
-cd apps/web && bun dev                                     # Web
-npx turbo dev                                              # All services
+python -m apps.bot.main    # Bot (run from project root)
+cd apps/web && bun dev     # Web (port 3000)
 ```
 
 ### Lint & Format
 
 ```bash
-ruff check . --fix && ruff format .   # Python auto-fix
-cd apps/web && bun run lint --fix     # TypeScript
-pylint apps/bot apps/api              # Target: 10.00/10
+ruff check apps/bot --fix && ruff format .   # Python auto-fix
+cd apps/web && bun run lint --fix            # TypeScript
+pylint apps/bot --rcfile=pyproject.toml      # Target: 10.00/10
 ```
 
 ### Test & Migrate
 
 ```bash
-pytest tests/api/ -v                  # API tests
 pytest tests/bot/ -v                  # Bot tests
 pytest --cov=apps --cov-report=html   # Coverage
 
-alembic upgrade head                  # Apply migrations
-alembic revision --autogenerate -m "desc"  # Create migration
+# Database migrations are managed via InsForge migrations:
+# → Edit insforge/migrations/*.sql and apply via InsForge dashboard
 ```
 
 ---
 
 ## ⚙️ Tech Stack
 
-| Layer        | Stack                                                    |
-| ------------ | -------------------------------------------------------- |
-| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
-| **Backend**  | FastAPI, Python 3.13, SQLAlchemy 2.0, Pydantic V2        |
-| **Bot**      | python-telegram-bot v22.6, AsyncIO, Redis                |
-| **Database** | PostgreSQL 15+ (Supabase), SQLite (dev)                  |
-| **Infra**    | Docker, Turborepo, Caddy                                 |
+| Layer        | Stack                                                                      |
+| ------------ | -------------------------------------------------------------------------- |
+| **Frontend** | Next.js 16.1, React 19.2, TypeScript 5.9, Tailwind v4, shadcn/ui, Recharts |
+| **Bot**      | python-telegram-bot v22.6, Python 3.13, AsyncIO, SQLAlchemy 2.0, AsyncPG  |
+| **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions |
+| **Auth**     | None (development mode — direct dashboard access)                          |
+| **Infra**    | Docker (bot), Koyeb (bot hosting), Vercel (web hosting), Caddy             |
 
 ---
 
 ## 📐 Coding Standards
 
-### Python (Bot & API)
+### Python (Bot)
 
 - **Indent**: 4 spaces | **Line**: 100 chars
-- **Format**: `ruff format` | **Lint**: ruff + pylint
-- **Types**: Required on all functions
+- **Format**: `ruff format` | **Lint**: ruff + pylint (target 10.00/10)
+- **Types**: Required on all functions (pyrefly enforced)
 - **Docstrings**: Required on public functions
 - **Async**: Always for I/O operations
 - **SQLAlchemy**: Use `select()` style, not ORM queries
-- **Pydantic**: Use `model_validator`, not `root_validator`
+- **Errors**: Catch specific exceptions (`PostgresError`, `TelegramError`) — never bare `except Exception`
 
 ### TypeScript (Web)
 
@@ -158,13 +157,17 @@ alembic revision --autogenerate -m "desc"  # Create migration
 
 ## 🔑 Key Patterns
 
-| Pattern             | Implementation                                  |
-| ------------------- | ----------------------------------------------- |
-| **Imports (Bot)**   | `python -m apps.bot.main` from root             |
-| **Imports (API)**   | Relative imports within `src/`                  |
-| **Imports (Tests)** | `from apps.api.src` or `from apps.bot`          |
-| **Env files**       | Per-app: `apps/web/.env.local`, `apps/api/.env` |
-| **Dependencies**    | `requirements/{base,api,bot,dev}.txt`           |
+| Pattern               | Implementation                                         |
+| --------------------- | ------------------------------------------------------ |
+| **Run Bot**           | `python -m apps.bot.main` from project root            |
+| **Imports (Bot)**     | Absolute from package root, e.g. `from apps.bot.core` |
+| **Imports (Tests)**   | `from apps.bot`                                        |
+| **Env (Bot)**         | `apps/bot/.env`                                        |
+| **Env (Web)**         | `apps/web/.env.local`                                  |
+| **Python deps**       | `requirements.txt` (prod) + `requirements-dev.txt`     |
+| **Frontend deps**     | `apps/web/package.json`, managed with `bun`            |
+| **DB migrations**     | Raw SQL in `insforge/migrations/`                      |
+| **InsForge SDK**      | `import { insforge } from "@/lib/insforge"` (web)      |
 
 ---
 
@@ -183,13 +186,15 @@ Before marking any task complete:
 
 ## 🧰 MCP Tools
 
-| Server                  | Purpose                                                             |
-| ----------------------- | ------------------------------------------------------------------- |
-| **context7**            | Query library docs: `resolve-library-id` → `query-docs`             |
-| **supabase-mcp-server** | DB ops: `execute_sql`, `apply_migration`, `list_tables`             |
-| **shadcn**              | Components: `view_items_in_registries`, `get_add_command_for_items` |
+| Server         | Purpose                                                                          |
+| -------------- | -------------------------------------------------------------------------------- |
+| **context7**   | Query library docs: `resolve-library-id` → `query-docs`                          |
+| **insforge**   | DB ops: `execute_sql`, `list_tables`, `apply_migration`, storage & edge functions |
+| **shadcn**     | Components: `view_items_in_registries`, `get_add_command_for_items`              |
 
 **🔍 Web Search Rule:** When searching the web or fetching URLs for documentation, best practices, or solutions, always append `2025-2026` to queries to ensure latest, up-to-date information.
+
+## 📚 Next.js Docs Never Skip when working on Next.js
 
 <!-- NEXT-AGENTS-MD-START -->[Next.js Docs Index]|root: ./.next-docs|STOP. What you remember about Next.js is WRONG for this project. Always search docs and read before any task.|If docs missing, run this command first: npx @next/codemod agents-md --output AGENTS.md
 <!-- NEXT-AGENTS-MD-END -->
@@ -198,7 +203,7 @@ Before marking any task complete:
 
 **⚠️ MANDATORY: Read relevant skills BEFORE generating any code.**
 
-Skills are located in `.agent/skills/`. Read the **SKILL.md** file inside each skill folder.
+Skills are located in `.agent/skills/` or `.agents/skills/` — check the path column. Read the **SKILL.md** file inside each skill folder.
 
 **Skill Reading Rules:**
 
@@ -216,22 +221,24 @@ Skills are located in `.agent/skills/`. Read the **SKILL.md** file inside each s
 
 ### Frontend (Web Dashboard)
 
-| Skill                           | When to Use                                        | Path                                        |
-| ------------------------------- | -------------------------------------------------- | ------------------------------------------- |
-| **nextjs**                      | Any Next.js 16 work, App Router, Server Components | `.agent/skills/nextjs/`                     |
-| **shadcn-ui**                   | Adding/customizing shadcn components               | `.agent/skills/shadcn-ui`                   |
-| **tanstack-query**              | Data fetching, mutations, caching                  | `.agent/skills/tanstack-query/`             |
-| **typescript-expert**           | Complex TS patterns, generics                      | `.agent/skills/typescript-expert`           |
-| **typescript-advanced-types**   | Utility types, conditional types                   | `.agent/skills/typescript-advanced-types`   |
-| **vercel-react-best-practices** | React 19 patterns, performance                     | `.agent/skills/vercel-react-best-practices` |
-| **ui-ux-pro-max**               | Design systems, color palettes, typography         | `.agent/skills/ui-ux-pro-max`               |
-| **web-design-guidelines**       | Layout, spacing, responsive design                 | `.agent/skills/web-design-guidelines`       |
+| Skill                           | When to Use                                        | Path                                          |
+| ------------------------------- | -------------------------------------------------- | --------------------------------------------- |
+| **nextjs**                      | Any Next.js 16 work, App Router, Server Components | `.agents/skills/nextjs/`                      |
+| **shadcn-ui**                   | Adding/customizing shadcn components               | `.agents/skills/shadcn-ui`                    |
+| **tanstack-query**              | Data fetching, mutations, caching                  | `.agents/skills/tanstack-query/`              |
+| **typescript-expert**           | Complex TS patterns, generics                      | `.agents/skills/typescript-expert`            |
+| **typescript-advanced-types**   | Utility types, conditional types                   | `.agents/skills/typescript-advanced-types`    |
+| **vercel-react-best-practices** | React 19 patterns, performance                     | `.agents/skills/vercel-react-best-practices`  |
+| **ui-ux-pro-max**               | Design systems, color palettes, typography         | `.agents/skills/ui-ux-pro-max`                |
+| **web-design-guidelines**       | Layout, spacing, responsive design                 | `.agents/skills/web-design-guidelines`        |
+| **motion**                      | React animations, gestures, scroll effects         | `.agents/skills/motion`                       |
 
 ### Backend (API & Bot)
 
 | Skill                               | When to Use                                 | Path                                                                       |
 | ----------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------- |
-| **fastapi**                         | FastAPI endpoints, dependencies, middleware | `.agent/skills/fastapi`                                                    |
+| **fastapi**                         | FastAPI endpoints, dependencies, middleware | `.agents/skills/fastapi`                                                   |
+| **insforge**                        | InsForge BaaS — tables, auth, SDK, storage  | `.agents/skills/insforge`                                                  |
 | **async-python-patterns**           | Async/await, concurrency, event loops       | `.agent/skills/python-development/skills/async-python-patterns/`           |
 | **python-code-style**               | PEP 8, naming conventions, formatting       | `.agent/skills/python-development/skills/python-code-style/`               |
 | **python-type-safety**              | Type hints, generics, Pydantic              | `.agent/skills/python-development/skills/python-type-safety/`              |
@@ -243,31 +250,47 @@ Skills are located in `.agent/skills/`. Read the **SKILL.md** file inside each s
 | **python-resilience**               | Retry, circuit breaker, fallbacks           | `.agent/skills/python-development/skills/python-resilience/`               |
 | **python-background-jobs**          | Task queues, scheduled jobs                 | `.agent/skills/python-development/skills/python-background-jobs/`          |
 | **python-observability**            | Logging, metrics, tracing                   | `.agent/skills/python-development/skills/python-observability/`            |
+| **python-configuration**            | Config management, env vars, settings       | `.agent/skills/python-development/skills/python-configuration/`            |
+| **python-packaging**                | Package structure, pyproject, build         | `.agent/skills/python-development/skills/python-packaging/`                |
+| **python-project-structure**        | Layout, modules, imports organisation       | `.agent/skills/python-development/skills/python-project-structure/`        |
+| **python-resource-management**      | Context managers, file handles, cleanup     | `.agent/skills/python-development/skills/python-resource-management/`      |
+| **uv-package-manager**              | uv install, lockfiles, virtualenvs          | `.agent/skills/python-development/skills/uv-package-manager/`              |
 
 ### Database
 
-| Skill                                | When to Use                              | Path                                             |
-| ------------------------------------ | ---------------------------------------- | ------------------------------------------------ |
-| **postgresql-table-design**          | Schema design, indexes, constraints      | `.agent/skills/postgresql-table-design/`         |
-| **supabase-postgres-best-practices** | Supabase auth, RLS, Edge Functions       | `.agent/skills/supabase-postgres-best-practices` |
-| **timescaledb**                      | Time-series data, hypertables, analytics | `.agent/skills/timescaledb/`                     |
+| Skill                                | When to Use                              | Path                                               |
+| ------------------------------------ | ---------------------------------------- | -------------------------------------------------- |
+| **postgresql-table-design**          | Schema design, indexes, constraints      | `.agents/skills/postgresql-table-design/`          |
+| **postgresql-best-practices**        | Query optimization, admin, performance   | `.agents/skills/postgresql-best-practices`         |
+| **postgres-pro**                     | Advanced queries, EXPLAIN, JSONB, VACUUM | `.agents/skills/postgres-pro`                      |
+| **supabase-postgres-best-practices** | InsForge/Supabase RLS, Edge Functions    | `.agents/skills/supabase-postgres-best-practices`  |
+| **timescaledb**                      | Time-series data, hypertables, analytics | `.agents/skills/timescaledb/`                      |
 
 ### DevOps & Tooling
 
-| Skill                        | When to Use                   | Path                                      |
-| ---------------------------- | ----------------------------- | ----------------------------------------- |
-| **git-commit**               | Conventional commits, staging | `.agent/skills/git-commit/`               |
-| **github-actions-templates** | CI/CD workflows               | `.agent/skills/github-actions-templates/` |
-| **powershell-expert**        | Windows scripts, automation   | `.agent/skills/powershell-expert`         |
+| Skill                        | When to Use                           | Path                                       |
+| ---------------------------- | ------------------------------------- | ------------------------------------------ |
+| **git-commit**               | Conventional commits, staging         | `.agent/skills/git-commit/`                |
+| **github-actions-templates** | CI/CD workflows                       | `.agent/skills/github-actions-templates/`  |
+| **powershell-expert**        | Windows scripts, automation           | `.agents/skills/powershell-expert`         |
+| **playwright-cli**           | Browser automation, testing, scraping | `.agents/skills/playwright-cli`            |
+| **skill-creator**            | Create or update agent skills         | `.agents/skills/skill-creator`             |
 
 ### Project Management
 
-| Skill                      | When to Use                 | Path                                    |
-| -------------------------- | --------------------------- | --------------------------------------- |
-| **openspec-new-change**    | Start a new feature/fix     | `.agent/skills/openspec-new-change/`    |
-| **openspec-apply-change**  | Implement tasks from change | `.agent/skills/openspec-apply-change/`  |
-| **openspec-verify-change** | Verify before archiving     | `.agent/skills/openspec-verify-change/` |
+| Skill                        | When to Use                                  | Path                                          |
+| ---------------------------- | -------------------------------------------- | --------------------------------------------- |
+| **openspec-new-change**      | Start a new feature/fix                      | `.agent/skills/openspec-new-change/`          |
+| **openspec-ff-change**       | Fast-forward all artifacts in one go         | `.agent/skills/openspec-ff-change/`           |
+| **openspec-apply-change**    | Implement tasks from a change                | `.agent/skills/openspec-apply-change/`        |
+| **openspec-continue-change** | Create the next artifact for a change        | `.agent/skills/openspec-continue-change/`     |
+| **openspec-verify-change**   | Verify implementation before archiving       | `.agent/skills/openspec-verify-change/`       |
+| **openspec-archive-change**  | Archive a completed change                   | `.agent/skills/openspec-archive-change/`      |
+| **openspec-bulk-archive**    | Archive multiple changes at once             | `.agent/skills/openspec-bulk-archive-change/` |
+| **openspec-sync-specs**      | Sync delta specs to main specs               | `.agent/skills/openspec-sync-specs/`          |
+| **openspec-explore**         | Think through ideas before starting a change | `.agent/skills/openspec-explore/`             |
+| **openspec-onboard**         | Guided walkthrough of the full OPSX cycle    | `.agent/skills/openspec-onboard/`             |
 
 ---
 
-_Last Updated: 2026-02-04_
+_Last Updated: 2026-02-05_

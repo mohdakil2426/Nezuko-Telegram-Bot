@@ -91,30 +91,44 @@ _tasks.add(task)
 task.add_done_callback(_tasks.discard)
 ```
 
-### SQLAlchemy 2.0 Queries
+### InsForge REST Client Pattern (Phase 58)
 
-We use the modern `select()` syntax, not the legacy ORM methods.
+The bot uses `apps/bot/core/insforge_client.py` — an `httpx`-based REST client.
+No SQLAlchemy sessions or asyncpg pools in production handlers.
 
 ```python
-# ✅ Correct: SQLAlchemy 2.0 style
+# ✅ Correct: Use insforge_client (not get_session/crud)
+from apps.bot.core import insforge_client
+
+channels = await insforge_client.get_group_channels(chat_id)
+group = await insforge_client.get_protected_group(group_id)
+await insforge_client.create_owner(user_id, username)
+```
+
+### SQLAlchemy 2.0 (Tests Only)
+
+SQLAlchemy + SQLite is used **only** in the test suite for fast offline testing.
+
+```python
+# ✅ Only in tests/
 stmt = select(Model).where(Model.id == id)
 result = await session.execute(stmt)
 ```
 
 ### Bot-to-Dashboard Communication
 
-The bot communicates with the dashboard exclusively through the **Database**.
+The bot communicates with the dashboard exclusively through the **InsForge REST API**.
 
-1.  **Status Updates**: Bot performs an `UPSERT` on the `bot_status` table every 30 seconds.
-2.  **Command Execution**: Bot polls the `admin_commands` table (status='pending') every 1 second.
-3.  **Logging**: Bot writes to `verification_log` and `admin_logs`.
+1.  **Status Updates**: `StatusWriter` PATCHes `bot_status` every 30 seconds via REST.
+2.  **Command Execution**: `CommandWorker` GETs `admin_commands` (status='pending') every 10s via REST.
+3.  **Logging**: Bot writes to `verification_log` and `api_call_log` via REST.
 
 ### Error Segregation & Isolation
 
-Never use bare `except Exception:` blocks inside the core polling systems.
-- Natively catch `TelegramError` for SDK interactions.
-- Catch `asyncpg.exceptions.PostgresError` exclusively for DB bound loops.
-- Fallback strictly to standard `ValueError` or `RuntimeError`.
+Never use bare `except Exception:` blocks inside core polling systems.
+- Catch `TelegramError` for Telegram SDK interactions.
+- Catch `httpx.HTTPStatusError` for InsForge REST API calls.
+- Fallback to `OSError`, `RuntimeError`, `ValueError` where appropriate.
 
 ---
 
@@ -193,4 +207,4 @@ Database triggers automatically push events to WebSocket channels.
 
 ---
 
-_Last Updated: 2026-02-22_
+_Last Updated: 2026-02-23 (Phase 58)_

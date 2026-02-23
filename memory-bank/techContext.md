@@ -6,9 +6,9 @@
 | Package | Version | Purpose |
 | --- | --- | --- |
 | python-telegram-bot | 22.6+ | Telegram Bot API |
-| SQLAlchemy | 2.0+ | Async ORM |
+| httpx | 0.27+ | InsForge REST API client |
+| SQLAlchemy | 2.0+ | Async ORM (tests only — SQLite) |
 | Pydantic | 2.12+ | Data validation |
-| AsyncPG | 0.31+ | PostgreSQL driver |
 | Redis | 7.1+ | Caching |
 
 ### Frontend (TypeScript)
@@ -42,7 +42,7 @@
 
 ```bash
 # Install dependencies
-pip install -r requirements/base.txt -r requirements/dev.txt
+pip install -r requirements.txt -r requirements-dev.txt
 cd apps/web && bun install
 
 # Start services (Parallel)
@@ -60,13 +60,16 @@ cd apps/web && bun dev           # Web (port 3000)
 ### Required Environment Variables
 
 ```bash
-# Bot (.env)
+# Bot (apps/bot/.env)
 BOT_TOKEN=<telegram-bot-token>
-DATABASE_URL=postgresql+asyncpg://<user>:<pass>@<insforge-host>:<port>/<db>?sslmode=require
+INSFORGE_BASE_URL=https://u4ckbciy.us-west.insforge.app
+INSFORGE_ANON_KEY=<insforge-anon-key>
 ENCRYPTION_KEY=<fernet-key>
-REDIS_URL=redis://localhost:6379/0
+REDIS_URL=redis://127.0.0.1:6379/0
+LOG_LEVEL=DEBUG
+# DATABASE_URL is only used in tests (auto-set to SQLite)
 
-# Web (.env.local)
+# Web (apps/web/.env.local)
 NEXT_PUBLIC_INSFORGE_BASE_URL=https://u4ckbciy.us-west.insforge.app
 NEXT_PUBLIC_INSFORGE_ANON_KEY=<insforge-anon-key>
 NEXT_PUBLIC_LOGIN_BOT_USERNAME=YourBotUsername
@@ -112,12 +115,14 @@ bun run format                  # Prettier + Tailwind Sort
 ## Database (InsForge Managed PostgreSQL)
 
 -   **Base URL**: `https://u4ckbciy.us-west.insforge.app`
--   **Hostname**: `db.u4ckbciy.us-west.insforge.app` (Port 5432 or 6543)
--   **Driver**: `asyncpg` (Python) - Requires `ssl="require"` in `connect_args`, NOT `sslmode` in URL.
+-   **Access (Bot)**: REST API via `httpx` — `GET/POST/PATCH /api/database/records/{table}`
+-   **Access (Web)**: InsForge SDK (TypeScript) — `@insforge/sdk`
+-   **Auth header**: `Authorization: Bearer <INSFORGE_ANON_KEY>`
 -   **Tables**: 13 (created via `insforge/migrations/001-005.sql`)
 -   **RPC Functions**: 15 (analytics + charts)
 -   **Realtime Triggers**: 4 (verification, bot_status, commands, logs)
 -   **Schema managed via**: Raw SQL migration files in `insforge/migrations/`
+-   **⚠️ No direct PG connection**: InsForge does not expose raw PostgreSQL passwords.
 
 ---
 
@@ -127,12 +132,11 @@ bun run format                  # Prettier + Tailwind Sort
 | --- | --- |
 | Tests | `tests/bot/` |
 | Logs | `apps/bot/logs/` |
-| Python deps | `requirements/*.txt` |
-| Docker | `config/docker/` |
+| Python deps | `requirements.txt` + `requirements-dev.txt` |
 | SQL Migrations | `insforge/migrations/` |
 | Edge Functions | `insforge/functions/` |
 | Pre-migration backup | `docs/local/backup-2026-02-12-105223/` |
 
 ---
 
-_Last Updated: 2026-02-22_
+_Last Updated: 2026-02-23 (Phase 58)_

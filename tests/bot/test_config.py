@@ -1,95 +1,157 @@
 """
-Test configuration and database setup.
-Tests environment loading, database operations, and module imports.
+Tests for bot configuration (BotSettings) and database CRUD operations.
+
+Verifies:
+- BotSettings loads environment variables correctly
+- SQLite in-memory database initialises without error
+- Core CRUD functions create and retrieve records
 """
 
-import asyncio
-import sys
-from pathlib import Path
-
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Set in-memory DB before imports to ensure config picks it up
 import os
 
+import pytest
+import pytest_asyncio
+
+# Ensure SQLite is used before config is imported
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
-# pylint: disable=wrong-import-position, import-outside-toplevel, unused-import, wrong-import-order
-from apps.bot.config import config
-from apps.bot.core.database import get_session, init_db
-from apps.bot.database.crud import (
-    create_owner,
-    create_protected_group,
-    get_owner,
-    link_group_channel,
-)
+
+class TestBotSettings:
+    """Test the BotSettings configuration model."""
+
+    def test_environment_loaded(self):
+        """BotSettings reads ENVIRONMENT from env."""
+        from apps.bot.config import config
+
+        assert config.environment in ("development", "staging", "production")
+
+    def test_database_url_set(self):
+        """DATABASE_URL is set and non-empty."""
+        from apps.bot.config import config
+
+        assert config.database_url
+        assert "://" in config.database_url
+
+    def test_is_production_flag(self):
+        """is_production returns False in development."""
+        from apps.bot.config import config
+
+        # In test environment we set ENVIRONMENT=development
+        assert config.is_production is False
+
+    def test_log_file_path(self):
+        """log_file resolves to a Path inside apps/bot/logs/."""
+        from apps.bot.config import config
+
+        assert config.log_file.name == "bot.log"
+        assert "logs" in str(config.log_file)
+
+    def test_logs_dir_resolves(self):
+        """logs_dir property returns a valid Path."""
+        from pathlib import Path
+        from apps.bot.config import config
+
+        assert isinstance(config.logs_dir, Path)
+        assert config.logs_dir.name == "logs"
+
+    def test_dashboard_mode_without_token(self):
+        """dashboard_mode is True when BOT_TOKEN is missing."""
+        import importlib
+        import apps.bot.config as cfg_module
+
+        original = os.environ.get("BOT_TOKEN")
+        try:
+            os.environ["BOT_TOKEN"] = ""
+            # Reload to pick up the cleared token
+            importlib.reload(cfg_module)
+            assert cfg_module.config.dashboard_mode is True
+        finally:
+            if original is not None:
+                os.environ["BOT_TOKEN"] = original
+            importlib.reload(cfg_module)
 
 
-async def test_configuration():
-    """Test configuration and database setup."""
-    print("=" * 60)
-    print("Configuration & Database Test")
-    print("=" * 60)
+@pytest.mark.asyncio
+@pytest.mark.integration
+class TestCrudOperations:
+    """Integration tests for core CRUD functions against SQLite in-memory DB."""
 
-    # Test 1: Configuration
-    print("\n[OK] Configuration loaded successfully")
-    print(f"  Environment: {config.environment}")
-    print(f"  Database: {config.database_url.split('://')[0]}")
-    print(f"  Mode: {'webhooks' if config.use_webhooks else 'polling'}")
+    @pytest_asyncio.fixture(autouse=True)
+    async def setup_db(self):
+        """Initialise and tear down the in-memory SQLite database."""
+        from apps.bot.core.database import close_db, init_db
 
-    # Test 2: Database initialization
-    print("\n[OK] Initializing database...")
-    await init_db()
-    print("  Database tables created")
+        await init_db()
+        yield
+        await close_db()
 
-    # Test 3: CRUD operations
-    print("\n[OK] Testing CRUD operations...")
-    async with get_session() as session:
-        # Create owner
-        owner = await create_owner(session, user_id=12345, username="test_user")
-        print(f"  Created owner: {owner}")
+    async def test_create_and_get_owner(self):
+        """create_owner then get_owner returns the same record."""
+        from apps.bot.core.database import get_session
+        from apps.bot.database.crud import create_owner, get_owner
 
-        # Get owner
-        fetched_owner = await get_owner(session, user_id=12345)
-        assert fetched_owner is not None
-        assert fetched_owner.user_id == 12345
-        print(f"  Retrieved owner: {fetched_owner}")
+        async with get_session() as session:
+            owner = await create_owner(session, user_id=10001, username="testuser")
+            assert owner.user_id == 10001
 
-        # Create protected group
-        group = await create_protected_group(
-            session, group_id=-1001234567890, owner_id=12345, title="Test Group"
+            fetched = await get_owner(session, user_id=10001)
+            assert fetched is not None
+            assert fetched.username == "testuser"
+
+    async def test_create_protected_group(self):
+        """create_protected_group stores group with correct owner."""
+        from apps.bot.core.database import get_session
+        from apps.bot.database.crud import create_owner, create_protected_group, get_protected_group
+
+        async with get_session() as session:
+            await create_owner(session, user_id=20001, username="groupowner")
+            group = await create_protected_group(
+                session,
+                group_id=-1001111111111,
+                owner_id=20001,
+                title="My Test Group",
+            )
+            assert group.group_id == -1001111111111
+
+            fetched = await get_protected_group(session, group_id=-1001111111111)
+            assert fetched is not None
+            assert fetched.title == "My Test Group"
+
+    async def test_link_and_get_channels(self):
+        """link_group_channel then get_group_channels returns the linked channel."""
+        from apps.bot.core.database import get_session
+        from apps.bot.database.crud import (
+            create_owner,
+            create_protected_group,
+            get_group_channels,
+            link_group_channel,
         )
-        print(f"  Created group: {group}")
 
-        # Link channel
-        await link_group_channel(
-            session,
-            group_id=-1001234567890,
-            channel_id=-1009876543210,
-            invite_link="https://t.me/testchannel",
-            title="Test Channel",
-        )
-        print("  Linked channel to group")
+        async with get_session() as session:
+            await create_owner(session, user_id=30001, username="chanowner")
+            await create_protected_group(
+                session,
+                group_id=-1002222222222,
+                owner_id=30001,
+                title="Channel Link Group",
+            )
+            await link_group_channel(
+                session,
+                group_id=-1002222222222,
+                channel_id=-1009999999999,
+                invite_link="https://t.me/testchan",
+                title="Linked Channel",
+            )
 
-    print("\n[OK] All CRUD operations successful")
+            channels = await get_group_channels(session, group_id=-1002222222222)
+            assert len(channels) == 1
+            assert channels[0].channel_id == -1009999999999
 
-    # Test 4: Handler imports
-    print("\n[OK] Testing handler imports...")
-    print("  All handlers imported successfully")
+    async def test_get_owner_nonexistent(self):
+        """get_owner returns None for unknown user_id."""
+        from apps.bot.core.database import get_session
+        from apps.bot.database.crud import get_owner
 
-    print("\n" + "=" * 60)
-    print("[SUCCESS] CONFIGURATION & DATABASE TEST COMPLETE")
-    print("=" * 60)
-    print("\nAll core components working:")
-    print("  - Configuration management")
-    print("  - Database layer (async SQLAlchemy)")
-    print("  - Database models")
-    print("  - CRUD operations")
-    print("  - Admin command handlers")
-    print("  - Rate limiter setup")
-    print("=" * 60)
-
-
-if __name__ == "__main__":
-    asyncio.run(test_configuration())
+        async with get_session() as session:
+            result = await get_owner(session, user_id=999999999)
+            assert result is None

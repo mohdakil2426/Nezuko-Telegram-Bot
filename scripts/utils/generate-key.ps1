@@ -48,13 +48,13 @@ try {
         
         Write-Host "  📋 Instructions:" -ForegroundColor Yellow
         Write-Host "  1. Copy the key above."
-        Write-Host "  2. Paste it into 'ENCRYPTION_KEY=' in:"
-        Write-Host "     - apps/api/.env" -ForegroundColor Cyan
-        Write-Host "     - apps/bot/.env" -ForegroundColor Cyan
+        Write-Host "  2. Paste it into 'ENCRYPTION_KEY=' in apps/bot/.env" -ForegroundColor Cyan
         Write-Host ""
         Write-Host "  ⚠️  IMPORTANT:" -ForegroundColor Red
-        Write-Host "  - The key MUST be identical in both files."
-        Write-Host "  - Store this key safely. If lost, all encrypted tokens are lost."
+        Write-Host "  - Use the SAME key in every environment (local, staging, production)."
+        Write-Host "  - Store it in a password manager. If lost, all encrypted bot tokens"
+        Write-Host "    in the database become permanently unreadable."
+        Write-Host "  - Never commit it to git (apps/bot/.env is in .gitignore)."
         Write-Host ""
     }
     else {

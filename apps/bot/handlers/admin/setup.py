@@ -5,19 +5,12 @@ Allows group admins to setup channel verification.
 
 import logging
 
-from sqlalchemy.exc import SQLAlchemyError
 from telegram import Update
 from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
-from apps.bot.core.database import get_session
-from apps.bot.database.crud import (
-    create_owner,
-    create_protected_group,
-    get_protected_group,
-    link_group_channel,
-)
+from apps.bot.core import insforge_client
 from apps.bot.utils.auto_delete import schedule_delete
 
 logger = logging.getLogger(__name__)
@@ -140,37 +133,35 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error("Error checking bot admin in group: %s", e)
         return
 
-    # All checks passed! Setup protection in database
+    # All checks passed! Setup protection in InsForge
     try:
-        async with get_session() as session:
-            # Create owner record
-            username = update.effective_user.username
-            await create_owner(session, user_id, username)
+        # Create owner record
+        username = update.effective_user.username
+        await insforge_client.create_owner(user_id, username)
 
-            # Check if group is already protected
-            existing_group = await get_protected_group(session, group_id)
-            if existing_group:
-                await update.message.reply_text(
-                    f"⚠️ This group is already protected.\n\n"
-                    f"Current channel: `@{channel_username}`\n\n"
-                    f"To change, run `/unprotect` first, then `/protect @NewChannel`",
-                    parse_mode="Markdown",
-                )
-                return
-
-            # Create protected group
-            group_title = update.effective_chat.title
-            await create_protected_group(session, group_id, user_id, group_title)
-
-            # Link group to channel
-            await link_group_channel(
-                session,
-                group_id,
-                channel_id,
-                invite_link=invite_link,
-                title=channel_title,
-                username=channel_username,
+        # Check if group is already protected
+        existing_group = await insforge_client.get_protected_group(group_id)
+        if existing_group:
+            await update.message.reply_text(
+                f"⚠️ This group is already protected.\n\n"
+                f"Current channel: `@{channel_username}`\n\n"
+                f"To change, run `/unprotect` first, then `/protect @NewChannel`",
+                parse_mode="Markdown",
             )
+            return
+
+        # Create protected group
+        group_title = update.effective_chat.title
+        await insforge_client.create_protected_group(group_id, user_id, group_title)
+
+        # Link group to channel
+        await insforge_client.link_group_channel(
+            group_id,
+            channel_id,
+            invite_link=invite_link,
+            title=channel_title,
+            username=channel_username,
+        )
 
         # Success message
         response = await update.message.reply_text(
@@ -191,7 +182,7 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Protection activated: group=%s, channel=%s, admin=%s", group_id, channel_id, user_id
         )
 
-    except (TelegramError, SQLAlchemyError) as e:
+    except (TelegramError, RuntimeError, ValueError, OSError) as e:
         logger.error("Error setting up protection: %s", e, exc_info=True)
         response = await update.message.reply_text(
             "❌ Database error while setting up protection.\nPlease try again or contact support."

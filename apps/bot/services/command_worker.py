@@ -1,4 +1,4 @@
-"""Command worker for processing admin commands from InsForge PostgreSQL.
+"""Command worker for processing admin commands from InsForge REST API.
 
 Polls the admin_commands table for pending commands and executes them
 using the bot's Telegram API context.
@@ -7,45 +7,44 @@ using the bot's Telegram API context.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 from typing import Any
 
-import asyncpg
 from telegram import Bot
 from telegram.error import TelegramError
+
+from apps.bot.core import insforge_client
 
 logger = logging.getLogger(__name__)
 
 # RUF006 compliant task storage
 _tasks: set[asyncio.Task[Any]] = set()
 
+# Polling interval (seconds)
+_POLL_INTERVAL = 10
+
 
 class CommandWorker:
-    """Polls and executes admin commands from InsForge PostgreSQL."""
+    """Polls and executes admin commands from InsForge REST API."""
 
-    def __init__(self, bot: Bot, bot_id: int, database_url: str) -> None:
+    def __init__(self, bot: Bot, bot_id: int, anon_key: str) -> None:
         """Initialize the command worker.
 
         Args:
             bot: Telegram Bot instance
             bot_id: Telegram bot ID
-            database_url: InsForge PostgreSQL connection string
+            anon_key: InsForge anonymous key (unused directly — client already
+                      initialised by main.py, kept for API compatibility)
         """
         self._bot = bot
         self._bot_id = bot_id
-        self._database_url = database_url
-        self._pool: asyncpg.Pool | None = None
+        self._anon_key = anon_key
         self._running = False
-        self._stop_event = asyncio.Event()
 
     async def start(self) -> None:
         """Start the command worker background task."""
-        self._pool = await asyncpg.create_pool(
-            self._database_url, min_size=1, max_size=2, ssl="require"
-        )
         self._running = True
-        task = asyncio.create_task(self._listen_loop())
+        task = asyncio.create_task(self._poll_loop())
         _tasks.add(task)
         task.add_done_callback(_tasks.discard)
         logger.info("Command worker started for bot %d", self._bot_id)
@@ -53,72 +52,57 @@ class CommandWorker:
     async def stop(self) -> None:
         """Stop the command worker."""
         self._running = False
-        self._stop_event.set()
-        if self._pool:
-            await self._pool.close()
         logger.info("Command worker stopped for bot %d", self._bot_id)
 
-    async def _listen_loop(self) -> None:
-        """Listen for pending commands using PostgreSQL NOTIFY."""
+    async def _poll_loop(self) -> None:
+        """Periodically poll InsForge for pending commands."""
         backoff = 1.0
         while self._running:
             try:
-                if not self._pool:
-                    break
-                async with self._pool.acquire() as conn:
-                    # Listen for notifications
-                    await conn.add_listener("new_admin_command", self._on_notify)
-
-                    # Process any that were missed
-                    await asyncio.wait_for(self._process_pending_commands(), timeout=10.0)
-
-                    backoff = 1.0  # Reset backoff on success
-
-                    # Hold connection open
-                    await self._stop_event.wait()
-            except (asyncpg.exceptions.PostgresError, OSError, TimeoutError):
-                logger.exception("Error in command listen loop")
-                if self._running:
-                    await asyncio.sleep(backoff)
-                    backoff = min(backoff * 2, 60.0)
-
-    def _on_notify(self, conn: asyncpg.Connection, pid: int, channel: str, payload: str) -> None:
-        """Handle PostgreSQL NOTIFY events."""
-        if payload == str(self._bot_id):
-            task = asyncio.create_task(self._process_pending_commands_safe())
-            _tasks.add(task)
-            task.add_done_callback(_tasks.discard)
-
-    async def _process_pending_commands_safe(self) -> None:
-        """Wrapper to call process_pending_commands safely."""
-        try:
-            await asyncio.wait_for(self._process_pending_commands(), timeout=15.0)
-        except (asyncpg.exceptions.PostgresError, OSError, ValueError, TypeError) as e:
-            logger.error("Error processing commands from notify: %s", e)
+                await asyncio.wait_for(self._process_pending_commands(), timeout=15.0)
+                backoff = 1.0
+                await asyncio.sleep(_POLL_INTERVAL)
+            except (OSError, RuntimeError, TimeoutError):
+                logger.exception("Error in command poll loop")
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 60.0)
 
     async def _process_pending_commands(self) -> None:
-        """Fetch and execute pending commands for this bot."""
-        if not self._pool:
-            return
-        rows = await self._pool.fetch(
-            """
-            UPDATE admin_commands
-            SET status = 'processing', executed_at = NOW()
-            WHERE bot_id = $1 AND status = 'pending'
-            RETURNING id, command_type, payload
-            """,
-            self._bot_id,
-        )
-        for row in rows:
-            payload = (
-                json.loads(row["payload"])
-                if isinstance(row["payload"], str)
-                else dict(row["payload"])
+        """Fetch and execute pending commands for this bot via InsForge REST API."""
+        try:
+            rows = await insforge_client._get(  # pylint: disable=protected-access
+                "admin_commands",
+                {
+                    "bot_id": f"eq.{self._bot_id}",
+                    "status": "eq.pending",
+                },
             )
+        except Exception as e:  # pylint: disable=broad-except
+            logger.warning("Failed to fetch admin_commands: %s", e)
+            return
+
+        for row in rows:
+            # Mark as processing
+            try:
+                await insforge_client._patch(  # pylint: disable=protected-access
+                    "admin_commands",
+                    {"id": f"eq.{row['id']}"},
+                    {"status": "processing"},
+                    prefer="return=minimal",
+                )
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning("Failed to mark command %s as processing: %s", row["id"], e)
+                continue
+
+            payload = row.get("payload") or {}
+            if isinstance(payload, str):
+                import json  # pylint: disable=import-outside-toplevel
+                payload = json.loads(payload)
+
             await self._execute_command(row["id"], row["command_type"], payload)
 
     async def _execute_command(
-        self, command_id: int, command_type: str, payload: dict[str, Any]
+        self, command_id: Any, command_type: str, payload: dict[str, Any]
     ) -> None:
         """Execute a single command.
 
@@ -136,46 +120,39 @@ class CommandWorker:
                 raise ValueError(f"Unknown command: {command_type}")
             await self._update_status(command_id, "completed", {"success": True})
         except (ValueError, TypeError, KeyError, TelegramError) as exc:
-            logger.exception("Command %d failed", command_id)
+            logger.exception("Command %s failed", command_id)
             await self._update_status(command_id, "failed", {"error": str(exc)})
 
     async def _ban_user(self, payload: dict[str, Any]) -> None:
-        """Ban a user from a chat.
-
-        Args:
-            payload: Dict with chat_id and user_id
-        """
+        """Ban a user from a chat."""
         await self._bot.ban_chat_member(chat_id=payload["chat_id"], user_id=payload["user_id"])
 
     async def _unban_user(self, payload: dict[str, Any]) -> None:
-        """Unban a user from a chat.
-
-        Args:
-            payload: Dict with chat_id and user_id
-        """
+        """Unban a user from a chat."""
         await self._bot.unban_chat_member(
             chat_id=payload["chat_id"], user_id=payload["user_id"], only_if_banned=True
         )
 
-    async def _update_status(self, command_id: int, status: str, result: dict[str, Any]) -> None:
-        """Update command status in database.
+    async def _update_status(
+        self, command_id: Any, status: str, result: dict[str, Any]
+    ) -> None:
+        """Update command status in InsForge via REST API.
 
         Args:
             command_id: Command ID
             status: New status (completed, failed)
             result: Result data
         """
-        if not self._pool:
-            return
+        import json  # pylint: disable=import-outside-toplevel
         try:
             await asyncio.wait_for(
-                self._pool.execute(
-                    "UPDATE admin_commands SET status = $1, result = $2::jsonb WHERE id = $3",
-                    status,
-                    json.dumps(result),
-                    command_id,
+                insforge_client._patch(  # pylint: disable=protected-access
+                    "admin_commands",
+                    {"id": f"eq.{command_id}"},
+                    {"status": status, "result": json.dumps(result)},
+                    prefer="return=minimal",
                 ),
-                timeout=5.0
+                timeout=5.0,
             )
-        except (asyncpg.exceptions.PostgresError, OSError, TimeoutError) as e:
-            logger.error("Failed to update command %d status: %s", command_id, e)
+        except (OSError, RuntimeError, TimeoutError) as e:
+            logger.error("Failed to update command %s status: %s", command_id, e)

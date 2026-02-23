@@ -6,16 +6,14 @@ enforced channels, then restricts them in all linked groups.
 """
 
 import logging
-from typing import cast
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
+from apps.bot.core import insforge_client
 from apps.bot.core.constants import CALLBACK_VERIFY
-from apps.bot.core.database import get_session
-from apps.bot.database.crud import get_groups_for_channel
 from apps.bot.services.protection import restrict_user
 from apps.bot.services.verification import invalidate_cache
 
@@ -23,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 # pylint: disable=too-many-locals
-async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Detect when user leaves an enforced channel and restrict in linked groups.
 
@@ -68,9 +66,8 @@ async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYP
         chat_title = chat.title or "no_title"
         logger.info("User %s (@%s) left channel %s (%s)", user_id, username, channel_id, chat_title)
 
-        # Query database for all groups linked to this channel
-        async with get_session() as session:
-            protected_groups = await get_groups_for_channel(session, channel_id)
+        # Query InsForge for all groups linked to this channel
+        protected_groups = await insforge_client.get_groups_for_channel(channel_id)
 
         if not protected_groups:
             logger.debug("Channel %s has no linked groups, skipping", channel_id)
@@ -83,7 +80,7 @@ async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYP
 
         # Restrict user in all linked groups
         for group in protected_groups:
-            group_id = cast(int, group.group_id)
+            group_id = group.group_id
 
             try:
                 # Restrict the user

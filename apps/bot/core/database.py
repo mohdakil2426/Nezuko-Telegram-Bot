@@ -28,39 +28,52 @@ _session_factory: async_sessionmaker[AsyncSession] | None = None  # pylint: disa
 
 
 def get_engine() -> AsyncEngine:
-    """Get or create the async database engine."""
+    """
+    Get or create the async database engine.
+
+    Automatically detects the dialect:
+    - SQLite (aiosqlite): uses StaticPool with no connect_args (tests / CI)
+    - PostgreSQL (asyncpg): uses connection pool, SSL, and timeouts (production)
+    """
     # pylint: disable=global-statement
     global _engine
 
-    if _engine is None:
-        # Parse database URL to handle sslmode for asyncpg
-        url_obj = make_url(config.database_url)
+    if _engine is not None:
+        return _engine
+
+    url_obj = make_url(config.database_url)
+    is_sqlite = url_obj.get_dialect().name == "sqlite"
+
+    if is_sqlite:
+        # SQLite: pool_size / connect_args not supported — use StaticPool so
+        # an in-memory DB is shared across the whole session (not per-connection).
+        from sqlalchemy.pool import StaticPool  # pylint: disable=import-outside-toplevel
+
+        _engine = create_async_engine(
+            url_obj,
+            echo=False,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+    else:
+        # PostgreSQL / asyncpg: strip sslmode from query string, pass via connect_args
         connect_args: dict[str, Any] = {"timeout": 30, "command_timeout": 30}
 
-        # Check if sslmode is in query parameters
         if "sslmode" in url_obj.query:
             ssl_mode = url_obj.query["sslmode"]
-
-            # Create new query dict without sslmode
-            new_query = dict(url_obj.query)
-            del new_query["sslmode"]
-
-            # Update URL object
+            new_query = {k: v for k, v in url_obj.query.items() if k != "sslmode"}
             url_obj = url_obj.set(query=new_query)
-
-            # Add ssl to connect_args if needed
             if ssl_mode in ("require", "verify-full"):
                 connect_args["ssl"] = "require"
 
-        # PostgreSQL with connection pooling and timeouts
         _engine = create_async_engine(
             url_obj,
             echo=config.is_development,
-            pool_size=20,  # Max connections in pool
-            max_overflow=10,  # Max connections beyond pool_size
-            pool_timeout=30,  # Max seconds to wait for connection
-            pool_pre_ping=True,  # Verify connections before use
-            pool_recycle=3600,  # Recycle connections after 1 hour
+            pool_size=20,
+            max_overflow=10,
+            pool_timeout=30,
+            pool_pre_ping=True,
+            pool_recycle=3600,
             connect_args=connect_args,
         )
 

@@ -13,6 +13,7 @@ Integrated with EventPublisher for real-time dashboard updates.
 import asyncio
 import logging
 import time
+from collections.abc import Sequence
 from typing import Protocol
 
 from telegram.constants import ChatMemberStatus
@@ -38,7 +39,7 @@ logger = logging.getLogger(__name__)
 class HasChannelId(Protocol):
     """Protocol for objects with channel_id and optional title attributes."""
 
-    channel_id: int | str
+    channel_id: int
     title: str | None
 
 
@@ -210,7 +211,7 @@ async def _verify_via_api(
         return None
 
 
-async def _cache_result(cache_key: str, is_member: bool):
+async def _cache_result(cache_key: str, is_member: bool) -> None:
     """Helper to cache result."""
     try:
         if is_member:
@@ -235,7 +236,7 @@ async def _log_result(
     status: str,
     cached: bool,
     error_type: str | None = None,
-):
+) -> None:
     """Helper to log verification result, metrics, and publish SSE event."""
     latency_ms = int((time.perf_counter() - wall_start) * 1000)
 
@@ -264,7 +265,7 @@ async def _log_result(
 
 async def check_multi_membership(
     user_id: int,
-    channels: list[HasChannelId],
+    channels: Sequence[HasChannelId],
     context: ContextTypes.DEFAULT_TYPE,
     group_id: int | None = None,
 ) -> list[HasChannelId]:
@@ -325,7 +326,7 @@ async def invalidate_cache(user_id: int, channel_id: str | int) -> bool:
         return False
 
 
-def get_cache_stats() -> dict:
+def get_cache_stats() -> dict[str, int | float]:
     """
     Get cache hit/miss statistics (for debugging and metrics).
 
@@ -343,7 +344,7 @@ def get_cache_stats() -> dict:
     }
 
 
-def reset_cache_stats():
+def reset_cache_stats() -> None:
     """Reset cache statistics (useful for testing)."""
     global _cache_hits, _cache_misses
     _cache_hits = 0

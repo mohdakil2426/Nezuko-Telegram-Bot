@@ -12,8 +12,7 @@ from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
-from apps.bot.core.database import get_session
-from apps.bot.database.crud import get_group_channels
+from apps.bot.core import insforge_client
 from apps.bot.services.protection import restrict_user
 from apps.bot.services.verification import check_multi_membership
 from apps.bot.utils.ui import send_verification_warning
@@ -63,9 +62,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.error("Error checking admin status: %s", e)
             # Continue with verification on error (fail-safe)
 
-        # Step 2: Get linked channels from database (multi-tenant)
-        async with get_session() as session:
-            channels = await get_group_channels(session, chat_id)
+        # Step 2: Get linked channels from InsForge (multi-tenant)
+        channels = await insforge_client.get_group_channels(chat_id)
 
         if not channels:
             # Group not protected or no channels linked

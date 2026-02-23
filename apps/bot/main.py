@@ -12,18 +12,17 @@ import asyncio
 import logging
 import sys
 
-from sqlalchemy.exc import SQLAlchemyError
 from telegram import Update
 from telegram.error import TelegramError
 from telegram.ext import Application
 
 from apps.bot.config import config
+from apps.bot.core import insforge_client
 from apps.bot.core.cache import close_redis_connection, get_redis_client
-from apps.bot.core.database import close_db, get_session, init_db
+from apps.bot.core.database import close_db
 from apps.bot.core.loader import register_handlers, setup_bot_commands
 from apps.bot.core.rate_limiter import create_rate_limiter
 from apps.bot.core.uptime import record_bot_start
-from apps.bot.database.crud import get_all_protected_groups
 from apps.bot.services.command_worker import CommandWorker
 from apps.bot.services.member_sync import schedule_member_sync
 from apps.bot.services.status_writer import StatusWriter
@@ -63,13 +62,12 @@ _status_writer: StatusWriter | None = None  # pylint: disable=invalid-name
 _command_worker: CommandWorker | None = None  # pylint: disable=invalid-name
 
 
-async def update_active_groups_gauge():
+async def update_active_groups_gauge() -> None:
     """Update the active groups Prometheus gauge."""
     try:
-        async with get_session() as session:
-            groups = await get_all_protected_groups(session)
-            set_active_groups_count(len(groups))
-            logger.debug("Active groups gauge updated: %s", len(groups))
+        groups = await insforge_client.get_all_protected_groups()
+        set_active_groups_count(len(groups))
+        logger.debug("Active groups gauge updated: %s", len(groups))
     except (OSError, RuntimeError) as e:
         logger.error("Failed to update active groups gauge: %s", e)
 
@@ -78,25 +76,16 @@ async def post_init(_application: Application) -> None:
     """Initialize database and other resources after app creation."""
     db_available = False
 
-    # Database initialization (graceful degradation if unreachable)
-    logger.info("Initializing database...")
-    try:
-        await init_db()
+    # Initialise InsForge REST client
+    logger.info("Initialising InsForge REST client...")
+    if config.insforge_anon_key:
+        insforge_client.init_client(config.insforge_base_url, config.insforge_anon_key)
         set_db_connected(True)
         db_available = True
-        logger.info("[OK] Database initialized successfully")
-    except (TimeoutError, OSError, ConnectionRefusedError) as e:
+        logger.info("[OK] InsForge REST client ready: %s", config.insforge_base_url)
+    else:
         set_db_connected(False)
-        logger.warning(
-            "[WARN] Database connection failed: %s. "
-            "Bot will run WITHOUT database features (commands that "
-            "need DB will return fallback responses). "
-            "Check if port 5432 is accessible from your network.",
-            e,
-        )
-    except (SQLAlchemyError, RuntimeError, ValueError) as e:
-        set_db_connected(False)
-        logger.error("Database initialization failed unexpectedly: %s", e, exc_info=True)
+        logger.warning("[WARN] INSFORGE_ANON_KEY not set — DB features disabled")
 
     # Initialize Redis (graceful degradation if unavailable)
     logger.info("Initializing Redis cache...")
@@ -135,33 +124,26 @@ async def post_init(_application: Application) -> None:
         schedule_member_sync(_application)
         logger.info("[OK] Analytics integration initialized")
 
-    # Initialize InsForge workers (status writer & command worker)
-    if config.insforge_database_url:
+    # InsForge status writer & command worker (use REST client now)
+    if config.insforge_anon_key:
         global _status_writer, _command_worker  # pylint: disable=global-statement
         try:
-            # Get bot info for bot_id
             bot_info = await _application.bot.get_me()
             bot_id = bot_info.id
 
-            # Start status writer
-            _status_writer = StatusWriter(bot_id, config.insforge_database_url)
+            _status_writer = StatusWriter(bot_id, config.insforge_anon_key)
             await _status_writer.start()
             logger.info("[OK] Status writer started for bot %d", bot_id)
 
-            # Start command worker
-            _command_worker = CommandWorker(_application.bot, bot_id, config.insforge_database_url)
+            _command_worker = CommandWorker(_application.bot, bot_id, config.insforge_anon_key)
             await _command_worker.start()
             logger.info("[OK] Command worker started for bot %d", bot_id)
         except (TimeoutError, OSError, ConnectionRefusedError) as e:
-            logger.warning(
-                "[WARN] InsForge workers failed to start (port blocked?): %s. "
-                "Dashboard sync disabled.",
-                e,
-            )
+            logger.warning("[WARN] InsForge workers failed: %s", e)
         except (TelegramError, RuntimeError, ValueError) as e:
             logger.error("Failed to start InsForge workers: %s", e, exc_info=True)
     else:
-        logger.warning("INSFORGE_DATABASE_URL not set - bot workers disabled")
+        logger.warning("INSFORGE_ANON_KEY not set — bot workers disabled")
 
 
 async def post_shutdown(_application: Application) -> None:
@@ -190,6 +172,7 @@ async def post_shutdown(_application: Application) -> None:
     # Close connections
     await close_redis_connection()
     await close_db()
+    await insforge_client.close_client()
     logger.info("All connections closed")
 
 

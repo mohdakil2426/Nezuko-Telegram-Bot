@@ -57,6 +57,7 @@
 - [🎯 Key Features](#-key-features)
 - [☁️ Cloud Deployment](#-cloud-deployment)
 - [🚀 Local Development](#-local-development)
+- [⌨️ CLI Commands](#️-cli-commands)
 - [🏗️ Project Structure](#️-project-structure)
 - [💻 Tech Stack](#-tech-stack)
 - [🎨 Dashboard Preview](#-dashboard-preview)
@@ -178,57 +179,86 @@ See [**DEPLOYMENT-REPORT.md**](DEPLOYMENT-REPORT.md) for the detailed setup guid
 | :--- | :--- | :--- |
 | **Python** | 3.13+ | Required for bot |
 | **Node.js** | 20+ | Required for dashboard |
-| **Bun** | 1.3+ | Recommended (faster than npm) |
-| **InsForge** | Cloud | Managed Backend (Free) |
+| **Bun** | 1.0+ | Faster package manager |
+| **Docker Desktop** | Latest | Required for local Redis |
+| **InsForge** | Cloud | Managed database (Free) |
 
 ### Quick Start
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/mohdakil2426/Nezuko-Telegram-Bot.git
 cd Nezuko-Telegram-Bot
 
-# Install dependencies
-bun install
-python -m venv .venv
-source .venv/bin/activate  # or .\.venv\Scripts\activate on Windows
-pip install -r requirements.txt
+# 2. One-command setup (installs everything, creates .env files)
+nezuko setup          # Windows
+./nezuko.sh setup     # Mac/Linux
 
-# Configure Environment
-cp apps/web/.env.example apps/web/.env.local
-cp apps/bot/.env.example apps/bot/.env
+# 3. Fill in your credentials
+# Edit apps/bot/.env  — add BOT_TOKEN, DATABASE_URL, ENCRYPTION_KEY
+# Edit apps/web/.env.local — add NEXT_PUBLIC_INSFORGE_ANON_KEY
 
-# Run Services
-# Terminal 1: Web Dashboard
-cd apps/web && bun dev
+# 4. Generate an encryption key (if setting up fresh)
+nezuko keygen         # Windows
+./nezuko.sh keygen    # Mac/Linux
 
-# Terminal 2: Telegram Bot
-python -m apps.bot.main
+# 5. Start local Redis
+docker compose -f docker-compose.local.yml up -d
+
+# 6. Start all development servers
+nezuko dev            # Windows  → opens Bot + Web in separate terminals
+./nezuko.sh dev       # Mac/Linux
 ```
+
+Then open **http://localhost:3000** in your browser.
+
+> 📖 See [`.env.example`](.env.example) for a full reference of all required environment variables.
+
+---
+
+## ⌨️ CLI Commands
+
+All commands are available via `nezuko` (Windows) or `./nezuko.sh` (Mac/Linux):
+
+| Command | Description |
+| :--- | :--- |
+| `nezuko` | Open interactive developer menu |
+| `nezuko setup` | First-time setup — installs all dependencies |
+| `nezuko dev` | Start Bot + Web dashboard in separate terminals |
+| `nezuko stop` | Stop all running services |
+| `nezuko keygen` | **Generate a Fernet encryption key** for `ENCRYPTION_KEY` |
+| `nezuko test` | Run the full test suite |
+| `nezuko clean` | Delete `node_modules` and `.venv` |
+| `nezuko tree` | Print the project folder structure |
+| `nezuko help` | Show all available commands |
 
 <br/>
 
 ## 🏗️ Project Structure
 
 ```
-nezuko-monorepo/
+nezuko/
 ├── 📁 apps/
 │   ├── 🌐 web/                 # Next.js 16 Admin Dashboard
 │   │   ├── src/app/            # App Router pages
 │   │   ├── src/components/     # shadcn/ui + custom components
-│   │   └── src/lib/            # Hooks, InsForge SDK
+│   │   └── src/lib/            # Hooks, InsForge SDK client
 │   │
 │   └── 🤖 bot/                 # Telegram Bot Engine
 │       ├── handlers/           # Command & event handlers
-│       ├── core/               # Database, lifecycle manager
-│       └── services/           # Business logic
+│       ├── services/           # Business logic (verification, protection)
+│       ├── database/           # CRUD operations
+│       ├── core/               # Cache, encryption, DB engine
+│       └── logs/               # Runtime log files (gitignored)
 │
-├── ☁️ insforge/                # Backend Configuration
-│   ├── migrations/             # Database schema
-│   └── functions/              # Edge Functions
+├── ☁️  insforge/               # Backend Configuration
+│   ├── migrations/             # SQL schema files
+│   └── functions/              # Edge Functions (manage-bot, test-webhook)
 │
-├── 📦 packages/                # Shared packages
-├── 🐳 config/                  # Docker & Deployment configs
+├── 📝 openspec/                # Change management artifacts
+├── 🧪 tests/                   # All tests (tests/bot/)
+├── 🛠️  scripts/                 # Developer CLI scripts
+├── 🐳 docker-compose.local.yml # Local Redis
 └── 📚 docs/                    # Documentation
 ```
 
@@ -239,16 +269,23 @@ nezuko-monorepo/
 <div align="center">
 
 ### Frontend
-![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
-![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)
+![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=flat-square&logo=next.js)
+![React](https://img.shields.io/badge/React-19.2-blue?style=flat-square&logo=react)
 ![Tailwind](https://img.shields.io/badge/Tailwind-v4-cyan?style=flat-square&logo=tailwindcss)
 ![shadcn/ui](https://img.shields.io/badge/shadcn/ui-latest-black?style=flat-square)
+![TanStack Query](https://img.shields.io/badge/TanStack_Query-v5-red?style=flat-square)
 
-### Backend & Bot
+### Bot
 ![Python](https://img.shields.io/badge/Python-3.13-blue?style=flat-square&logo=python)
 ![PTB](https://img.shields.io/badge/PTB-v22.6-blue?style=flat-square&logo=telegram)
-![InsForge](https://img.shields.io/badge/InsForge-BaaS-red?style=flat-square)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?style=flat-square&logo=postgresql)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-orange?style=flat-square)
+![Redis](https://img.shields.io/badge/Redis-7-red?style=flat-square&logo=redis)
+
+### Infrastructure
+![InsForge](https://img.shields.io/badge/InsForge-BaaS-FF6B6B?style=flat-square)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue?style=flat-square&logo=postgresql)
+![Vercel](https://img.shields.io/badge/Vercel-Web-black?style=flat-square&logo=vercel)
+![Koyeb](https://img.shields.io/badge/Koyeb-Bot-green?style=flat-square)
 
 </div>
 

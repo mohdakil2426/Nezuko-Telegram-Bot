@@ -1,49 +1,40 @@
 """
-Shared fixtures for Nezuko tests.
+Shared test configuration for all Nezuko tests.
 
-This file provides common fixtures like database sessions, sample data,
-and test clients that can be used across different test modules.
-
-Following Python Testing Patterns skill best practices:
-- Use fixtures for setup/teardown
-- Proper fixture scopes (function, module, session)
-- Parametrized fixtures for multi-database testing
+Sets up environment variables, pytest markers, and shared fixtures
+used across both bot unit tests and integration tests.
 """
 
 import os
-import sys
-from collections.abc import AsyncGenerator
-from pathlib import Path
 
 import pytest
 import pytest_asyncio
+from collections.abc import AsyncGenerator
 
-# Add apps/api to Python path so 'from src.' imports work when running from project root
-_PROJECT_ROOT = Path(__file__).parent.parent
-_API_PATH = _PROJECT_ROOT / "apps" / "api"
-if str(_API_PATH) not in sys.path:
-    sys.path.insert(0, str(_API_PATH))
-
-# Override database URL for tests to use in-memory SQLite
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
-os.environ["ENVIRONMENT"] = "development"  # Valid: development, staging, production
-os.environ["MOCK_AUTH"] = "true"
+# ── Environment setup (must happen before any app imports) ─────────────────
+# Use SQLite in-memory for tests so no real DB connection is needed
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+os.environ.setdefault("INSFORGE_DATABASE_URL", "")
+os.environ.setdefault("ENVIRONMENT", "development")
+os.environ.setdefault("BOT_TOKEN", "0000000000:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+os.environ.setdefault("ENCRYPTION_KEY", "cWYdiGbzQqgjllPskB7d55feP8dPRTVv98AJh1_sFBg=")
+os.environ.setdefault("REDIS_URL", "redis://127.0.0.1:6379/0")
 
 
-# Configure pytest-asyncio
 def pytest_configure(config: pytest.Config) -> None:
-    """Register custom markers."""
-    config.addinivalue_line("markers", "slow: marks tests as slow")
-    config.addinivalue_line("markers", "integration: marks integration tests")
-    config.addinivalue_line("markers", "unit: marks unit tests")
+    """Register custom markers used across the test suite."""
+    config.addinivalue_line("markers", "slow: marks tests as slow (use -m 'not slow' to skip)")
+    config.addinivalue_line("markers", "integration: marks integration tests that hit real services")
+    config.addinivalue_line("markers", "unit: marks pure unit tests (no I/O)")
 
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session() -> AsyncGenerator:
-    """Fixture to provide a fresh database session for each test.
+    """
+    Provide a fresh SQLite in-memory database session for each test.
 
-    Creates tables before test, yields session, then cleans up.
-    Uses function scope for test isolation.
+    Creates all tables before the test, yields the session,
+    then closes the engine after. Uses function scope for full isolation.
     """
     from apps.bot.core.database import close_db, get_session, init_db
 
@@ -53,18 +44,6 @@ async def db_session() -> AsyncGenerator:
         yield session
 
     await close_db()
-
-
-@pytest.fixture
-def sample_user_data() -> dict:
-    """Provide sample user data for testing."""
-    return {
-        "id": 1,
-        "email": "test@example.com",
-        "full_name": "Test User",
-        "role": "viewer",
-        "is_active": True,
-    }
 
 
 @pytest.fixture
@@ -87,25 +66,3 @@ def sample_channel_data() -> dict:
         "username": "testchannel",
         "invite_link": None,
     }
-
-
-@pytest.fixture
-def mock_telegram_context(mocker):
-    """Provide a mock Telegram context for testing handlers."""
-    context = mocker.MagicMock()
-    context.bot = mocker.AsyncMock()
-    context.bot.get_chat_member = mocker.AsyncMock()
-    return context
-
-
-@pytest.fixture
-def mock_update(mocker):
-    """Provide a mock Telegram update for testing handlers."""
-    update = mocker.MagicMock()
-    update.effective_user = mocker.MagicMock()
-    update.effective_user.id = 12345
-    update.effective_user.username = "testuser"
-    update.effective_chat = mocker.MagicMock()
-    update.effective_chat.id = -1001234567890
-    update.callback_query = mocker.AsyncMock()
-    return update

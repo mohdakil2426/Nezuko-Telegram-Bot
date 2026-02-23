@@ -9,6 +9,7 @@
 ::   nezuko stop     - Stop all services
 ::   nezuko setup    - First-time setup
 ::   nezuko test     - Run tests
+::   nezuko keygen   - Generate encryption key
 ::   nezuko clean    - Clean node_modules and .venv
 ::   nezuko tree     - Generate project structure
 ::   nezuko help     - Show commands
@@ -60,6 +61,7 @@ if /i "%~1"=="stop" goto :stop
 if /i "%~1"=="setup" goto :setup
 if /i "%~1"=="install" goto :setup
 if /i "%~1"=="test" goto :test
+if /i "%~1"=="keygen" goto :keygen
 if /i "%~1"=="clean" goto :clean
 if /i "%~1"=="tree" goto :tree
 if /i "%~1"=="structure" goto :tree
@@ -96,6 +98,10 @@ goto :eof
 %PWSH_CMD% -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_ROOT%scripts\test\run.ps1"
 goto :eof
 
+:keygen
+%PWSH_CMD% -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_ROOT%scripts\utils\generate-key.ps1"
+goto :eof
+
 :clean
 %PWSH_CMD% -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_ROOT%scripts\utils\clean.ps1"
 goto :eof
@@ -118,6 +124,7 @@ echo    dev         Start development servers
 echo    stop        Stop all services
 echo    setup       First-time project setup
 echo    test        Run test suite
+echo    keygen      Generate a new Fernet encryption key
 echo    clean       Clean node_modules and .venv
 echo    tree        Generate project folder structure
 echo    help        Show this help message

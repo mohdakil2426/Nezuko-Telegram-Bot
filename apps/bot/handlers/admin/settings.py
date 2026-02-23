@@ -12,8 +12,7 @@ from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
-from apps.bot.core.database import get_session
-from apps.bot.database.crud import get_group_channels, get_protected_group, toggle_protection
+from apps.bot.core import insforge_client
 from apps.bot.utils.auto_delete import schedule_delete
 
 logger = logging.getLogger(__name__)
@@ -52,27 +51,26 @@ async def handle_status(update: Update, _context: ContextTypes.DEFAULT_TYPE):
 
         logger.info("Status check requested for group %s", chat_id)
 
-        # Get group from database
-        async with get_session() as session:
-            group = await get_protected_group(session, chat_id)
+        # Get group from InsForge
+        group = await insforge_client.get_protected_group(chat_id)
 
-            if not group:
-                # Group not protected
-                response = await update.message.reply_text(
-                    f"❌ **Protection Status: Not Protected**\n\n"
-                    f"_{chat_title}_ is not currently protected.\n\n"
-                    f"**To enable protection:**\n"
-                    f"1. Add me as admin in this group\n"
-                    f"2. Add me as admin in your channel\n"
-                    f"3. Run `/protect @YourChannel`",
-                    parse_mode="Markdown",
-                )
-                # Schedule auto-delete
-                await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
-                return
+        if not group:
+            # Group not protected
+            response = await update.message.reply_text(
+                f"❌ **Protection Status: Not Protected**\n\n"
+                f"_{chat_title}_ is not currently protected.\n\n"
+                f"**To enable protection:**\n"
+                f"1. Add me as admin in this group\n"
+                f"2. Add me as admin in your channel\n"
+                f"3. Run `/protect @YourChannel`",
+                parse_mode="Markdown",
+            )
+            # Schedule auto-delete
+            await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
+            return
 
-            # Get linked channels
-            channels = await get_group_channels(session, chat_id)
+        # Get linked channels
+        channels = await insforge_client.get_group_channels(chat_id)
 
         # Format status message
         if not group.enabled:
@@ -169,25 +167,24 @@ async def handle_unprotect(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info("Unprotect requested for group %s by user %s", chat_id, user_id)
 
         # Toggle protection to False
-        async with get_session() as session:
-            group = await get_protected_group(session, chat_id)
+        group = await insforge_client.get_protected_group(chat_id)
 
-            if not group:
-                response = await update.message.reply_text("ℹ️ This group is not protected.")
-                await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
-                return
+        if not group:
+            response = await update.message.reply_text("ℹ️ This group is not protected.")
+            await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
+            return
 
-            if not group.enabled:
-                response = await update.message.reply_text(
-                    "ℹ️ Protection is already disabled.\n\n"
-                    "Use `/protect @YourChannel` to re-enable.",
-                    parse_mode="Markdown",
-                )
-                await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
-                return
+        if not group.enabled:
+            response = await update.message.reply_text(
+                "ℹ️ Protection is already disabled.\n\n"
+                "Use `/protect @YourChannel` to re-enable.",
+                parse_mode="Markdown",
+            )
+            await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
+            return
 
-            # Disable protection
-            await toggle_protection(session, chat_id, enabled=False)
+        # Disable protection
+        await insforge_client.toggle_protection(chat_id, enabled=False)
 
         response = await update.message.reply_text(
             "🔓 **Protection Disabled**\n\n"
@@ -235,16 +232,15 @@ async def handle_settings(update: Update, _context: ContextTypes.DEFAULT_TYPE):
 
         logger.info("Settings requested for group %s", chat_id)
 
-        # Get group from database
-        async with get_session() as session:
-            group = await get_protected_group(session, chat_id)
+        # Get group from InsForge
+        group = await insforge_client.get_protected_group(chat_id)
 
-            if not group:
-                response = await update.message.reply_text(
-                    "❌ This group is not protected. Use `/protect` first.", parse_mode="Markdown"
-                )
-                await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
-                return
+        if not group:
+            response = await update.message.reply_text(
+                "❌ This group is not protected. Use `/protect` first.", parse_mode="Markdown"
+            )
+            await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
+            return
 
         # Show current configuration (read-only)
         # Note: params is available for future customization features

@@ -7,13 +7,11 @@ membership in all linked channels.
 
 import logging
 
-from sqlalchemy.exc import SQLAlchemyError
 from telegram import Update
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
-from apps.bot.core.database import get_session
-from apps.bot.database.crud import get_group_channels
+from apps.bot.core import insforge_client
 from apps.bot.services.protection import restrict_user
 from apps.bot.services.verification import check_multi_membership
 from apps.bot.utils.ui import send_verification_warning
@@ -52,9 +50,8 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
         chat_id = update.effective_chat.id
 
-        # Get linked channels from database
-        async with get_session() as session:
-            channels = await get_group_channels(session, chat_id)
+        # Get linked channels from InsForge
+        channels = await insforge_client.get_group_channels(chat_id)
 
         if not channels:
             # Group not protected
@@ -109,7 +106,5 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     except TelegramError as e:
         logger.error("Telegram error in new member handler: %s", e, exc_info=True)
-    except SQLAlchemyError as e:
-        logger.error("Database error in new member handler: %s", e, exc_info=True)
     except (RuntimeError, ValueError, OSError) as e:
         logger.error("Unexpected error in new member handler: %s", e, exc_info=True)

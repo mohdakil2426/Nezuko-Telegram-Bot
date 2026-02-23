@@ -120,7 +120,7 @@ if ($Service -eq "all" -or $Service -eq "bot") {
 # ============================================================
 
 Write-LogSection -Title "DEV SERVICES STARTED"
-Write-Log -Message "All 3 services started successfully" -Level "SUCCESS" -Category "DEV"
+Write-Log -Message "All services started successfully" -Level "SUCCESS" -Category "DEV"
 
 Write-Host ""
 Write-Host "  ====================================" -ForegroundColor Cyan

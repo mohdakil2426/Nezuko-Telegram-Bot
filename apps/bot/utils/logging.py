@@ -15,7 +15,6 @@ Features:
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
-from pathlib import Path
 from typing import Any
 
 import structlog
@@ -72,11 +71,8 @@ def configure_logging(json_format: bool | None = None) -> None:
         structlog.processors.UnicodeDecoder(),
     ]
 
-    # Get project root for log file
-    project_root = Path(__file__).resolve().parent.parent.parent.parent
-    log_dir = project_root / "storage" / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = log_dir / "bot.log"
+    # Use the canonical log directory from config (apps/bot/logs/)
+    log_file = config.log_file
 
     if json_format:
         # Production: JSON format for log aggregation (Loki, ELK, etc.)

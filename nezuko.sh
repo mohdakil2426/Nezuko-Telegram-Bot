@@ -42,6 +42,7 @@ show_help() {
     echo "    stop      Stop all services"
     echo "    setup     First-time project setup"
     echo "    test      Run test suite"
+    echo "    keygen    Generate a new Fernet encryption key"
     echo "    clean     Clean node_modules and .venv"
     echo "    tree      Generate project folder structure"
     echo "    help      Show this help message"
@@ -105,6 +106,45 @@ case "${1:-menu}" in
         ;;
     "test")
         exec "$SCRIPT_DIR/scripts/test/run.sh"
+        ;;
+    "keygen")
+        echo ""
+        echo -e "${CYAN}  ====================================${NC}"
+        echo -e "${YELLOW}   🔑 Generate Encryption Key${NC}"
+        echo -e "${CYAN}  ====================================${NC}"
+        echo ""
+        # Try venv Python first, fall back to system Python
+        PYTHON=""
+        if [ -f "$SCRIPT_DIR/.venv/bin/python" ]; then
+            PYTHON="$SCRIPT_DIR/.venv/bin/python"
+        elif command -v python3 &>/dev/null; then
+            PYTHON="python3"
+        elif command -v python &>/dev/null; then
+            PYTHON="python"
+        fi
+        if [ -z "$PYTHON" ]; then
+            echo -e "${RED}  [ERROR] Python not found. Run: ./nezuko setup${NC}"
+            exit 1
+        fi
+        KEY=$("$PYTHON" -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())" 2>/dev/null)
+        if [ $? -eq 0 ]; then
+            echo -e "  ${GREEN}✅ Generated Key:${NC}"
+            echo ""
+            echo -e "  ${YELLOW}$KEY${NC}"
+            echo ""
+            echo "  📋 Instructions:"
+            echo "  1. Copy the key above."
+            echo "  2. Paste it into ENCRYPTION_KEY= in apps/bot/.env"
+            echo ""
+            echo -e "  ${RED}⚠️  IMPORTANT:${NC}"
+            echo "  - Use the SAME key in every environment (local & production)."
+            echo "  - Store it in a password manager. If lost, encrypted tokens are unreadable."
+            echo "  - Never commit it to git."
+            echo ""
+        else
+            echo -e "${RED}  [ERROR] Failed. Is 'cryptography' installed? Run: ./nezuko setup${NC}"
+            exit 1
+        fi
         ;;
     "clean")
         exec "$SCRIPT_DIR/scripts/utils/clean.sh"

@@ -34,8 +34,12 @@ class BotSettings(BaseSettings):
     BOT_TOKEN: str | None = None
     ENVIRONMENT: Literal["development", "production"] = "development"
 
-    # Database
+    # Database — used only for SQLite in tests (no raw PG connection to InsForge)
     DATABASE_URL: str | None = None
+
+    # InsForge BaaS (REST API — replaces direct PostgreSQL)
+    INSFORGE_BASE_URL: str = "https://u4ckbciy.us-west.insforge.app"
+    INSFORGE_ANON_KEY: str | None = None
 
     # Webhook settings
     WEBHOOK_URL: str | None = None
@@ -50,9 +54,6 @@ class BotSettings(BaseSettings):
 
     # Dashboard mode - for decrypting bot tokens from database
     ENCRYPTION_KEY: str | None = None
-
-    # InsForge PostgreSQL URL (for bot workers - separate from local DATABASE_URL)
-    INSFORGE_DATABASE_URL: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -128,9 +129,14 @@ class BotSettings(BaseSettings):
         return self.ENCRYPTION_KEY
 
     @property
-    def insforge_database_url(self) -> str | None:
-        """Alias for INSFORGE_DATABASE_URL for backwards compatibility."""
-        return self.INSFORGE_DATABASE_URL
+    def insforge_base_url(self) -> str:
+        """InsForge REST API base URL."""
+        return self.INSFORGE_BASE_URL
+
+    @property
+    def insforge_anon_key(self) -> str | None:
+        """InsForge anonymous JWT key for REST API calls."""
+        return self.INSFORGE_ANON_KEY
 
     @property
     def is_production(self) -> bool:
@@ -169,29 +175,27 @@ class BotSettings(BaseSettings):
         return Path(__file__).resolve().parent.parent.parent
 
     @property
-    def storage_dir(self) -> Path:
-        """Get the storage directory."""
-        path = self.base_dir / "storage"
-        path.mkdir(parents=True, exist_ok=True)
-        return path
+    def bot_dir(self) -> Path:
+        """Get the bot application directory (apps/bot/)."""
+        return Path(__file__).resolve().parent
 
     @property
     def logs_dir(self) -> Path:
-        """Get the logs directory."""
-        path = self.storage_dir / "logs"
+        """Get the logs directory (apps/bot/logs/)."""
+        path = self.bot_dir / "logs"
         path.mkdir(parents=True, exist_ok=True)
         return path
 
     @property
     def data_dir(self) -> Path:
-        """Get the data directory."""
-        path = self.storage_dir / "data"
+        """Get the data directory (apps/bot/data/)."""
+        path = self.bot_dir / "data"
         path.mkdir(parents=True, exist_ok=True)
         return path
 
     @property
     def log_file(self) -> Path:
-        """Get the log file path."""
+        """Get the log file path (apps/bot/logs/bot.log)."""
         return self.logs_dir / "bot.log"
 
     def check_config(self) -> None:

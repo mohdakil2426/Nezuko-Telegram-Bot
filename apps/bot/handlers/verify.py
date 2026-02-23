@@ -7,14 +7,12 @@ and unmutes if all channels are verified.
 
 import contextlib
 import logging
-from typing import cast
 
 from telegram import Update
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
-from apps.bot.core.database import get_session
-from apps.bot.database.crud import get_group_channels
+from apps.bot.core import insforge_client
 from apps.bot.services.protection import unmute_user
 from apps.bot.services.verification import check_multi_membership, invalidate_cache
 
@@ -51,9 +49,8 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
 
         logger.info("User %s clicked verify button in chat %s", user_id, chat_id)
 
-        # Get linked channels from database
-        async with get_session() as session:
-            channels = await get_group_channels(session, chat_id)
+        # Get linked channels from InsForge
+        channels = await insforge_client.get_group_channels(chat_id)
 
         if not channels:
             # Group not protected (unlikely, but handle gracefully)
@@ -68,7 +65,7 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
 
         # Invalidate cache for all channels (force fresh verification)
         for channel in channels:
-            await invalidate_cache(user_id, cast(int, channel.channel_id))
+            await invalidate_cache(user_id, channel.channel_id)
 
         # Re-check membership in all channels
         missing_channels = await check_multi_membership(

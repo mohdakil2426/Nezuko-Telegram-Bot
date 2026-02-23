@@ -280,19 +280,29 @@ Write-Host "  " -NoNewline
 Write-Host "IMPORTANT:" -ForegroundColor Yellow
 Write-Host " Edit these files with your credentials:"
 Write-Host ""
-Write-Host "  📝 " -NoNewline -ForegroundColor White
-Write-Host "apps/web/.env.local" -ForegroundColor Cyan
-Write-Host "     - NEXT_PUBLIC_API_URL (default: http://localhost:8080)" -ForegroundColor Gray
-Write-Host "     - NEXT_PUBLIC_LOGIN_BOT_USERNAME (your bot's username)" -ForegroundColor Gray
-Write-Host ""
 
 Write-Host "  📝 " -NoNewline -ForegroundColor White
 Write-Host "apps/bot/.env" -ForegroundColor Cyan
-Write-Host "     - BOT_TOKEN (optional - for standalone mode)" -ForegroundColor Gray
+Write-Host "     - BOT_TOKEN              (from @BotFather)" -ForegroundColor Gray
+Write-Host "     - DATABASE_URL           (InsForge DB connection string)" -ForegroundColor Gray
+Write-Host "     - INSFORGE_DATABASE_URL  (same host, plain asyncpg driver)" -ForegroundColor Gray
+Write-Host "     - ENCRYPTION_KEY         (generate with Fernet command in .env.example)" -ForegroundColor Gray
 Write-Host ""
+
+Write-Host "  📝 " -NoNewline -ForegroundColor White
+Write-Host "apps/web/.env.local" -ForegroundColor Cyan
+Write-Host "     - NEXT_PUBLIC_INSFORGE_ANON_KEY     (from InsForge Dashboard)" -ForegroundColor Gray
+Write-Host "     - NEXT_PUBLIC_LOGIN_BOT_USERNAME    (your bot's username without @)" -ForegroundColor Gray
+Write-Host ""
+
+Write-Host "  🐳 Start local Redis:" -ForegroundColor White
+Write-Host "     docker compose -f docker-compose.local.yml up -d" -ForegroundColor Gray
+Write-Host ""
+
 Write-Host "  Then run: " -NoNewline
 Write-Host "nezuko dev" -ForegroundColor Green
 Write-Host ""
 Write-Host "  📋 Log file: " -NoNewline -ForegroundColor Gray
 Write-Host (Get-LogPath) -ForegroundColor DarkGray
 Write-Host ""
+

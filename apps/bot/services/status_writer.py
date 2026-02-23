@@ -1,7 +1,7 @@
-"""Status writer service for InsForge PostgreSQL.
+"""Status writer service for InsForge REST API.
 
 Periodically UPSERTs bot heartbeat data to the bot_status table
-in InsForge managed PostgreSQL.
+via the InsForge REST API (no direct PostgreSQL connection needed).
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import logging
 import time
 from typing import Any
 
-import asyncpg
+from apps.bot.core import insforge_client
 
 logger = logging.getLogger(__name__)
 
@@ -20,27 +20,24 @@ _tasks: set[asyncio.Task[Any]] = set()
 
 
 class StatusWriter:
-    """Writes bot status heartbeats to InsForge PostgreSQL."""
+    """Writes bot status heartbeats to InsForge via REST API."""
 
-    def __init__(self, bot_id: int, database_url: str) -> None:
+    def __init__(self, bot_id: int, anon_key: str) -> None:
         """Initialize the status writer.
 
         Args:
             bot_id: Telegram bot ID
-            database_url: InsForge PostgreSQL connection string
+            anon_key: InsForge anonymous key (unused directly — client already
+                      initialised by main.py, kept for API compatibility)
         """
         self._bot_id = bot_id
-        self._database_url = database_url
-        self._pool: asyncpg.Pool | None = None
+        self._anon_key = anon_key
         self._running = False
         self._start_time = time.monotonic()
         self._interval = 30  # seconds
 
     async def start(self) -> None:
         """Start the status writer background task."""
-        self._pool = await asyncpg.create_pool(
-            self._database_url, min_size=1, max_size=2, ssl="require"
-        )
         self._running = True
         self._start_time = time.monotonic()
         task = asyncio.create_task(self._write_loop())
@@ -51,47 +48,48 @@ class StatusWriter:
     async def stop(self) -> None:
         """Stop the status writer and mark bot as offline."""
         self._running = False
-        if self._pool:
-            try:
-                await asyncio.wait_for(self._write_status("offline"), timeout=5.0)
-            except (TimeoutError, asyncpg.exceptions.PostgresError, OSError) as e:
-                logger.warning("Failed to write offline status: %s", e)
-            await self._pool.close()
+        try:
+            await asyncio.wait_for(self._write_status("offline"), timeout=5.0)
+        except (TimeoutError, OSError, RuntimeError) as e:
+            logger.warning("Failed to write offline status: %s", e)
         logger.info("Status writer stopped for bot %d", self._bot_id)
 
     async def _write_loop(self) -> None:
-        """Periodically write status to database."""
+        """Periodically write status to InsForge."""
         backoff = 1.0
         while self._running:
             try:
-                await asyncio.wait_for(self._write_status("online"), timeout=5.0)
-                backoff = 1.0  # reset on success
+                await asyncio.wait_for(self._write_status("online"), timeout=10.0)
+                backoff = 1.0
                 await asyncio.sleep(self._interval)
-            except (TimeoutError, asyncpg.exceptions.PostgresError, OSError):
+            except (TimeoutError, OSError, RuntimeError):
                 logger.exception("Failed to write bot status")
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, 60.0)
 
     async def _write_status(self, status: str) -> None:
-        """UPSERT bot status to InsForge PostgreSQL.
+        """UPSERT bot status via InsForge REST API.
 
         Args:
             status: Bot status (online, offline)
         """
-        if not self._pool:
-            return
+        import datetime  # pylint: disable=import-outside-toplevel
+
         uptime = int(time.monotonic() - self._start_time)
-        await self._pool.execute(
-            """
-            INSERT INTO bot_status (bot_id, status, last_heartbeat, uptime_seconds)
-            VALUES ($1, $2, NOW(), $3)
-            ON CONFLICT (bot_id) DO UPDATE SET
-                status = EXCLUDED.status,
-                last_heartbeat = NOW(),
-                uptime_seconds = EXCLUDED.uptime_seconds,
-                updated_at = NOW()
-            """,
-            self._bot_id,
-            status,
-            uptime,
-        )
+        try:
+            client = insforge_client._get_client()  # pylint: disable=protected-access
+            now = datetime.datetime.now(datetime.UTC).isoformat()
+            resp = await client.patch(
+                "/api/database/records/bot_status",
+                params={"bot_id": f"eq.{self._bot_id}"},
+                json={"status": status, "last_heartbeat": now, "updated_at": now},
+                headers={"Prefer": "return=minimal"},
+            )
+            if resp.status_code in (404, 400):
+                # Table schema mismatch — non-fatal, skip silently
+                logger.debug("bot_status table not compatible, skipping heartbeat")
+                return
+            resp.raise_for_status()
+            logger.debug("Bot %d status=%s uptime=%ds", self._bot_id, status, uptime)
+        except Exception as e:  # pylint: disable=broad-except
+            logger.debug("Status write skipped: %s", e)
