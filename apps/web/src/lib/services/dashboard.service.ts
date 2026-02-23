@@ -42,7 +42,9 @@ export async function getChartData(days = 30): Promise<ChartDataPoint[]> {
   );
   if (error) throw error;
 
-  const series = Array.isArray(data) ? data : [];
+  // RPC returns { period, series: [...], summary }
+  const envelope = data as Record<string, unknown> | null;
+  const series = Array.isArray(envelope?.series) ? envelope.series : [];
   return series.map(
     (item: { timestamp: string; successful: number; failed: number }) => ({
       date: item.timestamp,

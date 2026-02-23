@@ -1,19 +1,19 @@
 """
-Tests for bot configuration (BotSettings) and database CRUD operations.
+Tests for bot configuration (BotSettings).
 
 Verifies:
 - BotSettings loads environment variables correctly
-- SQLite in-memory database initialises without error
-- Core CRUD functions create and retrieve records
+- All config properties are the correct type
+- dashboard_mode detection works
+
+Note: CRUD tests have been removed — database operations now go via
+InsForge REST API (insforge_client) and are tested in test_services.py
+via mock patches of insforge_client functions.
 """
 
 import os
 
 import pytest
-import pytest_asyncio
-
-# Ensure SQLite is used before config is imported
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
 
 class TestBotSettings:
@@ -25,12 +25,12 @@ class TestBotSettings:
 
         assert config.environment in ("development", "staging", "production")
 
-    def test_database_url_set(self):
-        """DATABASE_URL is set and non-empty."""
+    def test_insforge_base_url_property(self):
+        """insforge_base_url is a non-empty string when INSFORGE_BASE_URL is set."""
         from apps.bot.config import config
 
-        assert config.database_url
-        assert "://" in config.database_url
+        # In test environment INSFORGE_BASE_URL may be empty — just check type
+        assert isinstance(config.insforge_base_url, str)
 
     def test_is_production_flag(self):
         """is_production returns False in development."""
@@ -70,88 +70,35 @@ class TestBotSettings:
                 os.environ["BOT_TOKEN"] = original
             importlib.reload(cfg_module)
 
+    def test_redis_url_property_type(self):
+        """redis_url is str or None — never raises."""
+        from apps.bot.config import config
+
+        assert config.redis_url is None or isinstance(config.redis_url, str)
+
 
 @pytest.mark.asyncio
-@pytest.mark.integration
-class TestCrudOperations:
-    """Integration tests for core CRUD functions against SQLite in-memory DB."""
+class TestInsForgeClientInit:
+    """Verify insforge_client can be initialised and queried (mocked)."""
 
-    @pytest_asyncio.fixture(autouse=True)
-    async def setup_db(self):
-        """Initialise and tear down the in-memory SQLite database."""
-        from apps.bot.core.database import close_db, init_db
+    async def test_init_client_sets_base_url(self):
+        """init_client stores the base URL for subsequent calls."""
+        from apps.bot.core import insforge_client
 
-        await init_db()
-        yield
-        await close_db()
+        insforge_client.init_client("https://test.insforge.app", "test-anon-key")
+        # After init, _BASE_URL should be set
+        assert insforge_client._BASE_URL == "https://test.insforge.app"  # pylint: disable=protected-access
 
-    async def test_create_and_get_owner(self):
-        """create_owner then get_owner returns the same record."""
-        from apps.bot.core.database import get_session
-        from apps.bot.database.crud import create_owner, get_owner
+    async def test_get_client_raises_before_init(self):
+        """_get_client raises RuntimeError if not initialised."""
+        import importlib
+        import apps.bot.core.insforge_client as ic
 
-        async with get_session() as session:
-            owner = await create_owner(session, user_id=10001, username="testuser")
-            assert owner.user_id == 10001
-
-            fetched = await get_owner(session, user_id=10001)
-            assert fetched is not None
-            assert fetched.username == "testuser"
-
-    async def test_create_protected_group(self):
-        """create_protected_group stores group with correct owner."""
-        from apps.bot.core.database import get_session
-        from apps.bot.database.crud import create_owner, create_protected_group, get_protected_group
-
-        async with get_session() as session:
-            await create_owner(session, user_id=20001, username="groupowner")
-            group = await create_protected_group(
-                session,
-                group_id=-1001111111111,
-                owner_id=20001,
-                title="My Test Group",
-            )
-            assert group.group_id == -1001111111111
-
-            fetched = await get_protected_group(session, group_id=-1001111111111)
-            assert fetched is not None
-            assert fetched.title == "My Test Group"
-
-    async def test_link_and_get_channels(self):
-        """link_group_channel then get_group_channels returns the linked channel."""
-        from apps.bot.core.database import get_session
-        from apps.bot.database.crud import (
-            create_owner,
-            create_protected_group,
-            get_group_channels,
-            link_group_channel,
-        )
-
-        async with get_session() as session:
-            await create_owner(session, user_id=30001, username="chanowner")
-            await create_protected_group(
-                session,
-                group_id=-1002222222222,
-                owner_id=30001,
-                title="Channel Link Group",
-            )
-            await link_group_channel(
-                session,
-                group_id=-1002222222222,
-                channel_id=-1009999999999,
-                invite_link="https://t.me/testchan",
-                title="Linked Channel",
-            )
-
-            channels = await get_group_channels(session, group_id=-1002222222222)
-            assert len(channels) == 1
-            assert channels[0].channel_id == -1009999999999
-
-    async def test_get_owner_nonexistent(self):
-        """get_owner returns None for unknown user_id."""
-        from apps.bot.core.database import get_session
-        from apps.bot.database.crud import get_owner
-
-        async with get_session() as session:
-            result = await get_owner(session, user_id=999999999)
-            assert result is None
+        # Reset module state
+        original_client = ic._client  # pylint: disable=protected-access
+        ic._client = None  # pylint: disable=protected-access
+        try:
+            with pytest.raises(RuntimeError, match="not initialised"):
+                ic._get_client()  # pylint: disable=protected-access
+        finally:
+            ic._client = original_client  # pylint: disable=protected-access

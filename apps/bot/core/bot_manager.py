@@ -13,16 +13,16 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+import httpx
 from telegram import Update
 from telegram.error import TelegramError
 from telegram.ext import Application
 
-from apps.bot.config import config
+from apps.bot.core import insforge_client
 from apps.bot.core.encryption import EncryptionError, decrypt_token, is_encryption_configured
 from apps.bot.core.loader import register_handlers, setup_bot_commands
+from apps.bot.services.command_worker import CommandWorker
+from apps.bot.services.status_writer import StatusWriter
 from apps.bot.utils.health import start_health_server, stop_health_server
 
 logger = logging.getLogger(__name__)
@@ -69,6 +69,8 @@ class BotInstance:  # pylint: disable=too-many-instance-attributes
     metrics: BotMetrics = field(default_factory=BotMetrics)
     shutdown_event: asyncio.Event = field(default_factory=asyncio.Event)
     logger: Any = None  # logging.Logger
+    status_writer: StatusWriter | None = None
+    command_worker: CommandWorker | None = None
 
 
 @dataclass
@@ -95,8 +97,6 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
     def __init__(self) -> None:
         """Initialize the bot manager."""
         self.bot_instances: dict[int, BotInstance] = {}
-        self.engine = create_async_engine(config.database_url, echo=False)
-        self.session_factory = async_sessionmaker(self.engine, expire_on_commit=False)
         self._running = False
         self._shutdown_event = asyncio.Event()
         self._health_monitor_task: asyncio.Task | None = None
@@ -162,7 +162,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         return f"bot:{bot_id}:{key}"
 
     async def load_bots_from_database(self) -> list[BotConfig]:
-        """Load active bot configurations from database.
+        """Load active bot configurations from InsForge bot_instances table.
 
         Returns:
             List of BotConfig objects with decrypted tokens.
@@ -173,55 +173,31 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         if not is_encryption_configured():
             raise EncryptionError("ENCRYPTION_KEY required for dashboard mode")
 
-        # Import model here to avoid circular imports
-        # The model is defined in API but we share the database
-        from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
-        from sqlalchemy.orm import declarative_base
+        rows = await insforge_client._get(  # pylint: disable=protected-access
+            "bot_instances",
+            {"is_active": "eq.true", "is_deleted": "eq.false"},
+        )
 
-        Base = declarative_base()  # pylint: disable=invalid-name
-
-        class BotInstanceModel(Base):  # type: ignore[valid-type,misc]
-            """Minimal model matching API's bot_instances table."""
-
-            __tablename__ = "bot_instances"
-
-            id = Column(Integer, primary_key=True)
-            owner_telegram_id = Column(Integer, nullable=False)
-            bot_id = Column(Integer, nullable=False, unique=True)
-            bot_username = Column(String(255), nullable=False)
-            bot_name = Column(String(255), nullable=True)
-            token_encrypted = Column(Text, nullable=False)
-            is_active = Column(Boolean, default=True)
-            created_at = Column(DateTime)
-            updated_at = Column(DateTime)
-
-        async with self.session_factory() as session:
-            stmt = select(BotInstanceModel).where(BotInstanceModel.is_active.is_(True))
-            result = await session.execute(stmt)
-            rows = result.scalars().all()
-
-            bots: list[BotConfig] = []
-            for row in rows:
-                try:
-                    # Cast row attributes - SQLAlchemy ORM returns actual values at runtime,
-                    # but type checkers see Column[T] schema types. Cast to satisfy Pyrefly.
-                    token_encrypted: str = str(row.token_encrypted)
-                    decrypted_token = decrypt_token(token_encrypted)
-                    bots.append(
-                        BotConfig(
-                            id=int(row.id),  # type: ignore[arg-type]
-                            bot_id=int(row.bot_id),  # type: ignore[arg-type]
-                            bot_username=str(row.bot_username),
-                            bot_name=str(row.bot_name or row.bot_username),
-                            token=decrypted_token,
-                            is_active=bool(row.is_active),
-                        )
+        bots: list[BotConfig] = []
+        for row in rows:
+            try:
+                token_encrypted: str = str(row["token_encrypted"])
+                decrypted_token = decrypt_token(token_encrypted)
+                bots.append(
+                    BotConfig(
+                        id=int(row["id"]),
+                        bot_id=int(row["bot_id"]),
+                        bot_username=str(row["bot_username"]),
+                        bot_name=str(row.get("bot_name") or row["bot_username"]),
+                        token=decrypted_token,
+                        is_active=bool(row.get("is_active", True)),
                     )
-                    logger.info("Loaded bot: @%s (id=%d)", row.bot_username, row.bot_id)
-                except EncryptionError as e:
-                    logger.error("Failed to decrypt token for bot %d: %s", row.bot_id, e)
+                )
+                logger.info("Loaded bot: @%s (id=%d)", row["bot_username"], row["bot_id"])
+            except EncryptionError as e:
+                logger.error("Failed to decrypt token for bot %d: %s", row["bot_id"], e)
 
-            return bots
+        return bots
 
     async def start_bot(self, bot_config: BotConfig) -> bool:
         """Start a single bot instance.
@@ -277,6 +253,36 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
                 "Started bot: @%s (id=%d)", bot_config.bot_username, bot_config.id
             )
             logger.info("Started bot: @%s", bot_config.bot_username)
+
+            # Start dashboard services (StatusWriter + CommandWorker)
+            from apps.bot.config import config as app_config
+
+            anon_key = app_config.insforge_anon_key
+            if anon_key:
+                try:
+                    bot_info = await application.bot.get_me()
+                    telegram_bot_id = bot_info.id
+
+                    sw = StatusWriter(telegram_bot_id, anon_key)
+                    await sw.start()
+                    bot_instance.status_writer = sw
+
+                    cw = CommandWorker(application.bot, telegram_bot_id, anon_key)
+                    await cw.start()
+                    bot_instance.command_worker = cw
+
+                    logger.info(
+                        "[OK] Dashboard services started for @%s (bot_id=%d)",
+                        bot_config.bot_username,
+                        telegram_bot_id,
+                    )
+                except (TimeoutError, OSError, TelegramError) as e:
+                    logger.warning(
+                        "Dashboard services failed for @%s: %s",
+                        bot_config.bot_username,
+                        e,
+                    )
+
             return True
 
         except (ValueError, TypeError, RuntimeError, TelegramError) as e:
@@ -441,7 +447,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
             except asyncio.CancelledError:
                 logger.info("Health monitor cancelled")
                 break
-            except (TelegramError, SQLAlchemyError, RuntimeError, OSError) as e:
+            except (TelegramError, RuntimeError, OSError) as e:
                 logger.error("Error in health monitor: %s", e, exc_info=True)
 
     async def restart_bot(self, bot_id: int) -> dict:
@@ -563,6 +569,18 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
 
             bot_instance.status = BotStatus.STOPPED
 
+            # Stop dashboard services
+            if bot_instance.status_writer:
+                try:
+                    await bot_instance.status_writer.stop()
+                except (RuntimeError, TimeoutError) as e:
+                    logger.warning("Error stopping status writer for bot %d: %s", bot_id, e)
+            if bot_instance.command_worker:
+                try:
+                    await bot_instance.command_worker.stop()
+                except (RuntimeError, TimeoutError) as e:
+                    logger.warning("Error stopping command worker for bot %d: %s", bot_id, e)
+
             # Close per-bot log handlers
             if bot_instance.logger:
                 for handler in bot_instance.logger.handlers[:]:
@@ -648,6 +666,10 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
             logger.error("Cannot start dashboard mode: %s", e)
             logger.error("Set ENCRYPTION_KEY in .env (same as API)")
             return
+        except (httpx.HTTPError, OSError) as e:
+            logger.error("Failed to load bots from InsForge: %s", e)
+            logger.info("Will keep retrying in the sync loop...")
+            bots = []
 
         if not bots:
             logger.warning("No active bots found in database")
@@ -661,7 +683,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
                     for bot in new_bots:
                         if bot.id not in self.bot_instances:
                             await self.start_bot(bot)
-                except (EncryptionError, SQLAlchemyError, OSError) as e:
+                except (EncryptionError, OSError, httpx.HTTPError) as e:
                     logger.error("Error checking for new bots: %s", e)
             return
 
@@ -708,7 +730,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
                 logger.info("Bot removed/deactivated: id=%d", bot_id)
                 await self.stop_bot(bot_id)
 
-        except (EncryptionError, SQLAlchemyError, OSError) as e:
+        except (EncryptionError, OSError, httpx.HTTPError) as e:
             logger.error("Error syncing bots: %s", e)
 
     async def shutdown(self) -> None:
@@ -726,8 +748,8 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         for bot_id in list(self.bot_instances.keys()):
             await self.stop_bot(bot_id)
 
-        # Close database engine
-        await self.engine.dispose()
+        # Close InsForge client
+        await insforge_client.close_client()
 
         # Stop health server
         await stop_health_server()

@@ -66,7 +66,7 @@ The platform uses a clean 2-tier architecture powered by InsForge BaaS. The lega
 
 ```
 Dashboard → InsForge SDK (direct queries) → InsForge Managed PostgreSQL
-Bot → SQLAlchemy (direct connection) → InsForge Managed PostgreSQL
+Bot → httpx REST (insforge_client.py) → InsForge REST API → PostgreSQL
 Dashboard ← InsForge Realtime (WebSocket) ← PostgreSQL Triggers
 ```
 
@@ -88,4 +88,4 @@ Dashboard ← InsForge Realtime (WebSocket) ← PostgreSQL Triggers
 
 ---
 
-_Last Updated: 2026-02-22_
+_Last Updated: 2026-02-23 (Phase 63)_

@@ -10,6 +10,7 @@ import asyncio
 import logging
 from typing import Any
 
+import httpx
 from telegram import Bot
 from telegram.error import TelegramError
 
@@ -77,7 +78,7 @@ class CommandWorker:
                     "status": "eq.pending",
                 },
             )
-        except Exception as e:  # pylint: disable=broad-except
+        except (httpx.HTTPError, OSError, RuntimeError) as e:
             logger.warning("Failed to fetch admin_commands: %s", e)
             return
 
@@ -90,13 +91,14 @@ class CommandWorker:
                     {"status": "processing"},
                     prefer="return=minimal",
                 )
-            except Exception as e:  # pylint: disable=broad-except
+            except (httpx.HTTPError, OSError, RuntimeError) as e:
                 logger.warning("Failed to mark command %s as processing: %s", row["id"], e)
                 continue
 
             payload = row.get("payload") or {}
             if isinstance(payload, str):
                 import json  # pylint: disable=import-outside-toplevel
+
                 payload = json.loads(payload)
 
             await self._execute_command(row["id"], row["command_type"], payload)
@@ -133,9 +135,7 @@ class CommandWorker:
             chat_id=payload["chat_id"], user_id=payload["user_id"], only_if_banned=True
         )
 
-    async def _update_status(
-        self, command_id: Any, status: str, result: dict[str, Any]
-    ) -> None:
+    async def _update_status(self, command_id: Any, status: str, result: dict[str, Any]) -> None:
         """Update command status in InsForge via REST API.
 
         Args:
@@ -144,6 +144,7 @@ class CommandWorker:
             result: Result data
         """
         import json  # pylint: disable=import-outside-toplevel
+
         try:
             await asyncio.wait_for(
                 insforge_client._patch(  # pylint: disable=protected-access

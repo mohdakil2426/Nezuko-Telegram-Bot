@@ -2,8 +2,8 @@
 
 ## Current Status
 
-**Phase**: 59 - Python Code Quality Audit (Complete)
-**Overall Completion**: Phase 59 of 59 complete
+**Phase**: 64 — Dashboard Full Pipeline Fix & Log Noise Reduction
+**Overall Completion**: Phase 64 of 64 complete
 **Last Updated**: 2026-02-23
 
 ---
@@ -26,105 +26,91 @@
 | 55 | Cloud Deployment Prep | Complete |
 | 56 | Architecture Audit & Polish | Complete |
 | 57 | Dev Environment Cleanup & Docs | Complete |
-| 58    | InsForge REST API Migration (Bot DB Layer) | Complete ✅ LIVE |
-| **59** | **Python Code Quality Audit** | **Complete ✅ 0 ISSUES** |
+| 58 | InsForge REST API Migration (Bot DB Layer) | Complete ✅ LIVE |
+| 59 | Python Code Quality Audit | Complete ✅ 0 ISSUES |
+| 60 | Full InsForge Migration Audit & Completion | Complete ✅ 55/55 tests |
+| 61 | InsForge Audit, Bug Fixes & Dashboard Mode | Complete ✅ |
+| 62 | Dashboard Sync, Dead Code Cleanup & Bot Startup | Complete ✅ |
+| **63** | **Dashboard Data Pipeline & Crash Resilience** | **Complete ✅** |
+| **64** | **Dashboard Full Pipeline Fix & Log Noise Reduction** | **Complete ✅** |
 
 ---
 
-## Phase 58: InsForge REST API Migration
+## Phase 63: Dashboard Data Pipeline & Crash Resilience
 
-### Problem Solved
-InsForge BaaS does not expose raw PostgreSQL connection strings — the `DATABASE_URL`
-and `INSFORGE_DATABASE_URL` env vars contained unresolvable `<PASSWORD>` placeholders.
-`asyncpg.create_pool()` and SQLAlchemy's `init_db()` were crashing at startup.
+### Problems Solved
 
-### Solution
-Replaced all direct PostgreSQL access in the bot with HTTP calls to InsForge's
-REST API (`/api/database/records/{table}`), using the existing anon key already
-available in `.env`.
+1. **`StatusWriter` + `CommandWorker` never started in dashboard mode** — only launched
+   in standalone mode's `post_init()` callback. Dashboard mode (`bot_manager.start_bot()`)
+   never started them → `bot_status` table always empty, `admin_commands` never polled.
+2. **`InsForgeLogHandler` never wired** — `main.py` had its own `logging.basicConfig()`
+   that didn't include the handler. `utils/logging.py` (which has it) was never imported.
+   → `admin_logs` table permanently empty, Logs page showed nothing.
+3. **Status value mismatch** — `get_dashboard_stats` RPC queried `status = 'running'`
+   but `StatusWriter` writes `status = 'online'` → uptime always showed 0.
+4. **Chart data extraction bug** — `get_verification_trends` returns `{series: [...]}`,
+   frontend treated `data` as flat array → charts always empty.
+5. **`httpx.ReadTimeout` crash** — `_sync_bots()` only caught `(EncryptionError, OSError)`,
+   not `httpx.HTTPError`. Transient timeout killed the entire bot process.
 
-### Completed
+### Fixes Applied
 
-- **`apps/bot/core/insforge_client.py`** (NEW): `httpx`-based REST client with full
-  CRUD API mirroring old `crud.py`. Returns `@dataclass` objects.
-- **`apps/bot/config.py`**: `INSFORGE_BASE_URL` + `INSFORGE_ANON_KEY` added;
-  `INSFORGE_DATABASE_URL` removed; `DATABASE_URL` defaults to empty.
-- **`apps/bot/main.py`**: Removed `init_db()` / SQLAlchemy; added `init_client()` /
-  `close_client()` calls; workers receive `anon_key` not `database_url`.
-- **All 6 handlers** (`verify`, `message`, `join`, `leave`, `setup`, `settings`):
-  Replaced `get_session()` + `crud.*` with `insforge_client.*` calls.
-- **`services/status_writer.py`** (REWRITE): REST PATCH to `bot_status`; graceful
-  skip on schema mismatch.
-- **`services/command_worker.py`** (REWRITE): REST polling of `admin_commands`;
-  no asyncpg NOTIFY.
-- **`services/verification.py`**: `HasChannelId.channel_id` narrowed to `int`;
-  `check_multi_membership` takes `Sequence[HasChannelId]`.
-- **InsForge DB (via MCP)**: Added `bot_id BIGINT` to `bot_status` and
-  `admin_commands`; added pending-command index.
-
-### Verified Live
-Bot running at 14:27 IST 2026-02-23:
-- InsForge REST: ✅ 200 OK on all API calls
-- Status writer: ✅ 204 No Content on heartbeat PATCH
-- Command worker: ✅ polling admin_commands (200 OK)
-- Telegram: ✅ `getUpdates` + real message handled
+| # | Fix | Files Changed |
+|---|-----|---------------|
+| 1 | Start StatusWriter + CommandWorker in `BotManager.start_bot()` | `bot_manager.py` |
+| 2 | Add `status_writer`/`command_worker` fields to `BotInstance` | `bot_manager.py` |
+| 3 | Stop services gracefully in `BotManager.stop_bot()` | `bot_manager.py` |
+| 4 | Replace `main.py` logging with `utils/logging.py` import | `main.py` |
+| 5 | Fix `get_dashboard_stats` RPC: `status = 'online'` | Migration 007 + live DB |
+| 6 | Fix chart data extraction: unwrap `envelope.series` | `dashboard.service.ts` |
+| 7 | Add `httpx.HTTPError` to `_sync_bots` exception handler | `bot_manager.py` |
+| 8 | Add `httpx.HTTPError` to `run()` initial load + polling loop | `bot_manager.py` |
+| 9 | Increase httpx timeout: `Timeout(connect=10, read=30)` | `insforge_client.py` |
 
 ---
 
-## Phase 57: Dev Environment Cleanup & Documentation
-
-### Completed
-
-- **GEMINI.md / AGENTS.md / CLAUDE.md sync**: All AI config files updated.
-- **Storage → Logs migration**: Deleted root `storage/` dir; `apps/bot/logs/` canonical.
-- **Bot env fix**: Both `DATABASE_URL` and `INSFORGE_DATABASE_URL` updated to InsForge cloud.
-- **docker-compose.local.yml**: Removed local PostgreSQL (cloud-only). Redis only.
-- **CLI `keygen` command**: `nezuko keygen` / `./nezuko.sh keygen` added.
-- **README.md**: Rewrote Quick Start, added CLI Commands table, fixed structure.
-- **install.ps1 / start.ps1**: Fixed stale API references.
-
----
-
-## Phase 56: Architecture Audit & Polish
-
-### Completed
-
--   **Backend Exception Eradication**: Removed all bare-except anti-patterns.
--   **Strict Error Mappings**: `PostgresError`, `TelegramError`, `asyncio.TimeoutError`.
--   **Frontend Staggered Motion**: Added motion/Framer Motion to Dashboard.
--   **Pylint 9.99/10**: Near-perfect structural score.
--   **Storage Refactor**: Root `storage/` → `apps/bot/logs/`.
--   **CLI & Script Cleanup**: Purged all deprecated `apps/api` logic.
--   **Turbopack Optimization**: Resolved Next.js module tracking faults.
--   **Networking Sync**: Fixed IPv6 `localhost` timeout routing loops.
-
----
-
-## What Works (Post Phase 58)
+## What Works (Post Phase 63)
 
 ### Bot Core
--   ✅ Instant mute on group join
--   ✅ Multi-channel verification
--   ✅ Leave detection
--   ✅ Inline verification buttons
--   ✅ Verification logging to InsForge DB (REST)
--   ✅ Status heartbeat to InsForge DB (REST)
--   ✅ Command polling from InsForge DB (REST)
--   ✅ Redis caching
--   ✅ Health server (port 8000)
+- ✅ Instant mute on group join
+- ✅ Multi-channel verification
+- ✅ Leave detection
+- ✅ Inline verification buttons
+- ✅ `group_channel_links` correctly populated
+- ✅ `/protect` is idempotent (adds channels to existing groups)
+- ✅ Join button URL uses correct `username` fallback
+- ✅ Verification logging → `verification_log` (InsForge REST)
+- ✅ API call logging → `api_call_log` (InsForge REST)
+- ✅ **Admin log forwarding → `admin_logs` (InsForgeLogHandler)** ← Phase 62
+- ✅ **InsForgeLogHandler actually wired to root logger** ← FIXED Phase 63
+- ✅ Status heartbeat → `bot_status` (UPSERT, not PATCH)
+- ✅ **StatusWriter starts in BOTH dashboard and standalone mode** ← FIXED Phase 63
+- ✅ Command polling → `admin_commands` (REST)
+- ✅ **CommandWorker starts in BOTH dashboard and standalone mode** ← FIXED Phase 63
+- ✅ Dashboard mode (multi-bot) + Standalone mode (dev)
+- ✅ Dashboard mode: `init_client()` called before `bot_manager.run()`
+- ✅ Dual token decryption: Fernet + base64 fallback
+- ✅ Redis caching
+- ✅ Health server (port 8000)
+- ✅ **Crash resilience: httpx.HTTPError caught in sync loop** ← FIXED Phase 63
 
 ### Web Dashboard
--   ✅ 10 full-featured pages
--   ✅ Real-time updates via WebSocket
--   ✅ Direct database queries via SDK
--   ✅ Secure bot token management via Edge Functions
--   ✅ Log streaming via database query + realtime trigger
+- ✅ 10 full-featured pages
+- ✅ Real-time updates via WebSocket (event names aligned with DB triggers)
+- ✅ Direct database queries via InsForge SDK
+- ✅ Secure bot token management via Edge Functions
+- ✅ Log streaming via database query + realtime trigger
+- ✅ `listBots` / `deleteBot` aligned with bot_manager query patterns
+- ✅ Dead API code removed (no more `localhost:8080` references)
+- ✅ **Chart data properly unwraps `series` from RPC response** ← FIXED Phase 63
+- ✅ **`get_dashboard_stats` reads correct `status = 'online'`** ← FIXED Phase 63
 
 ### Infrastructure
--   ✅ Managed PostgreSQL (tables, indexes, RPCs)
--   ✅ Managed Realtime (pub/sub)
--   ✅ Managed Storage (S3-compatible)
--   ✅ Serverless Edge Functions
+- ✅ Managed PostgreSQL (tables, indexes, RPCs via `insforge/migrations/`)
+- ✅ Managed Realtime (pub/sub — 5 channels registered)
+- ✅ Managed Storage (S3-compatible — 2 buckets)
+- ✅ Serverless Edge Functions (manage-bot, test-webhook)
+- ✅ **Migration 007**: fix_dashboard_stats_status.sql ← NEW Phase 63
 
 ---
 
@@ -132,11 +118,10 @@ Bot running at 14:27 IST 2026-02-23:
 
 | Metric | Score |
 | --- | --- |
-| Ruff | 0 errors |
-| Pylint | **10.00/10** (target) |
-| Pyrefly | 0 errors (post Phase 58 type fixes) |
-| ESLint | 0 warnings |
-| TypeScript | 0 errors |
+| Ruff | **0 errors** |
+| Pytest | **55/55 passed** |
+| ESLint | **0 warnings** |
+| Next.js Build | **0 errors** |
 
 ---
 
@@ -144,10 +129,13 @@ Bot running at 14:27 IST 2026-02-23:
 
 | Issue | Priority |
 |---|---|
-| `member_sync` disabled — `JobQueue` requires APScheduler config | Low |
-| Tests need mock updates: `crud.py` → `insforge_client` | Medium |
-| `bot_status` table uses `bot_instance_id` FK — heartbeat patches `bot_id` column only | Low |
+| End-to-end test: `/protect` → join → verify → unmute flow | High |
+| Verify StatusWriter + CommandWorker start successfully in dashboard mode | High |
+| Verify `admin_logs` populates (Logs page shows data) | High |
+| `member_sync` still disabled — requires APScheduler config | Low |
+| No RLS policies on InsForge tables (all data public via anon key) | Medium |
+| Edge Function uses `btoa()` (base64) — should ideally use proper encryption | Low |
 
 ---
 
-_Last Updated: 2026-02-23_
+_Last Updated: 2026-02-23 (Phase 63)_

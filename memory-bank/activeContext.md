@@ -3,91 +3,104 @@
 ## Current Status
 
 **Date**: 2026-02-23
-**Phase**: 59 - Python Code Quality Audit (Complete)
+**Phase**: 64 — Dashboard Full Pipeline Fix & Log Noise Reduction
 **Branch**: `main`
-**Change**: `code-quality-audit` — **ALL TOOLS PASSING AT ZERO ISSUES**
+**Quality**: Ruff ✅ 0 errors | Next.js build ✅ 0 errors | ESLint ✅ 0 warnings
 
 ---
 
-## Phase 58: What Was Done
+## Phase 64: What Was Done
 
-### Summary
-Migrated the bot's entire database access layer from direct SQLAlchemy / asyncpg
-connections to the InsForge REST API (`httpx`-based HTTP client). The PostgreSQL
-password was never recoverable from InsForge BaaS — this was the correct fix.
+### 1. `bot_status.bot_instance_id` INTEGER Overflow (CRITICAL — Root Cause of Empty Dashboard)
 
-### Problem
-InsForge does not expose raw PostgreSQL connection strings. The `DATABASE_URL` and
-`INSFORGE_DATABASE_URL` env vars contained `<PASSWORD>` placeholders that could not
-be filled, so `asyncpg.create_pool()` and SQLAlchemy's `init_db()` failed at startup.
+**Root cause**: `bot_status` table had `bot_instance_id INTEGER` (max 2,147,483,647). The
+Telegram bot ID `8265490825` is **8.26 billion** — exceeds INT4 range. Every UPSERT from
+`StatusWriter` silently failed with a type overflow → `bot_status` stayed permanently empty
+→ dashboard showed 0 uptime, no heartbeat, no online status.
 
-### Solution Implemented
+**Fix**: `ALTER TABLE bot_status ALTER COLUMN bot_instance_id TYPE BIGINT` (Migration 008)
 
-#### New File: `apps/bot/core/insforge_client.py`
-- `httpx.AsyncClient`-based REST client (15 s timeout)
-- Initialised once at startup via `init_client(base_url, anon_key)`
-- Generic helpers: `_get`, `_post`, `_patch`, `_delete`, `_rpc`
-- CRUD functions mirroring old `crud.py`:
-  - `get_owner`, `create_owner`
-  - `get_protected_group`, `create_protected_group`, `toggle_protection`, `update_group_params`
-  - `get_enforced_channel`, `create_enforced_channel`
-  - `get_group_channels`, `link_group_channel`, `unlink_all_channels`
-  - `get_groups_for_channel`
-  - `get_all_protected_groups`, `get_all_enforced_channels`
-  - `upsert_bot_status`
-- Returns plain `@dataclass` objects (`Owner`, `ProtectedGroup`, `EnforcedChannel`)
+### 2. `get_bot_health()` RPC Still Used `status = 'running'` (CRITICAL)
 
-#### Modified: `apps/bot/config.py`
-- Added `INSFORGE_BASE_URL` + `INSFORGE_ANON_KEY` settings
-- Removed dead `INSFORGE_DATABASE_URL` field
-- `DATABASE_URL` defaults to empty (tests use SQLite via `os.environ`)
+**Root cause**: Migration 007 fixed `get_dashboard_stats` but `get_bot_health()` in migration
+004 still queried `WHERE status = 'running'`. `StatusWriter` writes `status = 'online'`.
+The Bot Health panel always showed uptime_percent = 0.
 
-#### Modified: `apps/bot/main.py`
-- Removed `init_db()` / `get_session()` / SQLAlchemy imports
-- Calls `insforge_client.init_client()` at startup if anon key is set
-- Calls `insforge_client.close_client()` on shutdown
-- `StatusWriter` / `CommandWorker` now receive `anon_key` instead of `database_url`
-- `update_active_groups_gauge()` uses `insforge_client.get_all_protected_groups()`
+**Fix**: `CREATE OR REPLACE FUNCTION get_bot_health()` with `status = 'online'` (Migration 008)
 
-#### Modified: All Handlers & Services
-All six handler files replaced `get_session()` + `crud.*` with direct `insforge_client.*` calls:
-- `handlers/verify.py`
-- `handlers/events/message.py`
-- `handlers/events/join.py`
-- `handlers/events/leave.py`
-- `handlers/admin/setup.py`
-- `handlers/admin/settings.py`
+### 3. `analytics.service.ts` — `getVerificationTrends` + `getUserGrowth` Not Unwrapping Envelope
 
-#### Rewritten: `apps/bot/services/status_writer.py`
-- Removed `asyncpg.create_pool()` dependency
-- Uses `insforge_client` REST PATCH to `bot_status` table
-- Gracefully skips (DEBUG log only) if table schema is incompatible (404/400)
+**Root cause**: `get_verification_trends` and `get_user_growth` RPCs both return
+`{period, series: [...], summary}` objects — not flat arrays. The analytics service did
+`Array.isArray(data) ? data : []` which always evaluated to `[]` (objects are not arrays).
+All Analytics page charts (trends, growth) were permanently empty.
 
-#### Rewritten: `apps/bot/services/command_worker.py`
-- Removed `asyncpg` pool + PostgreSQL NOTIFY
-- Polls `admin_commands` table via `insforge_client._get()` every 10 s
-- Updates command status via `insforge_client._patch()`
+**Fix**: Changed both functions to unwrap `envelope?.series` like `dashboard.service.ts` does.
 
-#### Fixed: Type System
-- `HasChannelId` protocol in `verification.py`: `channel_id` narrowed to `int`
-- `check_multi_membership` signature: `list[HasChannelId]` → `Sequence[HasChannelId]`
-- Added `from collections.abc import Sequence` import
+### 4. Log Flooding — Bot Writing Logs at "Light of Speed"
 
-#### Schema: InsForge DB (via MCP)
-- `admin_commands`: added `bot_id BIGINT` + `result JSONB` columns
-- `bot_status`: added `bot_id BIGINT UNIQUE` column
-- Index: `idx_admin_commands_bot_pending (bot_id, status) WHERE status='pending'`
+**Root cause**: Multiple overlapping log sources spam at INFO/DEBUG:
+- `verification.py`: "Cache HIT", "Cache MISS", "Cached result", member status — fires per-user per-channel per-event
+- `join.py`: "Checking new member: X (@Y)" — fires per-user per-join
+- `verify.py`: "User X clicked verify button" (INFO) — fires per-button-click
+- `status_writer.py`: "Bot X status=online uptime=Ys" — fires every 30s
+- `httpx`, `telegram.*`, `httpcore` — flood at DEBUG level for every HTTP request
+
+**Fix**:
+- `utils/logging.py`: Silence 16 noisy third-party loggers to WARNING; `InsForgeLogHandler` level WARNING (not INFO) so only meaningful errors go to `admin_logs`; base level set to INFO (not DEBUG)
+- `verification.py`: Removed per-check debug lines (Cache HIT/MISS, caching result, member status)
+- `join.py`: Removed per-user "Checking new member" INFO log
+- `verify.py`: Demoted "User clicked verify" INFO → DEBUG
+- `status_writer.py`: Removed per-heartbeat debug log
 
 ---
 
-## Architecture (Updated — REST API, No Raw SQL from Bot)
+## Architecture (Complete — Zero SQLAlchemy in Production)
 
 ```
-Web Dashboard (Next.js) ──► InsForge SDK ──► InsForge BaaS (PostgreSQL, Realtime, Storage)
-                                                  ▲
-Bot Engine (Python) ──────► httpx REST ───────────┘
-                   └────────►  (insforge_client.py — /api/database/records/*)
+Web Dashboard (Next.js) ──► @insforge/sdk ──► InsForge BaaS (PostgreSQL + Realtime)
+                                                      ▲
+Bot Engine (Python) ──────► httpx REST ───────────────┘
+         └─ insforge_client.py (all tables: owners, protected_groups,
+                                 enforced_channels, verification_log,
+                                 api_call_log, bot_status, admin_commands,
+                                 bot_instances, admin_logs)
+         └─ insforge_log_handler.py (forwards Python logs → admin_logs)
 ```
+
+**SQLAlchemy is now 100% test-only** (SQLite in-memory via `aiosqlite`).
+
+---
+
+## Bot Operating Modes
+
+| Mode | Trigger | Token Source | Multi-Bot? |
+|------|---------|-------------|------------|
+| **Dashboard** | `DASHBOARD_MODE=true` (default) | `bot_instances` table in InsForge | ✅ Yes |
+| **Standalone** | `DASHBOARD_MODE=false` | `BOT_TOKEN` in `.env` | ❌ Single |
+
+---
+
+## Dashboard Mode Services (Per-Bot Lifecycle — Phase 63)
+
+Each bot started by `BotManager.start_bot()` now automatically gets:
+
+| Service | Purpose | Interval |
+|---------|---------|----------|
+| `StatusWriter` | Heartbeat → `bot_status` table | Every 30s |
+| `CommandWorker` | Poll → `admin_commands` table | Every 10s |
+
+Both are stored on the `BotInstance` dataclass and gracefully stopped in `stop_bot()`.
+
+---
+
+## Encryption Strategy
+
+| Where | Method | Format |
+|-------|--------|--------|
+| **Bot (Python)** | `encryption.decrypt_token()` | Fernet first, base64 fallback |
+| **Edge Function (Deno)** | `btoa(token)` | Base64 |
+| **Local encryption** | `encryption.encrypt_token()` | Fernet |
 
 ---
 
@@ -95,23 +108,7 @@ Bot Engine (Python) ──────► httpx REST ─────────
 
 - **InsForge Base URL**: `https://u4ckbciy.us-west.insforge.app`
 - **InsForge Anon Key**: `INSFORGE_ANON_KEY` in `apps/bot/.env`
-- **Bot Token**: `BOT_TOKEN` in `apps/bot/.env`
 - **Encryption Key**: `ENCRYPTION_KEY` in `apps/bot/.env` (Fernet)
-
----
-
-## Live Verification (2026-02-23 14:27)
-
-```
-✅ InsForge REST client ready: https://u4ckbciy.us-west.insforge.app
-✅ Redis cache initialized
-✅ Health server: http://localhost:8000/health
-✅ Handlers: 6 commands, 7 callbacks, 2 events, 1 message
-✅ Bot polling: getUpdates 200 OK (live messages handled)
-✅ Status writer: PATCH bot_status 204 No Content
-✅ Command worker: polling admin_commands (200 OK)
-✅ Web dashboard: http://localhost:3000 (Next.js 16 Turbopack, 1041ms)
-```
 
 ---
 
@@ -119,8 +116,8 @@ Bot Engine (Python) ──────► httpx REST ─────────
 
 | Component | Where it runs |
 |---|---|
-| Bot (Python) | `python -m apps.bot.main` (background cmd ID: `29c709bd`) |
-| Web (Next.js) | `bun dev` — port 3000 (background cmd ID: `6cfaaf41`) |
+| Bot (Python) | `python -m apps.bot.main` |
+| Web (Next.js) | `bun dev` — port 3000 |
 | Redis | Docker — `docker compose -f docker-compose.local.yml up -d` |
 | PostgreSQL | **InsForge cloud REST API** — no local DB |
 
@@ -128,11 +125,14 @@ Bot Engine (Python) ──────► httpx REST ─────────
 
 ## Next Steps
 
-1. Run full test suite (`pytest tests/bot/ -v`) — update mocks from `crud.py` → `insforge_client`
-2. Commit all Phase 58 changes with conventional commit
-3. Fix `member_sync` — requires APScheduler `JobQueue` to be enabled
-4. Update `techContext.md` to remove asyncpg from required bot deps
+1. **Test** bot startup — verify `StatusWriter` and `CommandWorker` start successfully
+2. **Verify** `admin_logs` table gets populated (logs page should show data)
+3. **Verify** `bot_status` table gets heartbeats (dashboard uptime shows real value)
+4. **Test** end-to-end: `/protect` → join new member → verify button → unmute
+5. **Enable** `member_sync` — JobQueue/APScheduler config needed
+6. **Add RLS policies** to InsForge tables for security
+7. **Commit** Phase 63 changes
 
 ---
 
-_Last Updated: 2026-02-23_
+_Last Updated: 2026-02-23 (Phase 63)_

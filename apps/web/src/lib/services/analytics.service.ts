@@ -17,7 +17,7 @@ import type { AnalyticsOverview } from "@/lib/mock";
  * Get verification trends via RPC
  */
 export async function getVerificationTrends(
-  params?: TrendsParams,
+  params?: TrendsParams
 ): Promise<VerificationTrendResponse> {
   if (USE_MOCK) {
     return mockData.getVerificationTrends(params);
@@ -26,41 +26,37 @@ export async function getVerificationTrends(
   const period = params?.period ?? "30d";
   const granularity = params?.granularity ?? "day";
 
-  const { data, error } = await insforge.database.rpc(
-    "get_verification_trends",
-    { p_period: period, p_granularity: granularity },
-  );
+  const { data, error } = await insforge.database.rpc("get_verification_trends", {
+    p_period: period,
+    p_granularity: granularity,
+  });
   if (error) throw error;
 
-  const series = Array.isArray(data) ? data : [];
-  const totalVerifications = series.reduce(
-    (sum: number, item: { total: number }) => sum + item.total,
-    0,
-  );
-  const totalSuccessful = series.reduce(
-    (sum: number, item: { successful: number }) => sum + item.successful,
-    0,
-  );
-
-  return {
-    period,
-    series: series.map(
-      (item: {
+  // RPC returns { period, series: [...], summary } — unwrap the envelope
+  const envelope = data as Record<string, unknown> | null;
+  const series = Array.isArray(envelope?.series)
+    ? (envelope.series as Array<{
         timestamp: string;
         total: number;
         successful: number;
         failed: number;
-      }) => ({
-        timestamp: item.timestamp,
-        total: item.total,
-        successful: item.successful,
-        failed: item.failed,
-      }),
-    ),
+      }>)
+    : [];
+
+  const totalVerifications = series.reduce((sum: number, item) => sum + (item.total ?? 0), 0);
+  const totalSuccessful = series.reduce((sum: number, item) => sum + (item.successful ?? 0), 0);
+
+  return {
+    period,
+    series: series.map((item) => ({
+      timestamp: item.timestamp,
+      total: item.total,
+      successful: item.successful,
+      failed: item.failed,
+    })),
     summary: {
       total_verifications: totalVerifications,
-      success_rate:
-        totalVerifications > 0 ? (totalSuccessful / totalVerifications) * 100 : 0,
+      success_rate: totalVerifications > 0 ? (totalSuccessful / totalVerifications) * 100 : 0,
     },
   };
 }
@@ -82,22 +78,26 @@ export async function getUserGrowth(params?: TrendsParams): Promise<UserGrowthRe
   });
   if (error) throw error;
 
-  const series = Array.isArray(data) ? data : [];
-  const totalNew = series.reduce(
-    (sum: number, item: { new_users: number }) => sum + item.new_users,
-    0,
-  );
+  // RPC returns { period, granularity, series: [...], summary } — unwrap the envelope
+  const envelope = data as Record<string, unknown> | null;
+  const series = Array.isArray(envelope?.series)
+    ? (envelope.series as Array<{
+        date: string;
+        new_users: number;
+        total_users: number;
+      }>)
+    : [];
+
+  const totalNew = series.reduce((sum: number, item) => sum + (item.new_users ?? 0), 0);
 
   return {
     period,
     granularity,
-    series: series.map(
-      (item: { date: string; new_users: number; total_users: number }) => ({
-        date: item.date,
-        new_users: item.new_users,
-        total_users: item.total_users,
-      }),
-    ),
+    series: series.map((item) => ({
+      date: item.date,
+      new_users: item.new_users,
+      total_users: item.total_users,
+    })),
     summary: {
       total_new_users: totalNew,
       growth_rate: 0,

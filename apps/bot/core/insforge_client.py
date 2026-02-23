@@ -37,7 +37,7 @@ def init_client(base_url: str, anon_key: str) -> None:
             "Authorization": f"Bearer {_ANON_KEY}",
             "Content-Type": "application/json",
         },
-        timeout=15.0,
+        timeout=httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=10.0),
     )
     logger.info("InsForge REST client initialised: %s", _BASE_URL)
 
@@ -70,7 +70,9 @@ async def _get(table: str, params: dict[str, Any] | None = None) -> list[dict[st
     return list(resp.json())
 
 
-async def _post(table: str, body: list[dict[str, Any]], prefer: str = "return=representation") -> list[dict[str, Any]]:
+async def _post(
+    table: str, body: list[dict[str, Any]], prefer: str = "return=representation"
+) -> list[dict[str, Any]]:
     """
     POST /api/database/records/{table} — create record(s).
 
@@ -89,7 +91,9 @@ async def _post(table: str, body: list[dict[str, Any]], prefer: str = "return=re
     return list(resp.json())
 
 
-async def _patch(table: str, params: dict[str, Any], body: dict[str, Any], prefer: str = "return=representation") -> list[dict[str, Any]]:
+async def _patch(
+    table: str, params: dict[str, Any], body: dict[str, Any], prefer: str = "return=representation"
+) -> list[dict[str, Any]]:
     """
     PATCH /api/database/records/{table}?{filters} — update record(s).
     """
@@ -223,20 +227,24 @@ async def get_protected_group(group_id: int) -> ProtectedGroup | None:
     )
 
 
-async def create_protected_group(group_id: int, owner_id: int, title: str | None = None) -> ProtectedGroup:
+async def create_protected_group(
+    group_id: int, owner_id: int, title: str | None = None
+) -> ProtectedGroup:
     """Create a new protected group."""
     now = datetime.now(UTC).isoformat()
     rows = await _post(
         "protected_groups",
-        [{
-            "group_id": group_id,
-            "owner_id": owner_id,
-            "title": title,
-            "enabled": True,
-            "params": {},
-            "created_at": now,
-            "updated_at": now,
-        }],
+        [
+            {
+                "group_id": group_id,
+                "owner_id": owner_id,
+                "title": title,
+                "enabled": True,
+                "params": {},
+                "created_at": now,
+                "updated_at": now,
+            }
+        ],
     )
     if rows:
         r = rows[0]
@@ -252,13 +260,17 @@ async def create_protected_group(group_id: int, owner_id: int, title: str | None
 async def toggle_protection(group_id: int, enabled: bool) -> None:
     """Enable or disable protection for a group."""
     now = datetime.now(UTC).isoformat()
-    await _patch("protected_groups", {"group_id": f"eq.{group_id}"}, {"enabled": enabled, "updated_at": now})
+    await _patch(
+        "protected_groups", {"group_id": f"eq.{group_id}"}, {"enabled": enabled, "updated_at": now}
+    )
 
 
 async def update_group_params(group_id: int, params: dict) -> None:
     """Update custom parameters for a group."""
     now = datetime.now(UTC).isoformat()
-    await _patch("protected_groups", {"group_id": f"eq.{group_id}"}, {"params": params, "updated_at": now})
+    await _patch(
+        "protected_groups", {"group_id": f"eq.{group_id}"}, {"params": params, "updated_at": now}
+    )
 
 
 async def get_enforced_channel(channel_id: int) -> EnforcedChannel | None:
@@ -301,9 +313,20 @@ async def create_enforced_channel(
     now = datetime.now(UTC).isoformat()
     await _post(
         "enforced_channels",
-        [{"channel_id": channel_id, "title": title, "username": username, "invite_link": invite_link, "created_at": now, "updated_at": now}],
+        [
+            {
+                "channel_id": channel_id,
+                "title": title,
+                "username": username,
+                "invite_link": invite_link,
+                "created_at": now,
+                "updated_at": now,
+            }
+        ],
     )
-    return EnforcedChannel(channel_id=channel_id, title=title, username=username, invite_link=invite_link)
+    return EnforcedChannel(
+        channel_id=channel_id, title=title, username=username, invite_link=invite_link
+    )
 
 
 async def get_group_channels(group_id: int) -> list[EnforcedChannel]:
@@ -332,7 +355,9 @@ async def link_group_channel(
     await create_enforced_channel(channel_id, title, username, invite_link)
 
     # Check existing link
-    links = await _get("group_channel_links", {"group_id": f"eq.{group_id}", "channel_id": f"eq.{channel_id}"})
+    links = await _get(
+        "group_channel_links", {"group_id": f"eq.{group_id}", "channel_id": f"eq.{channel_id}"}
+    )
     if not links:
         now = datetime.now(UTC).isoformat()
         await _post(
@@ -389,24 +414,23 @@ async def get_all_enforced_channels() -> list[EnforcedChannel]:
 async def upsert_bot_status(
     bot_id: int,
     status: str,
-    groups_count: int = 0,
-    channels_count: int = 0,
-    version: str = "unknown",
+    uptime_seconds: int = 0,
 ) -> None:
     """Upsert bot heartbeat into bot_status table."""
     now = datetime.now(UTC).isoformat()
     client = _get_client()
     resp = await client.post(
         "/api/database/records/bot_status",
-        json=[{
-            "bot_id": bot_id,
-            "status": status,
-            "groups_count": groups_count,
-            "channels_count": channels_count,
-            "version": version,
-            "last_heartbeat": now,
-            "updated_at": now,
-        }],
+        json=[
+            {
+                "bot_id": bot_id,
+                "bot_instance_id": bot_id,
+                "status": status,
+                "last_heartbeat": now,
+                "uptime_seconds": uptime_seconds,
+                "updated_at": now,
+            }
+        ],
         headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
     )
     if resp.status_code not in (200, 201, 204):

@@ -1,31 +1,20 @@
-"""Unit tests for verification logger."""
+"""Unit tests for the InsForge-backed verification logger."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 
 class TestVerificationLogger:
-    """Test cases for bot/database/verification_logger.py."""
-
-    @pytest.fixture
-    def mock_db_connection(self):
-        """Mock database connection."""
-        mock_conn = MagicMock()
-        mock_conn.execute = AsyncMock()
-        mock_conn.commit = AsyncMock()
-        return mock_conn
+    """Tests for apps/bot/database/verification_logger.py."""
 
     @pytest.mark.asyncio
-    async def test_log_verification_success(self, mock_db_connection):
-        """Test successful verification logging."""
+    async def test_log_verification_calls_insforge_post(self):
+        """log_verification calls insforge_client._post with correct table and payload."""
         from apps.bot.database.verification_logger import log_verification
+        from apps.bot.core import insforge_client
 
-        with patch("apps.bot.database.verification_logger.get_session") as mock_get_session:
-            mock_session = MagicMock()
-            mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_get_session.return_value.__aexit__ = AsyncMock(return_value=None)
-
+        with patch.object(insforge_client, "_post", new=AsyncMock(return_value=[])) as mock_post:
             await log_verification(
                 user_id=123456,
                 group_id=-100123,
@@ -35,48 +24,45 @@ class TestVerificationLogger:
                 cached=False,
             )
 
-            # Verify add was called on session
-            mock_session.add.assert_called()
+            mock_post.assert_awaited_once()
+            call_args = mock_post.call_args
+            # First positional arg is the table name
+            assert call_args[0][0] == "verification_log"
+            record = call_args[0][1][0]
+            assert record["user_id"] == 123456
+            assert record["group_id"] == -100123
+            assert record["status"] == "verified"
+            assert record["latency_ms"] == 45
+            assert record["cached"] is False
 
     @pytest.mark.asyncio
-    async def test_log_verification_handles_db_error(self, mock_db_connection):
-        """Test that DB errors don't crash the logger."""
+    async def test_log_verification_handles_insforge_error(self):
+        """log_verification swallows errors — verification must never fail due to analytics."""
         from apps.bot.database.verification_logger import log_verification
+        from apps.bot.core import insforge_client
 
-        with patch("apps.bot.database.verification_logger.get_session") as mock_get_session:
-            # Mock session context manager to raise OSError (which is caught)
-            mock_get_session.return_value.__aenter__ = AsyncMock(
-                side_effect=OSError("DB connection failed")
-            )
-            mock_get_session.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            # Should not raise exception
+        with patch.object(
+            insforge_client, "_post", new=AsyncMock(side_effect=OSError("network error"))
+        ):
+            # Must NOT raise
             await log_verification(
-                user_id=123456,
-                group_id=-100123,
-                channel_id=-100456,
+                user_id=111,
+                group_id=-100,
+                channel_id=-200,
                 status="error",
-                latency_ms=100,
+                latency_ms=None,
                 cached=False,
+                error_type="TelegramError",
             )
 
-
-class TestVerificationLoggerValidation:
-    """Test validation in verification logger."""
-
     @pytest.mark.asyncio
-    async def test_log_verification_validates_status(self):
-        """Test that only valid statuses are accepted."""
+    async def test_log_verification_valid_statuses_all_accepted(self):
+        """Each valid status value is forwarded to InsForge without error."""
         from apps.bot.database.verification_logger import log_verification
+        from apps.bot.core import insforge_client
 
-        # Valid statuses should work
-        valid_statuses = ["verified", "restricted", "error"]
-        for status in valid_statuses:
-            with patch("apps.bot.database.verification_logger.get_session") as mock_get_session:
-                mock_session = MagicMock()
-                mock_get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-                mock_get_session.return_value.__aexit__ = AsyncMock(return_value=None)
-
+        for status in ("verified", "restricted", "error"):
+            with patch.object(insforge_client, "_post", new=AsyncMock(return_value=[])) as mock_post:
                 await log_verification(
                     user_id=1,
                     group_id=-1,
@@ -85,6 +71,26 @@ class TestVerificationLoggerValidation:
                     latency_ms=10,
                     cached=False,
                 )
+                mock_post.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_log_verification_async_creates_task(self):
+        """log_verification_async returns an asyncio.Task and it completes successfully."""
+        import asyncio
+        from apps.bot.database.verification_logger import log_verification_async
+        from apps.bot.core import insforge_client
+
+        with patch.object(insforge_client, "_post", new=AsyncMock(return_value=[])):
+            task = log_verification_async(
+                user_id=9999,
+                group_id=-100999,
+                channel_id=-200999,
+                status="verified",
+                latency_ms=12,
+                cached=True,
+            )
+            assert isinstance(task, asyncio.Task)
+            await task  # Must complete without error
 
 
 if __name__ == "__main__":

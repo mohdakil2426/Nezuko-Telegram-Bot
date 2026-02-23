@@ -141,39 +141,51 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Check if group is already protected
         existing_group = await insforge_client.get_protected_group(group_id)
+
         if existing_group:
-            await update.message.reply_text(
-                f"⚠️ This group is already protected.\n\n"
-                f"Current channel: `@{channel_username}`\n\n"
-                f"To change, run `/unprotect` first, then `/protect @NewChannel`",
+            # Group exists — add the new channel link (idempotent)
+            await insforge_client.link_group_channel(
+                group_id,
+                channel_id,
+                invite_link=invite_link,
+                title=channel_title,
+                username=channel_username,
+            )
+
+            # Re-enable protection if it was disabled
+            if not existing_group.enabled:
+                await insforge_client.toggle_protection(group_id, enabled=True)
+
+            response = await update.message.reply_text(
+                f"✅ **Channel Added!**\n\n"
+                f"Channel `@{channel_username}` is now enforced "
+                f"in _{update.effective_chat.title}_.\n\n"
+                f"Use `/status` to see all linked channels.",
                 parse_mode="Markdown",
             )
-            return
+        else:
+            # New group — create owner, group, and link
+            group_title = update.effective_chat.title
+            await insforge_client.create_protected_group(group_id, user_id, group_title)
 
-        # Create protected group
-        group_title = update.effective_chat.title
-        await insforge_client.create_protected_group(group_id, user_id, group_title)
+            await insforge_client.link_group_channel(
+                group_id,
+                channel_id,
+                invite_link=invite_link,
+                title=channel_title,
+                username=channel_username,
+            )
 
-        # Link group to channel
-        await insforge_client.link_group_channel(
-            group_id,
-            channel_id,
-            invite_link=invite_link,
-            title=channel_title,
-            username=channel_username,
-        )
-
-        # Success message
-        response = await update.message.reply_text(
-            f"🛡️ **Protection Activated!**\n\n"
-            f"Group: {update.effective_chat.title}\n"
-            f"Channel: `@{channel_username}`\n\n"
-            f"✅ Members must join the channel to speak\n"
-            f"✅ Instant join verification enabled\n"
-            f"✅ Leave detection enabled\n\n"
-            f"Use `/status` to check configuration.",
-            parse_mode="Markdown",
-        )
+            response = await update.message.reply_text(
+                f"🛡️ **Protection Activated!**\n\n"
+                f"Group: {update.effective_chat.title}\n"
+                f"Channel: `@{channel_username}`\n\n"
+                f"✅ Members must join the channel to speak\n"
+                f"✅ Instant join verification enabled\n"
+                f"✅ Leave detection enabled\n\n"
+                f"Use `/status` to check configuration.",
+                parse_mode="Markdown",
+            )
 
         # Schedule auto-delete
         await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)

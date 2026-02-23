@@ -29,8 +29,12 @@ def get_membership_keyboard(missing_channels: list[Any]) -> InlineKeyboardMarkup
     primary_channel = missing_channels[0]
 
     # Build invite URL
-    channel_id_str = str(primary_channel.channel_id).strip("@")
-    invite_url = primary_channel.invite_link or f"https://t.me/{channel_id_str}"
+    if primary_channel.invite_link:
+        invite_url = primary_channel.invite_link
+    elif primary_channel.username:
+        invite_url = f"https://t.me/{primary_channel.username}"
+    else:
+        invite_url = f"https://t.me/c/{abs(int(primary_channel.channel_id))!s}"
 
     keyboard = [
         [InlineKeyboardButton("Join Channel", url=invite_url)],
@@ -64,7 +68,11 @@ async def send_verification_warning(
     user = update.effective_user
     primary_channel = missing_channels[0]
 
-    channel_mention = f"@{primary_channel.title}" if primary_channel.title else "the channel"
+    channel_mention = (
+        f"@{primary_channel.username}"
+        if primary_channel.username
+        else primary_channel.title or "the channel"
+    )
 
     reply_markup = get_membership_keyboard(missing_channels)
 

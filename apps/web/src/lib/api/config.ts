@@ -3,7 +3,6 @@
  * Environment variables for API connectivity
  */
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
 /**
@@ -35,7 +34,6 @@ export function getConfig() {
   return {
     useMock: USE_MOCK,
     devLogin: DEV_LOGIN,
-    apiUrl: API_URL,
     loginBotUsername: LOGIN_BOT_USERNAME,
   };
 }
@@ -45,7 +43,6 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
   console.log("[Nezuko Config]", {
     useMock: USE_MOCK,
     devLogin: DEV_LOGIN,
-    apiUrl: API_URL,
     loginBotUsername: LOGIN_BOT_USERNAME,
   });
 }

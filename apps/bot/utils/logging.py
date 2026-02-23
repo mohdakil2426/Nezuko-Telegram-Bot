@@ -21,6 +21,7 @@ import structlog
 from structlog.types import EventDict, WrappedLogger
 
 from apps.bot.config import config
+from apps.bot.database.insforge_log_handler import InsForgeLogHandler
 
 
 def add_environment(_logger: WrappedLogger, _method_name: str, event_dict: EventDict) -> EventDict:
@@ -76,13 +77,13 @@ def configure_logging(json_format: bool | None = None) -> None:
 
     if json_format:
         # Production: JSON format for log aggregation (Loki, ELK, etc.)
+        # InsForgeLogHandler at WARNING — only significant events go to admin_logs
         processors = [
             *shared_processors,
             structlog.processors.format_exc_info,
             structlog.processors.JSONRenderer(),
         ]
 
-        # Configure stdlib logging for JSON as well
         logging.basicConfig(
             format="%(message)s",
             level=logging.INFO,
@@ -94,16 +95,17 @@ def configure_logging(json_format: bool | None = None) -> None:
                     backupCount=10,
                     encoding="utf-8",
                 ),
+                InsForgeLogHandler(level=logging.WARNING),
             ],
         )
     else:
         # Development: Pretty console output
+        # InsForgeLogHandler at WARNING — don't spam admin_logs in dev
         processors = [*shared_processors, structlog.dev.ConsoleRenderer(colors=True)]
 
-        # Configure stdlib logging with readable format
         logging.basicConfig(
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-            level=logging.DEBUG,
+            level=logging.INFO,
             handlers=[
                 logging.StreamHandler(sys.stdout),
                 RotatingFileHandler(
@@ -112,8 +114,33 @@ def configure_logging(json_format: bool | None = None) -> None:
                     backupCount=10,
                     encoding="utf-8",
                 ),
+                InsForgeLogHandler(level=logging.WARNING),
             ],
         )
+
+    # ── Silence noisy third-party loggers ────────────────────────────────────
+    # These produce enormous volume with no actionable bot-level information.
+    _NOISY_LOGGERS = [
+        "httpx",
+        "httpcore",
+        "httpcore.connection",
+        "httpcore.http11",
+        "apscheduler",
+        "apscheduler.scheduler",
+        "apscheduler.executors",
+        "telegram",
+        "telegram.ext.Application",
+        "telegram.ext.Updater",
+        "telegram.ext.updater",
+        "telegram.request",
+        "telegram.ext._application",
+        "telegram.ext._updater",
+        "aiohttp",
+        "asyncio",
+    ]
+    for name in _NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(logging.WARNING)
+    # ─────────────────────────────────────────────────────────────────────────
 
     # Configure structlog
     structlog.configure(

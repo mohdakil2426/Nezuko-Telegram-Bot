@@ -1,3 +1,6 @@
+# ⚠️ TEST-ONLY: This module is NOT used in production. All production
+# database operations use InsForge REST API via core/insforge_client.py.
+# This file exists solely for pytest fixtures using SQLite in-memory.
 """
 Async SQLAlchemy database session factory and connection management.
 

@@ -70,8 +70,6 @@ async def handle_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             # Bots already filtered out
 
             user_id = user.id
-            username = user.username or "no_username"
-            logger.info("Checking new member: %s (@%s)", user_id, username)
 
             # Check membership in all linked channels
             missing_channels = await check_multi_membership(

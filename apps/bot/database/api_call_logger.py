@@ -1,22 +1,22 @@
 """
-API Call Logger for Analytics.
+API Call Logger for Analytics — InsForge REST API backend.
 
-Provides non-blocking async logging of all Telegram API calls to the database.
-Uses asyncio tasks to ensure logging never impacts bot performance.
+Provides non-blocking async logging of Telegram API calls to the
+api_call_log table via InsForge REST. Never blocks the bot's main flow.
 """
 
 import asyncio
 import logging
 from datetime import UTC, datetime
+from typing import Any
 
-from sqlalchemy.exc import SQLAlchemyError
+import httpx
 
-from apps.bot.core.database import get_session
-from apps.bot.database.models import ApiCallLog
+from apps.bot.core import insforge_client
 
 logger = logging.getLogger(__name__)
 
-# Hold references to background tasks to prevent garbage collection (RUF006)
+# RUF006: hold references so tasks aren't GC'd mid-flight
 _background_tasks: set[asyncio.Task[None]] = set()
 
 
@@ -29,34 +29,39 @@ async def log_api_call(
     error_type: str | None = None,
 ) -> None:
     """
-    Log a Telegram API call to the database.
+    Log a Telegram API call to the InsForge api_call_log table.
 
-    This function is designed to be called via asyncio.create_task() to avoid
-    blocking the main bot operations. Errors are caught and logged but
-    do not propagate to the caller.
+    Always fire-and-forget via log_api_call_async(); never await directly
+    from a hot path. Errors are swallowed so logging never blocks the bot.
 
     Args:
-        method: API method name (e.g., 'getChatMember', 'restrictChatMember')
+        method: API method name e.g. 'getChatMember', 'restrictChatMember'
         chat_id: Telegram chat ID (optional)
         user_id: Telegram user ID (optional)
         success: Whether the API call succeeded
-        latency_ms: Time taken for the API call in milliseconds
-        error_type: Type of error if the call failed (e.g., 'TelegramError')
+        latency_ms: Time taken in milliseconds
+        error_type: Exception type name if the call failed
     """
     try:
-        async with get_session() as session:
-            log_entry = ApiCallLog(
-                method=method,
-                chat_id=chat_id,
-                user_id=user_id,
-                success=success,
-                latency_ms=latency_ms,
-                error_type=error_type,
-                timestamp=datetime.now(UTC),
-            )
-            session.add(log_entry)
-            # Commit happens automatically via context manager
+        record: dict[str, Any] = {
+            "method": method,
+            "success": success,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+        if chat_id is not None:
+            record["chat_id"] = chat_id
+        if user_id is not None:
+            record["user_id"] = user_id
+        if latency_ms is not None:
+            record["latency_ms"] = latency_ms
+        if error_type is not None:
+            record["error_type"] = error_type
 
+        await insforge_client._post(  # pylint: disable=protected-access
+            "api_call_log",
+            [record],
+            prefer="return=minimal",
+        )
         logger.debug(
             "Logged API call: method=%s chat_id=%s user_id=%s success=%s",
             method,
@@ -64,9 +69,9 @@ async def log_api_call(
             user_id,
             success,
         )
-    except (SQLAlchemyError, OSError) as e:
-        # Log error but don't propagate - API logging should never impact bot operation
-        logger.error("Failed to log API call: %s", e)
+    except (httpx.HTTPError, OSError, RuntimeError) as e:
+        # Never let logging crash the bot
+        logger.debug("api_call_log write skipped: %s", e)
 
 
 def log_api_call_async(
@@ -78,21 +83,12 @@ def log_api_call_async(
     error_type: str | None = None,
 ) -> asyncio.Task[None]:
     """
-    Fire-and-forget version that creates a background task.
+    Fire-and-forget wrapper — preferred entry point for hot paths.
 
-    This is the preferred way to log API calls as it's non-blocking.
-    The task reference is stored to prevent garbage collection (RUF006).
-
-    Args:
-        method: API method name
-        chat_id: Telegram chat ID (optional)
-        user_id: Telegram user ID (optional)
-        success: Whether the API call succeeded
-        latency_ms: Time taken in milliseconds
-        error_type: Error type if failed
+    Stores the task reference (RUF006) to prevent premature GC.
 
     Returns:
-        The asyncio Task for optional monitoring/testing
+        The asyncio.Task (useful for testing assertions).
     """
     task = asyncio.create_task(
         log_api_call(

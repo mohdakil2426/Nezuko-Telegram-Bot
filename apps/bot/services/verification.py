@@ -98,7 +98,6 @@ async def check_membership(
     if cached_value is not None:
         _cache_hits += 1
         record_cache_hit()
-        logger.debug("Cache HIT: %s", cache_key)
         is_member = cached_value == "1"
         status = "verified" if is_member else "restricted"
 
@@ -110,7 +109,6 @@ async def check_membership(
     # Step 2: Cache miss - call Telegram API
     _cache_misses += 1
     record_cache_miss()
-    logger.debug("Cache MISS: %s - calling API", cache_key)
 
     is_member = await _verify_via_api(
         context, channel_id, user_id, start_time, wall_start, group_id, channel_id_int
@@ -170,10 +168,6 @@ async def _verify_via_api(
             ChatMemberStatus.OWNER,
         ]
 
-        status_str = "MEMBER" if is_member else "NOT_MEMBER"
-        logger.debug(
-            "User %s in channel %s: %s (status: %s)", user_id, channel_id, status_str, member.status
-        )
         return is_member
     except TelegramError as e:
         api_latency_ms = int((time.perf_counter() - api_start) * 1000)
@@ -217,11 +211,9 @@ async def _cache_result(cache_key: str, is_member: bool) -> None:
         if is_member:
             ttl = get_ttl_with_jitter(POSITIVE_CACHE_TTL, CACHE_JITTER_PERCENT)
             await cache_set(cache_key, "1", ttl)
-            logger.debug("Cached positive result: %s (TTL: %ss)", cache_key, ttl)
         else:
             ttl = get_ttl_with_jitter(NEGATIVE_CACHE_TTL, CACHE_JITTER_PERCENT)
             await cache_set(cache_key, "0", ttl)
-            logger.debug("Cached negative result: %s (TTL: %ss)", cache_key, ttl)
     except (ConnectionError, TimeoutError) as e:
         logger.warning("Failed to cache result: %s", e)
         record_error("cache_error")

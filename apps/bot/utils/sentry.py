@@ -6,7 +6,7 @@ Provides:
 - Automatic exception capture and reporting
 - User context (user_id, group_id) on errors
 - Environment-aware configuration
-- Integration with SQLAlchemy, Redis, and logging
+- Integration with Redis and logging
 - Graceful handling when SENTRY_DSN is not configured
 """
 
@@ -19,7 +19,6 @@ try:
     import sentry_sdk
     from sentry_sdk.integrations.logging import LoggingIntegration
     from sentry_sdk.integrations.redis import RedisIntegration
-    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
     SENTRY_AVAILABLE = True
 except ImportError:
@@ -69,7 +68,6 @@ def init_sentry(dsn: str | None = None, environment: str | None = None) -> bool:
                     level=logging.INFO,  # Capture INFO and above as breadcrumbs
                     event_level=logging.ERROR,  # Send ERROR and above to Sentry
                 ),
-                SqlalchemyIntegration(),
                 RedisIntegration(),
             ],
             # Performance monitoring (sample 10% of transactions)

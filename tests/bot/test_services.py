@@ -7,17 +7,11 @@ Tests:
 - Protection service retry logic on TelegramError
 - Protection stats tracking
 - Verification stats tracking
-- Database CRUD integration (SQLite in-memory)
+- InsForge CRUD client (mocked HTTP)
 """
 
-import os
-
 import pytest
-import pytest_asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
-
-# Ensure SQLite is active before any app imports
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
 
 class TestCacheTTL:
@@ -162,39 +156,56 @@ class TestVerificationStats:
         assert stats["hit_rate_percent"] == 0.0
 
 
-@pytest.mark.integration
-class TestDatabaseCrud:
-    """Integration tests for CRUD operations (SQLite in-memory)."""
+@pytest.mark.asyncio
+class TestInsForgeClientCrud:
+    """Unit tests for insforge_client CRUD helpers — mocked HTTP layer."""
 
-    @pytest_asyncio.fixture(autouse=True)
-    async def setup_db(self):
-        """Fresh in-memory DB before each test, torn down after."""
-        from apps.bot.core.database import close_db, init_db
+    async def test_get_owner_returns_none_when_not_found(self):
+        """get_owner returns None when the REST API returns an empty list."""
+        from apps.bot.core import insforge_client
 
-        await init_db()
-        yield
-        await close_db()
-
-    @pytest.mark.asyncio
-    async def test_create_and_retrieve_owner(self):
-        """create_owner then get_owner returns the same record."""
-        from apps.bot.core.database import get_session
-        from apps.bot.database.crud import create_owner, get_owner
-
-        async with get_session() as session:
-            owner = await create_owner(session, 99001, "testowner")
-            assert owner.user_id == 99001
-
-            fetched = await get_owner(session, 99001)
-            assert fetched is not None
-            assert fetched.username == "testowner"
-
-    @pytest.mark.asyncio
-    async def test_get_nonexistent_owner_returns_none(self):
-        """get_owner returns None for unknown user_id."""
-        from apps.bot.core.database import get_session
-        from apps.bot.database.crud import get_owner
-
-        async with get_session() as session:
-            result = await get_owner(session, 1)
+        with patch.object(insforge_client, "_get", new=AsyncMock(return_value=[])):
+            result = await insforge_client.get_owner(user_id=12345)
             assert result is None
+
+    async def test_get_owner_returns_owner_when_found(self):
+        """get_owner deserialises the first row into an Owner dataclass."""
+        from apps.bot.core import insforge_client
+
+        fake_row = {"user_id": 99001, "username": "testuser", "created_at": None, "updated_at": None}
+        with patch.object(insforge_client, "_get", new=AsyncMock(return_value=[fake_row])):
+            owner = await insforge_client.get_owner(user_id=99001)
+            assert owner is not None
+            assert owner.user_id == 99001
+            assert owner.username == "testuser"
+
+    async def test_get_protected_group_returns_none_when_missing(self):
+        """get_protected_group returns None for an unknown group_id."""
+        from apps.bot.core import insforge_client
+
+        with patch.object(insforge_client, "_get", new=AsyncMock(return_value=[])):
+            result = await insforge_client.get_protected_group(group_id=-1001111111111)
+            assert result is None
+
+    async def test_get_group_channels_returns_empty_when_no_links(self):
+        """get_group_channels returns [] when group has no channel links."""
+        from apps.bot.core import insforge_client
+
+        with patch.object(insforge_client, "_get", new=AsyncMock(return_value=[])):
+            channels = await insforge_client.get_group_channels(group_id=-1001111111111)
+            assert channels == []
+
+    async def test_get_all_protected_groups_returns_list(self):
+        """get_all_protected_groups returns a properly-typed list."""
+        from apps.bot.core import insforge_client
+
+        fake_rows = [
+            {"group_id": -1001, "owner_id": 1, "title": "G1", "enabled": True},
+            {"group_id": -1002, "owner_id": 2, "title": "G2", "enabled": True},
+        ]
+        with patch.object(insforge_client, "_get", new=AsyncMock(return_value=fake_rows)):
+            groups = await insforge_client.get_all_protected_groups()
+            assert len(groups) == 2
+            assert groups[0].group_id == -1001
+            assert groups[1].title == "G2"
+

@@ -38,7 +38,8 @@ export interface BotVerifyResponse {
 }
 
 /**
- * List all bots for the current owner.
+ * List all bots (non-deleted).
+ * Uses `is_deleted` boolean — the canonical delete flag used by bot_manager.
  */
 export async function listBots(): Promise<BotListResponse> {
   if (USE_MOCK) {
@@ -48,7 +49,7 @@ export async function listBots(): Promise<BotListResponse> {
   const { data, error, count } = await insforge.database
     .from("bot_instances")
     .select("*", { count: "exact" })
-    .is("deleted_at", null)
+    .eq("is_deleted", false)
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -113,11 +114,16 @@ export async function updateBot(botId: number, isActive: boolean): Promise<Bot> 
 
 /**
  * Soft-delete a bot.
+ * Sets BOTH `is_deleted` (boolean flag used by bot_manager) and `deleted_at` (timestamp).
  */
 export async function deleteBot(botId: number): Promise<void> {
   const { error } = await insforge.database
     .from("bot_instances")
-    .update({ deleted_at: new Date().toISOString(), is_active: false })
+    .update({
+      is_deleted: true,
+      deleted_at: new Date().toISOString(),
+      is_active: false,
+    })
     .eq("id", botId);
   if (error) throw error;
 }

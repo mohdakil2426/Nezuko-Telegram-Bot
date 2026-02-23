@@ -219,24 +219,13 @@ export function useInsForgeRealtime(
     insforge.realtime.on("disconnect", handleDisconnect);
     insforge.realtime.on("connect_error", handleConnectError);
 
-    // Listen for all possible event types from all channels
+    // Listen for event types that match actual DB trigger event names.
+    // Triggers publish: verification, status_changed, command_updated, new_log
     const eventTypes = [
-      // Verification events
-      "INSERT_verification",
-      "UPDATE_verification",
-      // Log events
-      "INSERT_log",
-      // Dashboard events (custom client events)
-      "stats_update",
-      "activity",
-      "analytics",
-      // Bot status
-      "bot_status",
-      // Other events
       "verification",
-      "member_join",
-      "member_leave",
-      "log",
+      "status_changed",
+      "command_updated",
+      "new_log",
       "error",
       "warning",
     ];
@@ -300,16 +289,10 @@ export function useInsForgeRealtime(
 export function useDashboardRealtime() {
   const queryClient = useQueryClient();
   const realtime = useInsForgeRealtime({
-    channels: ["dashboard", "verifications"],
+    channels: ["dashboard", "bot_status"],
     filterTypes: [
-      "INSERT_verification",
-      "UPDATE_verification",
-      "stats_update",
-      "activity",
-      "analytics",
       "verification",
-      "member_join",
-      "member_leave",
+      "status_changed",
     ],
   });
 
@@ -333,7 +316,7 @@ export function useDashboardRealtime() {
 export function useLogsRealtime() {
   return useInsForgeRealtime({
     channels: ["logs"],
-    filterTypes: ["INSERT_log", "log", "error", "warning"],
+    filterTypes: ["new_log", "error", "warning"],
   });
 }
 
@@ -392,9 +375,9 @@ export function useRealtimeChart<T>({
   queryFn,
   staleTime = DEFAULT_STALE_TIME,
   refetchInterval = DEFAULT_REFETCH_INTERVAL,
-  invalidateOnEvents = ["INSERT_verification", "UPDATE_verification", "stats_update"],
+  invalidateOnEvents = ["verification", "status_changed"],
   refetchIntervalInBackground = true,
-  channels = ["verifications", "dashboard"],
+  channels = ["dashboard", "bot_status"],
 }: UseRealtimeChartOptions<T>) {
   const queryClient = useQueryClient();
   const { events, isConnected } = useInsForgeRealtime({
@@ -431,8 +414,8 @@ export function useRealtimeVerificationChart<T>(
   return useRealtimeChart({
     queryKey,
     queryFn,
-    channels: ["verifications", "dashboard"],
-    invalidateOnEvents: ["INSERT_verification", "UPDATE_verification", "stats_update"],
+    channels: ["dashboard"],
+    invalidateOnEvents: ["verification"],
   });
 }
 
@@ -448,7 +431,7 @@ export function useRealtimeActivityChart<T>(
     queryKey,
     queryFn,
     channels: ["dashboard"],
-    invalidateOnEvents: ["activity", "member_join", "member_leave"],
+    invalidateOnEvents: ["verification"],
     refetchInterval: 30 * 1000, // Faster refresh for activity
   });
 }
@@ -464,8 +447,8 @@ export function useRealtimeBotHealthChart<T>(
   return useRealtimeChart({
     queryKey,
     queryFn,
-    channels: ["bot-status", "dashboard"],
-    invalidateOnEvents: ["bot_status", "stats_update"],
+    channels: ["bot_status", "dashboard"],
+    invalidateOnEvents: ["status_changed"],
     refetchInterval: 30 * 1000, // Faster refresh for health
   });
 }
@@ -481,8 +464,8 @@ export function useRealtimeBotHealthChart<T>(
  */
 export function useRealtimeActivity() {
   return useInsForgeRealtime({
-    channels: ["dashboard", "verifications"],
-    filterTypes: ["activity", "verification", "member_join", "member_leave"],
+    channels: ["dashboard"],
+    filterTypes: ["verification"],
   });
 }
 
@@ -492,8 +475,8 @@ export function useRealtimeActivity() {
  */
 export function useRealtimeAnalytics() {
   return useInsForgeRealtime({
-    channels: ["dashboard"],
-    filterTypes: ["analytics", "stats_update"],
+    channels: ["dashboard", "bot_status"],
+    filterTypes: ["verification", "status_changed"],
   });
 }
 

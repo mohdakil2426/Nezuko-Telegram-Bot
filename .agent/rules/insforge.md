@@ -1,5 +1,5 @@
 ---
-trigger: model_decision
+trigger: always_on
 description: Instructions building apps with MCP
 globs: *
 ---

@@ -26,13 +26,18 @@ class BotSettings(BaseSettings):
     """Bot application settings loaded from environment variables.
 
     Supports two modes:
-    1. Standalone Mode: BOT_TOKEN in .env, runs single bot
-    2. Dashboard Mode: No BOT_TOKEN, reads active bots from database
+    1. Dashboard Mode (DASHBOARD_MODE=true): Reads active bots from InsForge
+       database (multi-bot). Requires ENCRYPTION_KEY.
+    2. Standalone Mode (DASHBOARD_MODE=false): Uses BOT_TOKEN from .env (single
+       bot). Useful for local development and testing.
     """
 
     # Core settings
     BOT_TOKEN: str | None = None
     ENVIRONMENT: Literal["development", "production"] = "development"
+
+    # Bot mode: true = multi-bot from InsForge DB, false = single bot from BOT_TOKEN
+    DASHBOARD_MODE: bool = True
 
     # Database — used only for SQLite in tests (no raw PG connection to InsForge)
     DATABASE_URL: str | None = None
@@ -160,13 +165,18 @@ class BotSettings(BaseSettings):
 
     @property
     def dashboard_mode(self) -> bool:
-        """Check if running in dashboard mode (no BOT_TOKEN, reads from DB)."""
-        return self.BOT_TOKEN is None or self.BOT_TOKEN.strip() == ""
+        """Check if running in dashboard mode (multi-bot from InsForge DB).
+
+        Controlled by the DASHBOARD_MODE env var (default: true).
+        When true, reads active bot tokens from bot_instances table.
+        When false, uses BOT_TOKEN from .env for standalone development.
+        """
+        return self.DASHBOARD_MODE
 
     @property
     def standalone_mode(self) -> bool:
-        """Check if running in standalone mode (BOT_TOKEN in env)."""
-        return not self.dashboard_mode
+        """Check if running in standalone mode (single bot, BOT_TOKEN in .env)."""
+        return not self.DASHBOARD_MODE
 
     # Path properties
     @property

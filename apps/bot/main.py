@@ -16,10 +16,12 @@ from telegram import Update
 from telegram.error import TelegramError
 from telegram.ext import Application
 
+# Setup logging — uses structlog + InsForgeLogHandler via utils/logging.py
+# configure_logging() auto-runs at import time (module-level call at bottom of file)
+import apps.bot.utils.logging as _  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from apps.bot.config import config
 from apps.bot.core import insforge_client
 from apps.bot.core.cache import close_redis_connection, get_redis_client
-from apps.bot.core.database import close_db
 from apps.bot.core.loader import register_handlers, setup_bot_commands
 from apps.bot.core.rate_limiter import create_rate_limiter
 from apps.bot.core.uptime import record_bot_start
@@ -37,23 +39,6 @@ from apps.bot.utils.metrics import (
 )
 from apps.bot.utils.sentry import flush as sentry_flush
 from apps.bot.utils.sentry import init_sentry
-
-# Setup standard logging with UTF-8 support for Windows console
-# Windows cp1252 can't handle Unicode emojis - use 'replace' mode to avoid crashes
-if sys.platform == "win32":
-    # Proper Windows console encoding is better handled by setting PYTHONUTF8=1 environment variable
-    # or relying on modern Python 3.10+ defaults.
-    # Manual wrapping caused ValueError: I/O operation on closed file during runpy execution.
-    pass
-
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO if config.is_production else logging.DEBUG,
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler(config.log_file, encoding="utf-8"),
-    ],
-)
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +156,6 @@ async def post_shutdown(_application: Application) -> None:
 
     # Close connections
     await close_redis_connection()
-    await close_db()
     await insforge_client.close_client()
     logger.info("All connections closed")
 
@@ -199,6 +183,14 @@ def main():
 
             # Run bot manager
             from apps.bot.core.bot_manager import bot_manager
+
+            # Initialise InsForge REST client (standalone mode does this in post_init)
+            if config.insforge_anon_key:
+                insforge_client.init_client(config.insforge_base_url, config.insforge_anon_key)
+                logger.info("[OK] InsForge REST client ready: %s", config.insforge_base_url)
+            else:
+                logger.error("INSFORGE_ANON_KEY not set — cannot run dashboard mode")
+                return
 
             try:
                 asyncio.run(bot_manager.run())

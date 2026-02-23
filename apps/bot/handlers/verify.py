@@ -47,7 +47,7 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
         if not query:
             return
 
-        logger.info("User %s clicked verify button in chat %s", user_id, chat_id)
+        logger.debug("User %s clicked verify button in chat %s", user_id, chat_id)
 
         # Get linked channels from InsForge
         channels = await insforge_client.get_group_channels(chat_id)

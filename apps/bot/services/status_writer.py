@@ -11,6 +11,8 @@ import logging
 import time
 from typing import Any
 
+import httpx
+
 from apps.bot.core import insforge_client
 
 logger = logging.getLogger(__name__)
@@ -70,6 +72,9 @@ class StatusWriter:
     async def _write_status(self, status: str) -> None:
         """UPSERT bot status via InsForge REST API.
 
+        Uses POST with Prefer: resolution=merge-duplicates to create-or-update
+        the row instead of PATCH which silently does nothing on empty tables.
+
         Args:
             status: Bot status (online, offline)
         """
@@ -79,17 +84,24 @@ class StatusWriter:
         try:
             client = insforge_client._get_client()  # pylint: disable=protected-access
             now = datetime.datetime.now(datetime.UTC).isoformat()
-            resp = await client.patch(
+            resp = await client.post(
                 "/api/database/records/bot_status",
-                params={"bot_id": f"eq.{self._bot_id}"},
-                json={"status": status, "last_heartbeat": now, "updated_at": now},
-                headers={"Prefer": "return=minimal"},
+                json=[
+                    {
+                        "bot_id": self._bot_id,
+                        "bot_instance_id": self._bot_id,
+                        "status": status,
+                        "last_heartbeat": now,
+                        "uptime_seconds": uptime,
+                        "updated_at": now,
+                    }
+                ],
+                headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
             )
             if resp.status_code in (404, 400):
                 # Table schema mismatch — non-fatal, skip silently
-                logger.debug("bot_status table not compatible, skipping heartbeat")
+                logger.warning("bot_status table not compatible, skipping heartbeat")
                 return
             resp.raise_for_status()
-            logger.debug("Bot %d status=%s uptime=%ds", self._bot_id, status, uptime)
-        except Exception as e:  # pylint: disable=broad-except
+        except (httpx.HTTPError, OSError, RuntimeError) as e:
             logger.debug("Status write skipped: %s", e)

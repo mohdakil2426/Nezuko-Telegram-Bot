@@ -14,8 +14,12 @@ export function BrandLogo() {
       <SidebarMenuItem>
         <SidebarMenuButton size="lg" asChild>
           <a href="/dashboard">
-            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-              <Bot className="size-4" />
+            {/* suppressHydrationWarning: Dark Reader extension injects data-darkreader-inline-stroke into SVGs */}
+            <div
+              suppressHydrationWarning
+              className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
+            >
+              <Bot className="size-4" suppressHydrationWarning />
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-semibold">Nezuko</span>

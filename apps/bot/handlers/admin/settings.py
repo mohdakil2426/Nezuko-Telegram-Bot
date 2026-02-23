@@ -176,8 +176,7 @@ async def handle_unprotect(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not group.enabled:
             response = await update.message.reply_text(
-                "ℹ️ Protection is already disabled.\n\n"
-                "Use `/protect @YourChannel` to re-enable.",
+                "ℹ️ Protection is already disabled.\n\nUse `/protect @YourChannel` to re-enable.",
                 parse_mode="Markdown",
             )
             await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)

@@ -1,124 +1,128 @@
 """
-Member Count Sync Service.
+Member Count Sync Service — InsForge REST backend.
 
-Periodically synchronizes member/subscriber counts from Telegram API
-to keep dashboard analytics up-to-date.
+Periodically syncs member/subscriber counts from Telegram API
+to protected_groups.member_count and enforced_channels.subscriber_count
+via InsForge PATCH calls.
 
 Features:
-- Syncs every 15 minutes
-- Handles rate limits gracefully
-- Non-blocking async operations
-- Per-entity error isolation
+- Syncs every 15 minutes via PTB JobQueue
+- Handles Telegram rate limits (RetryAfter) gracefully
+- Per-entity error isolation (one failure doesn't abort the run)
 """
 
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
 from telegram.error import RetryAfter, TelegramError
 from telegram.ext import Application, ContextTypes
 
-from apps.bot.core.database import get_session
+from apps.bot.core import insforge_client
 from apps.bot.database.api_call_logger import log_api_call_async
-from apps.bot.database.models import EnforcedChannel, ProtectedGroup
 
 logger = logging.getLogger(__name__)
 
 # Sync interval in seconds (15 minutes)
 SYNC_INTERVAL_SECONDS = 900
 
-# Rate limiting: max 30 requests per second to respect Telegram's limits
-# We add a small delay between each call to stay well under the limit
-INTER_REQUEST_DELAY = 0.1  # 100ms between requests
+# 100 ms between Telegram API calls — well under the 30 req/s global limit
+INTER_REQUEST_DELAY = 0.1
 
 
-async def get_all_protected_groups_for_sync(enabled_only: bool = True) -> list[ProtectedGroup]:
-    """Get all protected groups for member count sync."""
-    async with get_session() as session:
-        query = select(ProtectedGroup)
-        if enabled_only:
-            query = query.where(ProtectedGroup.enabled.is_(True))
-        result = await session.execute(query)
-        return list(result.scalars().all())
-
-
-async def get_all_enforced_channels_for_sync() -> list[EnforcedChannel]:
-    """Get all enforced channels for subscriber count sync."""
-    async with get_session() as session:
-        result = await session.execute(select(EnforcedChannel))
-        return list(result.scalars().all())
-
-
-async def _sync_entity_count(
-    context: ContextTypes.DEFAULT_TYPE,
-    entity_id: int,
-    model_class: type,
-    id_column: str,
-    count_column: str,
-    entity_label: str,
-) -> bool:
-    """Sync a single entity's member/subscriber count from Telegram API.
+async def _sync_group_member_count(context: ContextTypes.DEFAULT_TYPE, group_id: int) -> bool:
+    """Fetch and persist member count for one protected group.
 
     Args:
-        context: Telegram bot context with bot instance
-        entity_id: Telegram chat ID of the entity
-        model_class: SQLAlchemy model class (ProtectedGroup or EnforcedChannel)
-        id_column: Name of the ID column on the model
-        count_column: Name of the count column to update
-        entity_label: Human-readable label for logging ("group" or "channel")
+        context: Telegram bot context
+        group_id: Telegram group chat ID
 
     Returns:
-        True if sync succeeded, False if it failed
+        True if sync succeeded, False otherwise.
     """
     try:
-        count = await context.bot.get_chat_member_count(entity_id)
-
-        async with get_session() as session:
-            result = await session.execute(
-                select(model_class).where(getattr(model_class, id_column) == entity_id)
-            )
-            db_entity = result.scalar_one_or_none()
-            if db_entity:
-                setattr(db_entity, count_column, count)
-                db_entity.last_sync_at = datetime.now(UTC)
-                await session.commit()
-
-        log_api_call_async(
-            method="getChatMemberCount",
-            chat_id=entity_id,
-            success=True,
+        count = await context.bot.get_chat_member_count(group_id)
+        now = datetime.now(UTC).isoformat()
+        await insforge_client._patch(  # pylint: disable=protected-access
+            "protected_groups",
+            {"group_id": f"eq.{group_id}"},
+            {"member_count": count, "last_sync_at": now, "updated_at": now},
+            prefer="return=minimal",
         )
+        log_api_call_async(method="getChatMemberCount", chat_id=group_id, success=True)
         await asyncio.sleep(INTER_REQUEST_DELAY)
         return True
 
     except RetryAfter as e:
-        retry_seconds = (
+        retry_secs = (
             e.retry_after.total_seconds()
             if isinstance(e.retry_after, timedelta)
             else float(e.retry_after)
         )
-        retry_wait = retry_seconds + 1.0
-        logger.warning(
-            "Rate limit syncing %s %s, waiting %.1fs",
-            entity_label,
-            entity_id,
-            retry_wait,
-        )
+        logger.warning("Rate-limited syncing group %s, waiting %.1fs", group_id, retry_secs + 1)
         log_api_call_async(
-            method="getChatMemberCount",
-            chat_id=entity_id,
-            success=False,
-            error_type="RetryAfter",
+            method="getChatMemberCount", chat_id=group_id, success=False, error_type="RetryAfter"
         )
-        await asyncio.sleep(retry_wait)
+        await asyncio.sleep(retry_secs + 1)
         return False
 
     except TelegramError as e:
-        logger.debug("Failed to sync %s %s: %s", entity_label, entity_id, e)
+        logger.debug("Failed to sync group %s: %s", group_id, e)
         log_api_call_async(
             method="getChatMemberCount",
-            chat_id=entity_id,
+            chat_id=group_id,
+            success=False,
+            error_type=type(e).__name__,
+        )
+        return False
+
+
+async def _sync_channel_subscriber_count(
+    context: ContextTypes.DEFAULT_TYPE, channel_id: int
+) -> bool:
+    """Fetch and persist subscriber count for one enforced channel.
+
+    Args:
+        context: Telegram bot context
+        channel_id: Telegram channel ID
+
+    Returns:
+        True if sync succeeded, False otherwise.
+    """
+    try:
+        count = await context.bot.get_chat_member_count(channel_id)
+        now = datetime.now(UTC).isoformat()
+        await insforge_client._patch(  # pylint: disable=protected-access
+            "enforced_channels",
+            {"channel_id": f"eq.{channel_id}"},
+            {"subscriber_count": count, "last_sync_at": now, "updated_at": now},
+            prefer="return=minimal",
+        )
+        log_api_call_async(method="getChatMemberCount", chat_id=channel_id, success=True)
+        await asyncio.sleep(INTER_REQUEST_DELAY)
+        return True
+
+    except RetryAfter as e:
+        retry_secs = (
+            e.retry_after.total_seconds()
+            if isinstance(e.retry_after, timedelta)
+            else float(e.retry_after)
+        )
+        logger.warning("Rate-limited syncing channel %s, waiting %.1fs", channel_id, retry_secs + 1)
+        log_api_call_async(
+            method="getChatMemberCount",
+            chat_id=channel_id,
+            success=False,
+            error_type="RetryAfter",
+        )
+        await asyncio.sleep(retry_secs + 1)
+        return False
+
+    except TelegramError as e:
+        logger.debug("Failed to sync channel %s: %s", channel_id, e)
+        log_api_call_async(
+            method="getChatMemberCount",
+            chat_id=channel_id,
             success=False,
             error_type=type(e).__name__,
         )
@@ -127,10 +131,10 @@ async def _sync_entity_count(
 
 async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Sync member/subscriber counts from Telegram API.
+    Sync member/subscriber counts for all groups and channels.
 
-    This job runs periodically to keep the dashboard stats current.
-    Errors on individual entities don't abort the entire sync.
+    Called automatically by PTB JobQueue every SYNC_INTERVAL_SECONDS.
+    Errors on individual entities don't abort the entire run.
 
     Args:
         context: Telegram bot context with bot instance
@@ -138,50 +142,37 @@ async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.info("Starting member count sync...")
     start_time = datetime.now(UTC)
 
-    groups_synced = 0
-    groups_failed = 0
-    channels_synced = 0
-    channels_failed = 0
+    groups_synced = groups_failed = channels_synced = channels_failed = 0
 
     # Sync protected groups
     try:
-        groups = await get_all_protected_groups_for_sync()
-        logger.debug("Syncing %d protected groups", len(groups))
-
+        groups = await insforge_client.get_all_protected_groups()
+        logger.debug("Syncing member counts for %d protected groups", len(groups))
         for group in groups:
-            group_id: int = group.group_id  # type: ignore[assignment]
-            success = await _sync_entity_count(
-                context, group_id, ProtectedGroup, "group_id", "member_count", "group"
-            )
-            if success:
+            ok = await _sync_group_member_count(context, group.group_id)
+            if ok:
                 groups_synced += 1
             else:
                 groups_failed += 1
-
     except (OSError, RuntimeError) as e:
         logger.error("Failed to fetch groups for sync: %s", e)
 
     # Sync enforced channels
     try:
-        channels = await get_all_enforced_channels_for_sync()
-        logger.debug("Syncing %d enforced channels", len(channels))
-
+        channels = await insforge_client.get_all_enforced_channels()
+        logger.debug("Syncing subscriber counts for %d enforced channels", len(channels))
         for channel in channels:
-            channel_id: int = channel.channel_id  # type: ignore[assignment]
-            success = await _sync_entity_count(
-                context, channel_id, EnforcedChannel, "channel_id", "subscriber_count", "channel"
-            )
-            if success:
+            ok = await _sync_channel_subscriber_count(context, channel.channel_id)
+            if ok:
                 channels_synced += 1
             else:
                 channels_failed += 1
-
     except (OSError, RuntimeError) as e:
         logger.error("Failed to fetch channels for sync: %s", e)
 
     elapsed = (datetime.now(UTC) - start_time).total_seconds()
     logger.info(
-        "Member sync completed in %.1fs: %d groups synced, %d failed; %d channels synced, %d failed",
+        "Member sync done in %.1fs — groups: %d ok / %d fail; channels: %d ok / %d fail",
         elapsed,
         groups_synced,
         groups_failed,
@@ -192,24 +183,22 @@ async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
 
 def schedule_member_sync(application: Application) -> None:
     """
-    Schedule periodic member count sync job.
+    Register the member-sync job with the PTB JobQueue.
 
     Args:
-        application: Telegram Application instance with job_queue
+        application: Telegram Application instance (must have job_queue configured)
     """
     if application.job_queue is None:
-        logger.warning("Job queue not available - member sync disabled")
+        logger.warning("JobQueue not configured — member sync disabled")
         return
 
-    # Schedule repeating job
     application.job_queue.run_repeating(
         callback=sync_member_counts,
         interval=SYNC_INTERVAL_SECONDS,
-        first=60,  # First run after 1 minute (allow bot to fully initialize)
+        first=60,  # First run 60s after startup to let the bot fully initialise
         name="member_sync",
     )
-
     logger.info(
-        "Member sync scheduled: first run in 60s, then every %d minutes",
+        "Member sync scheduled: first in 60s, then every %d min",
         SYNC_INTERVAL_SECONDS // 60,
     )

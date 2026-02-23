@@ -2,133 +2,157 @@
 
 ## Architecture Overview
 
-### Current (InsForge BaaS)
+### Current (InsForge BaaS — Phase 63, Complete)
 
-The Nezuko Platform now operates on a **2-tier architecture**, fully leveraging InsForge BaaS. The legacy API layer (`apps/api`) has been permanently removed.
+The Nezuko Platform operates on a **2-tier architecture** with **zero direct DB access**
+from the bot. All persistence goes through InsForge REST API or the InsForge SDK.
 
-```mermaid
-graph TD
-    subgraph Client ["Client Layer"]
-        Web["Web Dashboard (Next.js)"]
-        Bot["Telegram Bot (Python)"]
-    end
-
-    subgraph Backend ["InsForge BaaS"]
-        SDK["InsForge SDK (TypeScript)"]
-        PG["Managed PostgreSQL"]
-        RT["Realtime (WebSocket)"]
-        Edge["Edge Functions"]
-        Storage["Object Storage"]
-    end
-
-    Web -->|Direct Query| SDK
-    SDK -->|HTTPS| PG
-    PG -->|Triggers| RT
-    RT -->|WebSocket| Web
-
-    Bot -->|SQLAlchemy| PG
-    Bot -->|Polls| PG
-
-    Web -->|Invoke| Edge
-    Edge -->|Manage| PG
 ```
+┌─────────────────────────────┐    ┌──────────────────────────────────┐
+│  Web Dashboard (Next.js 16) │───►│  @insforge/sdk (TypeScript)      │
+└─────────────────────────────┘    └────────────────┬─────────────────┘
+                                                     │ HTTPS
+┌─────────────────────────────┐    ┌────────────────▼─────────────────┐
+│  Telegram Bot (Python 3.13) │───►│  InsForge BaaS                   │
+│                             │    │  ┌───────────┐ ┌───────────────┐ │
+│  insforge_client.py         │    │  │ PostgreSQL│ │ Realtime WS   │ │
+│  (httpx REST)               │    │  └───────────┘ └───────────────┘ │
+└─────────────────────────────┘    │  ┌───────────┐ ┌───────────────┐ │
+                                   │  │  Storage  │ │ Edge Functions│ │
+                                   │  └───────────┘ └───────────────┘ │
+                                   └──────────────────────────────────┘
+```
+
+**SQLAlchemy is test-only** (SQLite in-memory for fast offline pytest runs).
 
 ---
 
 ## Hosting Architecture (Cloud)
 
-```mermaid
-graph TD
-    User((User))
-    
-    subgraph Frontend ["Vercel (Web)"]
-        Dashboard["Next.js Dashboard"]
-    end
-    
-    subgraph Backend ["Koyeb (Bot)"]
-        Container["Docker Container"]
-        BotManager["BotManager"]
-        Workers["Bot Instances"]
-    end
-    
-    subgraph Data ["InsForge (BaaS)"]
-        DB[(PostgreSQL)]
-        Fn["Edge Functions"]
-    end
-    
-    User -->|HTTPS| Dashboard
-    Dashboard -->|HTTPS| Fn
-    Dashboard -->|HTTPS| DB
-    
-    BotManager -->|Health Check| Container
-    Container -->|SQL Connection| DB
+```
+User ──HTTPS──► Vercel (Next.js Dashboard)
+                    │ @insforge/sdk
+                    ▼
+                InsForge BaaS (PostgreSQL + Realtime + Storage + Functions)
+                    ▲
+                    │ httpx REST (insforge_client.py)
+Koyeb (Docker) ──► Bot Engine ──► Telegram API
 ```
 
 ---
 
 ## Bot Patterns (Python)
 
-### Async-First Architecture
-
-All I/O operations must use `async/await` to ensure the bot remains responsive.
-
-```python
-# ✅ Correct: Async database query
-async def get_groups(session: AsyncSession) -> list[Group]:
-    result = await session.execute(select(Group))
-    return result.scalars().all()
-```
-
-### Task Reference Pattern (RUF006)
-
-We must maintain strong references to background tasks to prevent garbage collection during execution.
-
-```python
-# ✅ Correct: Store task reference
-_tasks: set[asyncio.Task] = set()
-task = asyncio.create_task(some_coroutine())
-_tasks.add(task)
-task.add_done_callback(_tasks.discard)
-```
-
-### InsForge REST Client Pattern (Phase 58)
+### InsForge REST Client Pattern (CANONICAL — Phase 58+)
 
 The bot uses `apps/bot/core/insforge_client.py` — an `httpx`-based REST client.
-No SQLAlchemy sessions or asyncpg pools in production handlers.
+**Never use `get_session()`, `crud.*`, or SQLAlchemy in production bot code.**
 
 ```python
-# ✅ Correct: Use insforge_client (not get_session/crud)
+# ✅ CORRECT: Use insforge_client for all DB operations
 from apps.bot.core import insforge_client
 
-channels = await insforge_client.get_group_channels(chat_id)
-group = await insforge_client.get_protected_group(group_id)
+channels  = await insforge_client.get_group_channels(chat_id)
+group     = await insforge_client.get_protected_group(group_id)
+owner     = await insforge_client.get_owner(user_id)
 await insforge_client.create_owner(user_id, username)
+await insforge_client.link_group_channel(group_id, channel_id, ...)
+
+# ✅ For analytics (fire-and-forget)
+from apps.bot.database.verification_logger import log_verification_async
+from apps.bot.database.api_call_logger import log_api_call_async
+
+log_verification_async(user_id, group_id, channel_id, "verified", latency_ms=45)
+log_api_call_async(method="getChatMember", chat_id=chat_id, success=True)
+
+# ❌ WRONG: Never do this in production code
+async with get_session() as session:           # ← SQLAlchemy, test-only
+    await crud.get_protected_group(session, gid)  # ← deleted
+```
+
+### InsForge Client Internal API
+
+```python
+# Low-level REST helpers (used inside insforge_client.py)
+await insforge_client._get("table_name", {"col": "eq.value"})
+await insforge_client._post("table_name", [{"col": "value"}], prefer="return=minimal")
+await insforge_client._patch("table_name", {"col": "eq.val"}, {"col": "new_val"})
+await insforge_client._delete("table_name", {"col": "eq.val"})
+await insforge_client._rpc("function_name", {"param": "value"})
 ```
 
 ### SQLAlchemy 2.0 (Tests Only)
 
-SQLAlchemy + SQLite is used **only** in the test suite for fast offline testing.
+SQLAlchemy + SQLite is used **only** in `tests/` for fast offline test execution.
+**Never import `database.py`, `crud.py`, or `models.py` from production handler code.**
 
 ```python
-# ✅ Only in tests/
-stmt = select(Model).where(Model.id == id)
-result = await session.execute(stmt)
+# ✅ Only in tests/bot/
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+```
+
+### Task Reference Pattern (RUF006)
+
+Always store `asyncio.Task` references to prevent garbage collection.
+
+```python
+# ✅ Correct — both loggers do this
+_background_tasks: set[asyncio.Task[None]] = set()
+task = asyncio.create_task(some_coroutine())
+_background_tasks.add(task)
+task.add_done_callback(_background_tasks.discard)
 ```
 
 ### Bot-to-Dashboard Communication
 
-The bot communicates with the dashboard exclusively through the **InsForge REST API**.
+All communication from bot → dashboard goes through InsForge REST exclusively:
 
-1.  **Status Updates**: `StatusWriter` PATCHes `bot_status` every 30 seconds via REST.
-2.  **Command Execution**: `CommandWorker` GETs `admin_commands` (status='pending') every 10s via REST.
-3.  **Logging**: Bot writes to `verification_log` and `api_call_log` via REST.
+| Direction | Mechanism | Table |
+|---|---|---|
+| Bot → Dashboard | `StatusWriter` POST UPSERT heartbeat every 30s | `bot_status` |
+| Dashboard → Bot | `CommandWorker` GET polling every 10s | `admin_commands` |
+| Bot Analytics | `log_verification_async()` fire-and-forget | `verification_log` |
+| Bot Analytics | `log_api_call_async()` fire-and-forget | `api_call_log` |
+| Bot Logs | `InsForgeLogHandler` (logging.Handler) fire-and-forget | `admin_logs` |
+| Bot Sync | `sync_member_counts()` job every 15min | `protected_groups`, `enforced_channels` |
+| Dashboard Mode | `BotManager.load_bots_from_database()` | `bot_instances` |
+
+### Token Encryption Strategy
+
+| Where | Method | Format |
+|-------|--------|--------|
+| **Bot `decrypt_token()`** | Fernet first, base64 fallback | Reads both formats |
+| **Edge Function `manage-bot`** | `btoa(token)` | Base64 (Deno limitation) |
+| **Bot `encrypt_token()`** | `Fernet.encrypt()` | Fernet (preferred) |
 
 ### Error Segregation & Isolation
 
-Never use bare `except Exception:` blocks inside core polling systems.
-- Catch `TelegramError` for Telegram SDK interactions.
-- Catch `httpx.HTTPStatusError` for InsForge REST API calls.
-- Fallback to `OSError`, `RuntimeError`, `ValueError` where appropriate.
+Never use bare `except Exception:` in core polling systems.
+
+```python
+# ✅ Correct exception hierarchy
+except TelegramError as e: ...        # Telegram SDK interactions
+except httpx.HTTPError as e: ...      # InsForge REST API timeouts + 4xx/5xx
+except (OSError, RuntimeError) as e: ... # Network/system errors
+except asyncio.CancelledError: ...    # Task cancellation (re-raise or handle)
+
+# ❌ Never
+except Exception as e: ...  # Too broad — masks bugs
+```
+
+### Crash Resilience (Phase 63)
+
+Background sync loops MUST catch `httpx.HTTPError` to survive transient timeouts:
+
+```python
+# ✅ Correct: _sync_bots catches all network errors
+except (EncryptionError, OSError, httpx.HTTPError) as e:
+    logger.error("Error syncing bots: %s", e)
+    # Bot keeps running — next sync in 30s
+
+# ❌ Wrong: Missing httpx.HTTPError → ReadTimeout kills the process
+except (EncryptionError, OSError) as e:  # ← httpx.ReadTimeout escapes!
+```
 
 ---
 
@@ -136,10 +160,8 @@ Never use bare `except Exception:` blocks inside core polling systems.
 
 ### InsForge SDK Service Pattern
 
-The frontend communicates directly with InsForge. There is no intermediate API server.
-
 ```typescript
-// ✅ Correct: Service uses SDK directly
+// ✅ Correct: Service uses InsForge SDK directly (no intermediate API server)
 import { insforge } from "@/lib/insforge";
 
 export async function getDashboardStats() {
@@ -151,22 +173,17 @@ export async function getDashboardStats() {
 
 ### Realtime Hooks
 
-We use the InsForge Realtime client (WebSocket) to listen for database changes.
-
 ```typescript
-// ✅ Correct: Realtime subscription
+// ✅ Correct: WebSocket subscription to database change events
 export function useDashboardRealtime() {
   const queryClient = useQueryClient();
-
   useEffect(() => {
     const subscription = insforge.realtime
       .channel("dashboard")
       .on("verification", () => {
-        // Invalidate queries to fetch fresh data
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       })
       .subscribe();
-
     return () => { subscription.unsubscribe(); };
   }, []);
 }
@@ -174,10 +191,8 @@ export function useDashboardRealtime() {
 
 ### Edge Function Invocation
 
-Sensitive operations (like bot token management) are handled by Edge Functions.
-
 ```typescript
-// ✅ Correct: Invoke Edge Function
+// ✅ Sensitive operations go through Edge Functions (not direct table writes)
 const { data, error } = await insforge.functions.invoke('manage-bot', {
   body: { action: 'verify', token: '...' }
 });
@@ -187,24 +202,71 @@ const { data, error } = await insforge.functions.invoke('manage-bot', {
 
 ## Database Schema (InsForge Managed PostgreSQL)
 
-The database is the single source of truth.
+### Core Tables (Migration 001)
 
-### Key Tables
 | Table | Purpose |
 | --- | --- |
 | `owners` | Bot owners (Telegram user IDs) |
 | `bot_instances` | Registered bot tokens (Fernet encrypted) |
 | `protected_groups` | Groups with verification enforcement |
 | `enforced_channels` | Required channel subscriptions |
+| `group_channel_links` | M:N group↔channel relationships |
+
+### Logging Tables (Migration 003)
+
+| Table | Purpose |
+| --- | --- |
+| `verification_log` | Per-verification analytics (user, group, channel, status, latency) |
+| `api_call_log` | Per-Telegram-API-call analytics (method, success, latency) |
+| `admin_logs` | Bot log lines forwarded to dashboard |
+| `admin_audit_log` | Dashboard admin action audit trail |
+
+### Runtime Tables (Migrations 004-006)
+
+| Table | Purpose |
+| --- | --- |
+| `bot_status` | Live bot heartbeat (uptime, message count) |
 | `admin_commands` | Dashboard→Bot command queue |
-| `verification_log` | Analytics data source |
 
 ### Realtime Triggers
-Database triggers automatically push events to WebSocket channels.
-- `notify_verification_event` → `dashboard` channel
-- `notify_bot_status_event` → `bot_status` channel
-- `notify_command_event` → `commands` channel
+
+Database triggers automatically push events to WebSocket channels:
+- `notify_verification_event` → `dashboard` channel (event: `verification`)
+- `notify_bot_status_event` → `bot_status` channel (event: `status_changed`)
+- `notify_command_event` → `commands` channel (event: `command_updated`)
+- `notify_log_event` → `logs` channel (event: `new_log`)
+
+### Bot Operating Modes
+
+| Mode | Env Var | Token Source | Multi-Bot? |
+|------|---------|-------------|------------|
+| **Dashboard** | `DASHBOARD_MODE=true` | `bot_instances` table | ✅ Yes |
+| **Standalone** | `DASHBOARD_MODE=false` | `BOT_TOKEN` in `.env` | ❌ Single |
 
 ---
 
-_Last Updated: 2026-02-23 (Phase 58)_
+## Testing Patterns
+
+### Mock InsForge REST in Tests
+
+```python
+# ✅ Correct: Mock insforge_client methods via patch.object
+from unittest.mock import AsyncMock, patch
+from apps.bot.core import insforge_client
+
+with patch.object(insforge_client, "_get", new=AsyncMock(return_value=[])):
+    result = await insforge_client.get_owner(user_id=999)
+    assert result is None
+
+# ✅ Correct: Mock the full CRUD helper
+with patch("apps.bot.core.insforge_client.get_group_channels",
+           new=AsyncMock(return_value=[])):
+    ...
+
+# ❌ Wrong: Mocking get_session (deleted from production code)
+with patch("apps.bot.core.database.get_session") as mock: ...  # ← no longer valid
+```
+
+---
+
+_Last Updated: 2026-02-23 (Phase 63)_
