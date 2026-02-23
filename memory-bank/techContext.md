@@ -1,5 +1,7 @@
 # Technical Context: Stack & Development
 
+> **Status**: Phase 66 — Bot + Web fully working end-to-end 🎉
+
 ## Technology Stack
 
 ### Bot (Python 3.13)
@@ -153,10 +155,14 @@ bun run format        # Prettier + Tailwind Sort
 | `api_call_log` | `api_call_logger.py` | `_post()` fire-and-forget | `method`, `success`, `latency_ms` |
 | `protected_groups` | `member_sync.py` | `_patch()` count update | `member_count` |
 | `enforced_channels` | `member_sync.py` | `_patch()` count update | `subscriber_count` |
-| `bot_status` | `status_writer.py` | POST UPSERT every 30s | `status='online'` (not `'running'`) |
+| `bot_status` | `status_writer.py` | **PATCH-then-POST** every 30s | `status='online'` (not `'running'`) |
 | `admin_logs` | `insforge_log_handler.py` | `_post()` fire-and-forget | WARNING+ level only |
 | `admin_commands` | `command_worker.py` | `_get()` + `_patch()` status update | polls every 10s |
 | `bot_instances` | `bot_manager.py` | `_get()` load active bots | reads `is_active=true, is_deleted=false` |
+
+> **⚠️ Phase 66 lesson**: All INSERT operations require `GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon`.
+> Without this, every INSERT returns **401 Unauthorized** from PostgREST.
+> This is separate from and in addition to table-level `GRANT INSERT`.
 
 ### InsForge RPC Functions Called by Web (all via SDK)
 
@@ -197,4 +203,4 @@ bun run format        # Prettier + Tailwind Sort
 
 ---
 
-_Last Updated: 2026-02-23 (Phase 65)_
+_Last Updated: 2026-02-23 (Phase 66 — Bot + Web Fully Working)_

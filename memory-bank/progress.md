@@ -2,9 +2,10 @@
 
 ## Current Status
 
-**Phase**: 65 — Complete InsForge Clean Rebuild + Realtime Setup
-**Overall Completion**: Phase 65 of 65 complete
+**Phase**: 66 — Full End-to-End Success (Bot + Web Working)
+**Overall Completion**: Phase 66 of 66 complete ✅
 **Last Updated**: 2026-02-23
+**Git**: `cf7cca7` on `main`
 
 ---
 
@@ -31,116 +32,99 @@
 | 60    | Full InsForge Migration Audit & Completion  | Complete ✅ 55/55 tests |
 | 61    | InsForge Audit, Bug Fixes & Dashboard Mode  | Complete ✅ |
 | 62    | Dashboard Sync, Dead Code Cleanup & Bot Startup | Complete ✅ |
-| **63** | **Dashboard Data Pipeline & Crash Resilience** | **Complete ✅** |
-| **64** | **Dashboard Full Pipeline Fix & Log Noise Reduction** | **Complete ✅** |
-| **65** | **Complete InsForge Clean Rebuild + Realtime Setup** | **Complete ✅** |
+| 63    | Dashboard Data Pipeline & Crash Resilience  | Complete ✅ |
+| 64    | Dashboard Full Pipeline Fix & Log Noise Reduction | Complete ✅ |
+| 65    | Complete InsForge Clean Rebuild + Realtime Setup | Complete ✅ |
+| **66** | **Full End-to-End Success (Bot + Web Working)** | **Complete ✅ 🎉** |
 
 ---
 
-## Phase 65: Complete InsForge Clean Rebuild
+## Phase 66: Final Bug Fixes — Bot & Web Now Fully Operational
 
-### Problems Solved
+### Bug 1: `401 Unauthorized` on ALL bot INSERT operations
 
-All prior schema debt eliminated in a single clean sweep:
+**Symptom**: Every write from bot (bot_status, group_channel_links, verification_log, api_call_log, admin_logs) returned 401. Reads worked fine.
 
-1. **`bot_status` empty + BIGINT overflow** — `bot_instance_id` was `INTEGER` (max 2.1B). Telegram bot ID `8265490825` = 8.26B → every UPSERT silently failed → dashboard always showed 0 uptime. Fixed by rebuilding table with `BIGINT`.
+**Root cause**: PostgreSQL requires **separate GRANT on sequences** for SERIAL/auto-increment PKs. The Phase 65 clean schema did `GRANT INSERT ON TABLE` but forgot `GRANT USAGE, SELECT ON SEQUENCES`. Without this, `nextval('bot_status_id_seq')` fails with `permission denied for sequence X` → PostgREST returns 401.
 
-2. **Missing columns** — `verification_log` was missing `cached`, `latency_ms`, `error_type`; `admin_logs` columns didn't match `InsForgeLogHandler` payload → rows failed silently.
+**Why reads worked but writes didn't**: SELECT never touches sequences. RPCs worked because they use `SECURITY DEFINER` (run as superuser).
 
-3. **Wrong RPC return shapes** — `get_cache_hit_rate_trend` and `get_latency_trend` returned envelope objects; `charts.service.ts` expected flat arrays (`Array.isArray(data)` always failed).
+**Fix applied**:
+```sql
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+```
+Added permanently to `insforge/migrations/009_clean_schema.sql`.
 
-4. **Missing `get_analytics_overview` RPC** — `analytics.service.ts getAnalyticsOverview()` called a RPC that didn't exist → error on Analytics page.
+### Bug 2: `409 Conflict` on `bot_status` UPSERT
 
-5. **Stale anon key** — both `apps/web/.env.local` and `apps/bot/.env` had old keys. Refreshed via MCP `get-anon-key`.
+**Symptom**: Even after 401 was fixed, `bot_status` writes returned 409.
 
-6. **Realtime channels existed but no triggers** — DB had channel patterns but no triggers to call `realtime.publish()` → WebSocket connected but no events ever fired.
+**Root cause**: `Prefer: resolution=merge-duplicates` is ambiguous when a table has multiple UNIQUE constraints (`bot_id` AND `bot_instance_id`). PostgREST can't find a single conflict target.
 
-7. **Hydration mismatch error** — Dark Reader browser extension injects `data-darkreader-inline-stroke` into SVGs → React SSR/client mismatch. Fixed with `suppressHydrationWarning` on `<Bot>` icon.
+**Fix applied**: `status_writer.py` now uses PATCH-then-POST pattern:
+1. `PATCH /bot_status?bot_id=eq.X` (update existing)
+2. If `Content-Range: */0` (no rows matched) → `POST` (insert)
 
-### What Was Created
+### Bug 3: Re-adding a Deleted Bot Fails with UNIQUE Violation
 
-| Type | Count | Details |
-|---|---|---|
-| Tables | 10 | owners, bot_instances, protected_groups, enforced_channels, group_channel_links, bot_status, verification_log, api_call_log, admin_logs, admin_commands |
-| Table Indexes | 16 | Performance indexes on all high-query columns |
-| RPC Functions | 14 | Full analytics + health coverage |
-| Realtime Triggers | 4 | verification, status_changed, new_log, command_updated |
-| Realtime Channels | 4 | dashboard, bot_status, logs, commands |
-| Files modified | 3 | brand-logo.tsx, apps/web/.env.local, apps/bot/.env |
-| Migration file | 1 | insforge/migrations/009_clean_schema.sql (canonical) |
+**Symptom**: Delete bot from dashboard → re-add same token → 500 error.
 
----
+**Root cause**: `manage-bot` Edge Function used plain `.insert()` → hits UNIQUE constraint on `bot_id` (soft-deleted row still exists).
 
-## Phase 64: Dashboard Full Pipeline Fix & Log Noise Reduction
+**Fix applied**: Changed to `.upsert(payload, { onConflict: 'bot_id' })` which also resets `is_deleted=false, is_active=true, deleted_at=null`.
 
-### Problems Solved
+### Files Changed in Phase 66
 
-1. **`bot_status.bot_instance_id` INTEGER Overflow** — Telegram bot ID `8265490825` > INT4 max → silent UPSERT failure → empty `bot_status` table → 0 dashboard uptime
-2. **`get_bot_health()` used `status = 'running'`** — `StatusWriter` writes `'online'`; uptime_percent always 0
-3. **`analytics.service.ts` not unwrapping envelope** — `get_verification_trends` returns `{series:[]}` but service did `Array.isArray(data)` (objects aren't arrays)
-4. **Log flooding** — 5 separate sources spamming at INFO/DEBUG, making `admin_logs` unusable
-
-### Fixes Applied
-
-| File | Fix |
+| File | Change |
 |---|---|
-| `verification.py` | Removed Cache HIT/MISS/result debug logs per-check |
-| `join.py` | Removed "Checking new member" INFO per-join |
-| `verify.py` | Demoted "User clicked verify" INFO → DEBUG |
-| `status_writer.py` | Removed per-heartbeat debug log |
-| `utils/logging.py` | Silence 16 noisy third-party libraries; InsForgeLogHandler at WARNING |
-| Migration 008 | `bot_instance_id` INTEGER→BIGINT; `get_bot_health()` uses `'online'` |
-| `analytics.service.ts` | Unwrap `envelope?.series` for both trend RPCs |
+| `insforge/migrations/009_clean_schema.sql` | Added `GRANT USAGE, SELECT ON ALL SEQUENCES` at end |
+| `apps/bot/services/status_writer.py` | PATCH-then-POST UPSERT pattern |
+| `insforge/functions/manage-bot.js` | `insert` → `upsert(onConflict: 'bot_id')` |
 
 ---
 
-## Phase 63: Dashboard Data Pipeline & Crash Resilience
+## What Works (Post Phase 66 — COMPLETE)
 
-### Problems Solved
-
-1. `StatusWriter` + `CommandWorker` never started in dashboard mode
-2. `InsForgeLogHandler` never wired to root logger → admin_logs empty
-3. `get_dashboard_stats` checked `status='running'` not `'online'`
-4. Chart data extraction: `data` treated as flat array instead of `{series:[]}` envelope
-5. `httpx.ReadTimeout` could crash entire bot process in `_sync_bots()`
-
----
-
-## What Works (Post Phase 65)
-
-### Bot Core
+### Bot Core ✅
+- ✅ Bot starts in dashboard mode and loads bots from InsForge DB
 - ✅ Instant mute on group join
-- ✅ Multi-channel verification
-- ✅ Leave detection
-- ✅ Inline verification buttons
-- ✅ `/protect` is idempotent (adds channels to existing groups)
-- ✅ Verification logging → `verification_log`
-- ✅ API call logging → `api_call_log`
-- ✅ Admin log forwarding → `admin_logs` (InsForgeLogHandler, WARNING+)
-- ✅ Status heartbeat → `bot_status` (UPSERT, writes `status='online'`)
-- ✅ StatusWriter + CommandWorker start in BOTH dashboard and standalone mode
+- ✅ Multi-channel verification (all channels must be joined)
+- ✅ Leave detection → re-mute
+- ✅ Inline verification buttons (deep link + join button URL)
+- ✅ `/protect` command (idempotent, adds channels to existing groups)
+- ✅ `/unprotect` command (disables protection)
+- ✅ `/status` command (shows group protection status)
+- ✅ Verification logging → `verification_log` (INSERT works ✅)
+- ✅ API call logging → `api_call_log` (INSERT works ✅)
+- ✅ Admin log forwarding → `admin_logs` (WARNING+ via InsForgeLogHandler ✅)
+- ✅ Status heartbeat → `bot_status` PATCH-then-POST every 30s ✅
+- ✅ StatusWriter starts in BOTH dashboard and standalone mode
+- ✅ CommandWorker polls `admin_commands` every 10s
 - ✅ Dashboard mode (multi-bot) + Standalone mode (dev)
 - ✅ Dual token decryption: Fernet + base64 fallback
-- ✅ Redis caching
+- ✅ Redis caching (member status cache)
+- ✅ Health server (port 8000)
 - ✅ Crash resilience: `httpx.HTTPError` caught in sync loop
 
-### Web Dashboard
-- ✅ 10 full-featured pages
-- ✅ Real-time updates via WebSocket (triggers fire on DB changes)
-- ✅ All 14 analytics RPCs return correct shapes
-- ✅ Envelope unwrapping correct in `analytics.service.ts` and `dashboard.service.ts`
-- ✅ Flat arrays correct in `charts.service.ts`
-- ✅ `get_bot_health()` reads `status='online'` → correct uptime
-- ✅ Hydration mismatch fixed (Dark Reader SVG injection)
-- ✅ Fresh anon key in both env files
+### Web Dashboard ✅
+- ✅ 10 full-featured pages (dashboard, analytics, groups, channels, bots, logs, settings, etc.)
+- ✅ Real-time updates via WebSocket (4 channels, 4 DB triggers)
+- ✅ All 14 analytics RPCs return correct shapes (200 OK)
+- ✅ `get_dashboard_stats` returns live data
+- ✅ `get_bot_health` shows uptime (reads `status='online'`)
+- ✅ Hydration mismatch fixed (Dark Reader SVG suppression)
+- ✅ Add bot flow: verify token → UPSERT → bot loads on next sync
+- ✅ Delete bot → soft delete → re-add same token works
 
-### Infrastructure
-- ✅ 10 tables (clean schema, correct types)
+### Infrastructure ✅
+- ✅ 10 tables (clean schema, correct BIGINT types)
 - ✅ 14 RPC functions (all analytics + charts)
 - ✅ 4 realtime triggers (verification, bot_status, admin_logs, admin_commands)
 - ✅ 4 realtime channels (dashboard, bot_status, logs, commands)
+- ✅ **Sequence grants** on all 7 sequences (fix for 401s)
 - ✅ 2 storage buckets (bot-assets, bot-exports)
-- ✅ 2 edge functions (manage-bot, test-webhook)
+- ✅ 2 edge functions (manage-bot UPSERT, test-webhook)
 - ✅ Canonical migration in `insforge/migrations/009_clean_schema.sql`
 
 ---
@@ -152,22 +136,21 @@ All prior schema debt eliminated in a single clean sweep:
 | Ruff | **0 errors** |
 | Pytest | **55/55 passed** |
 | ESLint | **0 warnings** |
-| Next.js Build | **0 errors, exit code 0** |
+| Next.js Build | **0 errors** |
+| Bot Writes | **All 200/204** (was 401) |
 
 ---
 
-## Known Issues / Next Steps
+## Remaining Minor Issues (Non-Blocking)
 
-| Issue | Priority |
-|---|---|
-| End-to-end test: `/protect` → join → verify → unmute flow | High |
-| Verify `bot_status` gets UPSERT rows within 30s of bot start | High |
-| Verify `admin_logs` populates (Logs page shows WARNING+ entries) | High |
-| Verify dashboard charts update after a few verify events | High |
-| `member_sync` still disabled — requires APScheduler config | Low |
-| No RLS policies on InsForge tables (all data public via anon key) | Medium |
-| Edge Function uses `btoa()` (base64) — should use proper Fernet | Low |
+| Issue | Impact | Priority |
+|---|---|---|
+| Bot response latency (network to InsForge) | Minor UX delay | Low |
+| `member_sync` disabled (APScheduler not wired) | Member counts not refreshed | Low |
+| No RLS policies on InsForge tables | Security hardening | Medium |
+| Edge Function uses `btoa()` not Fernet | Weak encryption | Low |
+| No global Telegram error handler | Unhandled errors surfaced | Low |
 
 ---
 
-_Last Updated: 2026-02-23 (Phase 65)_
+_Last Updated: 2026-02-23 (Phase 66 — Full Success 🎉)_

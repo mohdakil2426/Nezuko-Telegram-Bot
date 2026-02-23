@@ -1,5 +1,7 @@
 # System Patterns: Architecture & Implementation
 
+> **Last Updated**: 2026-02-23 (Phase 66 — Bot + Web fully working)
+
 ## Architecture Overview
 
 ### Current (InsForge BaaS — Phase 65, Complete)
@@ -255,6 +257,48 @@ const { data, error } = await insforge.functions.invoke('manage-bot', {
   - Bot ID `8265490825` = 8.26 billion — overflows INT4
   - Any `INTEGER` for a Telegram ID will silently fail on UPSERT
 
+### ⚠️ Critical Grant Rules (Phase 66 Discovery)
+
+**ALWAYS grant sequences separately from tables.** Table-level INSERT grant is NOT enough.
+Without sequence USAGE, every INSERT by the `anon` role returns **401** via PostgREST.
+
+```sql
+-- Required AFTER every CREATE TABLE with SERIAL/auto-increment columns
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+```
+
+**Why**: PostgreSQL SERIAL columns call `nextval('table_id_seq')` during INSERT.
+That sequence call requires `USAGE` privilege on the sequence object itself,
+which is separate from the table's INSERT privilege.
+
+### ⚠️ UPSERT with Multiple UNIQUE Constraints
+
+`Prefer: resolution=merge-duplicates` **fails with 409** when a table has multiple UNIQUE columns.
+PostgREST can't determine which constraint to use for conflict resolution.
+
+**Use PATCH-then-POST pattern instead:**
+
+```python
+# ✅ Correct: PATCH first, POST only if no row exists
+patch_resp = await client.patch(
+    "/api/database/records/bot_status",
+    params={"bot_id": f"eq.{bot_id}"},
+    json={"status": "online", "last_heartbeat": now},
+    headers={"Prefer": "return=minimal"},
+)
+if patch_resp.headers.get("content-range", "").startswith("*/0"):
+    # No row matched → INSERT
+    await client.post(
+        "/api/database/records/bot_status",
+        json=[{"bot_id": bot_id, "status": "online", ...}],
+        headers={"Prefer": "return=minimal"},
+    )
+
+# ❌ Wrong: breaks when table has 2+ UNIQUE columns
+await client.post(..., headers={"Prefer": "resolution=merge-duplicates"})
+```
+
 ### Realtime Triggers (Phase 65)
 
 | Trigger Name | Table | Channel | Event | Web Hook |
@@ -299,4 +343,12 @@ with patch("apps.bot.core.database.get_session") as mock: ...  # ← no longer v
 
 ---
 
-_Last Updated: 2026-02-23 (Phase 65)_
+### ⚠️ Edge Function UPSERT Pattern (manage-bot)
+
+Always use `.upsert(payload, { onConflict: 'bot_id' })` in the manage-bot Edge Function.
+Plain `.insert()` will fail with 409/500 if the bot was previously soft-deleted (row still exists).
+The UPSERT must explicitly restore: `is_deleted: false, is_active: true, deleted_at: null`.
+
+---
+
+_Last Updated: 2026-02-23 (Phase 66)_
