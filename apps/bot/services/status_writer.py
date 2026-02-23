@@ -72,8 +72,13 @@ class StatusWriter:
     async def _write_status(self, status: str) -> None:
         """UPSERT bot status via InsForge REST API.
 
-        Uses POST with Prefer: resolution=merge-duplicates to create-or-update
-        the row instead of PATCH which silently does nothing on empty tables.
+        Uses PATCH-then-POST pattern:
+        1. PATCH updates the existing row (returns 204 if updated, 404 if missing)
+        2. If row doesn't exist yet, POST inserts it.
+
+        This avoids the ambiguous multi-unique-constraint behaviour of
+        Prefer: resolution=merge-duplicates which causes 409 errors when a
+        table has more than one UNIQUE column.
 
         Args:
             status: Bot status (online, offline)
@@ -81,27 +86,52 @@ class StatusWriter:
         import datetime  # pylint: disable=import-outside-toplevel
 
         uptime = int(time.monotonic() - self._start_time)
+        now = datetime.datetime.now(datetime.UTC).isoformat()
+        payload = {
+            "status": status,
+            "last_heartbeat": now,
+            "uptime_seconds": uptime,
+            "updated_at": now,
+        }
+        insert_payload = {
+            "bot_id": self._bot_id,
+            "bot_instance_id": self._bot_id,
+            **payload,
+        }
         try:
             client = insforge_client._get_client()  # pylint: disable=protected-access
-            now = datetime.datetime.now(datetime.UTC).isoformat()
-            resp = await client.post(
+
+            # Step 1: Try PATCH (update existing row)
+            patch_resp = await client.patch(
                 "/api/database/records/bot_status",
-                json=[
-                    {
-                        "bot_id": self._bot_id,
-                        "bot_instance_id": self._bot_id,
-                        "status": status,
-                        "last_heartbeat": now,
-                        "uptime_seconds": uptime,
-                        "updated_at": now,
-                    }
-                ],
-                headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
+                params={"bot_id": f"eq.{self._bot_id}"},
+                json=payload,
+                headers={"Prefer": "return=minimal"},
             )
-            if resp.status_code in (404, 400):
-                # Table schema mismatch — non-fatal, skip silently
-                logger.warning("bot_status table not compatible, skipping heartbeat")
-                return
-            resp.raise_for_status()
+
+            if patch_resp.status_code == 404 or (
+                patch_resp.status_code == 204
+                # PostgREST returns 204 even when 0 rows matched — check Content-Range
+                and patch_resp.headers.get("content-range", "").startswith("*/0")
+            ):
+                # Row doesn't exist yet — INSERT
+                post_resp = await client.post(
+                    "/api/database/records/bot_status",
+                    json=[insert_payload],
+                    headers={"Prefer": "return=minimal"},
+                )
+                if post_resp.status_code not in (200, 201, 204):
+                    logger.warning(
+                        "bot_status INSERT failed: %s %s",
+                        post_resp.status_code,
+                        post_resp.text[:200],
+                    )
+                    return
+            elif patch_resp.status_code not in (200, 201, 204):
+                logger.warning(
+                    "bot_status PATCH failed: %s %s",
+                    patch_resp.status_code,
+                    patch_resp.text[:200],
+                )
         except (httpx.HTTPError, OSError, RuntimeError) as e:
             logger.debug("Status write skipped: %s", e)

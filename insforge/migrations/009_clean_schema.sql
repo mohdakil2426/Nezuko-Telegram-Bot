@@ -342,3 +342,11 @@ DECLARE result JSON;
 BEGIN
     SELECT json_build_object('total_verifications',(SELECT COUNT(*) FROM verification_log),'total_groups',(SELECT COUNT(*) FROM protected_groups),'total_channels',(SELECT COUNT(*) FROM enforced_channels),'success_rate',COALESCE((SELECT ROUND(COUNT(*) FILTER (WHERE status='verified')::NUMERIC/NULLIF(COUNT(*)::NUMERIC,0)*100,1) FROM verification_log),0),'avg_latency_ms',COALESCE((SELECT ROUND(AVG(latency_ms)::NUMERIC,0) FROM verification_log WHERE latency_ms IS NOT NULL),0),'cache_hit_rate',COALESCE((SELECT ROUND(COUNT(*) FILTER (WHERE cached=TRUE)::NUMERIC/NULLIF(COUNT(*)::NUMERIC,0)*100,1) FROM verification_log),0)) INTO result; RETURN result;
 END; $$;
+
+-- ── GRANTS ────────────────────────────────────────────────────
+-- ⚠️  CRITICAL: Must grant USAGE + SELECT on sequences separately.
+-- Table-level INSERT grant alone is NOT sufficient — PostgreSQL
+-- requires sequence grants for SERIAL / auto-increment PKs.
+-- Without this, all INSERT operations via the anon key return 401.
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;

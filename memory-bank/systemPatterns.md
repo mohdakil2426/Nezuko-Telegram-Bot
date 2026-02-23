@@ -2,7 +2,7 @@
 
 ## Architecture Overview
 
-### Current (InsForge BaaS — Phase 63, Complete)
+### Current (InsForge BaaS — Phase 65, Complete)
 
 The Nezuko Platform operates on a **2-tier architecture** with **zero direct DB access**
 from the bot. All persistence goes through InsForge REST API or the InsForge SDK.
@@ -16,8 +16,9 @@ from the bot. All persistence goes through InsForge REST API or the InsForge SDK
 │  Telegram Bot (Python 3.13) │───►│  InsForge BaaS                   │
 │                             │    │  ┌───────────┐ ┌───────────────┐ │
 │  insforge_client.py         │    │  │ PostgreSQL│ │ Realtime WS   │ │
-│  (httpx REST)               │    │  └───────────┘ └───────────────┘ │
-└─────────────────────────────┘    │  ┌───────────┐ ┌───────────────┐ │
+│  (httpx REST)               │    │  └─────┬─────┘ └───────────────┘ │
+└─────────────────────────────┘    │        │ DB Triggers              │
+                                   │  ┌─────▼─────┐ ┌───────────────┐ │
                                    │  │  Storage  │ │ Edge Functions│ │
                                    │  └───────────┘ └───────────────┘ │
                                    └──────────────────────────────────┘
@@ -140,7 +141,7 @@ except asyncio.CancelledError: ...    # Task cancellation (re-raise or handle)
 except Exception as e: ...  # Too broad — masks bugs
 ```
 
-### Crash Resilience (Phase 63)
+### Crash Resilience (Phase 63+)
 
 Background sync loops MUST catch `httpx.HTTPError` to survive transient timeouts:
 
@@ -149,9 +150,6 @@ Background sync loops MUST catch `httpx.HTTPError` to survive transient timeouts
 except (EncryptionError, OSError, httpx.HTTPError) as e:
     logger.error("Error syncing bots: %s", e)
     # Bot keeps running — next sync in 30s
-
-# ❌ Wrong: Missing httpx.HTTPError → ReadTimeout kills the process
-except (EncryptionError, OSError) as e:  # ← httpx.ReadTimeout escapes!
 ```
 
 ---
@@ -171,22 +169,42 @@ export async function getDashboardStats() {
 }
 ```
 
+### RPC Response Shape Rules (CRITICAL — Phase 65)
+
+Different RPCs return different shapes. Match exactly what `charts.service.ts` and
+`analytics.service.ts` expect:
+
+```typescript
+// ── Envelope RPCs (have a {series:[]} wrapper) ────────────────────────────
+// get_verification_trends  → {period, series:[{timestamp, total, successful, failed}], summary}
+// get_user_growth          → {period, granularity, series:[{date, new_users, total_users}], summary}
+const envelope = data as Record<string, unknown> | null;
+const series = Array.isArray(envelope?.series) ? envelope.series : [];
+
+// ── Flat array RPCs (return [] directly) ─────────────────────────────────
+// get_api_calls_distribution, get_hourly_activity, get_latency_distribution,
+// get_top_groups, get_cache_hit_rate_trend, get_latency_trend
+const series = Array.isArray(data) ? data : [];
+
+// ── Plain object RPCs (return {} directly) ────────────────────────────────
+// get_dashboard_stats, get_verification_distribution, get_cache_breakdown,
+// get_groups_status, get_bot_health, get_analytics_overview
+return data as SomeType;
+```
+
 ### Realtime Hooks
 
 ```typescript
-// ✅ Correct: WebSocket subscription to database change events
-export function useDashboardRealtime() {
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    const subscription = insforge.realtime
-      .channel("dashboard")
-      .on("verification", () => {
-        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      })
-      .subscribe();
-    return () => { subscription.unsubscribe(); };
-  }, []);
-}
+// ✅ Correct: WebSocket subscription using InsForge SDK
+// useDashboardRealtime subscribes to ["dashboard", "bot_status"]
+// listens for "verification" and "status_changed" events
+// → invalidates ["dashboard", "stats"], ["dashboard", "activity"], ["analytics"] queries
+
+// useLogsRealtime subscribes to ["logs"]
+// listens for "new_log", "error", "warning" events
+
+// useCommandsRealtime subscribes to ["commands"]
+// listens for all events (command_updated)
 ```
 
 ### Edge Function Invocation
@@ -200,41 +218,53 @@ const { data, error } = await insforge.functions.invoke('manage-bot', {
 
 ---
 
-## Database Schema (InsForge Managed PostgreSQL)
+## Database Schema (InsForge Migration 009 — Canonical Clean Schema)
 
-### Core Tables (Migration 001)
+> **Canonical file**: `insforge/migrations/009_clean_schema.sql`
+> Replaces all previous migrations (001–008). This is idempotent (safe to re-run).
 
-| Table | Purpose |
-| --- | --- |
-| `owners` | Bot owners (Telegram user IDs) |
-| `bot_instances` | Registered bot tokens (Fernet encrypted) |
-| `protected_groups` | Groups with verification enforcement |
-| `enforced_channels` | Required channel subscriptions |
-| `group_channel_links` | M:N group↔channel relationships |
+### Core Tables
 
-### Logging Tables (Migration 003)
+| Table | Purpose | Key Types |
+| --- | --- | --- |
+| `owners` | Bot owners (Telegram user IDs) | `user_id BIGINT PK` |
+| `bot_instances` | Registered bot tokens (Fernet encrypted) | `bot_id BIGINT UNIQUE`, `is_active + is_deleted BOOLEAN` |
+| `protected_groups` | Groups with verification enforcement | `group_id BIGINT PK`, `params JSONB`, FK → owners |
+| `enforced_channels` | Required channel subscriptions | `channel_id BIGINT PK`, `linked_groups_count INT` |
+| `group_channel_links` | M:N group↔channel relationships | FK cascade both ways, `is_required BOOLEAN` |
 
-| Table | Purpose |
-| --- | --- |
-| `verification_log` | Per-verification analytics (user, group, channel, status, latency) |
-| `api_call_log` | Per-Telegram-API-call analytics (method, success, latency) |
-| `admin_logs` | Bot log lines forwarded to dashboard |
-| `admin_audit_log` | Dashboard admin action audit trail |
+### Analytics Tables
 
-### Runtime Tables (Migrations 004-006)
+| Table | Purpose | Key Columns |
+| --- | --- | --- |
+| `verification_log` | Per-verification analytics | `status VARCHAR(20)`, `latency_ms INT`, `cached BOOLEAN`, `error_type VARCHAR(50)` |
+| `api_call_log` | Per-Telegram-API-call analytics | `method VARCHAR(50)`, `success BOOLEAN`, `latency_ms INT` |
+| `admin_logs` | Bot log lines forwarded to dashboard | `level, logger, message, module, function, line_no, path` |
 
-| Table | Purpose |
-| --- | --- |
-| `bot_status` | Live bot heartbeat (uptime, message count) |
-| `admin_commands` | Dashboard→Bot command queue |
+### Runtime Tables
 
-### Realtime Triggers
+| Table | Purpose | Key Columns |
+| --- | --- | --- |
+| `bot_status` | Live bot heartbeat | **`bot_id BIGINT UNIQUE`, `bot_instance_id BIGINT UNIQUE`** (BIGINT critical!) |
+| `admin_commands` | Dashboard→Bot command queue | `status VARCHAR(20)`, `command_type VARCHAR(50)`, `payload JSONB` |
 
-Database triggers automatically push events to WebSocket channels:
-- `notify_verification_event` → `dashboard` channel (event: `verification`)
-- `notify_bot_status_event` → `bot_status` channel (event: `status_changed`)
-- `notify_command_event` → `commands` channel (event: `command_updated`)
-- `notify_log_event` → `logs` channel (event: `new_log`)
+### ⚠️ Critical Type Rules
+
+- **All Telegram IDs** (`user_id`, `group_id`, `channel_id`, `bot_id`, `bot_instance_id`) **MUST be `BIGINT`**
+  - Telegram user/chat IDs regularly exceed INT4 max (2,147,483,647)
+  - Bot ID `8265490825` = 8.26 billion — overflows INT4
+  - Any `INTEGER` for a Telegram ID will silently fail on UPSERT
+
+### Realtime Triggers (Phase 65)
+
+| Trigger Name | Table | Channel | Event | Web Hook |
+|---|---|---|---|---|
+| `verification_log_realtime` | `verification_log` | `dashboard` | `verification` | `useDashboardRealtime` |
+| `bot_status_realtime` | `bot_status` | `bot_status` | `status_changed` | `useDashboardRealtime` |
+| `admin_logs_realtime` | `admin_logs` | `logs` | `new_log` | `useLogsRealtime` |
+| `admin_commands_realtime` | `admin_commands` | `commands` | `command_updated` | `useCommandsRealtime` |
+
+Triggers use `realtime.publish(channel, event, jsonb_payload)` inside `AFTER INSERT OR UPDATE` trigger functions.
 
 ### Bot Operating Modes
 
@@ -269,4 +299,4 @@ with patch("apps.bot.core.database.get_session") as mock: ...  # ← no longer v
 
 ---
 
-_Last Updated: 2026-02-23 (Phase 63)_
+_Last Updated: 2026-02-23 (Phase 65)_
