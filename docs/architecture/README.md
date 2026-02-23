@@ -332,10 +332,7 @@ nezuko-monorepo/
 │   ├── deploy/                 # Deployment
 │   └── maintenance/            # Utilities
 │
-├── storage/                    # Runtime files (GITIGNORED)
-│   ├── logs/                   # Application logs
-│   ├── data/                   # Local databases
-│   └── uploads/                # User uploads
+├── apps/bot/logs/              # Bot runtime logs (GITIGNORED)
 │
 ├── docs/                       # Documentation
 └── tests/                      # Test suites

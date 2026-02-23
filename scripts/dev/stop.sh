@@ -34,10 +34,9 @@ stop_on_port() {
 echo -e "  ${BLUE}[1/4] Stopping Web Dashboard (Node.js on port 3000)...${NC}"
 stop_on_port 3000 "Web"
 
-echo -e "  ${GREEN}[2/4] Stopping API Server (Python on port 8080)...${NC}"
-stop_on_port 8080 "API"
 
-echo -e "  ${YELLOW}[3/4] Stopping Telegram Bot (Python)...${NC}"
+
+echo -e "  ${YELLOW}[2/3] Stopping Telegram Bot (Python)...${NC}"
 # Kill any python process running bot
 if pkill -f "apps.bot.main" 2>/dev/null; then
     echo -e "        ${GREEN}Stopped!${NC}"
@@ -45,7 +44,7 @@ else
     echo -e "        ${GRAY}Not running${NC}"
 fi
 
-echo -e "  ${MAGENTA}[4/4] Stopping Bun processes...${NC}"
+echo -e "  ${MAGENTA}[3/3] Stopping Bun processes...${NC}"
 if pkill -f "bun" 2>/dev/null; then
     echo -e "        ${GREEN}Stopped!${NC}"
 else

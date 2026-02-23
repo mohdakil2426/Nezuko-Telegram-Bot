@@ -228,7 +228,6 @@ Write-Step -Step "5/6" -Message "Creating environment files..."
 
 $envConfigs = @(
     @{ Dir = "apps\web"; EnvFile = ".env.local"; Example = ".env.example" },
-    @{ Dir = "apps\api"; EnvFile = ".env"; Example = ".env.example" },
     @{ Dir = "apps\bot"; EnvFile = ".env"; Example = ".env.example" }
 )
 
@@ -245,15 +244,13 @@ foreach ($config in $envConfigs) {
 }
 
 # ============================================================
-# Step 6: Create Storage Directories
+# Step 6: Create Logging Directories
 # ============================================================
 
-Write-Step -Step "6/6" -Message "Creating storage directories..."
+Write-Step -Step "6/6" -Message "Creating logging directories..."
 
 $storageDirs = @(
-    "storage\logs",
-    "storage\data",
-    "storage\cache"
+    "apps\bot\logs"
 )
 
 foreach ($dir in $storageDirs) {
@@ -288,12 +285,7 @@ Write-Host "apps/web/.env.local" -ForegroundColor Cyan
 Write-Host "     - NEXT_PUBLIC_API_URL (default: http://localhost:8080)" -ForegroundColor Gray
 Write-Host "     - NEXT_PUBLIC_LOGIN_BOT_USERNAME (your bot's username)" -ForegroundColor Gray
 Write-Host ""
-Write-Host "  📝 " -NoNewline -ForegroundColor White
-Write-Host "apps/api/.env" -ForegroundColor Cyan
-Write-Host "     - LOGIN_BOT_TOKEN (from @BotFather - for dashboard auth)" -ForegroundColor Gray
-Write-Host "     - BOT_OWNER_TELEGRAM_ID (your Telegram ID)" -ForegroundColor Gray
-Write-Host "     - ENCRYPTION_KEY (generate with: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')" -ForegroundColor Gray
-Write-Host ""
+
 Write-Host "  📝 " -NoNewline -ForegroundColor White
 Write-Host "apps/bot/.env" -ForegroundColor Cyan
 Write-Host "     - BOT_TOKEN (optional - for standalone mode)" -ForegroundColor Gray

@@ -261,72 +261,12 @@ function Invoke-StartMenu {
     }
 }
 
-# Helper function to start PostgreSQL Docker container
-function Start-PostgresContainer {
-    <#
-    .SYNOPSIS
-        Starts PostgreSQL Docker container, creating if necessary.
-    #>
-    
-    # Check if Docker is available
-    $dockerAvailable = $null
-    try {
-        $dockerAvailable = docker --version 2>&1
-    } catch {
-        $dockerAvailable = $null
-    }
-    
-    if (-not $dockerAvailable) {
-        Write-Host "  ❌ Docker not found or not running!" -ForegroundColor Red
-        Write-Host "     Please install Docker Desktop: https://docker.com/products/docker-desktop" -ForegroundColor Gray
-        return
-    }
-    
-    # Check if container exists
-    $containerExists = docker ps -a --filter "name=nezuko-postgres" --format "{{.Names}}" 2>$null
-    
-    if ($containerExists -eq "nezuko-postgres") {
-        # Container exists, check if running
-        $containerRunning = docker ps --filter "name=nezuko-postgres" --format "{{.Names}}" 2>$null
-        
-        if ($containerRunning -eq "nezuko-postgres") {
-            Write-Host "  ✅ PostgreSQL already running!" -ForegroundColor Green
-        } else {
-            # Start existing container
-            Write-Host "  Starting existing container..." -ForegroundColor Gray
-            docker start nezuko-postgres 2>$null | Out-Null
-            
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "  ✅ PostgreSQL started!" -ForegroundColor Green
-            } else {
-                Write-Host "  ❌ Failed to start PostgreSQL" -ForegroundColor Red
-            }
-        }
-    } else {
-        # Create new container
-        Write-Host "  Creating new PostgreSQL container..." -ForegroundColor Gray
-        docker run -d `
-            --name nezuko-postgres `
-            -e POSTGRES_USER=nezuko `
-            -e POSTGRES_PASSWORD=nezuko123 `
-            -e POSTGRES_DB=nezuko `
-            -p 5432:5432 `
-            postgres:17-alpine 2>$null | Out-Null
-        
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "  ✅ PostgreSQL container created and started!" -ForegroundColor Green
-            Write-Host ""
-            Write-Host "  Connection: postgresql://nezuko:nezuko123@localhost:5432/nezuko" -ForegroundColor Gray
-        } else {
-            Write-Host "  ❌ Failed to create PostgreSQL container" -ForegroundColor Red
-        }
-    }
-}
+
 
 
 
 function Invoke-StopServices {
-    Write-Host ""
+    Write-Host ""   
     Write-Host "  ⏹️  Stopping all services..." -ForegroundColor Red
     $stopScript = Join-Path $ScriptRoot "..\dev\stop.ps1"
     & $stopScript

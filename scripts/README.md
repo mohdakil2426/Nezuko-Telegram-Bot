@@ -53,19 +53,7 @@ scripts/
 │   ├── install.ps1             # First-time setup (Windows)
 │   └── install.sh              # First-time setup (Mac/Linux)
 │
-├── db/                         # 🗄️ Database scripts
-│   ├── init.sql                # PostgreSQL init script (Docker)
-│   ├── seed.py                 # 🌱 Seed test data (charts, verifications)
-│   └── README.md               # Database documentation
-│
-├── test/                       # 🧪 Test scripts
-│   ├── run.ps1                 # Run pytest (Windows)
-│   ├── run.sh                  # Run pytest (Mac/Linux)
-│   └── load_test.py            # 📊 API performance benchmarking
-│
-├── deploy/                     # 🚢 Deployment scripts
-│   └── docker-build.sh         # Docker build script
-│
+
 ├── logs/                       # 📋 Script execution logs (git-ignored)
 │   └── nezuko-YYYY-MM-DD.log
 │
@@ -102,7 +90,6 @@ When you run `nezuko` without arguments, you get an interactive menu:
 ┌── 📦 SETUP & CONFIGURATION ──────────────────────────┐
 │    [1] 🏗️  First-Time Setup                          │
 │    [2] 🔐 Security & Keys...                         │
-│    [3] 🗄️  Database...                                │
 ├── 🚀 DEVELOPMENT ────────────────────────────────────┤
 │    [4] ▶️  Start Services...                          │
 │    [5] ⏹️  Stop All Services                          │
@@ -136,69 +123,7 @@ This will:
 
 ---
 
-## 🗄️ Database Setup
 
-### Start PostgreSQL (Docker)
-
-```bash
-# Via menu: [3] Database → [1] Start PostgreSQL
-# Or directly:
-docker run -d --name nezuko-postgres \
-  -e POSTGRES_USER=nezuko \
-  -e POSTGRES_PASSWORD=nezuko123 \
-  -e POSTGRES_DB=nezuko \
-  -p 5432:5432 \
-  postgres:17-alpine
-```
-
-### Run Migrations
-
-```bash
-# Via menu: [3] Database → [3] Run Migrations
-# Or directly:
-cd apps/api && alembic upgrade head
-```
-
-### Seed Test Data
-
-```bash
-# Via menu: [3] Database → [4] Seed Test Data
-# Or directly:
-python scripts/db/seed.py --days 30 --count 20
-```
-
-**What it does:** Creates fake verification records so dashboard charts show data instead of empty graphs.
-
----
-
-## 🧪 Testing
-
-### Run Unit Tests
-
-```bash
-# Via script:
-.\scripts\test\run.ps1
-
-# Or directly:
-pytest tests/ -v
-pytest tests/api/ -v --cov=apps/api
-```
-
-### Load Testing (API Performance)
-
-```bash
-# Benchmark API endpoints:
-python scripts/test/load_test.py --requests 50 --concurrency 10
-
-# Options:
-#   --api-url     Target API (default: http://localhost:8080)
-#   --requests    Requests per endpoint (default: 50)
-#   --concurrency Concurrent requests (default: 10)
-```
-
-**What it does:** Measures latency (avg, p95, p99) and throughput for all chart endpoints.
-
----
 
 ## 🔑 Security & Encryption
 

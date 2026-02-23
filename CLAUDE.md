@@ -21,7 +21,7 @@ nezuko-monorepo/
 ├── requirements/     # Python deps (base, bot, dev)
 ├── tests/            # ALL tests (not in apps/)
 ├── scripts/          # Utility scripts
-├── storage/          # Runtime files (gitignored)
+├── apps/bot/logs/    # Bot runtime logs (gitignored)
 ├── memory-bank/      # Project context & progress
 └── docs/             # Documentation
 ```
@@ -35,8 +35,8 @@ nezuko-monorepo/
 | Type        | Correct Location            | ❌ Wrong                     |
 | ----------- | --------------------------- | ---------------------------- |
 | Tests       | `tests/bot/`                | `apps/*/tests/`              |
-| Database    | `storage/data/`             | `apps/*.db`                  |
-| Logs        | `storage/logs/`             | `apps/*.log`                 |
+| Database    | Docker local port 5432      | `apps/*.db`                  |
+| Logs        | `apps/bot/logs/`            | `apps/*.log`                 |
 | Env files   | `apps/*/.env`, `.env.local` | Root `.env`                  |
 | Python deps | `requirements.txt`        | Root `requirements.txt` only |
 

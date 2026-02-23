@@ -130,12 +130,7 @@ else
     write_info "apps/web/.env.local already exists"
 fi
 
-# API .env
-if copy_env_if_missing "apps/api" ".env" ".env.example"; then
-    write_success "Created apps/api/.env"
-else
-    write_info "apps/api/.env already exists"
-fi
+
 
 # Bot .env
 if copy_env_if_missing "apps/bot" ".env" ".env.example"; then
@@ -145,12 +140,12 @@ else
 fi
 
 # ============================================================
-# Step 6: Create Storage Directories
+# Step 6: Create Logging Directories
 # ============================================================
 
-write_step "6/6" "Creating storage directories..."
+write_step "6/6" "Creating logging directories..."
 
-STORAGE_DIRS=("storage/logs" "storage/data" "storage/cache")
+STORAGE_DIRS=("apps/bot/logs")
 
 for dir in "${STORAGE_DIRS[@]}"; do
     if [[ ! -d "$dir" ]]; then
@@ -176,11 +171,7 @@ echo -e "  ${WHITE}📝 ${CYAN}apps/web/.env.local${NC}"
 echo -e "     ${GRAY}- NEXT_PUBLIC_API_URL (default: http://localhost:8080)${NC}"
 echo -e "     ${GRAY}- NEXT_PUBLIC_LOGIN_BOT_USERNAME (your bot's username)${NC}"
 echo ""
-echo -e "  ${WHITE}📝 ${CYAN}apps/api/.env${NC}"
-echo -e "     ${GRAY}- LOGIN_BOT_TOKEN (from @BotFather - for dashboard auth)${NC}"
-echo -e "     ${GRAY}- BOT_OWNER_TELEGRAM_ID (your Telegram ID)${NC}"
-echo -e "     ${GRAY}- ENCRYPTION_KEY (generate with Fernet.generate_key())${NC}"
-echo ""
+
 echo -e "  ${WHITE}📝 ${CYAN}apps/bot/.env${NC}"
 echo -e "     ${GRAY}- BOT_TOKEN (optional - for standalone mode)${NC}"
 echo ""

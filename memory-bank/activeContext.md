@@ -2,10 +2,10 @@
 
 ## Current Status
 
-**Date**: 2026-02-20
+**Date**: 2026-02-22
 **Phase**: 56 - Architecture Audit & Polish
 **Branch**: `main` (Merged from `feat/full-stack-integration`)
-**Change**: `architectural-polish` - **READY**
+**Change**: `architectural-polish` - **COMPLETED**
 
 ---
 
@@ -20,13 +20,18 @@ The platform underwent a profound code quality and stylistic audit targeting Pyt
 2.  **Linting Perfection**: The Python backend achieved a pristine `9.99/10` pylint score avoiding all `broad-exception-caught` warnings.
 3.  **UI/UX Pro-Max Elegance**: Migrated from static Next.js views to staggered, spring-based micro-animations via `framer-motion` (`bun add motion`) achieving true Avant-Garde UI aesthetics.
 4.  **Compatibility Mapping**: Authored a Server Component bridge wrapper `motion-client.tsx` to seamlessly handle `AnimatePresence` and App Router constraints.
+5.  **Storage Refactor**: Completely removed the root `storage/` directory and re-routed bot logs directly to `apps/bot/logs/` to simplify the architecture.
 
-### Active Tasks
+### Completed Tasks
 
 - [x] **Backend Scrub**: Remove bare exceptions.
 - [x] **Frontend UX**: Add motion constraints.
 - [x] **Sanity Checks**: Re-run Pylint/Ruff/Pyrefly checks (all solid).
-- [ ] **Next Optimization**: Review log tracking, `structlog` injections can be staged later.
+- [x] **Next Optimization**: Review log tracking, `structlog` injections can be staged later.
+- [x] **Scripts Cleanup**: Removed dead `apps/api` dependencies, orphaned functions, and `deploy`/`test` script folders from `/scripts`.
+- [x] **Storage Refactor**: Deleted legacy `storage/` mapping and routed bot logs correctly to `apps/bot/logs/`.
+- [x] **Turbopack & Monorepo Optimization**: Fixed fatal module resolution crashes isolated to Next.js Turbopack by completely purging global node configurations and isolating Next.js inside `apps/web`.
+- [x] **Bot Polling Synchronization**: Resolved IPv6 parsing timeouts by converting `localhost` to `127.0.0.1` locally, allowing seamless Redis connectivity to Docker clusters.
 
 ---
 
@@ -72,4 +77,4 @@ Bot Engine (Python) ──────► SQLAlchemy ─────────
 
 ---
 
-_Last Updated: 2026-02-20_
+_Last Updated: 2026-02-22_

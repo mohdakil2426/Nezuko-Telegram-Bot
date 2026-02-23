@@ -66,11 +66,11 @@ graph TB
     style REDIS fill:#ef4444,color:#fff
 ```
 
-### Monorepo Structure
+### Workspace Structure
 
 ```mermaid
 graph LR
-    subgraph "nezuko-monorepo"
+    subgraph "nezuko"
         direction TB
         
         subgraph "apps/"
@@ -79,24 +79,11 @@ graph LR
             BOT["🤖 bot<br/>PTB v22"]
         end
         
-        subgraph "packages/"
-            TYPES["📦 types<br/>Zod + TS"]
-            CONFIG["📦 config<br/>ESLint/TS"]
-        end
-        
         subgraph "config/"
             DOCKER["🐳 docker/"]
         end
         
-        subgraph "storage/"
-            LOGS["📄 logs/"]
-            DATA["💾 data/"]
-        end
     end
-    
-    WEB --> TYPES
-    API --> TYPES
-    WEB --> CONFIG
 
     style WEB fill:#8b5cf6
     style API fill:#10b981

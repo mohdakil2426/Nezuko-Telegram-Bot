@@ -88,4 +88,4 @@ Dashboard ← InsForge Realtime (WebSocket) ← PostgreSQL Triggers
 
 ---
 
-_Last Updated: 2026-02-20_
+_Last Updated: 2026-02-22_

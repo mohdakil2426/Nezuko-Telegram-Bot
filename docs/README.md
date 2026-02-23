@@ -101,7 +101,7 @@ python -m main
 | --------------- | -------------------------------------- |
 | `apps/bot/` | Telegram bot application |
 | `apps/web/` | Next.js admin dashboard |
-| `storage/` | Runtime files (logs, cache) |
+| `apps/bot/logs/` | Bot runtime logs |
 | `scripts/` | CLI utilities and automation |
 
 ---

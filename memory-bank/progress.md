@@ -4,7 +4,7 @@
 
 **Phase**: 56 - Architecture Audit & Polish (Complete)
 **Overall Completion**: Phase 56 of 56 complete
-**Last Updated**: 2026-02-20
+**Last Updated**: 2026-02-22
 
 ---
 
@@ -36,6 +36,10 @@
 -   **Strict Error Mappings**: Handled `PostgresError`, `TelegramError`, and `asyncio.TimeoutError` natively avoiding pylint suppressions.
 -   **Frontend Staggered Motion**: Added `motion` (Framer Motion). Wrapped Dashboard components with `variants` leveraging physics-based `spring` entry transitions, eliminating stiff DOM painting.
 -   **Pylint 9.99/10**: Reclaimed virtually complete structural perfection inside `apps/bot`.
+-   **Storage Refactor**: Completely removed the root `storage/` directory and re-routed bot runtime logs directly to `apps/bot/logs/` to simplify the architecture.
+-   **CLI & Script Cleanup**: Purged all deprecated `apps/api` logic, `deploy/`, and `test/` scripts from the `scripts/` directory to simplify the DevOps engine.
+-   **Turbopack Optimization**: Resolved Next.js module tracking faults by explicitly isolating the Workspace boundaries from legacy locks, restoring native app-router speed.
+-   **Networking Sync**: Fixed IPv6 `localhost` timeout routing loops in the Python Bot targeting Redis Docker instances.
 
 ---
 
@@ -106,4 +110,4 @@
 
 ---
 
-_Last Updated: 2026-02-20_
+_Last Updated: 2026-02-22_

@@ -60,23 +60,13 @@ EOF
 }
 
 # Start Web Dashboard (Next.js)
-echo -e "  ${BLUE}[1/3] Starting Web Dashboard...${NC}"
+echo -e "  ${BLUE}[1/2] Starting Web Dashboard...${NC}"
 open_terminal "Nezuko - Web" "cd apps/web && bun dev"
 
 sleep 2
 
-# Start API Server (FastAPI)
-echo -e "  ${GREEN}[2/3] Starting API Server...${NC}"
-if [ -f "$PROJECT_ROOT/.venv/bin/activate" ]; then
-    open_terminal "Nezuko - API" "source .venv/bin/activate && cd apps/api && uvicorn src.main:app --reload --port 8080"
-else
-    open_terminal "Nezuko - API" "cd apps/api && uvicorn src.main:app --reload --port 8080"
-fi
-
-sleep 2
-
 # Start Telegram Bot
-echo -e "  ${YELLOW}[3/3] Starting Telegram Bot...${NC}"
+echo -e "  ${YELLOW}[2/2] Starting Telegram Bot...${NC}"
 if [ -f "$PROJECT_ROOT/.venv/bin/activate" ]; then
     open_terminal "Nezuko - Bot" "source .venv/bin/activate && python -m apps.bot.main"
 else
@@ -89,7 +79,6 @@ echo -e "${GREEN}   ✅ All services started!${NC}"
 echo -e "${CYAN}  ====================================${NC}"
 echo ""
 echo -e "   Web:  ${BLUE}http://localhost:3000${NC}"
-echo -e "   API:  ${GREEN}http://localhost:8080${NC}"
 echo -e "   Bot:  ${YELLOW}Running in polling mode${NC}"
 echo ""
 echo -e "   ${GRAY}Press Ctrl+C in each terminal to stop services.${NC}"

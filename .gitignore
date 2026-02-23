@@ -120,10 +120,9 @@ apps/api/alembic/versions/*.pyc
 *.tsbuildinfo
 .tsbuildinfo
 
-# Storage folder (runtime files - but preserve structure with .gitkeep)
-/storage/**/*
-!/storage/**/.gitkeep
-!/storage/README.md
+# Bot runtime logs
+/apps/bot/logs/**/*
+!/apps/bot/logs/.gitkeep
 
 # local Docs
 docs/local/

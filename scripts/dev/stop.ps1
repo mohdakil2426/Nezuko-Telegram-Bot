@@ -41,7 +41,6 @@ Write-Host ""
 
 # Define our specific ports
 $WEB_PORT = 3000
-$API_PORT = 8080
 
 # Helper function to stop process by port (Windows-specific using netstat)
 function Stop-ProcessOnPort {
@@ -132,16 +131,8 @@ if ($webStopped -eq 0) {
 }
 $totalStopped += $webStopped
 
-# Stop API Server (Port 8080)
-Write-Host "  [2/4] API Server (Port $API_PORT)..." -ForegroundColor Green
-$apiStopped = Stop-ProcessOnPort -Port $API_PORT -ServiceName "API"
-if ($apiStopped -eq 0) {
-    Write-Host "        Not running" -ForegroundColor Gray
-}
-$totalStopped += $apiStopped
-
 # Stop Telegram Bot
-Write-Host "  [3/4] Telegram Bot..." -ForegroundColor Yellow
+Write-Host "  [2/3] Telegram Bot..." -ForegroundColor Yellow
 $botStopped = Stop-BotProcess
 if ($botStopped -eq 0) {
     Write-Host "        Not running" -ForegroundColor Gray
@@ -149,7 +140,7 @@ if ($botStopped -eq 0) {
 $totalStopped += $botStopped
 
 # Stop PostgreSQL Docker container
-Write-Host "  [4/4] PostgreSQL (Docker)..." -ForegroundColor Cyan
+Write-Host "  [3/3] PostgreSQL (Docker)..." -ForegroundColor Cyan
 
 if ($KeepDatabase) {
     Write-Host "        Skipped (-KeepDatabase flag)" -ForegroundColor Gray

@@ -26,14 +26,11 @@ This document provides a detailed breakdown of the Nezuko monorepo structure, ex
 
 Nezuko uses a **Turborepo monorepo** structure with the following key directories:
 
-```
-nezuko-monorepo/
+nezuko/
 ├── apps/                  # All runnable applications
-├── packages/              # Shared TypeScript packages
-├── requirements/          # Modular Python dependencies
 ├── config/                # Infrastructure configuration
 ├── scripts/               # Utility scripts
-├── storage/               # Runtime files (GITIGNORED)
+├── apps/bot/logs/         # Bot runtime logs (GITIGNORED)
 ├── docs/                  # Documentation
 ├── tests/                 # Test suites
 
@@ -48,8 +45,6 @@ nezuko-monorepo/
 
 | File | Purpose |
 |------|---------|
-| `package.json` | Monorepo package manifest, workspace config |
-| `turbo.json` | Turborepo pipeline configuration |
 | `pyproject.toml` | Python project config (ruff, pylint, pytest) |
 | `pyrefly.toml` | Python type checker configuration |
 | `.env.example` | Documentation of all environment variables |
@@ -65,8 +60,6 @@ nezuko-monorepo/
 | `.dockerignore` | Docker build excludes |
 | `.editorconfig` | Editor settings (indentation, etc.) |
 | `.prettierrc` | Prettier formatting rules |
-| `.pylintrc` | Pylint configuration |
-| `bun.lock` | Bun lockfile |
 
 ---
 
@@ -300,63 +293,7 @@ apps/bot/
     └── helpers.py            # General helpers
 ```
 
----
 
-## Packages Directory
-
-```
-packages/
-├── types/                    # @nezuko/types
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── src/
-│       ├── index.ts          # Export all types
-│       ├── group.ts          # Group schemas
-│       ├── channel.ts        # Channel schemas
-│       └── common.ts         # Shared types
-│
-└── config/                   # @nezuko/config
-    ├── package.json
-    ├── eslint/               # Shared ESLint configs
-    │   └── library.js
-    └── typescript/           # Shared TS configs
-        └── base.json
-```
-
----
-
-## Requirements Directory
-
-### Modular Python Dependencies (`requirements/`)
-
-```
-requirements/
-├── README.md              # Documentation and usage guide
-├── base.txt               # Shared dependencies (SQLAlchemy, Redis, Pydantic)
-├── api.txt                # API-specific (FastAPI, Uvicorn, Slowapi)
-├── bot.txt                # Bot-specific (python-telegram-bot)
-├── dev.txt                # Development tools (pytest, ruff, mypy)
-├── prod-api.txt           # Production API (base + api)
-└── prod-bot.txt           # Production Bot (base + bot)
-```
-
-### Usage
-
-| Scenario | Command |
-|----------|---------|
-| Development (full) | `pip install -r requirements.txt` |
-| Production API | `pip install -r requirements/prod-api.txt` |
-| Production Bot | `pip install -r requirements/prod-bot.txt` |
-| CI/CD Testing | `pip install -r requirements.txt` |
-
-### Benefits
-
-- **DRY**: Shared dependencies defined once in `base.txt`
-- **Minimal Production**: Only required packages installed
-- **Fast Docker Builds**: Smaller images, faster builds
-- **Clear Separation**: Dev tools never in production
-
----
 
 ## Tests Directory
 
@@ -491,37 +428,7 @@ docs/
 
 ---
 
-## Storage (Runtime)
 
-### Runtime Files (`storage/`)
-
-The `storage/` directory contains all runtime files. Contents are gitignored except for `.gitkeep` files which preserve the directory structure.
-
-```
-storage/
-├── README.md              # Documentation (tracked)
-├── cache/                 # Redis fallback cache
-│   └── .gitkeep          # Preserves directory
-├── data/                  # SQLite databases
-│   ├── .gitkeep          # Preserves directory
-│   └── nezuko.db         # Main database (gitignored)
-├── logs/                  # Application logs
-│   ├── .gitkeep          # Preserves directory
-│   └── bot.log           # Bot logs (gitignored)
-└── uploads/               # User-uploaded files
-    └── .gitkeep          # Preserves directory
-```
-
-### Database Location
-
-Both API and Bot use the same SQLite database for local development:
-
-```bash
-# In apps/api/.env and apps/bot/.env
-DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
-```
-
----
 
 
 ## Key Principles
@@ -529,10 +436,9 @@ DATABASE_URL=sqlite+aiosqlite:///../../storage/data/nezuko.db
 ### 1. Separation of Concerns
 
 - **`apps/`**: Runnable applications only
-- **`packages/`**: Shared code (types, configs)
 - **`config/`**: Infrastructure (Docker, Nginx)
 - **`scripts/`**: Automation utilities
-- **`storage/`**: Runtime data (gitignored)
+- **`apps/bot/logs/`**: Bot runtime logs (gitignored)
 
 ### 2. Per-App Environment
 
@@ -572,4 +478,4 @@ import { useGroups } from "@/lib/hooks/use-groups";
 
 ---
 
-*This structure follows modern monorepo best practices with Turborepo.*
+*This structure follows modern modular best practices.*

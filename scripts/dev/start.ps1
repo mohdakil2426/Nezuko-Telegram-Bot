@@ -128,7 +128,7 @@ Write-Host "   ✅ All services started!" -ForegroundColor Green
 Write-Host "  ====================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "   Web:  " -NoNewline; Write-Host "http://localhost:3000" -ForegroundColor Blue
-Write-Host "   API:  " -NoNewline; Write-Host "http://localhost:8080" -ForegroundColor Green
+
 Write-Host "   Bot:  " -NoNewline; Write-Host "Running in polling mode" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "   Press Ctrl+C in each terminal to stop services." -ForegroundColor Gray

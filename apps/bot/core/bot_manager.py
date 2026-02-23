@@ -107,8 +107,8 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         self._setup_log_directory()
 
     def _setup_log_directory(self) -> None:
-        """Create storage/logs directory if it doesn't exist."""
-        log_dir = Path("storage/logs")
+        """Create apps/bot/logs directory if it doesn't exist."""
+        log_dir = Path("apps/bot/logs")
         log_dir.mkdir(parents=True, exist_ok=True)
 
     def _setup_bot_logger(self, bot_id: int, bot_username: str) -> logging.Logger:
@@ -128,7 +128,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         bot_logger.handlers.clear()
 
         # Add file handler for per-bot log
-        log_file = Path(f"storage/logs/bot_{bot_id}_{bot_username}.log")
+        log_file = Path(f"apps/bot/logs/bot_{bot_id}_{bot_username}.log")
         file_handler = logging.FileHandler(log_file, encoding="utf-8")
         file_handler.setLevel(logging.INFO)
 

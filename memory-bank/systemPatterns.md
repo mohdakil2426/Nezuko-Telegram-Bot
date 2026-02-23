@@ -193,4 +193,4 @@ Database triggers automatically push events to WebSocket channels.
 
 ---
 
-_Last Updated: 2026-02-20_
+_Last Updated: 2026-02-22_

@@ -24,28 +24,26 @@ Convert group participants into channel subscribers through automated verificati
 | **Backend (BaaS)** | InsForge (managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions) |
 | **Database**       | InsForge Managed PostgreSQL (cloud)                      |
 | **Auth**           | None (development mode, direct access)                   |
-| **Infrastructure** | Docker (bot only), Turborepo, Caddy                      |
+| **Infrastructure** | Docker (bot only), Caddy                                 |
 
 > **Architecture**: 2-tier (Web → InsForge BaaS + Bot → InsForge PostgreSQL). The `apps/api/` layer has been fully removed.
 
 ---
 
-## Monorepo Structure
+## Workspace Structure
 
 ```
-nezuko-monorepo/
+nezuko/
 ├── apps/
 │   ├── bot/          # Telegram Bot (~25 Python files)
 │   └── web/          # Next.js Dashboard (~120 TypeScript files)
 ├── insforge/         # InsForge migration files & Edge Functions
 │   ├── migrations/   # SQL migration files (001-005)
 │   └── functions/    # Edge Functions (manage-bot, test-webhook)
-├── packages/         # Shared packages (@nezuko/types, config)
 ├── config/           # Docker, Caddy, deployment configs
-├── requirements/     # Python deps (base, bot, dev)
 ├── tests/            # Centralized test suite
 ├── scripts/          # Development & utility scripts
-├── storage/          # Runtime files (gitignored)
+├── apps/bot/logs/    # Bot instance logs (gitignored)
 ├── memory-bank/      # Project documentation
 └── docs/             # Technical documentation
 ```
@@ -98,10 +96,10 @@ nezuko-monorepo/
 ## Current Status
 
 **Phase**: 56 - Architecture Audit & Polish (Complete)
-**Last Updated**: 2026-02-20
+**Last Updated**: 2026-02-22
 
 - Phase 55 (Cloud Deployment Prep): Complete
-- Phase 56 (Architecture Audit & Polish): Complete (Eradicated broad Python exceptions, added Next.js Framer Motion aesthetics)
+- Phase 56 (Architecture Audit & Polish): Complete (Eradicated broad Python exceptions, added Next.js Framer Motion aesthetics, cleaned up legacy scripts & storage)
 
 ---
 
