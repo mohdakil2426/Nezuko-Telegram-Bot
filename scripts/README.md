@@ -29,6 +29,9 @@ This opens an **interactive menu** for all development tasks.
 | **First-time setup**   | `nezuko setup` | `./nezuko setup` |
 | **Clean artifacts**    | `nezuko clean` | `./nezuko clean` |
 
+> **🐳 Docker note**: `start` and `stop` automatically manage the Redis Docker container  
+> (`nezuko-redis-local`) via `docker-compose.local.yml`. Docker Desktop must be running.
+
 ---
 
 ## 📁 Directory Structure
@@ -44,10 +47,10 @@ scripts/
 │   └── utils.sh                # Shared Bash functions
 │
 ├── dev/                        # 🚀 Development server scripts
-│   ├── start.ps1               # Start services (with -Service param)
-│   ├── start.sh                # Start all services (Mac/Linux)
-│   ├── stop.ps1                # Stop all services (Windows)
-│   └── stop.sh                 # Stop all services (Mac/Linux)
+│   ├── start.ps1               # Start Redis (Docker) + services (Windows)
+│   ├── start.sh                # Start Redis (Docker) + services (Mac/Linux)
+│   ├── stop.ps1                # Stop services + Redis container (Windows)
+│   └── stop.sh                 # Stop services + Redis container (Mac/Linux)
 │
 ├── setup/                      # 📦 Initial setup scripts
 │   ├── install.ps1             # First-time setup (Windows)
@@ -123,7 +126,22 @@ This will:
 
 ---
 
+## 🐳 Docker (Redis)
 
+The `docker-compose.local.yml` at the project root manages a local **Redis** cache container
+(`nezuko-redis-local` on port 6379).
+
+`start.ps1` / `start.sh` runs `docker compose ... up -d` automatically when you launch services.
+`stop.ps1` / `stop.sh` stops the container (data is preserved in a named volume).
+
+```bash
+# Manage Redis manually
+docker compose -f docker-compose.local.yml up -d    # Start
+docker compose -f docker-compose.local.yml stop      # Stop (keeps data)
+docker compose -f docker-compose.local.yml down -v   # Remove + wipe data
+```
+
+---
 
 ## 🔑 Security & Encryption
 
@@ -137,7 +155,6 @@ Generate a Fernet encryption key:
 
 Add the key to:
 
-- `apps/api/.env` → `ENCRYPTION_KEY=...`
 - `apps/bot/.env` → `ENCRYPTION_KEY=...`
 
 ---
@@ -167,4 +184,4 @@ Script operations are logged to `scripts/logs/nezuko-YYYY-MM-DD.log`.
 
 ---
 
-_Last Updated: 2026-02-05_
+_Last Updated: 2026-02-25_

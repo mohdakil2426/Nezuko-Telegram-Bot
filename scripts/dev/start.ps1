@@ -4,11 +4,15 @@
 .SYNOPSIS
     Nezuko Development Server Launcher (PowerShell)
 .DESCRIPTION
-    Opens 3 separate PowerShell 7 terminals for Web, API, and Bot services.
+    Starts Redis via Docker Compose, then opens separate PowerShell terminals
+    for the Web Dashboard and Telegram Bot.
     Prefers pwsh (PowerShell 7) with fallback to powershell (5.1).
 .EXAMPLE
     .\start.ps1
-    Launches all development services in separate terminals.
+    Starts Redis (Docker) + all development services in separate terminals.
+.EXAMPLE
+    .\start.ps1 -Service web
+    Starts Redis (Docker) + Web Dashboard only.
 #>
 
 [CmdletBinding()]
@@ -76,10 +80,46 @@ Write-Host "  Starting services in separate terminals..." -ForegroundColor White
 Write-Host ""
 
 # ============================================================
+# Step 0: Start Redis via Docker Compose
+# ============================================================
+
+Write-Host "  [Redis] Starting Redis cache (Docker)..." -ForegroundColor Magenta
+Write-Log -Message "Starting Redis via docker compose" -Category "DEV"
+
+$composeFile = Join-Path $ProjectRoot "docker-compose.local.yml"
+$dockerCheck = Get-Command docker -ErrorAction SilentlyContinue
+
+if (-not $dockerCheck) {
+    Write-Host "        ⚠️  Docker not found — Redis will not start." -ForegroundColor Yellow
+    Write-Host "        Install Docker Desktop: https://www.docker.com/products/docker-desktop/" -ForegroundColor Gray
+    Write-Log -Message "Docker not found — skipping Redis start" -Level "WARN" -Category "DEV"
+}
+elseif (-not (Test-Path $composeFile)) {
+    Write-Host "        ⚠️  docker-compose.local.yml not found — skipping Redis." -ForegroundColor Yellow
+    Write-Log -Message "docker-compose.local.yml not found" -Level "WARN" -Category "DEV"
+}
+else {
+    $redisOutput = docker compose -f $composeFile up -d 2>&1
+    $redisOutput | ForEach-Object {
+        $line = [string]$_
+        if ($line.Trim()) { Write-Host "        $line" -ForegroundColor DarkGray }
+    }
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "        ✅ Redis is up (nezuko-redis-local on port 6379)" -ForegroundColor Green
+        Write-Log -Message "Redis started successfully" -Level "SUCCESS" -Category "DEV"
+    }
+    else {
+        Write-Host "        ❌ Failed to start Redis (exit code $LASTEXITCODE)" -ForegroundColor Red
+        Write-Log -Message "Redis start failed" -Level "ERROR" -Category "DEV"
+    }
+}
+
+Write-Host ""
+
+# ============================================================
 # Start Services in Separate Terminals
 # ============================================================
 
-# Start Web Dashboard (Next.js)
 # Start Web Dashboard (Next.js)
 if ($Service -eq "all" -or $Service -eq "web") {
     Write-Host "  [Web] Starting Dashboard..." -ForegroundColor Blue
@@ -91,7 +131,6 @@ if ($Service -eq "all" -or $Service -eq "web") {
 
 Start-Sleep -Seconds 2
 
-# Start Telegram Bot
 # Start Telegram Bot
 if ($Service -eq "all" -or $Service -eq "bot") {
     Write-Host "  [Bot] Starting Telegram Bot..." -ForegroundColor Yellow
@@ -127,9 +166,10 @@ Write-Host "  ====================================" -ForegroundColor Cyan
 Write-Host "   ✅ All services started!" -ForegroundColor Green
 Write-Host "  ====================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "   Web:  " -NoNewline; Write-Host "http://localhost:3000" -ForegroundColor Blue
-
-Write-Host "   Bot:  " -NoNewline; Write-Host "Running in polling mode" -ForegroundColor Yellow
+Write-Host "   Redis: " -NoNewline; Write-Host "nezuko-redis-local (port 6379)" -ForegroundColor Magenta
+Write-Host "   Web:   " -NoNewline; Write-Host "http://localhost:3000" -ForegroundColor Blue
+Write-Host "   Bot:   " -NoNewline; Write-Host "Running in polling mode" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "   Press Ctrl+C in each terminal to stop services." -ForegroundColor Gray
+Write-Host "   Run stop.ps1 to shut down Redis + services." -ForegroundColor Gray
 Write-Host ""

@@ -1,7 +1,8 @@
 #!/bin/bash
 # ============================================================
 # Nezuko Development Server Launcher (Bash)
-# Starts Web, API, and Bot in separate terminal windows/tabs
+# Starts Redis via Docker Compose, then opens Web Dashboard
+# and Telegram Bot in separate terminal windows/tabs.
 # ============================================================
 
 set -e
@@ -21,7 +22,30 @@ echo ""
 
 cd "$PROJECT_ROOT"
 
-echo -e "  Starting services..."
+# ============================================================
+# Step 0: Start Redis via Docker Compose
+# ============================================================
+
+echo -e "  ${MAGENTA}[Redis] Starting Redis cache (Docker)...${NC}"
+
+COMPOSE_FILE="$PROJECT_ROOT/docker-compose.local.yml"
+
+if ! command -v docker &>/dev/null; then
+    echo -e "        ${YELLOW}⚠️  Docker not found — Redis will not start.${NC}"
+    echo -e "        ${GRAY}Install Docker Desktop: https://www.docker.com/products/docker-desktop/${NC}"
+elif [ ! -f "$COMPOSE_FILE" ]; then
+    echo -e "        ${YELLOW}⚠️  docker-compose.local.yml not found — skipping Redis.${NC}"
+else
+    docker compose -f "$COMPOSE_FILE" up -d 2>&1 | while IFS= read -r line; do
+        [ -n "$line" ] && echo -e "        ${GRAY}$line${NC}"
+    done
+    if [ ${PIPESTATUS[0]} -eq 0 ]; then
+        echo -e "        ${GREEN}✅ Redis is up (nezuko-redis-local on port 6379)${NC}"
+    else
+        echo -e "        ${RED}❌ Failed to start Redis${NC}"
+    fi
+fi
+
 echo ""
 
 # Detect terminal emulator and OS
@@ -78,8 +102,10 @@ echo -e "${CYAN}  ====================================${NC}"
 echo -e "${GREEN}   ✅ All services started!${NC}"
 echo -e "${CYAN}  ====================================${NC}"
 echo ""
-echo -e "   Web:  ${BLUE}http://localhost:3000${NC}"
-echo -e "   Bot:  ${YELLOW}Running in polling mode${NC}"
+echo -e "   Redis: ${MAGENTA}nezuko-redis-local (port 6379)${NC}"
+echo -e "   Web:   ${BLUE}http://localhost:3000${NC}"
+echo -e "   Bot:   ${YELLOW}Running in polling mode${NC}"
 echo ""
 echo -e "   ${GRAY}Press Ctrl+C in each terminal to stop services.${NC}"
+echo -e "   ${GRAY}Run stop.sh to shut down Redis + services.${NC}"
 echo ""

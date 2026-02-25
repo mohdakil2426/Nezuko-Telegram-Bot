@@ -196,6 +196,23 @@ function Invoke-SecurityMenu {
                     }
                 }
 
+                # Check Web .env.local
+                $webEnv = Join-Path $projectRoot "apps\web\.env.local"
+                $webEnvExample = Join-Path $projectRoot "apps\web\.env.example"
+                Write-Host "  apps/web/.env.local: " -NoNewline
+                if (Test-Path $webEnv) {
+                    Write-Host "✅ EXISTS" -ForegroundColor Green
+                }
+                else {
+                    Write-Host "❌ MISSING" -ForegroundColor Red -NoNewline
+                    if (Test-Path $webEnvExample) {
+                        Write-Host " (copy from .env.example)" -ForegroundColor Gray
+                    }
+                    else {
+                        Write-Host ""
+                    }
+                }
+
                 Write-Host ""
                 Wait-ForKeyPress
             }

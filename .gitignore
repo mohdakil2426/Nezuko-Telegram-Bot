@@ -89,6 +89,8 @@ coverage.xml
 .env.backup-*
 *.pem
 *.key
+skills-lock.json
+.mcp.json
 
 # Legacy/backup files
 main_v1.py

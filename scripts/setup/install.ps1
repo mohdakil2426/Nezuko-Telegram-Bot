@@ -133,21 +133,17 @@ if (-not $SkipPython) {
         }
     }
     
-    # Install requirements (root requirements.txt includes all dependencies)
-    # Use --prefer-binary to avoid needing C++ build tools for packages like pyroaring
+    # Install production requirements
     $requirementsFile = Join-Path $ProjectRoot "requirements.txt"
-    
+
     if (Test-Path $requirementsFile) {
         Write-Host ""
-        Write-Host "        Installing requirements.txt (all dependencies)..." -ForegroundColor Cyan
-        Write-Host "        Using --prefer-binary to avoid build issues..." -ForegroundColor Gray
+        Write-Host "        Installing requirements.txt (production dependencies)..." -ForegroundColor Cyan
         Write-Log -Message "COMMAND: pip install --prefer-binary -r requirements.txt" -Category "PYTHON"
-        
-        # Capture pip output to check for pyroaring error
+
         $pipOutput = & $venvPython -m pip install --prefer-binary -r $requirementsFile 2>&1
         $pipExitCode = $LASTEXITCODE
-        
-        # Display output
+
         $pipOutput | ForEach-Object {
             $line = [string]$_
             if ($line -match "^(Installing|Collecting|Requirement|Successfully|WARNING|ERROR|Failed)" -or $line -match "already satisfied") {
@@ -157,13 +153,13 @@ if (-not $SkipPython) {
                 Write-Log -Message $line -Category "PYTHON"
             }
         }
-        
+
         if ($pipExitCode -eq 0) {
-            Write-Success "All Python dependencies installed"
+            Write-Success "Production dependencies installed"
             Write-Log -Message "Installed from requirements.txt" -Level "SUCCESS" -Category "PYTHON"
         }
         else {
-            Write-Failure "Some dependencies failed to install (exit code: $pipExitCode)"
+            Write-Failure "Some production dependencies failed (exit code: $pipExitCode)"
             Write-Log -Message "pip install failed with exit code: $pipExitCode" -Level "ERROR" -Category "PYTHON"
             Write-Host "        You may need to install Microsoft C++ Build Tools" -ForegroundColor Yellow
             Write-Host "        https://visualstudio.microsoft.com/visual-cpp-build-tools/" -ForegroundColor Gray
@@ -173,6 +169,40 @@ if (-not $SkipPython) {
         Write-Failure "requirements.txt not found"
         Write-Log -Message "requirements.txt not found" -Level "ERROR" -Category "PYTHON"
         exit 1
+    }
+
+    # Install dev requirements (ruff, pytest, pyrefly, pylint)
+    $requirementsDevFile = Join-Path $ProjectRoot "requirements-dev.txt"
+
+    if (Test-Path $requirementsDevFile) {
+        Write-Host ""
+        Write-Host "        Installing requirements-dev.txt (dev tools: ruff, pytest, pyrefly, pylint)..." -ForegroundColor Cyan
+        Write-Log -Message "COMMAND: pip install --prefer-binary -r requirements-dev.txt" -Category "PYTHON"
+
+        $pipDevOutput = & $venvPython -m pip install --prefer-binary -r $requirementsDevFile 2>&1
+        $pipDevExitCode = $LASTEXITCODE
+
+        $pipDevOutput | ForEach-Object {
+            $line = [string]$_
+            if ($line -match "^(Installing|Collecting|Requirement|Successfully|WARNING|ERROR|Failed)" -or $line -match "already satisfied") {
+                Write-Host "        $line" -ForegroundColor DarkGray
+            }
+            if ($line -and $line.Trim()) {
+                Write-Log -Message $line -Category "PYTHON"
+            }
+        }
+
+        if ($pipDevExitCode -eq 0) {
+            Write-Success "Dev tools installed (ruff, pytest, pyrefly, pylint)"
+            Write-Log -Message "Installed from requirements-dev.txt" -Level "SUCCESS" -Category "PYTHON"
+        }
+        else {
+            Write-Failure "Some dev tools failed to install (exit code: $pipDevExitCode)"
+            Write-Log -Message "requirements-dev.txt install failed: $pipDevExitCode" -Level "WARN" -Category "PYTHON"
+        }
+    }
+    else {
+        Write-Info "requirements-dev.txt not found — skipping dev tools"
     }
 }
 else {
@@ -185,35 +215,42 @@ else {
 # ============================================================
 
 if (-not $SkipNode) {
-    Write-Step -Step "4/6" -Message "Installing Node.js dependencies (Bun)..."
+    Write-Step -Step "4/6" -Message "Installing Node.js dependencies (Bun — apps/web)..."
     Write-Log -Message "Step 4/6: Installing Node.js dependencies" -Category "NODE"
-    
-    Write-Host ""
-    Write-Host "        Running bun install..." -ForegroundColor Cyan
-    
-    Push-Location $ProjectRoot
-    Write-Log -Message "COMMAND: bun install" -Category "NODE"
-    
-    # Stream bun output to terminal
-    $bunExitCode = 0
-    bun install 2>&1 | ForEach-Object {
-        $line = [string]$_
-        Write-Host "        $line" -ForegroundColor DarkGray
-        if ($line -and $line.Trim()) {
-            Write-Log -Message $line -Category "NODE"
-        }
-    }
-    $bunExitCode = $LASTEXITCODE
-    Pop-Location
-    
-    if ($bunExitCode -eq 0) {
-        Write-Host ""
-        Write-Success "Node.js packages installed"
-        Write-Log -Message "Node.js packages installed successfully" -Level "SUCCESS" -Category "NODE"
+
+    $webDir = Join-Path $ProjectRoot "apps\web"
+
+    if (-not (Test-Path $webDir)) {
+        Write-Failure "apps/web directory not found"
+        Write-Log -Message "apps/web not found" -Level "ERROR" -Category "NODE"
     }
     else {
-        Write-Failure "Failed to install Node.js packages"
-        Write-Log -Message "Failed to install Node.js packages (exit code: $bunExitCode)" -Level "ERROR" -Category "NODE"
+        Write-Host ""
+        Write-Host "        Running bun install in apps/web..." -ForegroundColor Cyan
+
+        Push-Location $webDir
+        Write-Log -Message "COMMAND: bun install (in apps/web)" -Category "NODE"
+
+        $bunExitCode = 0
+        bun install 2>&1 | ForEach-Object {
+            $line = [string]$_
+            Write-Host "        $line" -ForegroundColor DarkGray
+            if ($line -and $line.Trim()) {
+                Write-Log -Message $line -Category "NODE"
+            }
+        }
+        $bunExitCode = $LASTEXITCODE
+        Pop-Location
+
+        if ($bunExitCode -eq 0) {
+            Write-Host ""
+            Write-Success "Node.js packages installed (apps/web)"
+            Write-Log -Message "Node.js packages installed successfully" -Level "SUCCESS" -Category "NODE"
+        }
+        else {
+            Write-Failure "Failed to install Node.js packages (exit code: $bunExitCode)"
+            Write-Log -Message "Failed to install Node.js packages (exit code: $bunExitCode)" -Level "ERROR" -Category "NODE"
+        }
     }
 }
 else {
@@ -283,20 +320,23 @@ Write-Host ""
 
 Write-Host "  📝 " -NoNewline -ForegroundColor White
 Write-Host "apps/bot/.env" -ForegroundColor Cyan
-Write-Host "     - BOT_TOKEN              (from @BotFather)" -ForegroundColor Gray
-Write-Host "     - DATABASE_URL           (InsForge DB connection string)" -ForegroundColor Gray
-Write-Host "     - INSFORGE_DATABASE_URL  (same host, plain asyncpg driver)" -ForegroundColor Gray
-Write-Host "     - ENCRYPTION_KEY         (generate with Fernet command in .env.example)" -ForegroundColor Gray
+Write-Host "     - BOT_TOKEN              (from @BotFather, used when DASHBOARD_MODE=false)" -ForegroundColor Gray
+Write-Host "     - INSFORGE_BASE_URL      (your InsForge project URL)" -ForegroundColor Gray
+Write-Host "     - INSFORGE_ANON_KEY      (from InsForge dashboard — must match web)" -ForegroundColor Gray
+Write-Host "     - ENCRYPTION_KEY         (generate with Security menu → Generate Key)" -ForegroundColor Gray
+Write-Host "     - REDIS_URL              (redis://127.0.0.1:6379/0 — local Docker Redis)" -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "  📝 " -NoNewline -ForegroundColor White
 Write-Host "apps/web/.env.local" -ForegroundColor Cyan
-Write-Host "     - NEXT_PUBLIC_INSFORGE_ANON_KEY     (from InsForge Dashboard)" -ForegroundColor Gray
+Write-Host "     - NEXT_PUBLIC_INSFORGE_BASE_URL     (your InsForge project URL)" -ForegroundColor Gray
+Write-Host "     - NEXT_PUBLIC_INSFORGE_ANON_KEY     (from InsForge dashboard — must match bot)" -ForegroundColor Gray
 Write-Host "     - NEXT_PUBLIC_LOGIN_BOT_USERNAME    (your bot's username without @)" -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "  🐳 Start local Redis:" -ForegroundColor White
 Write-Host "     docker compose -f docker-compose.local.yml up -d" -ForegroundColor Gray
+Write-Host "     (Or just run: nezuko dev — Redis starts automatically)" -ForegroundColor DarkGray
 Write-Host ""
 
 Write-Host "  Then run: " -NoNewline

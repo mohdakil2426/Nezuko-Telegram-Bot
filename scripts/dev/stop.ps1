@@ -4,25 +4,24 @@
 .SYNOPSIS
     Stops Nezuko development services by port and process name.
 .DESCRIPTION
-    Terminates only Nezuko-specific processes:
+    Terminates Nezuko-specific processes and stops the Redis Docker container:
     - Port 3000: Web Dashboard (Next.js)
-    - Port 8080: API Server (FastAPI/Uvicorn)
     - Bot: Python process running apps.bot.main
-    - PostgreSQL Docker container (optional)
+    - Redis: Docker container nezuko-redis-local (docker-compose.local.yml)
     Does NOT kill all node/python processes - only our services.
-.PARAMETER KeepDatabase
-    If specified, keeps the PostgreSQL Docker container running.
+.PARAMETER KeepRedis
+    If specified, keeps the Redis Docker container running.
 .EXAMPLE
     .\stop.ps1
-    Stops all Nezuko services including Docker.
+    Stops all Nezuko services including Redis Docker container.
 .EXAMPLE
-    .\stop.ps1 -KeepDatabase
-    Stops services but keeps PostgreSQL running.
+    .\stop.ps1 -KeepRedis
+    Stops services but keeps Redis running.
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [switch]$KeepDatabase
+    [switch]$KeepRedis
 )
 
 # Import utilities
@@ -94,7 +93,7 @@ function Stop-BotProcess {
     try {
         # Find Python processes running the bot module
         $botProcesses = Get-CimInstance Win32_Process -Filter "Name = 'python.exe'" -ErrorAction SilentlyContinue |
-            Where-Object { $_.CommandLine -like "*apps.bot.main*" -or $_.CommandLine -like "*apps/bot/main*" }
+        Where-Object { $_.CommandLine -like "*apps.bot.main*" -or $_.CommandLine -like "*apps/bot/main*" }
 
         if ($botProcesses) {
             foreach ($proc in $botProcesses) {
@@ -124,7 +123,7 @@ function Stop-BotProcess {
 $totalStopped = 0
 
 # Stop Web Dashboard (Port 3000)
-Write-Host "  [1/4] Web Dashboard (Port $WEB_PORT)..." -ForegroundColor Blue
+Write-Host "  [1/3] Web Dashboard (Port $WEB_PORT)..." -ForegroundColor Blue
 $webStopped = Stop-ProcessOnPort -Port $WEB_PORT -ServiceName "Web"
 if ($webStopped -eq 0) {
     Write-Host "        Not running" -ForegroundColor Gray
@@ -139,12 +138,12 @@ if ($botStopped -eq 0) {
 }
 $totalStopped += $botStopped
 
-# Stop PostgreSQL Docker container
-Write-Host "  [3/3] PostgreSQL (Docker)..." -ForegroundColor Cyan
+# Stop Redis Docker container
+Write-Host "  [3/3] Redis (Docker: nezuko-redis-local)..." -ForegroundColor Magenta
 
-if ($KeepDatabase) {
-    Write-Host "        Skipped (-KeepDatabase flag)" -ForegroundColor Gray
-    Write-Log -Message "PostgreSQL container kept running (-KeepDatabase)" -Category "DEV"
+if ($KeepRedis) {
+    Write-Host "        Skipped (-KeepRedis flag)" -ForegroundColor Gray
+    Write-Log -Message "Redis container kept running (-KeepRedis)" -Category "DEV"
 }
 else {
     # Check if Docker is available
@@ -152,7 +151,8 @@ else {
     try {
         $null = docker --version 2>&1
         $dockerAvailable = $true
-    } catch {
+    }
+    catch {
         $dockerAvailable = $false
     }
 
@@ -160,22 +160,28 @@ else {
         Write-Host "        Docker not available" -ForegroundColor Gray
     }
     else {
-        # Check if container is running
-        $containerRunning = docker ps --filter "name=nezuko-postgres" --format "{{.Names}}" 2>$null
+        $composeFile = Join-Path (Get-ProjectRoot) "docker-compose.local.yml"
+        if (Test-Path $composeFile) {
+            # Check if container is running
+            $containerRunning = docker ps --filter "name=nezuko-redis-local" --format "{{.Names}}" 2>$null
 
-        if ($containerRunning -eq "nezuko-postgres") {
-            docker stop nezuko-postgres 2>$null | Out-Null
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "        Stopped PostgreSQL container" -ForegroundColor Green
-                Write-Log -Message "Stopped PostgreSQL container" -Level "SUCCESS" -Category "DEV"
-                $totalStopped++
+            if ($containerRunning -eq "nezuko-redis-local") {
+                docker compose -f $composeFile stop 2>$null | Out-Null
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "        Stopped Redis container (data preserved)" -ForegroundColor Green
+                    Write-Log -Message "Stopped Redis container" -Level "SUCCESS" -Category "DEV"
+                    $totalStopped++
+                }
+                else {
+                    Write-Host "        Failed to stop Redis container" -ForegroundColor Red
+                }
             }
             else {
-                Write-Host "        Failed to stop container" -ForegroundColor Red
+                Write-Host "        Not running" -ForegroundColor Gray
             }
         }
         else {
-            Write-Host "        Not running" -ForegroundColor Gray
+            Write-Host "        docker-compose.local.yml not found" -ForegroundColor Gray
         }
     }
 }
