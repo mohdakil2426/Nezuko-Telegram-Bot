@@ -19,7 +19,7 @@ from typing import Any, cast
 from aiohttp import web
 
 from apps.bot.config import config
-from apps.bot.core.cache import _redis_available, _redis_client
+from apps.bot.core import cache as _cache_mod
 from apps.bot.core.database import check_db_connectivity
 from apps.bot.utils.metrics import (
     get_metrics,
@@ -79,7 +79,7 @@ async def check_redis() -> dict:
             "status": "not_configured",
         }
 
-    if not _redis_available or _redis_client is None:
+    if not _cache_mod._redis_available or _cache_mod._redis_client is None:  # pylint: disable=protected-access
         set_redis_connected(False)
         return {
             "healthy": False,
@@ -90,7 +90,7 @@ async def check_redis() -> dict:
 
     try:
         start = time.perf_counter()
-        pong = await cast(Awaitable[bool], _redis_client.ping())
+        pong = await cast(Awaitable[bool], _cache_mod._redis_client.ping())  # pylint: disable=protected-access
         latency_ms = (time.perf_counter() - start) * 1000
 
         if pong:
@@ -249,7 +249,7 @@ async def start_health_server(host: str = "0.0.0.0", port: int = 8000) -> None:
     _runner = web.AppRunner(_app)
 
     await _runner.setup()
-    site = web.TCPSite(_runner, host, port)
+    site = web.TCPSite(_runner, host, port, reuse_address=True)
     await site.start()
 
     logger.info("Health check server started on http://%s:%d", host, port)

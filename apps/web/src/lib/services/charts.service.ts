@@ -107,6 +107,11 @@ export async function getLatencyDistribution(): Promise<LatencyBucket[]> {
 }
 
 /**
+ * Default limit for top groups query
+ */
+const TOP_GROUPS_LIMIT = 10;
+
+/**
  * Get top groups by verifications
  */
 export async function getTopGroups(): Promise<TopGroupPerformance[]> {
@@ -115,7 +120,7 @@ export async function getTopGroups(): Promise<TopGroupPerformance[]> {
   }
 
   const { data, error } = await insforge.database.rpc("get_top_groups", {
-    p_limit: 10,
+    p_limit: TOP_GROUPS_LIMIT,
   });
   if (error) throw error;
   return (Array.isArray(data) ? data : []) as TopGroupPerformance[];

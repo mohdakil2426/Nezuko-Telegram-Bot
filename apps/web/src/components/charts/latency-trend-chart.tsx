@@ -95,7 +95,7 @@ export function LatencyTrendChart() {
           <Skeleton className="h-[300px] w-full" />
         ) : (
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <LineChart data={chartData}>
+            <LineChart accessibilityLayer data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="date"

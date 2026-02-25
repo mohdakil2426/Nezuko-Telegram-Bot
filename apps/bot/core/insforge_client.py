@@ -46,7 +46,11 @@ async def close_client() -> None:
     """Close the httpx client gracefully on shutdown."""
     global _client  # pylint: disable=global-statement
     if _client is not None:
-        await _client.aclose()
+        try:
+            await _client.aclose()
+        except (RuntimeError, OSError) as e:
+            # Event loop may already be closed after KeyboardInterrupt
+            logger.debug("InsForge client close error (expected on shutdown): %s", e)
         _client = None
         logger.info("InsForge REST client closed")
 
@@ -197,9 +201,17 @@ async def get_owner(user_id: int) -> Owner | None:
 
 
 async def create_owner(user_id: int, username: str | None = None) -> Owner:
-    """Create owner or return existing."""
+    """Create owner or return existing (updating username if missing)."""
     existing = await get_owner(user_id)
     if existing:
+        # Update username if it was NULL and we now have one
+        if username and not existing.username:
+            await _patch(
+                "owners",
+                {"user_id": f"eq.{user_id}"},
+                {"username": username, "updated_at": datetime.now(UTC).isoformat()},
+            )
+            return Owner(user_id=user_id, username=username)
         return existing
     now = datetime.now(UTC).isoformat()
     rows = await _post(

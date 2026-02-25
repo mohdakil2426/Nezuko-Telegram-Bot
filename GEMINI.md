@@ -131,7 +131,7 @@ pytest --cov=apps --cov-report=html   # Coverage
 | **Bot**      | python-telegram-bot v22.6, Python 3.13, AsyncIO, SQLAlchemy 2.0, AsyncPG  |
 | **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions |
 | **Auth**     | None (development mode — direct dashboard access)                          |
-| **Infra**    | Docker (bot), Koyeb (bot hosting), Vercel (web hosting), Caddy             |
+| **Infra**    | Docker (bot), Vercel (web hosting), Caddy                                  |
 
 ---
 

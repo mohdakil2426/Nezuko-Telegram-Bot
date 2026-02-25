@@ -74,7 +74,7 @@ export function HourlyActivityChart() {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
-          <BarChart data={data} margin={{ left: -20 }}>
+          <BarChart accessibilityLayer data={data} margin={{ left: -20 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="label"

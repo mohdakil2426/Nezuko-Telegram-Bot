@@ -100,15 +100,15 @@ export async function getUserGrowth(params?: TrendsParams): Promise<UserGrowthRe
 
 /**
  * Analytics overview metrics
+ * Matches the exact return shape of get_analytics_overview() RPC
  */
 export interface AnalyticsOverview {
   total_verifications: number;
+  total_groups: number;
+  total_channels: number;
   success_rate: number;
-  avg_response_time_ms: number;
-  active_groups: number;
-  active_channels: number;
-  peak_hour: string;
-  cache_efficiency: number;
+  avg_latency_ms: number;
+  cache_hit_rate: number;
 }
 
 /**
@@ -119,11 +119,10 @@ export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
 
   return {
     total_verifications: randomInt(10000, 15000),
+    total_groups: randomInt(18, 30),
+    total_channels: randomInt(8, 16),
     success_rate: randomInt(920, 980) / 10, // 92.0 - 98.0
-    avg_response_time_ms: randomInt(80, 150),
-    active_groups: 24,
-    active_channels: 12,
-    peak_hour: "14:00 UTC",
-    cache_efficiency: randomInt(850, 950) / 10, // 85.0 - 95.0
+    avg_latency_ms: randomInt(80, 150),
+    cache_hit_rate: randomInt(850, 950) / 10, // 85.0 - 95.0
   };
 }

@@ -72,7 +72,7 @@ export function TopGroupsChart() {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[350px] w-full">
-          <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
+          <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
             <YAxis

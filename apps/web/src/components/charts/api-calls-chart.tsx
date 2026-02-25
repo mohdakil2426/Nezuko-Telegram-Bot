@@ -81,7 +81,7 @@ export function ApiCallsChart() {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="mx-auto h-[300px]">
-          <PieChart>
+          <PieChart accessibilityLayer>
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
             <Pie
               data={chartData}

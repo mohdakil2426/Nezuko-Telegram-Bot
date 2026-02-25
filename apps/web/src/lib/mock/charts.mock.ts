@@ -268,10 +268,11 @@ export async function getBotHealthMetrics(): Promise<BotHealthMetrics> {
   const uptimePercent = randomInt(990, 1000) / 10; // 99.0 - 100.0
   const cacheEfficiency = randomInt(850, 950) / 10; // 85.0 - 95.0
   const successRate = randomInt(920, 980) / 10; // 92.0 - 98.0
-  const avgLatency = randomInt(60, 120);
-  // Convert latency to score (lower is better, max 200ms = 0%, 0ms = 100%)
-  const avgLatencyScore = Math.max(0, Math.min(100, 100 - avgLatency / 2));
+  const avgLatencyMs = randomInt(60, 120);
   const errorRate = randomInt(10, 50) / 10; // 1.0 - 5.0
+
+  // Convert latency to score for overall calc (lower is better, max 200ms = 0%, 0ms = 100%)
+  const avgLatencyScore = Math.max(0, Math.min(100, 100 - avgLatencyMs / 2));
 
   // Calculate overall score (weighted average)
   const overallScore =
@@ -288,7 +289,7 @@ export async function getBotHealthMetrics(): Promise<BotHealthMetrics> {
     uptime_percent: uptimePercent,
     cache_efficiency: cacheEfficiency,
     success_rate: successRate,
-    avg_latency_score: avgLatencyScore,
+    avg_latency_ms: avgLatencyMs,
     error_rate: errorRate,
     overall_score: overallScore,
   };

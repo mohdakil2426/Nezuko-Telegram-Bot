@@ -26,6 +26,8 @@ const routeLabels: Record<string, string> = {
   analytics: "Analytics",
   groups: "Groups",
   channels: "Channels",
+  bots: "Bots",
+  logs: "Logs",
   settings: "Settings",
 };
 

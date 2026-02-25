@@ -75,7 +75,7 @@ export function LatencyDistributionChart() {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
-          <BarChart data={data} layout="vertical" margin={{ left: 20 }}>
+          <BarChart accessibilityLayer data={data} layout="vertical" margin={{ left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
             <YAxis

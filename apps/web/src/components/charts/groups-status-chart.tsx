@@ -71,7 +71,7 @@ export function GroupsStatusChart() {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[250px]">
-          <PieChart>
+          <PieChart accessibilityLayer>
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
             <Pie
               data={chartData}

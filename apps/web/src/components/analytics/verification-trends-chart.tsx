@@ -78,7 +78,7 @@ export function VerificationTrendsChart() {
           <CardTitle>Verification Trends</CardTitle>
           <CardDescription>
             {data?.summary.total_verifications.toLocaleString() ?? 0} total verifications (
-            {data?.summary.success_rate ?? 0}% success)
+            {Math.round((data?.summary.success_rate ?? 0) * 10) / 10}% success)
           </CardDescription>
         </div>
         <Select value={period} onValueChange={(v) => setPeriod(v as PeriodOption)}>
@@ -97,7 +97,7 @@ export function VerificationTrendsChart() {
           <Skeleton className="h-[300px] w-full" />
         ) : (
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <AreaChart data={chartData}>
+            <AreaChart accessibilityLayer data={chartData}>
               <defs>
                 <linearGradient id="fillSuccessful" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--color-successful)" stopOpacity={0.8} />

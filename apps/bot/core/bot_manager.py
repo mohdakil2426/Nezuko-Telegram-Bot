@@ -652,12 +652,27 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
 
         self._running = True
 
-        # Start health check server (required for Koyeb/Cloud Run health probes)
+        # Start health check server (required for health probes)
         try:
             await start_health_server(host="0.0.0.0", port=8000)
             logger.info("[OK] Health server started on port 8000")
         except OSError as e:
             logger.warning("Health server failed to start: %s", e)
+
+        # Initialize Redis cache (dashboard mode)
+        from apps.bot.config import config as app_config  # pylint: disable=import-outside-toplevel
+        from apps.bot.core.cache import get_redis_client  # pylint: disable=import-outside-toplevel
+        from apps.bot.utils.health import (  # pylint: disable=import-outside-toplevel
+            set_redis_connected,
+        )
+
+        redis_client = await get_redis_client(app_config.redis_url)
+        if redis_client:
+            set_redis_connected(True)
+            logger.info("[OK] Redis cache initialized")
+        else:
+            set_redis_connected(False)
+            logger.warning("[WARN] Redis unavailable — caching disabled")
 
         # Load bots from database
         try:

@@ -37,6 +37,7 @@ class StatusWriter:
         self._running = False
         self._start_time = time.monotonic()
         self._interval = 30  # seconds
+        self._boot_iso: str | None = None  # Set once on first heartbeat
 
     async def start(self) -> None:
         """Start the status writer background task."""
@@ -87,10 +88,16 @@ class StatusWriter:
 
         uptime = int(time.monotonic() - self._start_time)
         now = datetime.datetime.now(datetime.UTC).isoformat()
+
+        # Record boot time once on first heartbeat
+        if self._boot_iso is None:
+            self._boot_iso = now
+
         payload = {
             "status": status,
             "last_heartbeat": now,
             "uptime_seconds": uptime,
+            "started_at": self._boot_iso,
             "updated_at": now,
         }
         insert_payload = {

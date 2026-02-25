@@ -90,7 +90,7 @@ export function CacheHitRateTrendChart() {
           <Skeleton className="h-[300px] w-full" />
         ) : (
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <LineChart data={chartData}>
+            <LineChart accessibilityLayer data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -103,7 +103,7 @@ export function CacheHitRateTrendChart() {
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                domain={[70, 100]}
+                domain={[0, 100]}
                 tickFormatter={(value) => `${value}%`}
               />
               <ChartTooltip

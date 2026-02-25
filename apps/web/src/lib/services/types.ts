@@ -369,6 +369,7 @@ export interface LatencyBucket {
   bucket: string;
   count: number;
   percentage: number;
+  sort_order?: number;
 }
 
 /**
@@ -419,7 +420,7 @@ export interface BotHealthMetrics {
   uptime_percent: number;
   cache_efficiency: number;
   success_rate: number;
-  avg_latency_score: number;
+  avg_latency_ms: number;
   error_rate: number;
   overall_score: number;
 }

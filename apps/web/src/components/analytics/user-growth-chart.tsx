@@ -100,7 +100,7 @@ export function UserGrowthChart() {
           <Skeleton className="h-[300px] w-full" />
         ) : (
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <BarChart data={chartData}>
+            <BarChart accessibilityLayer data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
               <YAxis tickLine={false} axisLine={false} tickMargin={8} />

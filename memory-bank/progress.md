@@ -2,9 +2,9 @@
 
 ## Current Status
 
-**Phase**: 66 — Full End-to-End Success (Bot + Web Working)
-**Overall Completion**: Phase 66 of 66 complete ✅
-**Last Updated**: 2026-02-23
+**Phase**: 67 — Web Charts & InsForge RPC Type Alignment
+**Overall Completion**: Phase 67 of 67 complete ✅
+**Last Updated**: 2026-02-25
 **Git**: `cf7cca7` on `main`
 
 ---
@@ -36,6 +36,7 @@
 | 64    | Dashboard Full Pipeline Fix & Log Noise Reduction | Complete ✅ |
 | 65    | Complete InsForge Clean Rebuild + Realtime Setup | Complete ✅ |
 | **66** | **Full End-to-End Success (Bot + Web Working)** | **Complete ✅ 🎉** |
+| **67** | **Web Charts & InsForge RPC Type Alignment** | **Complete ✅** |
 
 ---
 
@@ -84,6 +85,39 @@ Added permanently to `insforge/migrations/009_clean_schema.sql`.
 
 ---
 
+## Phase 67: Web Charts & InsForge RPC Type Alignment
+
+Full audit of all 14 InsForge RPC functions vs. TypeScript types, mock data, and chart components.
+
+### Bug 1: `AnalyticsOverview` type had 5 wrong field names (HIGH)
+
+**Symptom**: Analytics overview cards showed 0/empty values for "Avg Response Time" and "Cache Efficiency" when `USE_MOCK=false`.
+
+**Root cause**: Mock type used invented field names (`active_groups`, `active_channels`, `avg_response_time_ms`, `cache_efficiency`, `peak_hour`) that didn't match actual `get_analytics_overview()` RPC output (`total_groups`, `total_channels`, `avg_latency_ms`, `cache_hit_rate`).
+
+**Fix**: Updated `AnalyticsOverview` type, mock data, and `overview-cards.tsx` to use correct field names.
+
+### Bug 2: `BotHealthMetrics` type had `avg_latency_score` (MEDIUM)
+
+**Root cause**: RPC returns `avg_latency_ms`, not `avg_latency_score`.
+
+**Fix**: Renamed field in type + mock.
+
+### Bug 3: `LatencyBucket` type missing `sort_order` (LOW)
+
+**Fix**: Added `sort_order?: number` to type.
+
+### Files Changed in Phase 67
+
+| File | Change |
+|---|---|
+| `apps/web/src/lib/services/types.ts` | `LatencyBucket` + `sort_order?`, `BotHealthMetrics`: `avg_latency_score` → `avg_latency_ms` |
+| `apps/web/src/lib/mock/analytics.mock.ts` | `AnalyticsOverview` type: 5 fields aligned to RPC |
+| `apps/web/src/lib/mock/charts.mock.ts` | `getBotHealthMetrics()`: returns `avg_latency_ms` |
+| `apps/web/src/components/analytics/overview-cards.tsx` | All field references aligned to RPC |
+
+---
+
 ## What Works (Post Phase 66 — COMPLETE)
 
 ### Bot Core ✅
@@ -111,6 +145,8 @@ Added permanently to `insforge/migrations/009_clean_schema.sql`.
 - ✅ 10 full-featured pages (dashboard, analytics, groups, channels, bots, logs, settings, etc.)
 - ✅ Real-time updates via WebSocket (4 channels, 4 DB triggers)
 - ✅ All 14 analytics RPCs return correct shapes (200 OK)
+- ✅ All TypeScript types match actual RPC return shapes (Phase 67 audit)
+- ✅ Analytics overview cards display real data correctly
 - ✅ `get_dashboard_stats` returns live data
 - ✅ `get_bot_health` shows uptime (reads `status='online'`)
 - ✅ Hydration mismatch fixed (Dark Reader SVG suppression)
@@ -153,4 +189,4 @@ Added permanently to `insforge/migrations/009_clean_schema.sql`.
 
 ---
 
-_Last Updated: 2026-02-23 (Phase 66 — Full Success 🎉)_
+_Last Updated: 2026-02-25 (Phase 67 — Chart Type Alignment ✅)_

@@ -195,7 +195,16 @@ def main():
             try:
                 asyncio.run(bot_manager.run())
             except KeyboardInterrupt:
-                asyncio.run(bot_manager.shutdown())
+                # Cannot use asyncio.run() again — the previous event loop
+                # is already closed, and httpx connections reference it.
+                # Use a fresh loop only for the shutdown coroutine.
+                loop = asyncio.new_event_loop()
+                try:
+                    loop.run_until_complete(bot_manager.shutdown())
+                except (RuntimeError, OSError) as e:
+                    logger.warning("Shutdown cleanup error (expected): %s", e)
+                finally:
+                    loop.close()
             return
 
         # Standalone mode - single bot from .env

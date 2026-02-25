@@ -53,17 +53,32 @@
 <details open>
 <summary><h2>📑 Table of Contents</h2></summary>
 
-- [✨ What is Nezuko?](#-what-is-nezuko)
-- [🎯 Key Features](#-key-features)
-- [☁️ Cloud Deployment](#-cloud-deployment)
-- [🚀 Local Development](#-local-development)
-- [⌨️ CLI Commands](#️-cli-commands)
-- [🏗️ Project Structure](#️-project-structure)
-- [💻 Tech Stack](#-tech-stack)
-- [🎨 Dashboard Preview](#-dashboard-preview)
-- [🔧 Bot Commands](#-bot-commands)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
+- [🌸 Nezuko](#-nezuko)
+    - [The Ultimate All-In-One Telegram Bot Platform](#the-ultimate-all-in-one-telegram-bot-platform)
+  - [✨ What is Nezuko?](#-what-is-nezuko)
+  - [🎯 Key Features](#-key-features)
+    - [🔐 Channel Membership Enforcement](#-channel-membership-enforcement)
+    - [📊 Admin Dashboard](#-admin-dashboard)
+    - [⚡ Enterprise Performance](#-enterprise-performance)
+    - [🛠️ Self-Service Admin Commands](#️-self-service-admin-commands)
+  - [☁️ Cloud Deployment](#️-cloud-deployment)
+    - [1. Dashboard (Vercel)](#1-dashboard-vercel)
+    - [2. Bot Engine (Docker / Terminal)](#2-bot-engine-docker--terminal)
+    - [3. Backend (InsForge)](#3-backend-insforge)
+  - [🚀 Local Development](#-local-development)
+    - [Prerequisites](#prerequisites)
+    - [Quick Start](#quick-start)
+  - [⌨️ CLI Commands](#️-cli-commands)
+  - [🏗️ Project Structure](#️-project-structure)
+  - [💻 Tech Stack](#-tech-stack)
+    - [Frontend](#frontend)
+    - [Bot](#bot)
+    - [Infrastructure](#infrastructure)
+  - [🎨 Dashboard Preview](#-dashboard-preview)
+  - [🔧 Bot Commands](#-bot-commands)
+  - [🤝 Contributing](#-contributing)
+  - [📄 License](#-license)
+    - [Built with 💜 using async Python \& modern React](#built-with--using-async-python--modern-react)
 
 </details>
 
@@ -83,7 +98,7 @@
 │   │  React 19   │◄──┼──►│  Realtime   │◄──┼──► │   v22.6+    │          │
 │   │  Dashboard  │   │   │  Storage    │   │    │   AsyncIO   │          │
 │   └─────────────┘   │   └─────────────┘   │    └─────────────┘          │
-│     (Vercel)        │      (BaaS)         │       (Koyeb)               │
+│     (Vercel)        │      (BaaS)         │     (Docker/Terminal)         │
 └─────────────────────┴─────────────────────┴─────────────────────────────┘
 ```
 
@@ -157,10 +172,10 @@ The web dashboard manages your bots, analytics, and configuration.
 - **Platform:** Vercel (Free)
 - **Setup:** Import repository -> Select `apps/web` as root -> Deploy.
 
-### 2. Bot Engine (Koyeb)
+### 2. Bot Engine (Docker / Terminal)
 The Python bot engine runs 24/7 to handle Telegram updates.
-- **Platform:** Koyeb (Free)
-- **Setup:** Connect GitHub -> Select Dockerfile (`config/docker/Dockerfile.monorepo`) -> Deploy.
+- **Platform:** Any VPS, Docker, or local terminal
+- **Setup:** `python -m apps.bot.main` or use Docker Compose.
 
 ### 3. Backend (InsForge)
 Managed database, authentication, and realtime features.
@@ -285,7 +300,7 @@ nezuko/
 ![InsForge](https://img.shields.io/badge/InsForge-BaaS-FF6B6B?style=flat-square)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue?style=flat-square&logo=postgresql)
 ![Vercel](https://img.shields.io/badge/Vercel-Web-black?style=flat-square&logo=vercel)
-![Koyeb](https://img.shields.io/badge/Koyeb-Bot-green?style=flat-square)
+![Docker](https://img.shields.io/badge/Docker-Bot-blue?style=flat-square&logo=docker)
 
 </div>
 

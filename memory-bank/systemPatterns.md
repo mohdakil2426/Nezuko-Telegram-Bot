@@ -1,6 +1,6 @@
 # System Patterns: Architecture & Implementation
 
-> **Last Updated**: 2026-02-23 (Phase 66 — Bot + Web fully working)
+> **Last Updated**: 2026-02-25 (Phase 67 — Chart Type Alignment)
 
 ## Architecture Overview
 
@@ -39,7 +39,7 @@ User ──HTTPS──► Vercel (Next.js Dashboard)
                 InsForge BaaS (PostgreSQL + Realtime + Storage + Functions)
                     ▲
                     │ httpx REST (insforge_client.py)
-Koyeb (Docker) ──► Bot Engine ──► Telegram API
+Docker/Terminal ──► Bot Engine ──► Telegram API
 ```
 
 ---
@@ -193,6 +193,23 @@ const series = Array.isArray(data) ? data : [];
 // get_groups_status, get_bot_health, get_analytics_overview
 return data as SomeType;
 ```
+
+### ⚠️ RPC Field Name Alignment (Phase 67 — CRITICAL)
+
+TypeScript types **MUST exactly match** the column names returned by PostgreSQL RPCs.
+When adding new RPCs or types, always run `SELECT rpc_function()` via `run-raw-sql` MCP
+to verify exact field names before writing TypeScript interfaces.
+
+**Key corrections made in Phase 67:**
+
+| RPC | DB Field | ❌ Old TS Field | ✅ Correct TS Field |
+|---|---|---|---|
+| `get_analytics_overview` | `total_groups` | `active_groups` | `total_groups` |
+| `get_analytics_overview` | `total_channels` | `active_channels` | `total_channels` |
+| `get_analytics_overview` | `avg_latency_ms` | `avg_response_time_ms` | `avg_latency_ms` |
+| `get_analytics_overview` | `cache_hit_rate` | `cache_efficiency` | `cache_hit_rate` |
+| `get_bot_health` | `avg_latency_ms` | `avg_latency_score` | `avg_latency_ms` |
+| `get_latency_distribution` | `sort_order` | *(missing)* | `sort_order?: number` |
 
 ### Realtime Hooks
 
@@ -351,4 +368,4 @@ The UPSERT must explicitly restore: `is_deleted: false, is_active: true, deleted
 
 ---
 
-_Last Updated: 2026-02-23 (Phase 66)_
+_Last Updated: 2026-02-25 (Phase 67)_

@@ -22,7 +22,7 @@ interface OverviewCardProps {
 
 function OverviewCard({ title, value, description, icon, isUpdated }: OverviewCardProps) {
   return (
-    <Card className="relative overflow-hidden">
+    <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         {icon}
@@ -61,7 +61,7 @@ function OverviewSkeleton() {
 }
 
 export function AnalyticsOverviewCards() {
-  const { data, isPending, error, refetch } = useAnalyticsOverview();
+  const { data, isPending, error } = useAnalyticsOverview();
   const { events } = useRealtimeAnalytics();
 
   // Track which cards were recently updated
@@ -72,8 +72,8 @@ export function AnalyticsOverviewCards() {
   const [realtimeStats, setRealtimeStats] = useState<{
     total_verifications?: number;
     success_rate?: number;
-    avg_response_time_ms?: number;
-    cache_efficiency?: number;
+    avg_latency_ms?: number;
+    cache_hit_rate?: number;
   }>({});
 
   // Process SSE events for stats updates
@@ -101,13 +101,13 @@ export function AnalyticsOverviewCards() {
           updates.success_rate = eventData.success_rate;
           updatedKeys.push("success_rate");
         }
-        if (typeof eventData.avg_response_time_ms === "number") {
-          updates.avg_response_time_ms = eventData.avg_response_time_ms;
-          updatedKeys.push("avg_response_time_ms");
+        if (typeof eventData.avg_latency_ms === "number") {
+          updates.avg_latency_ms = eventData.avg_latency_ms;
+          updatedKeys.push("avg_latency_ms");
         }
-        if (typeof eventData.cache_efficiency === "number") {
-          updates.cache_efficiency = eventData.cache_efficiency;
-          updatedKeys.push("cache_efficiency");
+        if (typeof eventData.cache_hit_rate === "number") {
+          updates.cache_hit_rate = eventData.cache_hit_rate;
+          updatedKeys.push("cache_hit_rate");
         }
 
         // Mark cards as updated
@@ -122,22 +122,16 @@ export function AnalyticsOverviewCards() {
     }
   }, [events]);
 
-  // Fallback polling when SSE is not available
-  useEffect(() => {
-    const interval = setInterval(() => {
-      refetch();
-    }, 30000); // Poll every 30 seconds as fallback
-
-    return () => clearInterval(interval);
-  }, [refetch]);
+  // Note: Polling fallback is handled by TanStack Query's refetchInterval
+  // in the useAnalyticsOverview hook (30s). No manual setInterval needed.
 
   // Merge real-time stats with initial data
   const mergedData = useMemo(() => {
     return {
       total_verifications: realtimeStats.total_verifications ?? data?.total_verifications ?? 0,
       success_rate: realtimeStats.success_rate ?? data?.success_rate ?? 0,
-      avg_response_time_ms: realtimeStats.avg_response_time_ms ?? data?.avg_response_time_ms ?? 0,
-      cache_efficiency: realtimeStats.cache_efficiency ?? data?.cache_efficiency ?? 0,
+      avg_latency_ms: realtimeStats.avg_latency_ms ?? data?.avg_latency_ms ?? 0,
+      cache_hit_rate: realtimeStats.cache_hit_rate ?? data?.cache_hit_rate ?? 0,
     };
   }, [data, realtimeStats]);
 
@@ -182,17 +176,17 @@ export function AnalyticsOverviewCards() {
       />
       <OverviewCard
         title="Avg Response Time"
-        value={`${mergedData.avg_response_time_ms}ms`}
+        value={`${mergedData.avg_latency_ms}ms`}
         description="Bot response latency"
         icon={<Clock className="h-4 w-4 text-muted-foreground" />}
-        isUpdated={updatedCards.has("avg_response_time_ms")}
+        isUpdated={updatedCards.has("avg_latency_ms")}
       />
       <OverviewCard
-        title="Cache Efficiency"
-        value={`${mergedData.cache_efficiency}%`}
+        title="Cache Hit Rate"
+        value={`${mergedData.cache_hit_rate}%`}
         description="Membership cache hit rate"
         icon={<Zap className="h-4 w-4 text-muted-foreground" />}
-        isUpdated={updatedCards.has("cache_efficiency")}
+        isUpdated={updatedCards.has("cache_hit_rate")}
       />
     </div>
   );

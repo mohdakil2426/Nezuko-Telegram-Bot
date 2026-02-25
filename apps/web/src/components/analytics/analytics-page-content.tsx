@@ -59,7 +59,7 @@ export function AnalyticsPageContent() {
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
             <LatencyDistributionChart />
-            <BotHealthChart />
+            <CacheBreakdownChart />
           </div>
         </TabsContent>
 
