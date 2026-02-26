@@ -49,7 +49,7 @@ Nezuko acts as an **automated gatekeeper** that:
 | **Channels** | Manage enforced channels, subscriber counts, linked groups. |
 | **Bots** | Add/manage multiple bot instances. |
 | **Logs** | Real-time log streaming with filters. |
-| **Settings** | Theme, account info, preferences. |
+| **Settings** | Theme, security vault (AES-GCM key generation), account info. |
 
 ---
 
@@ -88,4 +88,4 @@ Dashboard ← InsForge Realtime (WebSocket) ← PostgreSQL Triggers
 
 ---
 
-_Last Updated: 2026-02-26 (Phase 69)_
+_Last Updated: 2026-02-27 (Phase 71 — Secure Vault)_

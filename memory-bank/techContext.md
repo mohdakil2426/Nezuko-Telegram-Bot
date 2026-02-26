@@ -14,7 +14,8 @@
 | aiosqlite | 0.21+ | **Tests only** — SQLite async driver for pytest |
 | Pydantic | 2.12+ | Data validation / config |
 | Redis (aioredis) | 7.1+ | Caching layer |
-| cryptography | 43+ | Fernet token encryption (`core/encryption.py`) |
+| **uv** | Latest | Dependency management & environment virtualization |
+| cryptography | 43+ | AES-GCM & Fernet encryption (`core/encryption.py`) |
 
 > **⚠️ asyncpg**: Completely removed from production. No direct PG connection.
 > **⚠️ SQLAlchemy**: Only present for offline test speed (SQLite). Never imported
@@ -54,14 +55,11 @@
 ### Quick Start
 
 ```bash
-# Install Python deps
-pip install -r requirements.txt -r requirements-dev.txt
-
-# Install web deps
-cd apps/web && bun install
+# Install dependencies and sync environment
+uv sync
 
 # Start services (parallel)
-python -m apps.bot.main          # Bot (from project root)
+uv run python -m apps.bot.main   # Bot (from project root)
 cd apps/web && bun dev           # Web (port 3000)
 ```
 
@@ -79,9 +77,8 @@ cd apps/web && bun dev           # Web (port 3000)
 DASHBOARD_MODE=true              # true = multi-bot from DB, false = use BOT_TOKEN
 BOT_TOKEN=<telegram-bot-token>   # Only used when DASHBOARD_MODE=false
 INSFORGE_BASE_URL=https://u4ckbciy.us-west.insforge.app
-INSFORGE_ANON_KEY=<insforge-anon-key>   # Refreshed Phase 65
-ENCRYPTION_KEY=<fernet-key>      # Required for dashboard mode (decrypt bot tokens)
-REDIS_URL=redis://127.0.0.1:6379/0
+INSFORGE_ANON_KEY=<insforge-anon-key>
+# No manual ENCRYPTION_KEY required! Syncs from Security Vault.
 LOG_LEVEL=DEBUG
 # DATABASE_URL is only used in tests (auto-set to SQLite in conftest/test files)
 
@@ -112,14 +109,13 @@ NEXT_PUBLIC_LOGIN_BOT_USERNAME=gmakilbot
 
 ### Python CLI Commands
 
-```bash
-# All from project root
-ruff check apps/bot --fix             # Auto-fix lint (0 errors target)
-ruff check apps/bot                   # Verify (0 errors)
-ruff format apps/bot --check          # Verify formatting
-pylint apps/bot --rcfile=pyproject.toml  # Score (10.00/10)
+# All from project root using uv
+uv run ruff check apps/bot --fix      # Auto-fix lint (0 errors target)
+uv run ruff check apps/bot            # Verify (0 errors)
+uv run ruff format apps/bot           # Format code
+uv run pylint apps/bot --rcfile=pyproject.toml  # Score (10.00/10)
 .venv/Scripts/python.exe -m pyrefly check  # Types (0 errors)
-pytest tests/bot/ -v                  # All 55 tests pass
+uv run pytest tests/bot/ -v           # All 58 tests pass
 ```
 
 ### TypeScript CLI Commands
@@ -183,9 +179,9 @@ bun run format        # Prettier + Tailwind Sort
 | --- | --- |
 | Tests | `tests/bot/` |
 | Logs | `apps/bot/logs/` |
-| Python deps | `requirements.txt` + `requirements-dev.txt` |
+| Python deps | `pyproject.toml` (managed via `uv`) |
 | SQL Migrations | `insforge/migrations/` (001-010) |
-| Canonical Schema | `insforge/migrations/009_clean_schema.sql` + `010_add_linked_channels_count.sql` |
+| Canonical Schema | `insforge/migrations/009_clean_schema.sql` + `011_add_nezuko_secrets_table.sql` |
 | Edge Functions | `insforge/functions/` |
 | Pre-migration backup | `docs/local/backup-2026-02-12-105223/` |
 

@@ -61,6 +61,7 @@ nezuko/
 - Verification logging directly to InsForge PostgreSQL
 - Status writer (heartbeat via DB UPSERT)
 - Command worker (polls admin_commands table)
+- Security Vault (automated AES-256-GCM encryption key management)
 - Member/subscriber count sync every 15min (PTB JobQueue)
 - Link counter maintenance (linked_channels_count / linked_groups_count)
 
@@ -80,8 +81,8 @@ nezuko/
 - 14 PostgreSQL RPC functions for analytics/charts
 - 4 realtime triggers (verification, bot_status, commands, logs)
 - 2 storage buckets (bot-exports private, bot-assets public)
-- Edge Functions for bot token management and webhook testing
-- 10 SQL migrations (001-010)
+- Edge Functions for bot token management (AES-256-GCM) and webhook testing
+- 11 SQL migrations (001-011)
 
 ---
 
@@ -102,8 +103,8 @@ nezuko/
 **Phase**: 69 — Chart Responsiveness & Groups/Channels Data Fix (Complete)
 **Last Updated**: 2026-02-26
 
-- Phase 68 (Comprehensive Audit, Bug Fixes & Redis Setup): Complete
-- Phase 69 (Chart Responsiveness & Groups/Channels Data Fix): Complete — 9 charts fixed, 3 data pipeline issues resolved
+- Phase 70 (Frontend Audit & Performance Optimization): Complete
+- Phase 71 (Secure Vault & Automated Key Management): Complete — Automated AES-GCM vault integrated
 
 ---
 

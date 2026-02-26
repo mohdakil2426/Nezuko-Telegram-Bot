@@ -528,3 +528,19 @@ async def bulk_update_subscriber_counts(updates: list[dict[str, Any]]) -> None:
         headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
     )
     resp.raise_for_status()
+
+
+async def get_secret(key_name: str) -> str | None:
+    """
+    Get a secret value from the nezuko_secrets table (the vault).
+    Used for fetching the master_key for AES-GCM decryption.
+    """
+    try:
+        # Use existing private _get helper
+        rows = await _get("nezuko_secrets", {"key_name": f"eq.{key_name}"})
+        if not rows:
+            return None
+        return rows[0].get("key_value")
+    except (httpx.HTTPError, OSError, ValueError, KeyError) as e:
+        logger.error("Failed to fetch secret '%s' from vault: %s", key_name, e)
+        return None

@@ -189,8 +189,7 @@ async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
 
     elapsed = (datetime.now(UTC) - start_time).total_seconds()
     logger.info(
-        "Batch member sync done in %.1fs — groups: %d ok / %d fail; "
-        "channels: %d ok / %d fail",
+        "Batch member sync done in %.1fs — groups: %d ok / %d fail; channels: %d ok / %d fail",
         elapsed,
         groups_synced,
         groups_failed,

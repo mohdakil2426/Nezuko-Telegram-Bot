@@ -21,7 +21,10 @@ from telegram.ext import Application
 from apps.bot.core import insforge_client
 from apps.bot.core.encryption import EncryptionError, decrypt_token, is_encryption_configured
 from apps.bot.core.loader import register_handlers, setup_bot_commands
+from apps.bot.core.rate_limiter import create_rate_limiter
+from apps.bot.core.uptime import record_bot_start
 from apps.bot.services.command_worker import CommandWorker
+from apps.bot.services.member_sync import schedule_member_sync
 from apps.bot.services.status_writer import StatusWriter
 from apps.bot.utils.health import start_health_server, stop_health_server
 
@@ -170,8 +173,10 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         Raises:
             EncryptionError: If encryption is not configured.
         """
-        if not is_encryption_configured():
-            raise EncryptionError("ENCRYPTION_KEY required for dashboard mode")
+        if not await is_encryption_configured():
+            raise EncryptionError(
+                "Security Vault not configured. Set up master key in Dashboard Settings."
+            )
 
         rows = await insforge_client._get(  # pylint: disable=protected-access
             "bot_instances",
@@ -182,7 +187,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         for row in rows:
             try:
                 token_encrypted: str = str(row["token_encrypted"])
-                decrypted_token = decrypt_token(token_encrypted)
+                decrypted_token = await decrypt_token(token_encrypted)
                 bots.append(
                     BotConfig(
                         id=int(row["id"]),
@@ -215,7 +220,11 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         try:
             # Build application
             application = (
-                Application.builder().token(bot_config.token).concurrent_updates(True).build()
+                Application.builder()
+                .token(bot_config.token)
+                .rate_limiter(create_rate_limiter())
+                .concurrent_updates(True)
+                .build()
             )
 
             # Register handlers
@@ -227,6 +236,12 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
 
             # Setup bot commands
             await setup_bot_commands(application)
+
+            # Record bot start time for uptime tracking
+            await record_bot_start()
+
+            # Schedule member count sync (analytics)
+            schedule_member_sync(application)
 
             # Start polling in background task
             task = asyncio.create_task(
@@ -679,7 +694,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
             bots = await self.load_bots_from_database()
         except EncryptionError as e:
             logger.error("Cannot start dashboard mode: %s", e)
-            logger.error("Set ENCRYPTION_KEY in .env (same as API)")
+            logger.info("Ensure the Security Vault has a valid master key generated and saved.")
             return
         except (httpx.HTTPError, OSError) as e:
             logger.error("Failed to load bots from InsForge: %s", e)

@@ -1,5 +1,41 @@
 import { createClient } from 'npm:@insforge/sdk';
 
+/**
+ * Encrypt bot token using AES-256-GCM (Modern Standard)
+ * Used when a master_key is provided from the dashboard.
+ */
+async function encryptWithAES(plaintext, base64Key) {
+  try {
+    const binaryKey = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey(
+      'raw', 
+      binaryKey, 
+      { name: 'AES-GCM' }, 
+      false, 
+      ['encrypt']
+    );
+    
+    // 12-byte IV is standard for AES-GCM
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv }, 
+      key, 
+      new TextEncoder().encode(plaintext)
+    );
+    
+    // Combine IV (12 bytes) + Ciphertext
+    const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(ciphertext), iv.length);
+    
+    // Prefix with v2: to identify the new format
+    return 'v2:' + btoa(String.fromCharCode(...combined));
+  } catch (err) {
+    console.error('[encryptWithAES] Encryption failed:', err);
+    throw new Error('Secret vault encryption failed');
+  }
+}
+
 export default async function(req) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -78,8 +114,8 @@ async function handleVerify(body, corsHeaders) {
 }
 
 async function handleAdd(body, corsHeaders) {
-  const { token, owner_telegram_id } = body;
-  console.log('[manage-bot] handleAdd called with owner_telegram_id:', owner_telegram_id, 'token present:', !!token);
+  const { token, owner_telegram_id, master_key } = body;
+  console.log('[manage-bot] handleAdd called. master_key present:', !!master_key);
 
   if (!token || (owner_telegram_id === undefined || owner_telegram_id === null)) {
     return new Response(JSON.stringify({ error: 'Token and owner_telegram_id are required' }), {
@@ -89,12 +125,10 @@ async function handleAdd(body, corsHeaders) {
   }
 
   // Step 1: Verify token with Telegram
-  console.log('[manage-bot] Verifying token with Telegram API...');
   const verifyResponse = await fetch(`https://api.telegram.org/bot${token}/getMe`);
   const verifyData = await verifyResponse.json();
 
   if (!verifyData.ok) {
-    console.log('[manage-bot] Token verification failed:', verifyData.description);
     return new Response(JSON.stringify({ error: 'Invalid bot token' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -102,22 +136,20 @@ async function handleAdd(body, corsHeaders) {
   }
 
   const botInfo = verifyData.result;
-  console.log('[manage-bot] Token verified. Bot:', botInfo.username, 'ID:', botInfo.id);
 
-  // Step 2: Encrypt token using base64 (compatible storage)
-  const encryptedToken = btoa(token);
+  // Step 2: Encrypt token (Modern AES if master_key present, else fallback b64)
+  let encryptedToken;
+  if (master_key) {
+    console.log('[manage-bot] Using AES-GCM vault encryption...');
+    encryptedToken = await encryptWithAES(token, master_key);
+  } else {
+    console.log('[manage-bot] WARNING: Using fallback base64 encoding (No master_key provided)');
+    encryptedToken = btoa(token);
+  }
 
   // Step 3: UPSERT into database
-  // ─────────────────────────────────────────────────────────────────────────
-  // WHY UPSERT not INSERT:
-  //   The bot_id column has UNIQUE constraint. Deleting a bot is a soft-delete
-  //   (is_deleted=true, row stays). Re-adding the same token would hit a
-  //   UNIQUE violation on bot_id with a plain INSERT → 500 error.
-  //   UPSERT (onConflict: bot_id) restores the row instead of failing.
-  // ─────────────────────────────────────────────────────────────────────────
   const baseUrl = Deno.env.get('INSFORGE_BASE_URL');
   const anonKey = Deno.env.get('ANON_KEY');
-  console.log('[manage-bot] Creating InsForge client. baseUrl:', baseUrl ? 'set' : 'NOT SET', 'anonKey:', anonKey ? 'set' : 'NOT SET');
 
   const client = createClient({
     baseUrl,
@@ -131,11 +163,10 @@ async function handleAdd(body, corsHeaders) {
     bot_name: botInfo.first_name,
     token_encrypted: encryptedToken,
     is_active: true,
-    is_deleted: false,        // ← restore soft-deleted row
-    deleted_at: null,         // ← clear deletion timestamp
+    is_deleted: false,
+    deleted_at: null,
     updated_at: new Date().toISOString(),
   };
-  console.log('[manage-bot] Upserting bot:', JSON.stringify({ ...upsertPayload, token_encrypted: '***' }));
 
   const { data, error } = await client.database
     .from('bot_instances')
@@ -151,7 +182,6 @@ async function handleAdd(body, corsHeaders) {
     });
   }
 
-  console.log('[manage-bot] Bot upserted successfully:', data?.id);
   return new Response(JSON.stringify(data), {
     status: 201,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },

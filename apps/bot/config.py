@@ -27,7 +27,7 @@ class BotSettings(BaseSettings):
 
     Supports two modes:
     1. Dashboard Mode (DASHBOARD_MODE=true): Reads active bots from InsForge
-       database (multi-bot). Requires ENCRYPTION_KEY.
+       database (multi-bot). Uses encryption key from Security Vault.
     2. Standalone Mode (DASHBOARD_MODE=false): Uses BOT_TOKEN from .env (single
        bot). Useful for local development and testing.
     """
@@ -56,9 +56,6 @@ class BotSettings(BaseSettings):
 
     # Monitoring
     SENTRY_DSN: str | None = None
-
-    # Dashboard mode - for decrypting bot tokens from database
-    ENCRYPTION_KEY: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -127,11 +124,6 @@ class BotSettings(BaseSettings):
     def sentry_dsn(self) -> str | None:
         """Alias for SENTRY_DSN for backwards compatibility."""
         return self.SENTRY_DSN
-
-    @property
-    def encryption_key(self) -> str | None:
-        """Alias for ENCRYPTION_KEY for backwards compatibility."""
-        return self.ENCRYPTION_KEY
 
     @property
     def insforge_base_url(self) -> str:
@@ -232,7 +224,6 @@ class BotSettings(BaseSettings):
             f"  redis_url=***REDACTED***,\n"
             f"  webhook_url=***REDACTED***,\n"
             f"  insforge_database_url=***REDACTED***,\n"
-            f"  encryption_key=***REDACTED***,\n"
             f"  polling={'webhooks' if self.use_webhooks else 'polling'}\n"
             f")"
         )
@@ -246,7 +237,6 @@ class BotSettings(BaseSettings):
             "WEBHOOK_SECRET",
             "REDIS_URL",
             "SENTRY_DSN",
-            "ENCRYPTION_KEY",
             "INSFORGE_DATABASE_URL",
         }
         for key in sensitive_keys:

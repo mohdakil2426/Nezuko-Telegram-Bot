@@ -1,103 +1,134 @@
-"""Encryption utilities for decrypting bot tokens from database.
+"""Encryption utilities for secure bot token management.
 
-Supports two formats:
-- **Fernet** — the preferred format used when tokens are encrypted locally.
-- **Base64** — fallback used by the Edge Function (``manage-bot``) which
-  cannot run the Python ``cryptography`` library.
+Supports three formats:
+- **v2 (AES-256-GCM)** — Modern standard, shared with Edge Functions.
+- **Fernet** — Legacy Python-only encryption.
+- **Base64** — Fallback encoding (unsecured).
 
-``decrypt_token()`` tries Fernet first; if decryption fails (e.g. wrong
-format) it falls back to plain base64 decoding.
+The master key is fetched automatically from the InsForge Security Vault (nezuko_secrets).
+Manual ENCRYPTION_KEY in .env is no longer supported for dashboard mode.
 """
 
 import base64
-from functools import lru_cache
+import binascii
+import logging
 
 from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-from apps.bot.config import config
+from apps.bot.core import insforge_client
+
+logger = logging.getLogger(__name__)
 
 
 class EncryptionError(Exception):
     """Raised when encryption/decryption fails."""
 
 
-@lru_cache(maxsize=1)
-def get_fernet() -> Fernet | None:
-    """Get Fernet instance using ENCRYPTION_KEY from config.
+# Internal cache for the master key to avoid repeated DB lookups
+_MASTER_KEY_B64: str | None = None
+
+
+async def get_master_key() -> str | None:
+    """
+    Get the master encryption key from the InsForge Security Vault (nezuko_secrets table).
 
     Returns:
-        Fernet instance if ENCRYPTION_KEY is configured, None otherwise.
+        Base64 encoded 256-bit key string or None.
     """
-    encryption_key = config.ENCRYPTION_KEY
-    if not encryption_key:
-        return None
+    global _MASTER_KEY_B64  # pylint: disable=global-statement
+
+    if _MASTER_KEY_B64:
+        return _MASTER_KEY_B64
+
+    # Fetch from Security Vault (Exclusive source for Dashboard Mode)
+    remote_key = await insforge_client.get_secret("master_key")
+    if remote_key:
+        _MASTER_KEY_B64 = remote_key
+        logger.info("Master encryption key synchronized from Security Vault.")
+        return _MASTER_KEY_B64
+
+    return None
+
+
+def decrypt_v2(ciphertext_b64: str, master_key_b64: str) -> str:
+    """
+    Decrypt tokens using AES-256-GCM (v2 format).
+    Compatible with Edge Function 'manage-bot'.
+    """
     try:
-        return Fernet(encryption_key.encode())
-    except (ValueError, TypeError) as exc:
-        raise EncryptionError(f"Invalid ENCRYPTION_KEY format: {exc}") from exc
+        key = base64.b64decode(master_key_b64)
+        if len(key) != 32:
+            raise EncryptionError(f"Invalid master key length for AES-256: {len(key)} bytes")
 
+        aesgcm = AESGCM(key)
 
-def encrypt_token(plaintext: str) -> str:
-    """Encrypt a bot token for storage using Fernet.
-
-    Args:
-        plaintext: The raw bot token.
-
-    Returns:
-        Base64-encoded Fernet ciphertext.
-
-    Raises:
-        EncryptionError: If ENCRYPTION_KEY is not configured.
-    """
-    fernet = get_fernet()
-    if fernet is None:
-        raise EncryptionError("ENCRYPTION_KEY is not configured")
-
-    return fernet.encrypt(plaintext.encode()).decode()
-
-
-def decrypt_token(ciphertext: str) -> str:
-    """Decrypt a bot token from storage.
-
-    Tries Fernet first.  If that fails (e.g. the token was stored as plain
-    base64 by the Edge Function), falls back to base64 decoding.
-
-    Args:
-        ciphertext: The encrypted/encoded token string.
-
-    Returns:
-        Decrypted plain-text bot token.
-
-    Raises:
-        EncryptionError: If both Fernet and base64 decoding fail.
-    """
-    # ── Attempt 1: Fernet ──
-    fernet = get_fernet()
-    if fernet is not None:
+        # Format: IV (12 bytes) + Ciphertext
         try:
-            return fernet.decrypt(ciphertext.encode()).decode()
-        except InvalidToken:
-            pass  # Not a Fernet token — try base64 fallback
+            data = base64.b64decode(ciphertext_b64)
+        except (binascii.Error, ValueError) as e:
+            raise EncryptionError(f"Invalid v2 base64 payload: {e}") from e
 
-    # ── Attempt 2: Plain base64 (Edge Function format) ──
+        if len(data) < 13:
+            raise EncryptionError("Invalid v2 ciphertext length")
+
+        iv = data[:12]
+        ciphertext = data[12:]
+
+        decrypted = aesgcm.decrypt(iv, ciphertext, None)
+        return decrypted.decode("utf-8")
+    except Exception as e:
+        if isinstance(e, EncryptionError):
+            raise
+        raise EncryptionError(f"AES-GCM decryption failed: {e}") from e
+
+
+async def decrypt_token(ciphertext: str) -> str:
+    """
+    Decrypt a bot token from storage using multi-format support.
+
+    Order of preference:
+    1. v2 (AES-GCM) - If prefixed with 'v2:'
+    2. Fernet - If key is available
+    3. Base64 - Fallback for unencrypted tokens
+    """
+    if not ciphertext:
+        raise EncryptionError("Empty ciphertext provided")
+
+    # ── Attempt 1: Modern AES-GCM (v2) ──
+    if ciphertext.startswith("v2:"):
+        master_key = await get_master_key()
+        if not master_key:
+            raise EncryptionError(
+                "Master key not found in Security Vault. Cannot decrypt v2 token."
+            )
+        return decrypt_v2(ciphertext[3:], master_key)
+
+    # ── Attempt 2: Legacy Fernet ──
+    master_key = await get_master_key()
+    if master_key:
+        try:
+            f = Fernet(master_key.encode())
+            return f.decrypt(ciphertext.encode()).decode("utf-8")
+        except (InvalidToken, ValueError, binascii.Error):
+            pass  # Not a Fernet token, fall through to b64
+
+    # ── Attempt 3: Legacy Base64 Fallback ──
     try:
-        decoded = base64.b64decode(ciphertext).decode()
+        decoded = base64.b64decode(ciphertext).decode("utf-8")
         # Basic sanity: Telegram tokens look like "123456:ABC-DEF..."
         if ":" in decoded and len(decoded) > 20:
             return decoded
-    except Exception:
+    except (ValueError, binascii.Error, UnicodeDecodeError):
         pass
 
-    raise EncryptionError("Failed to decrypt token — neither Fernet nor base64 decoding succeeded")
+    raise EncryptionError("Failed to decrypt token: Unknown format or missing key from Vault.")
 
 
-def is_encryption_configured() -> bool:
-    """Check if encryption is properly configured.
-
-    Returns:
-        True if ENCRYPTION_KEY is set and valid, False otherwise.
+async def is_encryption_configured() -> bool:
     """
-    try:
-        return get_fernet() is not None
-    except EncryptionError:
-        return False
+    Check if the platform is ready for encrypted operations.
+    Returns True if a master key is available in the Vault.
+    """
+    key = await get_master_key()
+    return key is not None

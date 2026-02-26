@@ -1,11 +1,31 @@
 # Active Context: Current State
 
-## Current Status
+### Current Status
+Finalizing production readiness. Completed **Phase 71: Secure Vault & Automated Key Management**, which automated encryption key management and upgraded the platform to AES-256-GCM.
+Next: RLS hardening and deployment verification.
+ ✅ 0 warnings | Knip ✅ Clean
 
-**Date**: 2026-02-27
-**Phase**: 70 — Frontend Audit & Performance Optimization
-**Branch**: `main`
-**Quality**: Ruff ✅ 0 errors | Pylint ✅ 10.00/10 | Next.js build ✅ 0 errors | ESLint ✅ 0 warnings | Knip ✅ Clean
+---
+
+## Phase 71: Secure Vault & Automated Key Management (Complete)
+
+### Automated Key Management
+The platform now fully automates the management of encryption keys, enhancing security and operational efficiency.
+
+**1. Secure Vault Integration:**
+- **`nezuko_secrets` Table**: Introduced a dedicated database table for storing sensitive secrets, including the `master_key`.
+- **Dashboard Management**: Encryption keys can now be securely managed directly from the web dashboard.
+- **Bot Synchronization**: The bot automatically synchronizes keys from the `nezuko_secrets` vault, eliminating the need for manual `.env` updates.
+
+**2. Encryption Standard Upgrade:**
+- **AES-256-GCM**: Upgraded all encryption processes to the robust AES-256-GCM standard, ensuring authenticated encryption for bot tokens and other sensitive data.
+- **Backend/Frontend Parity**: Ensured consistent encryption standards across both backend and frontend components.
+
+### Important Patterns & Insights
+- **LazyMotion Strategy**: Using `motion/react` with `domAnimation` keeps the main bundle lightweight (~4.6 KB).
+- **Server Component Animations**: Use `<PageTransition />` wrappers for client-side entry effects without making the whole page a Client Component.
+- **Secure Vault Pattern**: Platforms secrets (like `master_key`) should be managed via the dashboard and stored in the database vault (`nezuko_secrets`). The bot should synchronize these keys automatically if `.env` is missing them.
+- **AES-256-GCM Standard**: Always use authenticated encryption for bot tokens to ensure backend/frontend parity.
 
 ---
 
