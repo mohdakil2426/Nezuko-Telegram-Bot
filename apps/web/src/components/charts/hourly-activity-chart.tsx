@@ -73,7 +73,7 @@ export function HourlyActivityChart() {
         <CardDescription>Peak activity at {peakHour?.label ?? "N/A"} UTC</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[250px] md:h-[300px] w-full">
           <BarChart accessibilityLayer data={data} margin={{ left: -20 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis

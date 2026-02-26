@@ -3,13 +3,27 @@
 /**
  * Bot Health Radial Chart
  * Shows overall bot health with multiple metrics
+ * Uses ChartContainer for consistent theming and accessibility
  */
 
-import { RadialBar, RadialBarChart, PolarAngleAxis, ResponsiveContainer } from "recharts";
+import { RadialBar, RadialBarChart, PolarAngleAxis } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBotHealthMetrics } from "@/lib/hooks";
+
+function getHealthColor(score: number): string {
+  if (score >= 90) return "var(--chart-1)"; // Green
+  if (score >= 70) return "var(--chart-3)"; // Yellow
+  if (score >= 50) return "var(--chart-4)"; // Orange
+  return "var(--chart-5)"; // Red
+}
 
 export function BotHealthChart() {
   const { data, isPending, error } = useBotHealthMetrics();
@@ -35,14 +49,23 @@ export function BotHealthChart() {
           <Skeleton className="h-4 w-32" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[300px] w-full rounded-full mx-auto max-w-[300px]" />
+          <Skeleton className="h-[200px] w-full rounded-full mx-auto max-w-[200px]" />
         </CardContent>
       </Card>
     );
   }
 
   const overallScore = data?.overall_score ?? 0;
-  const chartData = [{ value: overallScore, fill: getHealthColor(overallScore) }];
+  const healthColor = getHealthColor(overallScore);
+  const chartData = [{ name: "health", value: overallScore, fill: healthColor }];
+
+  // Dynamic config so the color matches the actual health score
+  const dynamicConfig: ChartConfig = {
+    health: {
+      label: "Health Score",
+      color: healthColor,
+    },
+  };
 
   return (
     <Card>
@@ -51,9 +74,10 @@ export function BotHealthChart() {
         <CardDescription>Overall system performance</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="relative h-[200px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="relative">
+          <ChartContainer config={dynamicConfig} className="mx-auto aspect-square max-h-[200px]">
             <RadialBarChart
+              accessibilityLayer
               cx="50%"
               cy="50%"
               innerRadius="60%"
@@ -64,9 +88,17 @@ export function BotHealthChart() {
               endAngle={0}
             >
               <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-              <RadialBar background={{ fill: "var(--muted)" }} dataKey="value" cornerRadius={10} />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent hideLabel formatter={(value) => `${value}/100`} />}
+              />
+              <RadialBar
+                background={{ fill: "var(--muted)" }}
+                dataKey="value"
+                cornerRadius={10}
+              />
             </RadialBarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-4xl font-bold">{overallScore}</span>
             <span className="text-sm text-muted-foreground">/ 100</span>
@@ -92,11 +124,4 @@ function MetricItem({ label, value }: { label: string; value: string }) {
       <span className="font-medium">{value}</span>
     </div>
   );
-}
-
-function getHealthColor(score: number): string {
-  if (score >= 90) return "var(--chart-1)"; // Green
-  if (score >= 70) return "var(--chart-3)"; // Yellow
-  if (score >= 50) return "var(--chart-4)"; // Orange
-  return "var(--chart-5)"; // Red
 }

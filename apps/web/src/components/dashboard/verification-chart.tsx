@@ -28,7 +28,20 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function VerificationChart() {
-  const { data: chartData, isPending } = useChartData(30);
+  const { data: chartData, isPending, error } = useChartData(30);
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Verification Trends</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[200px] md:h-[300px]">
+          <p className="text-destructive">Failed to load trends</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (isPending) {
     return <ChartSkeleton />;
@@ -41,9 +54,9 @@ export function VerificationChart() {
         <CardDescription>Daily verification activity (last 30 days)</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[200px] md:h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[200px] md:h-[300px] w-full">
           <AreaChart accessibilityLayer data={chartData} margin={{ left: 12, right: 12 }}>
-            <CartesianGrid vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="date"
               tickLine={false}

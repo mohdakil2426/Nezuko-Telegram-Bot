@@ -9,10 +9,12 @@ import { Pie, PieChart, Cell, Label } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  ChartConfig,
+  type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGroupsStatusDistribution } from "@/lib/hooks";
@@ -64,13 +66,13 @@ export function GroupsStatusChart() {
   ];
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle>Groups Status</CardTitle>
         <CardDescription>{data?.total ?? 0} total groups</CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[250px]">
+      <CardContent className="flex-1 pb-0">
+        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
           <PieChart accessibilityLayer>
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
             <Pie
@@ -98,7 +100,7 @@ export function GroupsStatusChart() {
                         <tspan
                           x={viewBox.cx}
                           y={viewBox.cy}
-                          className="fill-foreground text-3xl font-bold"
+                          className="fill-foreground text-2xl font-bold"
                         >
                           {data?.active ?? 0}
                         </tspan>
@@ -116,6 +118,10 @@ export function GroupsStatusChart() {
                 }}
               />
             </Pie>
+            <ChartLegend
+              content={<ChartLegendContent nameKey="name" />}
+              className="flex-wrap gap-2 [&>*]:basis-auto [&>*]:justify-center pt-2"
+            />
           </PieChart>
         </ChartContainer>
       </CardContent>

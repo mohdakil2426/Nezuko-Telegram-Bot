@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * API Calls Distribution Donut Chart
+ * API Calls Distribution Pie Chart
  * Shows breakdown of API calls by method.
  * Fully responsive — adapts to any card/column width.
  */
@@ -10,7 +10,7 @@ import { Pie, PieChart, Cell } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  ChartConfig,
+  type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -52,7 +52,7 @@ export function ApiCallsChart() {
           <Skeleton className="h-4 w-36" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[300px] w-full rounded-full mx-auto max-w-[300px]" />
         </CardContent>
       </Card>
     );
@@ -81,10 +81,9 @@ export function ApiCallsChart() {
         <CardDescription>{total.toLocaleString()} total calls</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
-        {/* aspect-square keeps the chart circular regardless of card width */}
         <ChartContainer
           config={chartConfig}
-          className="mx-auto aspect-square max-h-[300px] w-full [&_.recharts-pie-label-text]:fill-foreground"
+          className="mx-auto aspect-square max-h-[300px] w-full"
         >
           <PieChart accessibilityLayer>
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
@@ -92,9 +91,7 @@ export function ApiCallsChart() {
               data={chartData}
               dataKey="value"
               nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius="70%"
+              outerRadius={100}
               strokeWidth={2}
               stroke="var(--background)"
             >

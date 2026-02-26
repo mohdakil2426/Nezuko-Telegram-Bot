@@ -87,7 +87,7 @@ export function TopGroupsChart() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[350px] w-full">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[280px] md:h-[350px] w-full">
           <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
@@ -117,9 +117,9 @@ export function TopGroupsChart() {
               }
             />
             {/*
-              shadcn pattern: set fill="fill" so Recharts reads the fill value
-              we embedded per-row in chartData above.
-              Do NOT use <Cell> — the fill key in data handles it correctly.
+              shadcn pattern: set fill="fill" so Recharts reads the fill
+              value we embedded per-row in chartData above.
+              Alternative: <Cell> per-row is also a valid shadcn pattern.
             */}
             <Bar dataKey="verifications" fill="fill" radius={[0, 4, 4, 0]} />
           </BarChart>

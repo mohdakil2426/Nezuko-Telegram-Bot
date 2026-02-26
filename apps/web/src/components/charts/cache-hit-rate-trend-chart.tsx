@@ -89,7 +89,7 @@ export function CacheHitRateTrendChart() {
         {isPending ? (
           <Skeleton className="h-[300px] w-full" />
         ) : (
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <ChartContainer config={chartConfig} className="aspect-auto h-[250px] md:h-[300px] w-full">
             <LineChart accessibilityLayer data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis

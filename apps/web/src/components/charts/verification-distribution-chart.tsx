@@ -3,16 +3,19 @@
 /**
  * Verification Distribution Donut Chart
  * Shows breakdown of verification outcomes: verified, restricted, error
+ * Uses <Label content={...}> for responsive center label (shadcn pattern)
  */
 
-import { Pie, PieChart, Cell } from "recharts";
+import { Pie, PieChart, Cell, Label } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  ChartConfig,
+  type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useVerificationDistribution } from "@/lib/hooks";
@@ -72,13 +75,13 @@ export function VerificationDistributionChart() {
   const successRate = total > 0 ? Math.round(((data?.verified ?? 0) / total) * 1000) / 10 : 0;
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle>Verification Distribution</CardTitle>
         <CardDescription>{total.toLocaleString()} total verifications</CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[250px]">
+      <CardContent className="flex-1 pb-0">
+        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
           <PieChart accessibilityLayer>
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
             <Pie
@@ -93,25 +96,41 @@ export function VerificationDistributionChart() {
               {chartData.map((entry) => (
                 <Cell key={entry.name} fill={entry.fill} />
               ))}
+              <Label
+                content={({ viewBox }) => {
+                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                    return (
+                      <text
+                        x={viewBox.cx}
+                        y={viewBox.cy}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                      >
+                        <tspan
+                          x={viewBox.cx}
+                          y={viewBox.cy}
+                          className="fill-foreground text-2xl font-bold"
+                        >
+                          {successRate}%
+                        </tspan>
+                        <tspan
+                          x={viewBox.cx}
+                          y={(viewBox.cy ?? 0) + 20}
+                          className="fill-muted-foreground text-xs"
+                        >
+                          Success
+                        </tspan>
+                      </text>
+                    );
+                  }
+                  return null;
+                }}
+              />
             </Pie>
-            <text
-              x="50%"
-              y="50%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="fill-foreground text-2xl font-bold"
-            >
-              {successRate}%
-            </text>
-            <text
-              x="50%"
-              y="58%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="fill-muted-foreground text-xs"
-            >
-              Success
-            </text>
+            <ChartLegend
+              content={<ChartLegendContent nameKey="name" />}
+              className="flex-wrap gap-2 [&>*]:basis-auto [&>*]:justify-center pt-2"
+            />
           </PieChart>
         </ChartContainer>
       </CardContent>

@@ -13,14 +13,32 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLatencyDistribution } from "@/lib/hooks";
 
 const chartConfig = {
-  count: {
-    label: "Requests",
+  "<50ms": {
+    label: "<50ms",
     color: "var(--chart-1)",
+  },
+  "50-100ms": {
+    label: "50-100ms",
+    color: "var(--chart-3)",
+  },
+  "100-200ms": {
+    label: "100-200ms",
+    color: "var(--chart-4)",
+  },
+  "200-500ms": {
+    label: "200-500ms",
+    color: "var(--chart-2)",
+  },
+  ">500ms": {
+    label: ">500ms",
+    color: "var(--chart-5)",
   },
 } satisfies ChartConfig;
 
@@ -74,7 +92,7 @@ export function LatencyDistributionChart() {
         <CardDescription>{fastPercentage}% of requests complete in &lt;50ms</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[250px] md:h-[300px] w-full">
           <BarChart accessibilityLayer data={data} layout="vertical" margin={{ left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
@@ -93,6 +111,10 @@ export function LatencyDistributionChart() {
                 <Cell key={entry.bucket} fill={LATENCY_COLORS[index % LATENCY_COLORS.length]} />
               ))}
             </Bar>
+            <ChartLegend
+              content={<ChartLegendContent />}
+              className="flex-wrap gap-2 [&>*]:basis-auto [&>*]:justify-center pt-2"
+            />
           </BarChart>
         </ChartContainer>
       </CardContent>
