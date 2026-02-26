@@ -2,10 +2,13 @@
 
 /**
  * Top Groups Bar Chart
- * Shows top performing groups by verification count
+ * Shows top performing groups by verification count.
+ * Colors follow the shadcn/ui chart pattern: define per-key colors in
+ * chartConfig → inject `fill: "var(--color-KEY)"` into chart data →
+ * use `fill="var(--color-<dataKey>)"` or dataKey="fill" on <Bar>.
  */
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -17,12 +20,14 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTopGroups } from "@/lib/hooks";
 
-const chartConfig = {
-  verifications: {
-    label: "Verifications",
-    color: "var(--chart-1)",
-  },
-} satisfies ChartConfig;
+// Color slots taken directly from the chart CSS variables — no hsl() wrapping
+const CHART_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+];
 
 export function TopGroupsChart() {
   const { data, isPending, error } = useTopGroups();
@@ -55,10 +60,21 @@ export function TopGroupsChart() {
   }
 
   // Truncate long titles for display
-  const chartData = (data ?? []).map((group) => ({
+  const chartData = (data ?? []).map((group, index) => ({
     ...group,
     displayTitle: group.title.length > 20 ? `${group.title.substring(0, 18)}...` : group.title,
+    // shadcn pattern: embed the fill value in the data row so <Bar dataKey="fill"> picks it up
+    fill: `var(--color-group-${index})`,
   }));
+
+  // Build a chartConfig entry per group so ChartContainer injects the CSS variables
+  const chartConfig = chartData.reduce((acc, _group, index) => {
+    acc[`group-${index}`] = {
+      label: chartData[index].displayTitle,
+      color: CHART_COLORS[index % CHART_COLORS.length],
+    };
+    return acc;
+  }, {} as ChartConfig);
 
   const totalVerifications = chartData.reduce((sum, g) => sum + g.verifications, 0);
 
@@ -91,7 +107,7 @@ export function TopGroupsChart() {
                   formatter={(value, _name, item) => (
                     <div className="flex flex-col gap-1">
                       <span className="font-medium">{item.payload.title}</span>
-                      <span>{value.toLocaleString()} verifications</span>
+                      <span>{Number(value).toLocaleString()} verifications</span>
                       <span className="text-muted-foreground text-xs">
                         {item.payload.success_rate}% success rate
                       </span>
@@ -100,11 +116,12 @@ export function TopGroupsChart() {
                 />
               }
             />
-            <Bar dataKey="verifications" radius={[0, 4, 4, 0]}>
-              {chartData.map((entry, index) => (
-                <Cell key={entry.group_id} fill={`hsl(var(--chart-1) / ${1 - index * 0.1})`} />
-              ))}
-            </Bar>
+            {/*
+              shadcn pattern: set fill="fill" so Recharts reads the fill value
+              we embedded per-row in chartData above.
+              Do NOT use <Cell> — the fill key in data handles it correctly.
+            */}
+            <Bar dataKey="verifications" fill="fill" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ChartContainer>
       </CardContent>

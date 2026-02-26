@@ -6,12 +6,11 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { CheckCircle, Shield, Settings, AlertCircle, WifiOff, Loader2 } from "lucide-react";
+import { CheckCircle, Shield, Settings, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useActivity, useRealtimeActivity } from "@/lib/hooks";
 import type { ActivityItem } from "@/lib/services/types";
 
@@ -72,11 +71,9 @@ function formatRelativeTime(timestamp: string): string {
 function ConnectionStatus({
   isConnected,
   isReconnecting,
-  onRetry,
 }: {
   isConnected: boolean;
   isReconnecting: boolean;
-  onRetry: () => void;
 }) {
   if (isConnected) {
     return (
@@ -100,27 +97,27 @@ function ConnectionStatus({
         className="gap-1 text-yellow-600 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30"
       >
         <Loader2 className="h-3 w-3 animate-spin" />
-        Reconnecting...
+        Connecting...
       </Badge>
     );
   }
 
+  // WebSocket unavailable — show neutral polling badge, not alarming red error
   return (
-    <Button
+    <Badge
       variant="outline"
-      size="sm"
-      onClick={onRetry}
-      className="gap-1 h-6 px-2 text-xs text-red-600 border-red-200 bg-red-50 hover:bg-red-100 dark:bg-red-950/30"
+      className="gap-1 text-muted-foreground border-muted"
+      title="Real-time WebSocket unavailable. Data refreshes automatically every 30s."
     >
-      <WifiOff className="h-3 w-3" />
-      Offline (Retry)
-    </Button>
+      <Clock className="h-3 w-3" />
+      Polling
+    </Badge>
   );
 }
 
 export function ActivityFeed() {
   const { data: initialActivities, isPending, refetch } = useActivity(10);
-  const { events, isConnected, isReconnecting, connect } = useRealtimeActivity();
+  const { events, isConnected, isReconnecting } = useRealtimeActivity();
   const [realtimeActivities, setRealtimeActivities] = useState<ActivityItem[]>([]);
   const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
   const processedEventCountRef = useRef(0);
@@ -260,13 +257,12 @@ export function ActivityFeed() {
         <ConnectionStatus
           isConnected={isConnected}
           isReconnecting={isReconnecting}
-          onRetry={connect}
         />
       </CardHeader>
       <CardContent>
         {!isConnected && !isReconnecting && (
-          <div className="mb-4 p-2 text-xs text-center text-muted-foreground bg-muted/50 rounded-md">
-            Real-time updates unavailable. Refreshing every 30s.
+          <div className="mb-3 p-2 text-xs text-center text-muted-foreground bg-muted/30 rounded-md border border-border/50">
+            Live updates paused — auto-refreshing every 30s.
           </div>
         )}
         <ScrollArea className="h-[250px] md:h-[300px]">

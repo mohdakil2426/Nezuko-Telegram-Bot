@@ -145,18 +145,20 @@ export async function getCacheHitRateTrend(params?: TrendsParams): Promise<Cache
   });
   if (error) throw error;
 
-  const series = Array.isArray(data) ? data : [];
-  const rates = series.map((item: { hit_rate: number }) => item.hit_rate);
-  const avgRate = rates.length > 0 ? rates.reduce((a: number, b: number) => a + b, 0) / rates.length : 0;
+  // RPC returns { period, series: [{date, value}], current_rate, average_rate } envelope
+  const envelope = data as Record<string, unknown> | null;
+  const series = Array.isArray(envelope?.series)
+    ? (envelope.series as Array<{ date: string; value: number }>)
+    : [];
 
   return {
     period,
-    series: series.map((item: { date: string; hit_rate: number }) => ({
+    series: series.map((item) => ({
       date: item.date,
-      value: item.hit_rate,
+      value: item.value,
     })),
-    current_rate: rates.length > 0 ? rates[rates.length - 1] : 0,
-    average_rate: avgRate,
+    current_rate: typeof envelope?.current_rate === "number" ? envelope.current_rate : 0,
+    average_rate: typeof envelope?.average_rate === "number" ? envelope.average_rate : 0,
   };
 }
 
@@ -175,20 +177,20 @@ export async function getLatencyTrend(params?: TrendsParams): Promise<LatencyTre
   });
   if (error) throw error;
 
-  const series = Array.isArray(data) ? data : [];
-  const latencies = series.map((item: { avg_latency: number }) => item.avg_latency);
-  const currentAvg = latencies.length > 0 ? latencies[latencies.length - 1] : 0;
+  // RPC returns { period, series: [{date, avg_latency, p95_latency}], current_avg } envelope
+  const envelope = data as Record<string, unknown> | null;
+  const series = Array.isArray(envelope?.series)
+    ? (envelope.series as Array<{ date: string; avg_latency: number; p95_latency: number }>)
+    : [];
 
   return {
     period,
-    series: series.map(
-      (item: { date: string; avg_latency: number; p95_latency: number }) => ({
-        date: item.date,
-        avg_latency: item.avg_latency,
-        p95_latency: item.p95_latency,
-      }),
-    ),
-    current_avg: currentAvg,
+    series: series.map((item) => ({
+      date: item.date,
+      avg_latency: item.avg_latency,
+      p95_latency: item.p95_latency,
+    })),
+    current_avg: typeof envelope?.current_avg === "number" ? envelope.current_avg : 0,
   };
 }
 

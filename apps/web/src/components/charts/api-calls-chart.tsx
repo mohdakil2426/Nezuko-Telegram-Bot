@@ -2,7 +2,8 @@
 
 /**
  * API Calls Distribution Donut Chart
- * Shows breakdown of API calls by method
+ * Shows breakdown of API calls by method.
+ * Fully responsive — adapts to any card/column width.
  */
 
 import { Pie, PieChart, Cell } from "recharts";
@@ -74,13 +75,17 @@ export function ApiCallsChart() {
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle>API Calls Distribution</CardTitle>
         <CardDescription>{total.toLocaleString()} total calls</CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="mx-auto h-[300px]">
+      <CardContent className="flex-1 pb-0">
+        {/* aspect-square keeps the chart circular regardless of card width */}
+        <ChartContainer
+          config={chartConfig}
+          className="mx-auto aspect-square max-h-[300px] w-full [&_.recharts-pie-label-text]:fill-foreground"
+        >
           <PieChart accessibilityLayer>
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
             <Pie
@@ -89,7 +94,7 @@ export function ApiCallsChart() {
               nameKey="name"
               cx="50%"
               cy="50%"
-              outerRadius={80}
+              outerRadius="70%"
               strokeWidth={2}
               stroke="var(--background)"
             >
@@ -99,7 +104,7 @@ export function ApiCallsChart() {
             </Pie>
             <ChartLegend
               content={<ChartLegendContent nameKey="name" />}
-              className="-translate-y-2 flex-wrap gap-2 *:basis-1/3 *:justify-center"
+              className="flex-wrap gap-2 [&>*]:basis-auto [&>*]:justify-center pt-2"
             />
           </PieChart>
         </ChartContainer>

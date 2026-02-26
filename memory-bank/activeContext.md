@@ -3,61 +3,37 @@
 ## Current Status
 
 **Date**: 2026-02-25
-**Phase**: 67 — Web Charts & InsForge RPC Type Alignment
+**Phase**: 68 — Comprehensive Audit, Bug Fixes & Redis Setup
 **Branch**: `main`
-**Quality**: Ruff ✅ 0 errors | Next.js build ✅ 0 errors | ESLint ✅ 0 warnings | All tests ✅
+**Quality**: Ruff ✅ 0 errors | Next.js build ✅ 0 errors | ESLint ✅ 0 warnings | All 55 tests ✅
 
 ---
 
-## Phase 67: Chart Type Alignment (Complete)
+## Phase 68: Comprehensive Audit & Bug Fixes (Complete)
 
-Full audit of all 14 InsForge RPC functions vs. TypeScript types, mock data, and chart components.
-Found and fixed **3 type mismatches** between frontend types and actual RPC return shapes.
+Full platform audit covering bot code, database schema, RPC functions, Telegram API usage, security, and web dashboard. Generated `COMPREHENSIVE_AUDIT_REPORT.md` with 92/100 platform score.
 
-### What Was Done
+### Bug Fixes Applied
 
-**Audit Scope**: All 14 RPC functions tested live via `run-raw-sql`, all 10 chart components reviewed, all 3 service files checked, all hooks and query keys verified.
+| # | Issue | File | Fix |
+|---|---|---|---|
+| 1 | Event loop crash on `KeyboardInterrupt` | `main.py` + `insforge_client.py` | `asyncio.new_event_loop()` + exception handling |
+| 2 | `bot_status.started_at` always NULL | `status_writer.py` | Records boot ISO timestamp on first heartbeat |
+| 3 | Health port `[Errno 10048]` on restart | `health.py` | Added `reuse_address=True` to TCPSite |
+| 4 | `owners.username` always NULL | `insforge_client.py` | `create_owner` PATCHes username if missing |
+| 5 | No React Query DevTools | `query-provider.tsx` | Installed `@tanstack/react-query-devtools` |
+| 6 | Redis not initialized in dashboard mode | `bot_manager.py` + `health.py` | Added `get_redis_client()` call in `run()`, fixed stale import |
+| 7 | `reuse_port` unsupported on Windows | `health.py` | Removed `reuse_port=True`, kept only `reuse_address=True` |
 
-### Bug 1 — `AnalyticsOverview` type had 5 wrong field names (HIGH)
+### Koyeb Removal
 
-**Symptom**: Analytics overview cards showed 0/empty values for "Avg Response Time" and "Cache Efficiency" when using real API data (`USE_MOCK=false`).
+Removed all Koyeb references from: `README.md`, `GEMINI.md`, `memory-bank/techContext.md`, `memory-bank/systemPatterns.md`. Bot runs via Docker or terminal.
 
-**Root cause**: The `AnalyticsOverview` type (defined in `analytics.mock.ts`) used mock-invented field names that didn't match the real `get_analytics_overview()` RPC:
+### Redis Now Connected
 
-| Mock Type Field | Real RPC Field |
-|---|---|
-| `active_groups` | `total_groups` |
-| `active_channels` | `total_channels` |
-| `avg_response_time_ms` | `avg_latency_ms` |
-| `cache_efficiency` | `cache_hit_rate` |
-| `peak_hour` | *(not returned by RPC)* |
-
-**Fix**: Updated type, mock data, and `overview-cards.tsx` component to use correct field names.
-
-### Bug 2 — `BotHealthMetrics` type had wrong field name (MEDIUM)
-
-**Symptom**: Type-safety issue — `avg_latency_score` doesn't exist in RPC output.
-
-**Root cause**: DB RPC `get_bot_health()` returns `avg_latency_ms` (raw milliseconds), not `avg_latency_score`. The component doesn't render this field directly, so no visual impact, but the type was incorrect.
-
-**Fix**: Renamed `avg_latency_score` → `avg_latency_ms` in `BotHealthMetrics` type and mock.
-
-### Bug 3 — `LatencyBucket` type missing `sort_order` field (LOW)
-
-**Symptom**: No runtime impact — extra field ignored by Recharts.
-
-**Root cause**: `get_latency_distribution` RPC returns `sort_order` in each bucket, but the type didn't include it.
-
-**Fix**: Added `sort_order?: number` to `LatencyBucket` type.
-
-### Files Changed in Phase 67
-
-| File | Change |
-|---|---|
-| `apps/web/src/lib/services/types.ts` | `LatencyBucket` + `sort_order?`, `BotHealthMetrics`: `avg_latency_score` → `avg_latency_ms` |
-| `apps/web/src/lib/mock/analytics.mock.ts` | `AnalyticsOverview` type: 5 fields aligned to RPC |
-| `apps/web/src/lib/mock/charts.mock.ts` | `getBotHealthMetrics()`: returns `avg_latency_ms` |
-| `apps/web/src/components/analytics/overview-cards.tsx` | All field references aligned to RPC |
+- Redis Docker container: `docker compose -f docker-compose.local.yml up -d`
+- Health endpoint shows: `"redis": {"healthy": true, "latency_ms": 2.38}`
+- Cache module stale import bug fixed (imported module instead of value)
 
 ---
 
@@ -97,26 +73,27 @@ Bot Engine (Python) ──────► httpx REST ─────────
 
 ---
 
-## Remaining Minor Issues (Non-Blocking)
+## Remaining Issues (Non-Blocking)
 
 | Issue | Impact | Priority |
 |---|---|---|
-| Bot responds slowly (network latency to InsForge) | Minor UX delay | Low |
+| No RLS policies (all data accessible via anon key) | Security hardening needed before multi-tenant | Medium |
 | `member_sync` disabled (APScheduler not configured) | Member counts not refreshed | Low |
-| No RLS policies (all data accessible via anon key) | Security hardening needed | Medium |
 | Edge Function uses `btoa()` instead of Fernet | Weak token encryption | Low |
-| No global Telegram error handler in bot | Unhandled errors logged via PTB | Low |
+| WebSocket offline locally | Falls back to 30s polling — works on deploy | Info |
+| Settings page hardcoded | Needs auth system first | Deferred |
 
 ---
 
 ## What to Work on Next
 
-1. **Add global error handler** — register `error_handler` in `Application` to catch all unhandled exceptions gracefully
-2. **Add RLS policies** — restrict `bot_instances` reads to owner, `admin_logs` to authenticated users
-3. **Enable `member_sync`** — wire APScheduler job to run `sync_member_counts()` every 15min
-4. **Improve bot response speed** — optimize InsForge queries, add Redis caching for group/channel lookups
-5. **Commit ceremony** — tag Phase 67 release
+1. **Commit ceremony** — tag Phase 68 release
+2. **Add RLS policies** — restrict tables by owner before public deployment
+3. **Enable `member_sync`** — wire scheduled job for member count refresh
+4. **Add global error handler** — register `error_handler` in bot Application
+5. **Deploy** — Vercel (web) + VPS/Docker (bot)
 
 ---
 
-_Last Updated: 2026-02-25 (Phase 67 — Chart Type Alignment)_
+_Last Updated: 2026-02-25 (Phase 68 — Comprehensive Audit & Redis Setup)_
+
