@@ -17,11 +17,11 @@ import {
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-svh w-full items-center justify-center bg-muted p-6 md:p-10">
+    <div className="bg-muted flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-            <FileQuestion className="h-8 w-8 text-muted-foreground" />
+          <div className="bg-muted mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+            <FileQuestion className="text-muted-foreground h-8 w-8" />
           </div>
           <CardTitle className="text-2xl">Page Not Found</CardTitle>
           <CardDescription>
@@ -30,7 +30,7 @@ export default function NotFound() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-4xl font-bold text-muted-foreground">404</p>
+          <p className="text-muted-foreground text-4xl font-bold">404</p>
         </CardContent>
         <CardFooter className="justify-center">
           <Button asChild>

@@ -89,13 +89,13 @@ export default function BotsPage() {
       {/* Empty State */}
       {!isPending && data?.bots.length === 0 && (
         <Card className="bg-card/50 backdrop-blur-sm">
-          <CardContent className="flex flex-col items-center justify-center py-16 space-y-4">
-            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-              <Bot className="h-8 w-8 text-muted-foreground" />
+          <CardContent className="flex flex-col items-center justify-center space-y-4 py-16">
+            <div className="bg-muted flex h-16 w-16 items-center justify-center rounded-full">
+              <Bot className="text-muted-foreground h-8 w-8" />
             </div>
-            <div className="text-center space-y-2">
+            <div className="space-y-2 text-center">
               <h3 className="text-lg font-semibold">No bots yet</h3>
-              <p className="text-sm text-muted-foreground max-w-[300px]">
+              <p className="text-muted-foreground max-w-[300px] text-sm">
                 Add your first bot to start managing your Telegram communities.
               </p>
             </div>
@@ -156,7 +156,7 @@ function BotRow({ bot }: { bot: BotType }) {
     <TableRow>
       <TableCell className="font-medium">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+          <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-full">
             <Bot className="h-4 w-4" />
           </div>
           {bot.bot_name || "Unnamed Bot"}
@@ -188,7 +188,7 @@ function BotRow({ bot }: { bot: BotType }) {
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="icon" title="Delete">
-                <Trash2 className="h-4 w-4 text-destructive" />
+                <Trash2 className="text-destructive h-4 w-4" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -255,7 +255,7 @@ function AddBotDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Add Bot
         </Button>
       </DialogTrigger>
@@ -286,7 +286,7 @@ function AddBotDialog() {
                 onChange={(e) => setToken(e.target.value)}
                 disabled={addMutation.isPending}
               />
-              <p className="text-xs text-muted-foreground">Get this from @BotFather on Telegram</p>
+              <p className="text-muted-foreground text-xs">Get this from @BotFather on Telegram</p>
             </div>
           </div>
 

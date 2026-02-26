@@ -36,7 +36,7 @@ export function VerificationChart() {
         <CardHeader>
           <CardTitle>Verification Trends</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[200px] md:h-[300px]">
+        <CardContent className="flex h-[200px] items-center justify-center md:h-[300px]">
           <p className="text-destructive">Failed to load trends</p>
         </CardContent>
       </Card>
@@ -54,7 +54,7 @@ export function VerificationChart() {
         <CardDescription>Daily verification activity (last 30 days)</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="aspect-auto h-[200px] md:h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[200px] w-full md:h-[300px]">
           <AreaChart accessibilityLayer data={chartData} margin={{ left: 12, right: 12 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
@@ -124,7 +124,7 @@ function ChartSkeleton() {
         <Skeleton className="h-4 w-60" />
       </CardHeader>
       <CardContent>
-        <Skeleton className="h-[200px] md:h-[300px] w-full" />
+        <Skeleton className="h-[200px] w-full md:h-[300px]" />
       </CardContent>
     </Card>
   );

@@ -60,7 +60,7 @@ export function LatencyDistributionChart() {
         <CardHeader>
           <CardTitle>Latency Distribution</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
+        <CardContent className="flex h-[300px] items-center justify-center">
           <p className="text-destructive">Failed to load data</p>
         </CardContent>
       </Card>
@@ -92,7 +92,7 @@ export function LatencyDistributionChart() {
         <CardDescription>{fastPercentage}% of requests complete in &lt;50ms</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="aspect-auto h-[250px] md:h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full md:h-[300px]">
           <BarChart accessibilityLayer data={data} layout="vertical" margin={{ left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
@@ -113,7 +113,7 @@ export function LatencyDistributionChart() {
             </Bar>
             <ChartLegend
               content={<ChartLegendContent />}
-              className="flex-wrap gap-2 [&>*]:basis-auto [&>*]:justify-center pt-2"
+              className="flex-wrap gap-2 pt-2 [&>*]:basis-auto [&>*]:justify-center"
             />
           </BarChart>
         </ChartContainer>

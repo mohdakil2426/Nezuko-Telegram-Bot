@@ -37,7 +37,7 @@ export function ApiCallsChart() {
         <CardHeader>
           <CardTitle>API Calls</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
+        <CardContent className="flex h-[300px] items-center justify-center">
           <p className="text-destructive">Failed to load data</p>
         </CardContent>
       </Card>
@@ -52,7 +52,7 @@ export function ApiCallsChart() {
           <Skeleton className="h-4 w-36" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[300px] w-full rounded-full mx-auto max-w-[300px]" />
+          <Skeleton className="mx-auto h-[300px] w-full max-w-[300px] rounded-full" />
         </CardContent>
       </Card>
     );
@@ -81,10 +81,7 @@ export function ApiCallsChart() {
         <CardDescription>{total.toLocaleString()} total calls</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-square max-h-[300px] w-full"
-        >
+        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[300px] w-full">
           <PieChart accessibilityLayer>
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
             <Pie
@@ -101,7 +98,7 @@ export function ApiCallsChart() {
             </Pie>
             <ChartLegend
               content={<ChartLegendContent nameKey="name" />}
-              className="flex-wrap gap-2 [&>*]:basis-auto [&>*]:justify-center pt-2"
+              className="flex-wrap gap-2 pt-2 [&>*]:basis-auto [&>*]:justify-center"
             />
           </PieChart>
         </ChartContainer>

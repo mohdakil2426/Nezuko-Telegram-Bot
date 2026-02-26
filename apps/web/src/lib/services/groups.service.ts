@@ -27,9 +27,7 @@ export async function getGroups(params?: GroupsParams): Promise<GroupListRespons
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
-  let query = insforge.database
-    .from("protected_groups")
-    .select("*", { count: "exact" });
+  let query = insforge.database.from("protected_groups").select("*", { count: "exact" });
 
   if (params?.search) {
     query = query.ilike("title", `%${params.search}%`);
@@ -130,10 +128,7 @@ export async function deleteGroup(id: number): Promise<void> {
     return;
   }
 
-  const { error } = await insforge.database
-    .from("protected_groups")
-    .delete()
-    .eq("group_id", id);
+  const { error } = await insforge.database.from("protected_groups").delete().eq("group_id", id);
   if (error) throw error;
 }
 

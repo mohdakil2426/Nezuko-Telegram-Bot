@@ -168,7 +168,9 @@ export function useInsForgeRealtime(
             // Use warn instead of error — subscription failures are expected
             // graceful degradation (channels may not be configured on InsForge)
             // console.error triggers Next.js DevTools error overlay which is misleading
-            console.warn(`[InsForge Realtime] Channel "${channel}" unavailable — polling fallback active`);
+            console.warn(
+              `[InsForge Realtime] Channel "${channel}" unavailable — polling fallback active`
+            );
           }
         }
       }
@@ -290,10 +292,7 @@ export function useDashboardRealtime() {
   const queryClient = useQueryClient();
   const realtime = useInsForgeRealtime({
     channels: ["dashboard", "bot_status"],
-    filterTypes: [
-      "verification",
-      "status_changed",
-    ],
+    filterTypes: ["verification", "status_changed"],
   });
 
   // Invalidate dashboard queries on events

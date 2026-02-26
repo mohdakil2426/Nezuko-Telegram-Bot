@@ -39,7 +39,7 @@ export function HourlyActivityChart() {
         <CardHeader>
           <CardTitle>Hourly Activity</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
+        <CardContent className="flex h-[300px] items-center justify-center">
           <p className="text-destructive">Failed to load data</p>
         </CardContent>
       </Card>
@@ -73,7 +73,7 @@ export function HourlyActivityChart() {
         <CardDescription>Peak activity at {peakHour?.label ?? "N/A"} UTC</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="aspect-auto h-[250px] md:h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full md:h-[300px]">
           <BarChart accessibilityLayer data={data} margin={{ left: -20 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis

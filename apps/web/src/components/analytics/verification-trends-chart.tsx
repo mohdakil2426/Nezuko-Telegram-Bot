@@ -64,7 +64,7 @@ export function VerificationTrendsChart() {
         <CardHeader>
           <CardTitle>Verification Trends</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
+        <CardContent className="flex h-[300px] items-center justify-center">
           <p className="text-destructive">Failed to load trends</p>
         </CardContent>
       </Card>
@@ -96,7 +96,10 @@ export function VerificationTrendsChart() {
         {isPending ? (
           <Skeleton className="h-[300px] w-full" />
         ) : (
-          <ChartContainer config={chartConfig} className="aspect-auto h-[250px] md:h-[300px] w-full">
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-[250px] w-full md:h-[300px]"
+          >
             <AreaChart accessibilityLayer data={chartData}>
               <defs>
                 <linearGradient id="fillSuccessful" x1="0" y1="0" x2="0" y2="1">

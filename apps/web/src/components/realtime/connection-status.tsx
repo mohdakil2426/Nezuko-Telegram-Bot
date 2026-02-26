@@ -88,7 +88,7 @@ export function ConnectionStatus({ className, compact = false }: ConnectionStatu
               onClick={handleClick}
               disabled={isConnected || isReconnecting}
               className={cn(
-                "relative flex items-center justify-center h-8 w-8 rounded-full",
+                "relative flex h-8 w-8 items-center justify-center rounded-full",
                 "hover:bg-muted transition-colors",
                 connectionState === "disconnected" && "cursor-pointer",
                 className
@@ -117,7 +117,7 @@ export function ConnectionStatus({ className, compact = false }: ConnectionStatu
             variant={config.variant}
             onClick={handleClick}
             className={cn(
-              "gap-1.5 cursor-default",
+              "cursor-default gap-1.5",
               connectionState === "disconnected" && "cursor-pointer hover:opacity-80",
               className
             )}

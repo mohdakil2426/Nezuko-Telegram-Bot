@@ -94,7 +94,7 @@ export function createChannelsColumns({
         return (
           <div className="flex flex-col">
             <span className="font-medium">{title ?? "Untitled Channel"}</span>
-            {username && <span className="text-xs text-muted-foreground">@{username}</span>}
+            {username && <span className="text-muted-foreground text-xs">@{username}</span>}
           </div>
         );
       },
@@ -112,7 +112,7 @@ export function createChannelsColumns({
             href={`https://t.me/${username}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-primary hover:underline"
+            className="text-primary flex items-center gap-1 hover:underline"
           >
             @{username}
             <ExternalLink className="h-3 w-3" />
@@ -143,7 +143,7 @@ export function createChannelsColumns({
         const count = row.getValue("linked_groups_count") as number;
         return (
           <div className="flex items-center justify-center gap-1">
-            <Link2 className="h-3 w-3 text-muted-foreground" />
+            <Link2 className="text-muted-foreground h-3 w-3" />
             <span>{count}</span>
           </div>
         );

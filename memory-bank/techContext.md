@@ -1,6 +1,6 @@
 # Technical Context: Stack & Development
 
-> **Status**: Phase 69 — Chart Responsiveness & Groups/Channels Data Fix 🎉
+> **Status**: Phase 70 — Frontend Audit & Performance Optimization 🎉
 
 ## Technology Stack
 
@@ -33,7 +33,9 @@
 | shadcn/ui | Latest | Accessible UI components |
 | Recharts | 2.15+ | Dashboard charts (via shadcn/ui ChartContainer) |
 | @insforge/sdk | Latest | InsForge BaaS client (DB, Realtime, Storage, Functions) |
-| motion | 12.27+ | React micro-animations |
+| motion | 12.27+ | React micro-animations (LazyMotion optimized) |
+| zod | 3.24+ | Schema validation |
+| react-hook-form | 7.54+ | Form management |
 
 ### Infrastructure
 

@@ -27,9 +27,7 @@ export async function getChannels(params?: ChannelsParams): Promise<ChannelListR
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
-  let query = insforge.database
-    .from("enforced_channels")
-    .select("*", { count: "exact" });
+  let query = insforge.database.from("enforced_channels").select("*", { count: "exact" });
 
   if (params?.search) {
     query = query.ilike("title", `%${params.search}%`);
@@ -121,9 +119,6 @@ export async function deleteChannel(id: number): Promise<void> {
     return;
   }
 
-  const { error } = await insforge.database
-    .from("enforced_channels")
-    .delete()
-    .eq("channel_id", id);
+  const { error } = await insforge.database.from("enforced_channels").delete().eq("channel_id", id);
   if (error) throw error;
 }

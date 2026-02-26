@@ -91,14 +91,14 @@ export function AppearanceCard() {
               <Label
                 key={option.value}
                 htmlFor={`theme-${option.value}`}
-                className="flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors [&:has([data-state=checked])]:border-primary"
+                className="hover:bg-muted/50 [&:has([data-state=checked])]:border-primary flex cursor-pointer items-center space-x-3 rounded-lg border p-4 transition-colors"
               >
                 <RadioGroupItem value={option.value} id={`theme-${option.value}`} />
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="p-2 rounded-md bg-muted">{option.icon}</div>
+                <div className="flex flex-1 items-center gap-3">
+                  <div className="bg-muted rounded-md p-2">{option.icon}</div>
                   <div className="flex-1">
                     <div className="font-medium">{option.label}</div>
-                    <div className="text-sm text-muted-foreground">{option.description}</div>
+                    <div className="text-muted-foreground text-sm">{option.description}</div>
                   </div>
                 </div>
               </Label>

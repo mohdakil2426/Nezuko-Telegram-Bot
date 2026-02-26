@@ -39,7 +39,7 @@ export function CacheBreakdownChart() {
         <CardHeader>
           <CardTitle>Cache Performance</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[250px]">
+        <CardContent className="flex h-[250px] items-center justify-center">
           <p className="text-destructive">Failed to load data</p>
         </CardContent>
       </Card>
@@ -54,7 +54,7 @@ export function CacheBreakdownChart() {
           <Skeleton className="h-4 w-28" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[250px] w-full rounded-full mx-auto max-w-[250px]" />
+          <Skeleton className="mx-auto h-[250px] w-full max-w-[250px] rounded-full" />
         </CardContent>
       </Card>
     );
@@ -122,7 +122,7 @@ export function CacheBreakdownChart() {
             </Pie>
             <ChartLegend
               content={<ChartLegendContent nameKey="name" />}
-              className="flex-wrap gap-2 [&>*]:basis-auto [&>*]:justify-center pt-2"
+              className="flex-wrap gap-2 pt-2 [&>*]:basis-auto [&>*]:justify-center"
             />
           </PieChart>
         </ChartContainer>

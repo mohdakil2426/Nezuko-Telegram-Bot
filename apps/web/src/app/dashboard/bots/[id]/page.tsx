@@ -84,7 +84,7 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
     return (
       <div className="flex flex-col gap-6 p-6">
         <Button variant="ghost" className="w-fit" onClick={() => router.push("/dashboard/bots")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Bots
         </Button>
         <Alert variant="destructive">
@@ -101,7 +101,7 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
     return (
       <div className="flex flex-col gap-6 p-6">
         <Button variant="ghost" className="w-fit" onClick={() => router.push("/dashboard/bots")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Bots
         </Button>
         <Alert variant="destructive">
@@ -124,7 +124,7 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+            <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-full">
               <Bot className="h-6 w-6" />
             </div>
             <div>
@@ -147,7 +147,7 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Status */}
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+          <div className="bg-muted/50 flex items-center justify-between rounded-lg p-4">
             <div className="flex items-center gap-3">
               <Power
                 className={`h-5 w-5 ${bot.is_active ? "text-green-500" : "text-muted-foreground"}`}
@@ -156,7 +156,7 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
                 <Label htmlFor="status-toggle" className="text-base font-medium">
                   Bot Status
                 </Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {bot.is_active
                     ? "Bot is active and processing requests"
                     : "Bot is paused and not processing requests"}
@@ -177,17 +177,17 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
           </div>
 
           {/* Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-muted/50">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="bg-muted/50 rounded-lg p-4">
+              <div className="text-muted-foreground mb-1 flex items-center gap-2">
                 <Bot className="h-4 w-4" />
                 <span className="text-sm">Bot ID</span>
               </div>
               <p className="font-mono text-sm">{bot.bot_id}</p>
             </div>
 
-            <div className="p-4 rounded-lg bg-muted/50">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            <div className="bg-muted/50 rounded-lg p-4">
+              <div className="text-muted-foreground mb-1 flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 <span className="text-sm">Added</span>
               </div>
@@ -202,9 +202,9 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
           </div>
 
           {/* Danger Zone */}
-          <div className="border border-destructive/20 rounded-lg p-4 bg-destructive/5">
-            <h3 className="text-lg font-semibold text-destructive mb-2">Danger Zone</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+          <div className="border-destructive/20 bg-destructive/5 rounded-lg border p-4">
+            <h3 className="text-destructive mb-2 text-lg font-semibold">Danger Zone</h3>
+            <p className="text-muted-foreground mb-4 text-sm">
               Deleting this bot will remove it from your dashboard. Any linked groups will need to
               be reconfigured.
             </p>
@@ -212,7 +212,7 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" disabled={deleteMutation.isPending}>
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="mr-2 h-4 w-4" />
                   {deleteMutation.isPending ? "Deleting..." : "Delete Bot"}
                 </Button>
               </AlertDialogTrigger>

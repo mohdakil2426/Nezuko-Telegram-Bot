@@ -57,7 +57,7 @@ export async function getLogs(limit = 100, level?: string): Promise<LogsResponse
       message: row.message,
       timestamp: row.timestamp,
       extra: row.extra ?? undefined,
-    }),
+    })
   );
 
   return {

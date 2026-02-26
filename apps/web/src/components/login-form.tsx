@@ -63,14 +63,14 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full shadow-xl border-0 bg-card/80 backdrop-blur-sm">
-      <CardHeader className="text-center pb-2">
+    <Card className="bg-card/80 w-full border-0 shadow-xl backdrop-blur-sm">
+      <CardHeader className="pb-2 text-center">
         {/* Logo */}
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-pink-500 to-violet-500 shadow-lg shadow-pink-500/25">
           <ShieldCheck className="h-8 w-8 text-white" />
         </div>
 
-        <CardTitle className="text-2xl font-bold bg-linear-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent">
+        <CardTitle className="bg-linear-to-r from-pink-500 to-violet-500 bg-clip-text text-2xl font-bold text-transparent">
           Nezuko Dashboard
         </CardTitle>
 
@@ -100,9 +100,9 @@ export function LoginForm() {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="flex flex-col items-center justify-center py-4 space-y-2">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Verifying authentication...</p>
+          <div className="flex flex-col items-center justify-center space-y-2 py-4">
+            <Loader2 className="text-primary h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground text-sm">Verifying authentication...</p>
           </div>
         )}
 
@@ -116,7 +116,7 @@ export function LoginForm() {
               cornerRadius={8}
             />
 
-            <p className="text-xs text-muted-foreground text-center max-w-62.5">
+            <p className="text-muted-foreground max-w-62.5 text-center text-xs">
               Only the project owner can access this dashboard. Your Telegram ID will be verified.
             </p>
           </div>
@@ -124,7 +124,7 @@ export function LoginForm() {
 
         {/* Dev Mode Bypass */}
         {DEV_LOGIN && !success && (
-          <div className="pt-4 border-t border-dashed">
+          <div className="border-t border-dashed pt-4">
             <Alert className="mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Development Mode</AlertTitle>

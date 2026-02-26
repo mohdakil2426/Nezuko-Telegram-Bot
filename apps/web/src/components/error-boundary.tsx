@@ -50,7 +50,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <Card className="bg-destructive/5 border-destructive/20">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
+              <AlertCircle className="text-destructive h-5 w-5" />
               <CardTitle className="text-lg">Something went wrong</CardTitle>
             </div>
             <CardDescription>
@@ -59,7 +59,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           </CardHeader>
           <CardContent className="space-y-4">
             {process.env.NODE_ENV === "development" && this.state.error && (
-              <pre className="text-xs bg-muted p-3 rounded-md overflow-auto max-h-[200px]">
+              <pre className="bg-muted max-h-[200px] overflow-auto rounded-md p-3 text-xs">
                 {this.state.error.message}
               </pre>
             )}

@@ -5,11 +5,7 @@
 
 import { USE_MOCK } from "@/lib/api/config";
 import { insforge } from "@/lib/insforge";
-import type {
-  DashboardStats,
-  ChartDataPoint,
-  ActivityItem,
-} from "@/lib/services/types";
+import type { DashboardStats, ChartDataPoint, ActivityItem } from "@/lib/services/types";
 import * as mockData from "@/lib/mock";
 
 /**
@@ -36,22 +32,20 @@ export async function getChartData(days = 30): Promise<ChartDataPoint[]> {
   const period = days <= 1 ? "24h" : days <= 7 ? "7d" : "30d";
   const granularity = days <= 1 ? "hour" : "day";
 
-  const { data, error } = await insforge.database.rpc(
-    "get_verification_trends",
-    { p_period: period, p_granularity: granularity },
-  );
+  const { data, error } = await insforge.database.rpc("get_verification_trends", {
+    p_period: period,
+    p_granularity: granularity,
+  });
   if (error) throw error;
 
   // RPC returns { period, series: [...], summary }
   const envelope = data as Record<string, unknown> | null;
   const series = Array.isArray(envelope?.series) ? envelope.series : [];
-  return series.map(
-    (item: { timestamp: string; successful: number; failed: number }) => ({
-      date: item.timestamp,
-      verified: item.successful,
-      restricted: item.failed,
-    }),
-  );
+  return series.map((item: { timestamp: string; successful: number; failed: number }) => ({
+    date: item.timestamp,
+    verified: item.successful,
+    restricted: item.failed,
+  }));
 }
 
 /**
@@ -81,6 +75,6 @@ export async function getActivity(limit = 10): Promise<ActivityItem[]> {
       type: "verification" as const,
       description: `User ${row.user_id} ${row.status} in group ${row.group_id}`,
       timestamp: row.timestamp,
-    }),
+    })
   );
 }

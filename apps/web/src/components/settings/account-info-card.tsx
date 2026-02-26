@@ -40,7 +40,7 @@ export function AccountInfoCard() {
             <AvatarFallback className="text-lg">{initials}</AvatarFallback>
           </Avatar>
           <div className="space-y-1">
-            <h3 className="font-semibold text-lg">{mockUser.name}</h3>
+            <h3 className="text-lg font-semibold">{mockUser.name}</h3>
             <Badge variant="secondary" className="gap-1">
               <Shield className="h-3 w-3" />
               {mockUser.role}
@@ -50,11 +50,11 @@ export function AccountInfoCard() {
 
         <div className="space-y-3">
           <div className="flex items-center gap-3 text-sm">
-            <Mail className="h-4 w-4 text-muted-foreground" />
+            <Mail className="text-muted-foreground h-4 w-4" />
             <span>{mockUser.email}</span>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="text-muted-foreground h-4 w-4" />
             <span>
               Member since{" "}
               {new Date(mockUser.createdAt).toLocaleDateString("en-US", {

@@ -26,10 +26,7 @@ export interface AuditLogsResponse {
 /**
  * Fetch audit log entries with pagination
  */
-export async function getAuditLogs(
-  limit = 50,
-  offset = 0,
-): Promise<AuditLogsResponse> {
+export async function getAuditLogs(limit = 50, offset = 0): Promise<AuditLogsResponse> {
   if (USE_MOCK) {
     return { items: [], total: 0 };
   }
@@ -62,7 +59,7 @@ export async function getAuditLogs(
       ip_address: row.ip_address,
       created_at: row.created_at,
       admin_username: row.admin_users?.username ?? null,
-    }),
+    })
   );
 
   return { items, total: count ?? items.length };

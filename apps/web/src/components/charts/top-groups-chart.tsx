@@ -38,7 +38,7 @@ export function TopGroupsChart() {
         <CardHeader>
           <CardTitle>Top Groups</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[350px]">
+        <CardContent className="flex h-[350px] items-center justify-center">
           <p className="text-destructive">Failed to load data</p>
         </CardContent>
       </Card>
@@ -87,8 +87,13 @@ export function TopGroupsChart() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="aspect-auto h-[280px] md:h-[350px] w-full">
-          <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
+        <ChartContainer config={chartConfig} className="aspect-auto h-[280px] w-full md:h-[350px]">
+          <BarChart
+            accessibilityLayer
+            data={chartData}
+            layout="vertical"
+            margin={{ left: 20, right: 20 }}
+          >
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
             <YAxis

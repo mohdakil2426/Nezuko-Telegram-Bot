@@ -1,6 +1,6 @@
 # System Patterns: Architecture & Implementation
 
-> **Last Updated**: 2026-02-26 (Phase 69 — Chart Responsiveness & Groups/Channels Data Fix)
+> **Last Updated**: 2026-02-27 (Phase 70 — Frontend Audit & Performance Optimization)
 
 ## Architecture Overview
 
@@ -266,6 +266,60 @@ to verify exact field names before writing TypeScript interfaces.
 const { data, error } = await insforge.functions.invoke('manage-bot', {
   body: { action: 'verify', token: '...' }
 });
+
+### Animation Performance (LazyMotion)
+To maintain a <10KB animation runtime, use `LazyMotion` from `motion/react`.
+
+```typescript
+// ✅ Correct: Lazy loading animation features
+import { LazyMotion, domAnimation } from "motion/react";
+
+function Root() {
+  return (
+    <LazyMotion features={domAnimation} strict>
+       <App />
+    </LazyMotion>
+  );
+}
+
+// ✅ Correct: Use the 'm' component Proxy in client components
+import { m } from "motion/react";
+const Div = () => <m.div animate={{ opacity: 1 }} />;
+```
+
+### Server Component Animation Pattern
+To keep pages fast (Server Components) while having "wow" entry animations:
+
+1. **Keep Page as Server Component**: No `"use client"` at the top.
+2. **Use PageTransition Wrapper**: Wrap sections in a client-side `<PageTransition />`.
+
+```typescript
+// 1. Define Page (Server Component)
+export default function Page() {
+  return (
+    <PageTransition>
+       <RevealItem>Content</RevealItem>
+    </PageTransition>
+  );
+}
+```
+
+### Form Hardening Pattern (Zod + Server Actions)
+All business-critical forms must follow this hardening pattern:
+
+1. **Schema**: Define a `Zod` validation schema.
+2. **Action**: Create a `"use server"` action for persistence.
+3. **Hook**: Use `react-hook-form` + `zodResolver` in the client component.
+
+```typescript
+// ✅ Correct Action Pattern
+"use server";
+export async function updateData(data: SchemaType) {
+  const validated = schema.safeParse(data);
+  if (!validated.success) return { error: "..." };
+  // ... secure DB update ...
+}
+```
 ```
 
 ---

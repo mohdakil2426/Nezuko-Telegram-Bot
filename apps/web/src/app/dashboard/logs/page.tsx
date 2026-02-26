@@ -121,7 +121,7 @@ function ConnectionStatus({
     return (
       <Badge
         variant="outline"
-        className="gap-1 text-yellow-600 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30"
+        className="gap-1 border-yellow-200 bg-yellow-50 text-yellow-600 dark:bg-yellow-950/30"
       >
         <Pause className="h-3 w-3" />
         Paused
@@ -133,11 +133,11 @@ function ConnectionStatus({
     return (
       <Badge
         variant="outline"
-        className="gap-1 text-green-600 border-green-200 bg-green-50 dark:bg-green-950/30"
+        className="gap-1 border-green-200 bg-green-50 text-green-600 dark:bg-green-950/30"
       >
         <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
         </span>
         Live
       </Badge>
@@ -148,7 +148,7 @@ function ConnectionStatus({
     return (
       <Badge
         variant="outline"
-        className="gap-1 text-yellow-600 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30"
+        className="gap-1 border-yellow-200 bg-yellow-50 text-yellow-600 dark:bg-yellow-950/30"
       >
         <Loader2 className="h-3 w-3 animate-spin" />
         Reconnecting...
@@ -161,7 +161,7 @@ function ConnectionStatus({
       variant="outline"
       size="sm"
       onClick={onRetry}
-      className="gap-1 h-6 px-2 text-xs text-red-600 border-red-200 bg-red-50 hover:bg-red-100 dark:bg-red-950/30"
+      className="h-6 gap-1 border-red-200 bg-red-50 px-2 text-xs text-red-600 hover:bg-red-100 dark:bg-red-950/30"
     >
       <WifiOff className="h-3 w-3" />
       Offline (Retry)
@@ -325,7 +325,7 @@ export default function LogsPage() {
 
             {/* Level Filter */}
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Filter className="text-muted-foreground h-4 w-4" />
               <Select value={levelFilter} onValueChange={(v) => setLevelFilter(v as LogLevel)}>
                 <SelectTrigger className="w-35">
                   <SelectValue placeholder="Filter by level" />
@@ -356,14 +356,14 @@ export default function LogsPage() {
               variant="outline"
               size="sm"
               onClick={handleClear}
-              className="gap-2 text-destructive hover:text-destructive"
+              className="text-destructive hover:text-destructive gap-2"
             >
               <Trash2 className="h-4 w-4" />
               Clear
             </Button>
 
             {/* Stats */}
-            <div className="ml-auto text-sm text-muted-foreground">
+            <div className="text-muted-foreground ml-auto text-sm">
               {filteredLogs.length} logs
               {levelFilter !== "all" && ` (filtered from ${logs.length})`}
             </div>
@@ -385,7 +385,7 @@ export default function LogsPage() {
         <CardContent>
           {/* Offline Warning */}
           {!isConnected && !isReconnecting && (
-            <div className="mb-4 p-2 text-xs text-center text-muted-foreground bg-muted/50 rounded-md">
+            <div className="text-muted-foreground bg-muted/50 mb-4 rounded-md p-2 text-center text-xs">
               Real-time updates unavailable. Refreshing every 30s.
             </div>
           )}
@@ -395,13 +395,13 @@ export default function LogsPage() {
             <LogsSkeleton />
           ) : filteredLogs.length === 0 ? (
             /* Empty State */
-            <div className="flex flex-col items-center justify-center py-16 space-y-4">
-              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                <ScrollText className="h-8 w-8 text-muted-foreground" />
+            <div className="flex flex-col items-center justify-center space-y-4 py-16">
+              <div className="bg-muted flex h-16 w-16 items-center justify-center rounded-full">
+                <ScrollText className="text-muted-foreground h-8 w-8" />
               </div>
-              <div className="text-center space-y-2">
+              <div className="space-y-2 text-center">
                 <h3 className="text-lg font-semibold">No logs yet</h3>
-                <p className="text-sm text-muted-foreground max-w-75">
+                <p className="text-muted-foreground max-w-75 text-sm">
                   {levelFilter !== "all"
                     ? `No ${levelFilter} logs found. Try changing the filter.`
                     : "Logs will appear here as they are generated."}
@@ -420,7 +420,7 @@ export default function LogsPage() {
                   return (
                     <div
                       key={log.id}
-                      className={`flex items-start gap-3 p-2 rounded-md transition-all duration-300 hover:bg-muted/50 ${
+                      className={`hover:bg-muted/50 flex items-start gap-3 rounded-md p-2 transition-all duration-300 ${
                         isNew ? "animate-in slide-in-from-top-2 fade-in-0 bg-accent/30" : ""
                       }`}
                     >
@@ -437,7 +437,7 @@ export default function LogsPage() {
                       {/* Level Badge */}
                       <Badge
                         variant={getLogBadgeVariant(log.level)}
-                        className="shrink-0 uppercase text-xs font-normal"
+                        className="shrink-0 text-xs font-normal uppercase"
                       >
                         {log.level}
                       </Badge>

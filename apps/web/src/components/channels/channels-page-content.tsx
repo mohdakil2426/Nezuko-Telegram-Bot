@@ -35,10 +35,10 @@ export function ChannelsPageContent() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <p className="text-destructive font-medium">Failed to load channels</p>
-          <p className="text-sm text-muted-foreground mt-1">{error.message}</p>
+          <p className="text-muted-foreground mt-1 text-sm">{error.message}</p>
         </div>
       </div>
     );

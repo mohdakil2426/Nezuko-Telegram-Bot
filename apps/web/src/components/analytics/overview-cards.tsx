@@ -22,7 +22,7 @@ interface OverviewCardProps {
 
 function OverviewCard({ title, value, description, icon, isUpdated }: OverviewCardProps) {
   return (
-    <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+    <Card className="relative overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         {icon}
@@ -30,16 +30,16 @@ function OverviewCard({ title, value, description, icon, isUpdated }: OverviewCa
       <CardContent>
         <div
           className={`text-2xl font-bold tabular-nums transition-all duration-300 ${
-            isUpdated ? "scale-105 text-primary" : ""
+            isUpdated ? "text-primary scale-105" : ""
           }`}
         >
           {value}
         </div>
-        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        {description && <p className="text-muted-foreground text-xs">{description}</p>}
       </CardContent>
       {/* Real-time update indicator */}
       {isUpdated && (
-        <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-green-500 animate-ping" />
+        <div className="absolute top-2 right-2 h-2 w-2 animate-ping rounded-full bg-green-500" />
       )}
     </Card>
   );
@@ -53,7 +53,7 @@ function OverviewSkeleton() {
         <Skeleton className="h-4 w-4" />
       </CardHeader>
       <CardContent>
-        <Skeleton className="h-8 w-20 mb-1" />
+        <Skeleton className="mb-1 h-8 w-20" />
         <Skeleton className="h-3 w-32" />
       </CardContent>
     </Card>
@@ -137,7 +137,7 @@ export function AnalyticsOverviewCards() {
 
   if (error) {
     return (
-      <div className="text-center py-8 text-destructive">Failed to load analytics overview</div>
+      <div className="text-destructive py-8 text-center">Failed to load analytics overview</div>
     );
   }
 
@@ -164,28 +164,28 @@ export function AnalyticsOverviewCards() {
         title="Total Verifications"
         value={formatNumber(mergedData.total_verifications)}
         description="Last 30 days"
-        icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
+        icon={<CheckCircle className="text-muted-foreground h-4 w-4" />}
         isUpdated={updatedCards.has("total_verifications")}
       />
       <OverviewCard
         title="Success Rate"
         value={`${mergedData.success_rate}%`}
         description="Verification success"
-        icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
+        icon={<TrendingUp className="text-muted-foreground h-4 w-4" />}
         isUpdated={updatedCards.has("success_rate")}
       />
       <OverviewCard
         title="Avg Response Time"
         value={`${mergedData.avg_latency_ms}ms`}
         description="Bot response latency"
-        icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+        icon={<Clock className="text-muted-foreground h-4 w-4" />}
         isUpdated={updatedCards.has("avg_latency_ms")}
       />
       <OverviewCard
         title="Cache Hit Rate"
         value={`${mergedData.cache_hit_rate}%`}
         description="Membership cache hit rate"
-        icon={<Zap className="h-4 w-4 text-muted-foreground" />}
+        icon={<Zap className="text-muted-foreground h-4 w-4" />}
         isUpdated={updatedCards.has("cache_hit_rate")}
       />
     </div>

@@ -129,7 +129,7 @@ export function TelegramLogin({
   return (
     <div
       ref={containerRef}
-      className="flex items-center justify-center min-h-[44px]"
+      className="flex min-h-[44px] items-center justify-center"
       data-testid="telegram-login-widget"
     />
   );

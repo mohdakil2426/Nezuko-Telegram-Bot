@@ -34,7 +34,7 @@ export function BotHealthChart() {
         <CardHeader>
           <CardTitle>Bot Health</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
+        <CardContent className="flex h-[300px] items-center justify-center">
           <p className="text-destructive">Failed to load data</p>
         </CardContent>
       </Card>
@@ -49,7 +49,7 @@ export function BotHealthChart() {
           <Skeleton className="h-4 w-32" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[200px] w-full rounded-full mx-auto max-w-[200px]" />
+          <Skeleton className="mx-auto h-[200px] w-full max-w-[200px] rounded-full" />
         </CardContent>
       </Card>
     );
@@ -92,21 +92,17 @@ export function BotHealthChart() {
                 cursor={false}
                 content={<ChartTooltipContent hideLabel formatter={(value) => `${value}/100`} />}
               />
-              <RadialBar
-                background={{ fill: "var(--muted)" }}
-                dataKey="value"
-                cornerRadius={10}
-              />
+              <RadialBar background={{ fill: "var(--muted)" }} dataKey="value" cornerRadius={10} />
             </RadialBarChart>
           </ChartContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-4xl font-bold">{overallScore}</span>
-            <span className="text-sm text-muted-foreground">/ 100</span>
+            <span className="text-muted-foreground text-sm">/ 100</span>
           </div>
         </div>
 
         {/* Metrics breakdown */}
-        <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
           <MetricItem label="Uptime" value={`${data?.uptime_percent ?? 0}%`} />
           <MetricItem label="Success Rate" value={`${data?.success_rate ?? 0}%`} />
           <MetricItem label="Cache Efficiency" value={`${data?.cache_efficiency ?? 0}%`} />
@@ -119,7 +115,7 @@ export function BotHealthChart() {
 
 function MetricItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-center py-1 px-2 rounded-md bg-muted/50">
+    <div className="bg-muted/50 flex items-center justify-between rounded-md px-2 py-1">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
     </div>

@@ -7,12 +7,21 @@
 
 import { AppearanceCard } from "./appearance-card";
 import { AccountInfoCard } from "./account-info-card";
+import { BotConfigurationCard } from "./bot-configuration-card";
+import { RevealItem, PageTransition } from "@/components/page-transition";
 
 export function SettingsPageContent() {
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <AppearanceCard />
-      <AccountInfoCard />
-    </div>
+    <PageTransition className="grid gap-6 md:grid-cols-2">
+      <RevealItem>
+        <BotConfigurationCard />
+      </RevealItem>
+      <RevealItem>
+        <AppearanceCard />
+      </RevealItem>
+      <RevealItem className="md:col-span-2">
+        <AccountInfoCard />
+      </RevealItem>
+    </PageTransition>
   );
 }

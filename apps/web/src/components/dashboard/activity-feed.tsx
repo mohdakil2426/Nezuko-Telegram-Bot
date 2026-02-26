@@ -79,11 +79,11 @@ function ConnectionStatus({
     return (
       <Badge
         variant="outline"
-        className="gap-1 text-green-600 border-green-200 bg-green-50 dark:bg-green-950/30"
+        className="gap-1 border-green-200 bg-green-50 text-green-600 dark:bg-green-950/30"
       >
         <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
         </span>
         Live
       </Badge>
@@ -94,7 +94,7 @@ function ConnectionStatus({
     return (
       <Badge
         variant="outline"
-        className="gap-1 text-yellow-600 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30"
+        className="gap-1 border-yellow-200 bg-yellow-50 text-yellow-600 dark:bg-yellow-950/30"
       >
         <Loader2 className="h-3 w-3 animate-spin" />
         Connecting...
@@ -106,7 +106,7 @@ function ConnectionStatus({
   return (
     <Badge
       variant="outline"
-      className="gap-1 text-muted-foreground border-muted"
+      className="text-muted-foreground border-muted gap-1"
       title="Real-time WebSocket unavailable. Data refreshes automatically every 30s."
     >
       <Clock className="h-3 w-3" />
@@ -254,14 +254,11 @@ export function ActivityFeed() {
           <CardTitle className="text-base font-medium">Recent Activity</CardTitle>
           <CardDescription>Latest verification and system events</CardDescription>
         </div>
-        <ConnectionStatus
-          isConnected={isConnected}
-          isReconnecting={isReconnecting}
-        />
+        <ConnectionStatus isConnected={isConnected} isReconnecting={isReconnecting} />
       </CardHeader>
       <CardContent>
         {!isConnected && !isReconnecting && (
-          <div className="mb-3 p-2 text-xs text-center text-muted-foreground bg-muted/30 rounded-md border border-border/50">
+          <div className="text-muted-foreground bg-muted/30 border-border/50 mb-3 rounded-md border p-2 text-center text-xs">
             Live updates paused — auto-refreshing every 30s.
           </div>
         )}
@@ -275,9 +272,9 @@ export function ActivityFeed() {
               return (
                 <div
                   key={activity.id}
-                  className={`flex items-start gap-3 transition-all duration-500 ${
+                  className={`feed-item flex items-start gap-3 transition-all duration-500 ${
                     isNew
-                      ? "animate-in slide-in-from-top-2 fade-in-0 bg-accent/50 -mx-2 px-2 py-1 rounded-md"
+                      ? "animate-in slide-in-from-top-2 fade-in-0 bg-accent/50 -mx-2 rounded-md px-2 py-1"
                       : ""
                   }`}
                 >
@@ -286,7 +283,7 @@ export function ActivityFeed() {
                   </div>
                   <div className="flex-1 space-y-1">
                     <p className="text-sm leading-tight">{activity.description}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       {formatRelativeTime(activity.timestamp)}
                     </p>
                   </div>
@@ -294,7 +291,7 @@ export function ActivityFeed() {
               );
             })}
             {allActivities.length === 0 && (
-              <div className="text-center text-muted-foreground py-8">No recent activity</div>
+              <div className="text-muted-foreground py-8 text-center">No recent activity</div>
             )}
           </div>
         </ScrollArea>
@@ -314,7 +311,7 @@ function ActivityFeedSkeleton() {
         <div className="space-y-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-start gap-3">
-              <Skeleton className="h-4 w-4 mt-0.5" />
+              <Skeleton className="mt-0.5 h-4 w-4" />
               <div className="flex-1 space-y-1">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-3 w-16" />

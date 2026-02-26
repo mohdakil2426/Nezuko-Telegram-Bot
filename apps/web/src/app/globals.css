@@ -123,3 +123,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .feed-item {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 60px; /* Estimated height for feed items */
+  }
+}

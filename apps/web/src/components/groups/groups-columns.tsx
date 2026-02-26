@@ -96,7 +96,7 @@ export function createGroupsColumns({
         return (
           <div className="flex flex-col">
             <span className="font-medium">{title ?? "Untitled Group"}</span>
-            <span className="text-xs text-muted-foreground">ID: {groupId}</span>
+            <span className="text-muted-foreground text-xs">ID: {groupId}</span>
           </div>
         );
       },

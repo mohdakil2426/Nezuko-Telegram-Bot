@@ -58,7 +58,7 @@ export function CacheHitRateTrendChart() {
         <CardHeader>
           <CardTitle>Cache Hit Rate Trend</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
+        <CardContent className="flex h-[300px] items-center justify-center">
           <p className="text-destructive">Failed to load data</p>
         </CardContent>
       </Card>
@@ -89,7 +89,10 @@ export function CacheHitRateTrendChart() {
         {isPending ? (
           <Skeleton className="h-[300px] w-full" />
         ) : (
-          <ChartContainer config={chartConfig} className="aspect-auto h-[250px] md:h-[300px] w-full">
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-[250px] w-full md:h-[300px]"
+          >
             <LineChart accessibilityLayer data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
