@@ -1,7 +1,7 @@
 # Nezuko Telegram Bot Platform
 
 > **Production-ready Telegram bot platform** for automated channel membership enforcement.  
-> Python 3.13+ | python-telegram-bot v22.6+ | Async-first architecture
+> Python 3.13.1 | uv (lockfile) | python-telegram-bot v22.6+ | Async-first architecture
 
 **Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read these all files for deep project understanding. **NEVER SKIP THIS STEP**
 
@@ -41,7 +41,7 @@ nezuko/
 | Migrations  | `insforge/migrations/*.sql`            | `alembic/versions/`           |
 | Logs        | `apps/bot/logs/`                       | `apps/*.log`                  |
 | Env files   | `apps/bot/.env`, `apps/web/.env.local` | Root `.env`                   |
-| Python deps | `requirements.txt`, `requirements-dev.txt` | `requirements/*.txt`      |
+| Python deps | `pyproject.toml`, `uv.lock`            | `requirements.txt`, `pip`     |
 
 ### Code Quality (ZERO TOLERANCE)
 
@@ -91,6 +91,7 @@ asyncio.create_task(coro())
 8. **Security First** - Sanitize inputs, validate tokens, never log secrets, use parameterized queries.
 9. **Performance Aware** - Avoid N+1 queries, cache expensive operations, lazy load when possible.
 10. **Clean Commits** - Atomic commits, conventional messages, no broken builds in commit history.
+11. **KISS (Keep It Simple, Stupid)** - Prioritize simple, readable, and maintainable solutions over complex, over-engineered architectures. Simple is better than complex.
 
 ---
 
@@ -99,27 +100,41 @@ asyncio.create_task(coro())
 ### Run Services
 
 ```bash
-python -m apps.bot.main    # Bot (run from project root)
-cd apps/web && bun dev     # Web (port 3000)
+uv run python -m apps.bot.main    # Bot (run from project root)
+cd apps/web && bun dev            # Web (port 3000)
 ```
 
 ### Lint & Format
 
+**Python (Bot):**
 ```bash
-ruff check apps/bot --fix && ruff format .   # Python auto-fix
-cd apps/web && bun run lint --fix            # TypeScript
-pylint apps/bot --rcfile=pyproject.toml      # Target: 10.00/10
+uv run ruff check apps/bot --fix && uv run ruff format .   # Auto-fix & Format (Ruff)
+uv run pylint apps/bot --rcfile=pyproject.toml             # Deep analysis (Target: 10/10)
 ```
 
-### Test & Migrate
-
+**TypeScript (Web):**
 ```bash
-pytest tests/bot/ -v                  # Bot tests
-pytest --cov=apps --cov-report=html   # Coverage
+cd apps/web && bun run lint --fix                          # ESLint (Logic fixes)
+cd apps/web && bun x prettier src --write                  # Prettier (Tailwind & style fix)
+```
+
+### Quality & Testing
+
+**Python (Bot):**
+```bash
+uv run pytest tests/bot/ -v                  # Run all tests
+uv run pytest --cov=apps --cov-report=html   # Coverage report
+```
+
+**TypeScript (Web):**
+```bash
+cd apps/web && bun run type-check            # TypeScript validation (TSC)
+cd apps/web && bun x knip                    # Find dead code & unused deps
+```
 
 # Database migrations are managed via InsForge migrations:
 # → Edit insforge/migrations/*.sql and apply via InsForge dashboard
-```
+
 
 ---
 
@@ -128,9 +143,10 @@ pytest --cov=apps --cov-report=html   # Coverage
 | Layer        | Stack                                                                      |
 | ------------ | -------------------------------------------------------------------------- |
 | **Frontend** | Next.js 16.1, React 19.2, TypeScript 5.9, Tailwind v4, shadcn/ui, Recharts |
-| **Bot**      | python-telegram-bot v22.6, Python 3.13, AsyncIO, SQLAlchemy 2.0, AsyncPG  |
+| **Bot**      | python-telegram-bot v22.6, Python 3.13.1, AsyncIO, SQLAlchemy 2.0, AsyncPG  |
 | **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions |
 | **Auth**     | None (development mode — direct dashboard access)                          |
+| **Package**  | uv (high-performance dependency resolver & lockfile)                       |
 | **Infra**    | Docker (bot), Vercel (web hosting), Caddy                                  |
 
 ---
@@ -164,7 +180,7 @@ pytest --cov=apps --cov-report=html   # Coverage
 | **Imports (Tests)**   | `from apps.bot`                                        |
 | **Env (Bot)**         | `apps/bot/.env`                                        |
 | **Env (Web)**         | `apps/web/.env.local`                                  |
-| **Python deps**       | `requirements.txt` (prod) + `requirements-dev.txt`     |
+| **Python deps**       | `pyproject.toml`, `uv.lock` (managed with `uv`)       |
 | **Frontend deps**     | `apps/web/package.json`, managed with `bun`            |
 | **DB migrations**     | Raw SQL in `insforge/migrations/`                      |
 | **InsForge SDK**      | `import { insforge } from "@/lib/insforge"` (web)      |
@@ -232,6 +248,8 @@ Skills are located in `.agent/skills/` or `.agents/skills/` — check the path c
 | **ui-ux-pro-max**               | Design systems, color palettes, typography         | `.agents/skills/ui-ux-pro-max`                |
 | **web-design-guidelines**       | Layout, spacing, responsive design                 | `.agents/skills/web-design-guidelines`        |
 | **motion**                      | React animations, gestures, scroll effects         | `.agents/skills/motion`                       |
+| **nextjs-react-expert**         | React & Next.js core patterns, Server Components   | `.agents/skills/nextjs-react-expert`          |
+| **responsiveness-check**        | Breakpoint testing, mobile-first verification      | `.agents/skills/responsiveness-check`         |
 
 ### Backend (API & Bot)
 
@@ -239,22 +257,23 @@ Skills are located in `.agent/skills/` or `.agents/skills/` — check the path c
 | ----------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------- |
 | **fastapi**                         | FastAPI endpoints, dependencies, middleware | `.agents/skills/fastapi`                                                   |
 | **insforge**                        | InsForge BaaS — tables, auth, SDK, storage  | `.agents/skills/insforge`                                                  |
-| **async-python-patterns**           | Async/await, concurrency, event loops       | `.agent/skills/python-development/skills/async-python-patterns/`           |
-| **python-code-style**               | PEP 8, naming conventions, formatting       | `.agent/skills/python-development/skills/python-code-style/`               |
-| **python-type-safety**              | Type hints, generics, Pydantic              | `.agent/skills/python-development/skills/python-type-safety/`              |
-| **python-error-handling**           | Exceptions, error recovery, logging         | `.agent/skills/python-development/skills/python-error-handling/`           |
-| **python-design-patterns**          | Factory, singleton, dependency injection    | `.agent/skills/python-development/skills/python-design-patterns/`          |
-| **python-testing-patterns**         | pytest, fixtures, mocking                   | `.agent/skills/python-development/skills/python-testing-patterns/`         |
-| **python-performance-optimization** | Profiling, caching, memory management       | `.agent/skills/python-development/skills/python-performance-optimization/` |
-| **python-anti-patterns**            | Common mistakes to avoid                    | `.agent/skills/python-development/skills/python-anti-patterns/`            |
-| **python-resilience**               | Retry, circuit breaker, fallbacks           | `.agent/skills/python-development/skills/python-resilience/`               |
-| **python-background-jobs**          | Task queues, scheduled jobs                 | `.agent/skills/python-development/skills/python-background-jobs/`          |
-| **python-observability**            | Logging, metrics, tracing                   | `.agent/skills/python-development/skills/python-observability/`            |
-| **python-configuration**            | Config management, env vars, settings       | `.agent/skills/python-development/skills/python-configuration/`            |
-| **python-packaging**                | Package structure, pyproject, build         | `.agent/skills/python-development/skills/python-packaging/`                |
-| **python-project-structure**        | Layout, modules, imports organisation       | `.agent/skills/python-development/skills/python-project-structure/`        |
-| **python-resource-management**      | Context managers, file handles, cleanup     | `.agent/skills/python-development/skills/python-resource-management/`      |
-| **uv-package-manager**              | uv install, lockfiles, virtualenvs          | `.agent/skills/python-development/skills/uv-package-manager/`              |
+| **async-python-patterns**           | Async/await, concurrency, event loops       | `.agents/skills/python-development/skills/async-python-patterns/`           |
+| **python-code-style**               | PEP 8, naming conventions, formatting       | `.agents/skills/python-development/skills/python-code-style/`               |
+| **python-type-safety**              | Type hints, generics, Pydantic              | `.agents/skills/python-development/skills/python-type-safety/`              |
+| **python-error-handling**           | Exceptions, error recovery, logging         | `.agents/skills/python-development/skills/python-error-handling/`           |
+| **python-design-patterns**          | Factory, singleton, dependency injection    | `.agents/skills/python-development/skills/python-design-patterns/`          |
+| **python-testing-patterns**         | pytest, fixtures, mocking                   | `.agents/skills/python-development/skills/python-testing-patterns/`         |
+| **python-performance-optimization** | Profiling, caching, memory management       | `.agents/skills/python-development/skills/python-performance-optimization/` |
+| **python-anti-patterns**            | Common mistakes to avoid                    | `.agents/skills/python-development/skills/python-anti-patterns/`            |
+| **python-resilience**               | Retry, circuit breaker, fallbacks           | `.agents/skills/python-development/skills/python-resilience/`               |
+| **python-background-jobs**          | Task queues, scheduled jobs                 | `.agents/skills/python-development/skills/python-background-jobs/`          |
+| **python-observability**            | Logging, metrics, tracing                   | `.agents/skills/python-development/skills/python-observability/`            |
+| **python-configuration**            | Config management, env vars, settings       | `.agents/skills/python-development/skills/python-configuration/`            |
+| **python-packaging**                | Package structure, pyproject, build         | `.agents/skills/python-development/skills/python-packaging/`                |
+| **python-project-structure**        | Layout, modules, imports organisation       | `.agents/skills/python-development/skills/python-project-structure/`        |
+| **python-resource-management**      | Context managers, file handles, cleanup     | `.agents/skills/python-development/skills/python-resource-management/`      |
+| **uv-package-manager**              | uv install, lockfiles, virtualenvs          | `.agents/skills/python-development/skills/uv-package-manager/`              |
+| **websocket-engineer**              | Real-time bi-directional communication      | `.agents/skills/websocket-engineer`           |
 
 ### Database
 
@@ -263,17 +282,17 @@ Skills are located in `.agent/skills/` or `.agents/skills/` — check the path c
 | **postgresql-table-design**          | Schema design, indexes, constraints      | `.agents/skills/postgresql-table-design/`          |
 | **postgresql-best-practices**        | Query optimization, admin, performance   | `.agents/skills/postgresql-best-practices`         |
 | **postgres-pro**                     | Advanced queries, EXPLAIN, JSONB, VACUUM | `.agents/skills/postgres-pro`                      |
-| **supabase-postgres-best-practices** | InsForge/Supabase RLS, Edge Functions    | `.agents/skills/supabase-postgres-best-practices`  |
-| **timescaledb**                      | Time-series data, hypertables, analytics | `.agents/skills/timescaledb/`                      |
 
 ### DevOps & Tooling
 
 | Skill                        | When to Use                           | Path                                       |
 | ---------------------------- | ------------------------------------- | ------------------------------------------ |
-| **git-commit**               | Conventional commits, staging         | `.agent/skills/git-commit/`                |
-| **github-actions-templates** | CI/CD workflows                       | `.agent/skills/github-actions-templates/`  |
-| **powershell-expert**        | Windows scripts, automation           | `.agents/skills/powershell-expert`         |
+| **docker-expert**            | Containerization, Multi-stage builds, Compose | `.agents/skills/docker-expert`               |
+| **git-commit**               | Conventional commits, staging         | `.agents/skills/git-commit/`                |
+| **github-actions-templates** | CI/CD workflows                       | `.agents/skills/github-actions-templates/`  |
+| **mermaid-diagrams**         | UML, Flowcharts, Sequence diagrams    | `.agents/skills/mermaid-diagrams`            |
 | **playwright-cli**           | Browser automation, testing, scraping | `.agents/skills/playwright-cli`            |
+| **powershell-expert**        | Windows scripts, automation           | `.agents/skills/powershell-expert`         |
 | **skill-creator**            | Create or update agent skills         | `.agents/skills/skill-creator`             |
 
 ### Project Management

@@ -38,7 +38,7 @@ nezuko/
 │   ├── bot/          # Telegram Bot (~25 Python files)
 │   └── web/          # Next.js Dashboard (~120 TypeScript files)
 ├── insforge/         # InsForge migration files & Edge Functions
-│   ├── migrations/   # SQL migration files (001-007)
+│   ├── migrations/   # SQL migration files (001-010)
 │   └── functions/    # Edge Functions (manage-bot, test-webhook)
 ├── config/           # Docker, Caddy, deployment configs
 ├── tests/            # Centralized test suite
@@ -61,6 +61,8 @@ nezuko/
 - Verification logging directly to InsForge PostgreSQL
 - Status writer (heartbeat via DB UPSERT)
 - Command worker (polls admin_commands table)
+- Member/subscriber count sync every 15min (PTB JobQueue)
+- Link counter maintenance (linked_channels_count / linked_groups_count)
 
 ### Web Dashboard
 
@@ -70,14 +72,16 @@ nezuko/
 - Real-time updates via InsForge WebSocket
 - Dark/Light mode theming
 - Direct InsForge SDK queries
+- Responsive charts (shadcn/ui ChartContainer + Recharts)
 
 ### InsForge Backend
 
-- 13 database tables with proper indexes
-- 15 PostgreSQL RPC functions for analytics/charts
+- 11 database tables with proper indexes
+- 14 PostgreSQL RPC functions for analytics/charts
 - 4 realtime triggers (verification, bot_status, commands, logs)
 - 2 storage buckets (bot-exports private, bot-assets public)
 - Edge Functions for bot token management and webhook testing
+- 10 SQL migrations (001-010)
 
 ---
 
@@ -95,11 +99,11 @@ nezuko/
 
 ## Current Status
 
-**Phase**: 67 — Web Charts & InsForge RPC Type Alignment (Complete)
-**Last Updated**: 2026-02-25
+**Phase**: 69 — Chart Responsiveness & Groups/Channels Data Fix (Complete)
+**Last Updated**: 2026-02-26
 
-- Phase 66 (Full End-to-End Success): Complete
-- Phase 67 (Web Charts & InsForge RPC Type Alignment): Complete — 3 type mismatches fixed
+- Phase 68 (Comprehensive Audit, Bug Fixes & Redis Setup): Complete
+- Phase 69 (Chart Responsiveness & Groups/Channels Data Fix): Complete — 9 charts fixed, 3 data pipeline issues resolved
 
 ---
 

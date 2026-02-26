@@ -1,6 +1,6 @@
 # Technical Context: Stack & Development
 
-> **Status**: Phase 66 — Bot + Web fully working end-to-end 🎉
+> **Status**: Phase 69 — Chart Responsiveness & Groups/Channels Data Fix 🎉
 
 ## Technology Stack
 
@@ -8,18 +8,18 @@
 
 | Package | Version | Purpose |
 | --- | --- | --- |
-| python-telegram-bot | 22.6+ | Telegram Bot API |
+| python-telegram-bot | 22.6+ | Telegram Bot API (includes JobQueue for scheduled jobs) |
 | httpx | 0.27+ | InsForge REST API client (`insforge_client.py`) |
 | SQLAlchemy | 2.0+ | **Tests only** — SQLite in-memory (never in production code) |
 | aiosqlite | 0.21+ | **Tests only** — SQLite async driver for pytest |
 | Pydantic | 2.12+ | Data validation / config |
 | Redis (aioredis) | 7.1+ | Caching layer |
 | cryptography | 43+ | Fernet token encryption (`core/encryption.py`) |
-| APScheduler | — | Required for `member_sync` job queue (pending config) |
 
 > **⚠️ asyncpg**: Completely removed from production. No direct PG connection.
 > **⚠️ SQLAlchemy**: Only present for offline test speed (SQLite). Never imported
 > in handlers, services, or any production bot code.
+> **⚠️ Member sync**: Uses PTB's built-in `JobQueue.run_repeating()` — no APScheduler needed.
 
 ### Frontend (TypeScript)
 
@@ -31,7 +31,7 @@
 | Tailwind CSS | 4.1+ | Styling |
 | TanStack Query | 5.90+ | Server state / data fetching |
 | shadcn/ui | Latest | Accessible UI components |
-| Recharts | 3.7+ | Dashboard charts |
+| Recharts | 2.15+ | Dashboard charts (via shadcn/ui ChartContainer) |
 | @insforge/sdk | Latest | InsForge BaaS client (DB, Realtime, Storage, Functions) |
 | motion | 12.27+ | React micro-animations |
 
@@ -137,13 +137,13 @@ bun run format        # Prettier + Tailwind Sort
 - **Access (Bot)**: REST API via `httpx` — `GET/POST/PATCH/DELETE /api/database/records/{table}`
 - **Access (Web)**: InsForge SDK (TypeScript) — `@insforge/sdk`
 - **Auth header**: `Authorization: Bearer <INSFORGE_ANON_KEY>`
-- **Tables**: 10 (created via `insforge/migrations/009_clean_schema.sql`)
+- **Tables**: 11 (created via `insforge/migrations/009_clean_schema.sql` + `010_add_linked_channels_count.sql`)
 - **RPC Functions**: 14 (analytics + charts — see systemPatterns.md for full list)
 - **Realtime Channels**: 4 (`dashboard`, `bot_status`, `logs`, `commands`)
 - **Realtime Triggers**: 4 (fire on INSERT/UPDATE — push to channels via `realtime.publish()`)
 - **Edge Functions**: 2 (`manage-bot`, `test-webhook`)
 - **Storage Buckets**: 2 (`bot-assets` public, `bot-exports` private)
-- **Schema managed via**: `insforge/migrations/009_clean_schema.sql` (canonical)
+- **SQL Migrations**: 10 files (`001` through `010`)
 - **⚠️ No direct PG connection**: InsForge does not expose raw PostgreSQL passwords
 
 ### InsForge Tables Written by Bot (all via REST)
@@ -152,8 +152,10 @@ bun run format        # Prettier + Tailwind Sort
 |---|---|---|---|
 | `verification_log` | `verification_logger.py` | `_post()` fire-and-forget | `latency_ms`, `cached`, `status` |
 | `api_call_log` | `api_call_logger.py` | `_post()` fire-and-forget | `method`, `success`, `latency_ms` |
-| `protected_groups` | `member_sync.py` | `_patch()` count update | `member_count` |
-| `enforced_channels` | `member_sync.py` | `_patch()` count update | `subscriber_count` |
+| `protected_groups` | `member_sync.py` | `_patch()` count update | `member_count`, `last_sync_at` |
+| `protected_groups` | `insforge_client.py` | `_patch()` link counter | `linked_channels_count` (on link/unlink) |
+| `enforced_channels` | `member_sync.py` | `_patch()` count update | `subscriber_count`, `last_sync_at` |
+| `enforced_channels` | `insforge_client.py` | `_patch()` link counter | `linked_groups_count` (on link/unlink) |
 | `bot_status` | `status_writer.py` | **PATCH-then-POST** every 30s | `status='online'` (not `'running'`) |
 | `admin_logs` | `insforge_log_handler.py` | `_post()` fire-and-forget | WARNING+ level only |
 | `admin_commands` | `command_worker.py` | `_get()` + `_patch()` status update | polls every 10s |
@@ -180,8 +182,8 @@ bun run format        # Prettier + Tailwind Sort
 | Tests | `tests/bot/` |
 | Logs | `apps/bot/logs/` |
 | Python deps | `requirements.txt` + `requirements-dev.txt` |
-| SQL Migrations | `insforge/migrations/` |
-| Canonical Schema | `insforge/migrations/009_clean_schema.sql` |
+| SQL Migrations | `insforge/migrations/` (001-010) |
+| Canonical Schema | `insforge/migrations/009_clean_schema.sql` + `010_add_linked_channels_count.sql` |
 | Edge Functions | `insforge/functions/` |
 | Pre-migration backup | `docs/local/backup-2026-02-12-105223/` |
 
@@ -202,4 +204,4 @@ bun run format        # Prettier + Tailwind Sort
 
 ---
 
-_Last Updated: 2026-02-25 (Phase 67 — Chart Type Alignment)_
+_Last Updated: 2026-02-26 (Phase 69 — Chart Responsiveness & Groups/Channels Data Fix)_

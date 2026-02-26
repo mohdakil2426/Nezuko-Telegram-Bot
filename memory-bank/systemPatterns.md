@@ -1,6 +1,6 @@
 # System Patterns: Architecture & Implementation
 
-> **Last Updated**: 2026-02-25 (Phase 67 — Chart Type Alignment)
+> **Last Updated**: 2026-02-26 (Phase 69 — Chart Responsiveness & Groups/Channels Data Fix)
 
 ## Architecture Overview
 
@@ -84,6 +84,23 @@ await insforge_client._delete("table_name", {"col": "eq.val"})
 await insforge_client._rpc("function_name", {"param": "value"})
 ```
 
+### Link Counter Maintenance Pattern (Phase 69 — CRITICAL)
+
+When linking/unlinking groups and channels, **always update the denormalized counters**:
+
+```python
+# ✅ Correct: link_group_channel() calls _update_link_counts() after creating link
+# _update_link_counts() recalculates from actual group_channel_links rows (not increment)
+# This prevents counter drift if operations fail midway
+
+# ✅ Correct: unlink_all_channels() gets links BEFORE deleting, then:
+#   - Resets group's linked_channels_count to 0
+#   - Recalculates each channel's linked_groups_count
+
+# ❌ Wrong: Incrementing/decrementing without verification
+# Counters can drift if operations fail partway through
+```
+
 ### SQLAlchemy 2.0 (Tests Only)
 
 SQLAlchemy + SQLite is used **only** in `tests/` for fast offline test execution.
@@ -117,7 +134,7 @@ All communication from bot → dashboard goes through InsForge REST exclusively:
 | Bot Analytics | `log_verification_async()` fire-and-forget | `verification_log` |
 | Bot Analytics | `log_api_call_async()` fire-and-forget | `api_call_log` |
 | Bot Logs | `InsForgeLogHandler` (logging.Handler) fire-and-forget | `admin_logs` |
-| Bot Sync | `sync_member_counts()` job every 15min | `protected_groups`, `enforced_channels` |
+| Bot Sync | `sync_member_counts()` job every 15min (PTB JobQueue) | `protected_groups`, `enforced_channels` |
 | Dashboard Mode | `BotManager.load_bots_from_database()` | `bot_instances` |
 
 ### Token Encryption Strategy
@@ -211,6 +228,22 @@ to verify exact field names before writing TypeScript interfaces.
 | `get_bot_health` | `avg_latency_ms` | `avg_latency_score` | `avg_latency_ms` |
 | `get_latency_distribution` | `sort_order` | *(missing)* | `sort_order?: number` |
 
+### Chart Responsiveness Patterns (Phase 69 — CRITICAL)
+
+**Standard patterns for `ChartContainer` className:**
+
+| Chart Type | Pattern |
+|---|---|
+| Time-series (Area, Bar, Line) | `aspect-auto h-[250px] md:h-[300px] w-full` |
+| Pie/Donut | `mx-auto aspect-square max-h-[250px]` |
+| Radial | `mx-auto aspect-square max-h-[200px]` |
+
+**Key rules:**
+- Always include `aspect-auto` for time-series charts (prevents default `aspect-video` conflict)
+- Use `max-h-` (not `h-`) for pie/donut/radial charts to allow shrinking
+- Add mobile height breakpoints (`h-[250px] md:h-[300px]`)
+- Grid for pie/donut charts: use `xl:grid-cols-4` not `lg:grid-cols-4` to prevent overflow
+
 ### Realtime Hooks
 
 ```typescript
@@ -237,10 +270,10 @@ const { data, error } = await insforge.functions.invoke('manage-bot', {
 
 ---
 
-## Database Schema (InsForge Migration 009 — Canonical Clean Schema)
+## Database Schema (InsForge Migrations 009-010)
 
-> **Canonical file**: `insforge/migrations/009_clean_schema.sql`
-> Replaces all previous migrations (001–008). This is idempotent (safe to re-run).
+> **Canonical file**: `insforge/migrations/009_clean_schema.sql` + `010_add_linked_channels_count.sql`
+> Migration 009 replaces all previous migrations (001–008). Migration 010 adds `linked_channels_count`.
 
 ### Core Tables
 
@@ -248,8 +281,8 @@ const { data, error } = await insforge.functions.invoke('manage-bot', {
 | --- | --- | --- |
 | `owners` | Bot owners (Telegram user IDs) | `user_id BIGINT PK` |
 | `bot_instances` | Registered bot tokens (Fernet encrypted) | `bot_id BIGINT UNIQUE`, `is_active + is_deleted BOOLEAN` |
-| `protected_groups` | Groups with verification enforcement | `group_id BIGINT PK`, `params JSONB`, FK → owners |
-| `enforced_channels` | Required channel subscriptions | `channel_id BIGINT PK`, `linked_groups_count INT` |
+| `protected_groups` | Groups with verification enforcement | `group_id BIGINT PK`, `params JSONB`, `member_count INT`, `linked_channels_count INT`, FK → owners |
+| `enforced_channels` | Required channel subscriptions | `channel_id BIGINT PK`, `subscriber_count INT`, `linked_groups_count INT` |
 | `group_channel_links` | M:N group↔channel relationships | FK cascade both ways, `is_required BOOLEAN` |
 
 ### Analytics Tables
@@ -316,6 +349,17 @@ if patch_resp.headers.get("content-range", "").startswith("*/0"):
 await client.post(..., headers={"Prefer": "resolution=merge-duplicates"})
 ```
 
+### ⚠️ Denormalized Counter Pattern (Phase 69)
+
+`linked_channels_count` on `protected_groups` and `linked_groups_count` on `enforced_channels`
+are **denormalized counters** maintained by bot code (`insforge_client.py`).
+
+**Key rules:**
+- Always recalculate from actual `group_channel_links` rows (not increment/decrement)
+- `_update_link_counts(group_id, channel_id)` updates both sides after a link
+- `_update_channel_link_count(channel_id)` updates one channel after unlinking
+- `unlink_all_channels(group_id)` resets group counter to 0 and recalculates each channel
+
 ### Realtime Triggers (Phase 65)
 
 | Trigger Name | Table | Channel | Event | Web Hook |
@@ -368,4 +412,4 @@ The UPSERT must explicitly restore: `is_deleted: false, is_active: true, deleted
 
 ---
 
-_Last Updated: 2026-02-25 (Phase 67)_
+_Last Updated: 2026-02-26 (Phase 69)_

@@ -14,6 +14,7 @@ Features:
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from telegram.error import RetryAfter, TelegramError
 from telegram.ext import Application, ContextTypes
@@ -30,28 +31,31 @@ SYNC_INTERVAL_SECONDS = 900
 INTER_REQUEST_DELAY = 0.1
 
 
-async def _sync_group_member_count(context: ContextTypes.DEFAULT_TYPE, group_id: int) -> bool:
-    """Fetch and persist member count for one protected group.
+async def _fetch_group_member_count_data(
+    context: ContextTypes.DEFAULT_TYPE, group_id: int, owner_id: int
+) -> dict[str, Any] | None:
+    """Fetch member count for one protected group from Telegram.
 
     Args:
         context: Telegram bot context
         group_id: Telegram group chat ID
+        owner_id: Group owner ID (required for bulk upsert)
 
     Returns:
-        True if sync succeeded, False otherwise.
+        Data dict for bulk update if succeeded, None otherwise.
     """
     try:
         count = await context.bot.get_chat_member_count(group_id)
         now = datetime.now(UTC).isoformat()
-        await insforge_client._patch(  # pylint: disable=protected-access
-            "protected_groups",
-            {"group_id": f"eq.{group_id}"},
-            {"member_count": count, "last_sync_at": now, "updated_at": now},
-            prefer="return=minimal",
-        )
         log_api_call_async(method="getChatMemberCount", chat_id=group_id, success=True)
         await asyncio.sleep(INTER_REQUEST_DELAY)
-        return True
+        return {
+            "group_id": group_id,
+            "owner_id": owner_id,
+            "member_count": count,
+            "last_sync_at": now,
+            "updated_at": now,
+        }
 
     except RetryAfter as e:
         retry_secs = (
@@ -64,43 +68,42 @@ async def _sync_group_member_count(context: ContextTypes.DEFAULT_TYPE, group_id:
             method="getChatMemberCount", chat_id=group_id, success=False, error_type="RetryAfter"
         )
         await asyncio.sleep(retry_secs + 1)
-        return False
+        return None
 
     except TelegramError as e:
-        logger.debug("Failed to sync group %s: %s", group_id, e)
+        logger.debug("Failed to fetch group count for %s: %s", group_id, e)
         log_api_call_async(
             method="getChatMemberCount",
             chat_id=group_id,
             success=False,
             error_type=type(e).__name__,
         )
-        return False
+        return None
 
 
-async def _sync_channel_subscriber_count(
+async def _fetch_channel_subscriber_count_data(
     context: ContextTypes.DEFAULT_TYPE, channel_id: int
-) -> bool:
-    """Fetch and persist subscriber count for one enforced channel.
+) -> dict[str, Any] | None:
+    """Fetch subscriber count for one enforced channel from Telegram.
 
     Args:
         context: Telegram bot context
         channel_id: Telegram channel ID
 
     Returns:
-        True if sync succeeded, False otherwise.
+        Data dict for bulk update if succeeded, None otherwise.
     """
     try:
         count = await context.bot.get_chat_member_count(channel_id)
         now = datetime.now(UTC).isoformat()
-        await insforge_client._patch(  # pylint: disable=protected-access
-            "enforced_channels",
-            {"channel_id": f"eq.{channel_id}"},
-            {"subscriber_count": count, "last_sync_at": now, "updated_at": now},
-            prefer="return=minimal",
-        )
         log_api_call_async(method="getChatMemberCount", chat_id=channel_id, success=True)
         await asyncio.sleep(INTER_REQUEST_DELAY)
-        return True
+        return {
+            "channel_id": channel_id,
+            "subscriber_count": count,
+            "last_sync_at": now,
+            "updated_at": now,
+        }
 
     except RetryAfter as e:
         retry_secs = (
@@ -116,17 +119,17 @@ async def _sync_channel_subscriber_count(
             error_type="RetryAfter",
         )
         await asyncio.sleep(retry_secs + 1)
-        return False
+        return None
 
     except TelegramError as e:
-        logger.debug("Failed to sync channel %s: %s", channel_id, e)
+        logger.debug("Failed to fetch channel count for %s: %s", channel_id, e)
         log_api_call_async(
             method="getChatMemberCount",
             chat_id=channel_id,
             success=False,
             error_type=type(e).__name__,
         )
-        return False
+        return None
 
 
 async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -134,45 +137,60 @@ async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
     Sync member/subscriber counts for all groups and channels.
 
     Called automatically by PTB JobQueue every SYNC_INTERVAL_SECONDS.
-    Errors on individual entities don't abort the entire run.
+    Collects updates and performs bulk DB writes for better performance.
 
     Args:
         context: Telegram bot context with bot instance
     """
-    logger.info("Starting member count sync...")
+    logger.info("Starting member count sync (batch mode)...")
     start_time = datetime.now(UTC)
 
     groups_synced = groups_failed = channels_synced = channels_failed = 0
+    group_updates = []
+    channel_updates = []
 
-    # Sync protected groups
+    # 1. Collect protected group counts
     try:
         groups = await insforge_client.get_all_protected_groups()
-        logger.debug("Syncing member counts for %d protected groups", len(groups))
+        logger.debug("Fetching member counts for %d groups", len(groups))
         for group in groups:
-            ok = await _sync_group_member_count(context, group.group_id)
-            if ok:
+            data = await _fetch_group_member_count_data(context, group.group_id, group.owner_id)
+            if data:
+                group_updates.append(data)
                 groups_synced += 1
             else:
                 groups_failed += 1
-    except (OSError, RuntimeError) as e:
-        logger.error("Failed to fetch groups for sync: %s", e)
 
-    # Sync enforced channels
+        if group_updates:
+            await insforge_client.bulk_update_member_counts(group_updates)
+            logger.debug("Bulk updated member counts for %d groups", len(group_updates))
+
+    except (OSError, RuntimeError) as e:
+        logger.error("Failed to sync groups: %s", e)
+
+    # 2. Collect enforced channel counts
     try:
         channels = await insforge_client.get_all_enforced_channels()
-        logger.debug("Syncing subscriber counts for %d enforced channels", len(channels))
+        logger.debug("Fetching subscriber counts for %d channels", len(channels))
         for channel in channels:
-            ok = await _sync_channel_subscriber_count(context, channel.channel_id)
-            if ok:
+            data = await _fetch_channel_subscriber_count_data(context, channel.channel_id)
+            if data:
+                channel_updates.append(data)
                 channels_synced += 1
             else:
                 channels_failed += 1
+
+        if channel_updates:
+            await insforge_client.bulk_update_subscriber_counts(channel_updates)
+            logger.debug("Bulk updated subscriber counts for %d channels", len(channel_updates))
+
     except (OSError, RuntimeError) as e:
-        logger.error("Failed to fetch channels for sync: %s", e)
+        logger.error("Failed to sync channels: %s", e)
 
     elapsed = (datetime.now(UTC) - start_time).total_seconds()
     logger.info(
-        "Member sync done in %.1fs — groups: %d ok / %d fail; channels: %d ok / %d fail",
+        "Batch member sync done in %.1fs — groups: %d ok / %d fail; "
+        "channels: %d ok / %d fail",
         elapsed,
         groups_synced,
         groups_failed,

@@ -1,7 +1,7 @@
 # Nezuko Telegram Bot Platform
 
-> **Production-ready Telegram bot platform** for automated channel membership enforcement.
-> Python 3.13+ | python-telegram-bot v22.6+ | Async-first architecture
+> **Production-ready Telegram bot platform** for automated channel membership enforcement.  
+> Python 3.13.1 | uv (lockfile) | python-telegram-bot v22.6+ | Async-first architecture
 
 **Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read these all files for deep project understanding. **NEVER SKIP THIS STEP**
 
@@ -12,13 +12,15 @@
 ## 📁 Project Structure
 
 ```
-nezuko-monorepo/
+nezuko/
 ├── apps/
-│   ├── web/          # Next.js 16 Admin Dashboard
-│   └── bot/          # Telegram Bot (PTB v22)
-├── packages/         # Shared packages (@nezuko/types)
+│   ├── web/          # Next.js 16 Admin Dashboard (~120 TS files)
+│   └── bot/          # Telegram Bot (PTB v22, ~25 Python files)
+├── insforge/         # InsForge migration files & Edge Functions
+│   ├── migrations/   # SQL migration files (001-005)
+│   └── functions/    # Edge Functions (manage-bot, test-webhook)
+├── openspec/         # OpenSpec change management artifacts
 ├── config/           # Docker, Caddy, deployment configs
-├── requirements/     # Python deps (base, bot, dev)
 ├── tests/            # ALL tests (not in apps/)
 ├── scripts/          # Utility scripts
 ├── apps/bot/logs/    # Bot runtime logs (gitignored)
@@ -32,46 +34,33 @@ nezuko-monorepo/
 
 ### File Locations (NEVER Violate)
 
-| Type        | Correct Location            | ❌ Wrong                     |
-| ----------- | --------------------------- | ---------------------------- |
-| Tests       | `tests/bot/`                | `apps/*/tests/`              |
-| Database    | Docker local port 5432      | `apps/*.db`                  |
-| Logs        | `apps/bot/logs/`            | `apps/*.log`                 |
-| Env files   | `apps/*/.env`, `.env.local` | Root `.env`                  |
-| Python deps | `requirements.txt`        | Root `requirements.txt` only |
+| Type        | Correct Location                       | ❌ Wrong                      |
+| ----------- | -------------------------------------- | ----------------------------- |
+| Tests       | `tests/bot/`                           | `apps/*/tests/`               |
+| Database    | InsForge managed PostgreSQL (cloud)    | Local sqlite or `apps/*.db`   |
+| Migrations  | `insforge/migrations/*.sql`            | `alembic/versions/`           |
+| Logs        | `apps/bot/logs/`                       | `apps/*.log`                  |
+| Env files   | `apps/bot/.env`, `apps/web/.env.local` | Root `.env`                   |
+| Python deps | `pyproject.toml`, `uv.lock`            | `requirements.txt`, `pip`     |
 
 ### Code Quality (ZERO TOLERANCE)
 
 **⚠️ Always use LATEST versions. Check before installing:**
 
 ```bash
-# Python (Bot) - 4 tools required:
+# Python (Bot) - 3 tools required:
 ruff check apps/bot                  # Lint (0 errors)
-ruff format .                        # Format Python files
-pylint apps/bot                      # Score: 10.00/10
-pyrefly check                        # Type check (0 errors)
+ruff format --check .                # Format check
+pylint apps/bot --rcfile=pyproject.toml  # Score: 10.00/10
+.venv/Scripts/python.exe -m pyrefly check  # Type check (0 errors)
 
-# TypeScript (Web) - 4 tools required:
+# TypeScript (Web):
 cd apps/web && bun run lint          # ESLint (0 warnings)
 cd apps/web && bun run build         # TypeScript (0 errors)
-cd apps/web && bunx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,md}"  # Prettier format
 
 # MUST pass before ANY commit:
 pytest                               # All tests pass
 ```
-
-### Code Quality Checklist
-
-| Tool | Command | Target |
-|------|---------|--------|
-| **Ruff Check** | `ruff check apps/bot` | 0 errors |
-| **Ruff Format** | `ruff format .` | All formatted |
-| **Pylint** | `pylint apps/bot` | 10.00/10 |
-| **Pyrefly** | `pyrefly check` | 0 errors |
-| **ESLint** | `cd apps/web && bun run lint` | 0 warnings |
-| **Prettier** | `cd apps/web && bunx prettier --write "src/**/*"` | All formatted |
-| **TypeScript** | `cd apps/web && bun run build` | 0 errors |
-| **Pytest** | `pytest` | All pass |
 
 ### Async Patterns (RUF006)
 
@@ -102,6 +91,7 @@ asyncio.create_task(coro())
 8. **Security First** - Sanitize inputs, validate tokens, never log secrets, use parameterized queries.
 9. **Performance Aware** - Avoid N+1 queries, cache expensive operations, lazy load when possible.
 10. **Clean Commits** - Atomic commits, conventional messages, no broken builds in commit history.
+11. **KISS (Keep It Simple, Stupid)** - Prioritize simple, readable, and maintainable solutions over complex, over-engineered architectures. Simple is better than complex.
 
 ---
 
@@ -110,38 +100,54 @@ asyncio.create_task(coro())
 ### Run Services
 
 ```bash
-python -m apps.bot.main                                    # Bot
-cd apps/web && bun dev                                     # Web
-npx turbo dev                                              # All services
+uv run python -m apps.bot.main    # Bot (run from project root)
+cd apps/web && bun dev            # Web (port 3000)
 ```
 
 ### Lint & Format
 
+**Python (Bot):**
 ```bash
-ruff check . --fix && ruff format .   # Python auto-fix
-cd apps/web && bun run lint --fix     # TypeScript
-pylint apps/bot                       # Target: 10.00/10
+uv run ruff check apps/bot --fix && uv run ruff format .   # Auto-fix & Format (Ruff)
+uv run pylint apps/bot --rcfile=pyproject.toml             # Deep analysis (Target: 10/10)
 ```
 
-### Test & Migrate
-
+**TypeScript (Web):**
 ```bash
-pytest tests/bot/ -v                  # Bot tests
-pytest --cov=apps --cov-report=html   # Coverage
+cd apps/web && bun run lint --fix                          # ESLint (Logic fixes)
+cd apps/web && bun x prettier src --write                  # Prettier (Tailwind & style fix)
 ```
+
+### Quality & Testing
+
+**Python (Bot):**
+```bash
+uv run pytest tests/bot/ -v                  # Run all tests
+uv run pytest --cov=apps --cov-report=html   # Coverage report
+```
+
+**TypeScript (Web):**
+```bash
+cd apps/web && bun run type-check            # TypeScript validation (TSC)
+cd apps/web && bun x knip                    # Find dead code & unused deps
+```
+
+# Database migrations are managed via InsForge migrations:
+# → Edit insforge/migrations/*.sql and apply via InsForge dashboard
+
 
 ---
 
 ## ⚙️ Tech Stack
 
-| Layer        | Stack                                                    |
-| ------------ | -------------------------------------------------------- |
-| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
-| **Backend**  | InsForge BaaS (PostgreSQL, Realtime, Functions)          |
-| **Bot**      | python-telegram-bot v22.6, AsyncIO, Redis                |
-| **Database** | InsForge Managed PostgreSQL                              |
-| **Auth**     | None (development mode)                                  |
-| **Infra**    | Docker, Turborepo, Caddy                                 |
+| Layer        | Stack                                                                      |
+| ------------ | -------------------------------------------------------------------------- |
+| **Frontend** | Next.js 16.1, React 19.2, TypeScript 5.9, Tailwind v4, shadcn/ui, Recharts |
+| **Bot**      | python-telegram-bot v22.6, Python 3.13.1, AsyncIO, SQLAlchemy 2.0, AsyncPG  |
+| **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions |
+| **Auth**     | None (development mode — direct dashboard access)                          |
+| **Package**  | uv (high-performance dependency resolver & lockfile)                       |
+| **Infra**    | Docker (bot), Vercel (web hosting), Caddy                                  |
 
 ---
 
@@ -150,12 +156,12 @@ pytest --cov=apps --cov-report=html   # Coverage
 ### Python (Bot)
 
 - **Indent**: 4 spaces | **Line**: 100 chars
-- **Format**: `ruff format` | **Lint**: ruff + pylint
-- **Types**: Required on all functions
+- **Format**: `ruff format` | **Lint**: ruff + pylint (target 10.00/10)
+- **Types**: Required on all functions (pyrefly enforced)
 - **Docstrings**: Required on public functions
 - **Async**: Always for I/O operations
 - **SQLAlchemy**: Use `select()` style, not ORM queries
-- **Pydantic**: Use `model_validator`, not `root_validator`
+- **Errors**: Catch specific exceptions (`PostgresError`, `TelegramError`) — never bare `except Exception`
 
 ### TypeScript (Web)
 
@@ -167,12 +173,17 @@ pytest --cov=apps --cov-report=html   # Coverage
 
 ## 🔑 Key Patterns
 
-| Pattern             | Implementation                                  |
-| ------------------- | ----------------------------------------------- |
-| **Imports (Bot)**   | `python -m apps.bot.main` from root             |
-| **Imports (Tests)** | `from apps.bot`                                 |
-| **Env files**       | Per-app: `apps/web/.env.local`, `apps/bot/.env` |
-| **Dependencies**    | `requirements/{base,bot,dev}.txt`               |
+| Pattern               | Implementation                                         |
+| --------------------- | ------------------------------------------------------ |
+| **Run Bot**           | `python -m apps.bot.main` from project root            |
+| **Imports (Bot)**     | Absolute from package root, e.g. `from apps.bot.core` |
+| **Imports (Tests)**   | `from apps.bot`                                        |
+| **Env (Bot)**         | `apps/bot/.env`                                        |
+| **Env (Web)**         | `apps/web/.env.local`                                  |
+| **Python deps**       | `pyproject.toml`, `uv.lock` (managed with `uv`)       |
+| **Frontend deps**     | `apps/web/package.json`, managed with `bun`            |
+| **DB migrations**     | Raw SQL in `insforge/migrations/`                      |
+| **InsForge SDK**      | `import { insforge } from "@/lib/insforge"` (web)      |
 
 ---
 
@@ -191,18 +202,13 @@ Before marking any task complete:
 
 ## 🧰 MCP Tools
 
-| Server       | Purpose                                                             |
-| ------------ | ------------------------------------------------------------------- |
-| **context7** | Query library docs: `resolve-library-id` → `query-docs`             |
-| **shadcn**   | Components: `view_items_in_registries`, `get_add_command_for_items` |
+| Server         | Purpose                                                                          |
+| -------------- | -------------------------------------------------------------------------------- |
+| **context7**   | Query library docs: `resolve-library-id` → `query-docs`                          |
+| **insforge**   | DB ops: `execute_sql`, `list_tables`, `apply_migration`, storage & edge functions |
+| **shadcn**     | Components: `view_items_in_registries`, `get_add_command_for_items`              |
 
 **🔍 Web Search Rule:** When searching the web or fetching URLs for documentation, best practices, or solutions, always append `2025-2026` to queries to ensure latest, up-to-date information.
-
-## Browser Automation
-
-### Alway use playwright-cli tool to open browser and test web dashboard
-
-| **playwright-cli** | Browser automation | `.claude/skills/playwright-cli/SKILL.md` |
 
 ## 📚 Next.js Docs Never Skip when working on Next.js
 
@@ -213,7 +219,7 @@ Before marking any task complete:
 
 **⚠️ MANDATORY: Read relevant skills BEFORE generating any code.**
 
-Skills are located in `.claude/skills/`. Read the **SKILL.md** file inside each skill folder.
+Skills are located in `.agent/skills/` or `.agents/skills/` — check the path column. Read the **SKILL.md** file inside each skill folder.
 
 **Skill Reading Rules:**
 
@@ -231,47 +237,79 @@ Skills are located in `.claude/skills/`. Read the **SKILL.md** file inside each 
 
 ### Frontend (Web Dashboard)
 
-| Skill | When to Use | Path |
-| ------------------------------- | -------------------------------------------------- | -------------------------------------------- | |
-| **shadcn-ui** | Adding/customizing shadcn components | `.claude/skills/shadcn-ui` |
-| **tanstack-query** | Data fetching, mutations, caching | `.claude/skills/tanstack-query/` |
-| **typescript-expert** | Complex TS patterns, generics | `.claude/skills/typescript-expert` |
-| **typescript-advanced-types** | Utility types, conditional types | `.claude/skills/typescript-advanced-types` |
-| **vercel-react-best-practices** | React 19 patterns, performance | `.claude/skills/vercel-react-best-practices` |
-| **ui-ux-pro-max** | Design systems, color palettes, typography | `.claude/skills/ui-ux-pro-max` |
-| **web-design-guidelines** | Layout, spacing, responsive design | `.claude/skills/web-design-guidelines` |
+| Skill                           | When to Use                                        | Path                                          |
+| ------------------------------- | -------------------------------------------------- | --------------------------------------------- |
+| **nextjs**                      | Any Next.js 16 work, App Router, Server Components | `.agents/skills/nextjs/`                      |
+| **shadcn-ui**                   | Adding/customizing shadcn components               | `.agents/skills/shadcn-ui`                    |
+| **tanstack-query**              | Data fetching, mutations, caching                  | `.agents/skills/tanstack-query/`              |
+| **typescript-expert**           | Complex TS patterns, generics                      | `.agents/skills/typescript-expert`            |
+| **typescript-advanced-types**   | Utility types, conditional types                   | `.agents/skills/typescript-advanced-types`    |
+| **vercel-react-best-practices** | React 19 patterns, performance                     | `.agents/skills/vercel-react-best-practices`  |
+| **ui-ux-pro-max**               | Design systems, color palettes, typography         | `.agents/skills/ui-ux-pro-max`                |
+| **web-design-guidelines**       | Layout, spacing, responsive design                 | `.agents/skills/web-design-guidelines`        |
+| **motion**                      | React animations, gestures, scroll effects         | `.agents/skills/motion`                       |
+| **nextjs-react-expert**         | React & Next.js core patterns, Server Components   | `.agents/skills/nextjs-react-expert`          |
+| **responsiveness-check**        | Breakpoint testing, mobile-first verification      | `.agents/skills/responsiveness-check`         |
 
-### Backend (Bot)
+### Backend (API & Bot)
 
-| Skill       | When to Use                                 | Path                     |
-| ----------- | ------------------------------------------- | ------------------------ |
-| **fastapi** | (Removed - legacy) | |
+| Skill                               | When to Use                                 | Path                                                                       |
+| ----------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------- |
+| **fastapi**                         | FastAPI endpoints, dependencies, middleware | `.agents/skills/fastapi`                                                   |
+| **insforge**                        | InsForge BaaS — tables, auth, SDK, storage  | `.agents/skills/insforge`                                                  |
+| **async-python-patterns**           | Async/await, concurrency, event loops       | `.agents/skills/python-development/skills/async-python-patterns/`           |
+| **python-code-style**               | PEP 8, naming conventions, formatting       | `.agents/skills/python-development/skills/python-code-style/`               |
+| **python-type-safety**              | Type hints, generics, Pydantic              | `.agents/skills/python-development/skills/python-type-safety/`              |
+| **python-error-handling**           | Exceptions, error recovery, logging         | `.agents/skills/python-development/skills/python-error-handling/`           |
+| **python-design-patterns**          | Factory, singleton, dependency injection    | `.agents/skills/python-development/skills/python-design-patterns/`          |
+| **python-testing-patterns**         | pytest, fixtures, mocking                   | `.agents/skills/python-development/skills/python-testing-patterns/`         |
+| **python-performance-optimization** | Profiling, caching, memory management       | `.agents/skills/python-development/skills/python-performance-optimization/` |
+| **python-anti-patterns**            | Common mistakes to avoid                    | `.agents/skills/python-development/skills/python-anti-patterns/`            |
+| **python-resilience**               | Retry, circuit breaker, fallbacks           | `.agents/skills/python-development/skills/python-resilience/`               |
+| **python-background-jobs**          | Task queues, scheduled jobs                 | `.agents/skills/python-development/skills/python-background-jobs/`          |
+| **python-observability**            | Logging, metrics, tracing                   | `.agents/skills/python-development/skills/python-observability/`            |
+| **python-configuration**            | Config management, env vars, settings       | `.agents/skills/python-development/skills/python-configuration/`            |
+| **python-packaging**                | Package structure, pyproject, build         | `.agents/skills/python-development/skills/python-packaging/`                |
+| **python-project-structure**        | Layout, modules, imports organisation       | `.agents/skills/python-development/skills/python-project-structure/`        |
+| **python-resource-management**      | Context managers, file handles, cleanup     | `.agents/skills/python-development/skills/python-resource-management/`      |
+| **uv-package-manager**              | uv install, lockfiles, virtualenvs          | `.agents/skills/python-development/skills/uv-package-manager/`              |
+| **websocket-engineer**              | Real-time bi-directional communication      | `.agents/skills/websocket-engineer`           |
 
 ### Database
 
-| Skill                                | When to Use                               | Path                                              |
-| ------------------------------------ | ----------------------------------------- | ------------------------------------------------- |
-| **postgresql-table-design**          | Schema design, indexes, constraints       | `.claude/skills/postgresql-table-design/`         |
-| **supabase-postgres-best-practices** | supabase-postgres-best-practices          | `.claude/skills/supabase-postgres-best-practices` |
-| **timescaledb**                      | Time-series data, hypertables, analytics  | `.claude/skills/timescaledb/`                     |
-| **postgres-pro**                     | Advanced optimization, replication, JSONB | `.claude/skills/postgres-pro`                     |
+| Skill                                | When to Use                              | Path                                               |
+| ------------------------------------ | ---------------------------------------- | -------------------------------------------------- |
+| **postgresql-table-design**          | Schema design, indexes, constraints      | `.agents/skills/postgresql-table-design/`          |
+| **postgresql-best-practices**        | Query optimization, admin, performance   | `.agents/skills/postgresql-best-practices`         |
+| **postgres-pro**                     | Advanced queries, EXPLAIN, JSONB, VACUUM | `.agents/skills/postgres-pro`                      |
 
 ### DevOps & Tooling
 
-| Skill                        | When to Use                   | Path                                       |
-| ---------------------------- | ----------------------------- | ------------------------------------------ |
-| **git-commit**               | Conventional commits, staging | `.claude/skills/git-commit/`               |
-| **github-actions-templates** | CI/CD workflows               | `.claude/skills/github-actions-templates/` |
-| **powershell-expert**        | Windows scripts, automation   | `.claude/skills/powershell-expert`         |
+| Skill                        | When to Use                           | Path                                       |
+| ---------------------------- | ------------------------------------- | ------------------------------------------ |
+| **docker-expert**            | Containerization, Multi-stage builds, Compose | `.agents/skills/docker-expert`               |
+| **git-commit**               | Conventional commits, staging         | `.agents/skills/git-commit/`                |
+| **github-actions-templates** | CI/CD workflows                       | `.agents/skills/github-actions-templates/`  |
+| **mermaid-diagrams**         | UML, Flowcharts, Sequence diagrams    | `.agents/skills/mermaid-diagrams`            |
+| **playwright-cli**           | Browser automation, testing, scraping | `.agents/skills/playwright-cli`            |
+| **powershell-expert**        | Windows scripts, automation           | `.agents/skills/powershell-expert`         |
+| **skill-creator**            | Create or update agent skills         | `.agents/skills/skill-creator`             |
 
 ### Project Management
 
-| Skill                      | When to Use                 | Path                                     |
-| -------------------------- | --------------------------- | ---------------------------------------- |
-| **openspec-new-change**    | Start a new feature/fix     | `.claude/skills/openspec-new-change/`    |
-| **openspec-apply-change**  | Implement tasks from change | `.claude/skills/openspec-apply-change/`  |
-| **openspec-verify-change** | Verify before archiving     | `.claude/skills/openspec-verify-change/` |
+| Skill                        | When to Use                                  | Path                                          |
+| ---------------------------- | -------------------------------------------- | --------------------------------------------- |
+| **openspec-new-change**      | Start a new feature/fix                      | `.agent/skills/openspec-new-change/`          |
+| **openspec-ff-change**       | Fast-forward all artifacts in one go         | `.agent/skills/openspec-ff-change/`           |
+| **openspec-apply-change**    | Implement tasks from a change                | `.agent/skills/openspec-apply-change/`        |
+| **openspec-continue-change** | Create the next artifact for a change        | `.agent/skills/openspec-continue-change/`     |
+| **openspec-verify-change**   | Verify implementation before archiving       | `.agent/skills/openspec-verify-change/`       |
+| **openspec-archive-change**  | Archive a completed change                   | `.agent/skills/openspec-archive-change/`      |
+| **openspec-bulk-archive**    | Archive multiple changes at once             | `.agent/skills/openspec-bulk-archive-change/` |
+| **openspec-sync-specs**      | Sync delta specs to main specs               | `.agent/skills/openspec-sync-specs/`          |
+| **openspec-explore**         | Think through ideas before starting a change | `.agent/skills/openspec-explore/`             |
+| **openspec-onboard**         | Guided walkthrough of the full OPSX cycle    | `.agent/skills/openspec-onboard/`             |
 
 ---
 
-_Last Updated: 2026-02-12_
+_Last Updated: 2026-02-05_

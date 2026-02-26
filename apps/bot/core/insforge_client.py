@@ -356,6 +356,35 @@ async def get_group_channels(group_id: int) -> list[EnforcedChannel]:
     return channels
 
 
+async def _update_link_counts(group_id: int, channel_id: int) -> None:
+    """Recalculate linked_channels_count and linked_groups_count from actual links."""
+    now = datetime.now(UTC).isoformat()
+
+    # Count channels linked to this group
+    group_links = await _get("group_channel_links", {"group_id": f"eq.{group_id}"})
+    await _patch(
+        "protected_groups",
+        {"group_id": f"eq.{group_id}"},
+        {"linked_channels_count": len(group_links), "updated_at": now},
+        prefer="return=minimal",
+    )
+
+    # Count groups linked to this channel
+    await _update_channel_link_count(channel_id)
+
+
+async def _update_channel_link_count(channel_id: int) -> None:
+    """Recalculate linked_groups_count for a single channel."""
+    now = datetime.now(UTC).isoformat()
+    channel_links = await _get("group_channel_links", {"channel_id": f"eq.{channel_id}"})
+    await _patch(
+        "enforced_channels",
+        {"channel_id": f"eq.{channel_id}"},
+        {"linked_groups_count": len(channel_links), "updated_at": now},
+        prefer="return=minimal",
+    )
+
+
 async def link_group_channel(
     group_id: int,
     channel_id: int,
@@ -363,7 +392,7 @@ async def link_group_channel(
     title: str | None = None,
     username: str | None = None,
 ) -> None:
-    """Link a group to a channel."""
+    """Link a group to a channel and update link counters."""
     await create_enforced_channel(channel_id, title, username, invite_link)
 
     # Check existing link
@@ -377,11 +406,27 @@ async def link_group_channel(
             [{"group_id": group_id, "channel_id": channel_id, "created_at": now}],
             prefer="return=minimal",
         )
+        # Update link counters on both sides
+        await _update_link_counts(group_id, channel_id)
 
 
 async def unlink_all_channels(group_id: int) -> None:
-    """Remove all channel links for a group."""
+    """Remove all channel links for a group and update link counters."""
+    # Get current links before deleting so we can decrement channel counters
+    links = await _get("group_channel_links", {"group_id": f"eq.{group_id}"})
     await _delete("group_channel_links", {"group_id": f"eq.{group_id}"})
+
+    # Reset group's linked_channels_count to 0
+    now = datetime.now(UTC).isoformat()
+    await _patch(
+        "protected_groups",
+        {"group_id": f"eq.{group_id}"},
+        {"linked_channels_count": 0, "updated_at": now},
+        prefer="return=minimal",
+    )
+    # Decrement each channel's linked_groups_count
+    for link in links:
+        await _update_channel_link_count(link["channel_id"])
 
 
 async def get_groups_for_channel(channel_id: int) -> list[ProtectedGroup]:
@@ -447,3 +492,39 @@ async def upsert_bot_status(
     )
     if resp.status_code not in (200, 201, 204):
         logger.warning("bot_status upsert returned %d: %s", resp.status_code, resp.text)
+
+
+async def bulk_update_member_counts(updates: list[dict[str, Any]]) -> None:
+    """
+    Update member_count for multiple groups in one request.
+
+    Args:
+        updates: List of dicts with {"group_id": int, "owner_id": int, "member_count": int, ...}
+    """
+    if not updates:
+        return
+    client = _get_client()
+    resp = await client.post(
+        "/api/database/records/protected_groups",
+        json=updates,
+        headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
+    )
+    resp.raise_for_status()
+
+
+async def bulk_update_subscriber_counts(updates: list[dict[str, Any]]) -> None:
+    """
+    Update subscriber_count for multiple channels in one request.
+
+    Args:
+        updates: List of dicts with {"channel_id": int, "subscriber_count": int, ...}
+    """
+    if not updates:
+        return
+    client = _get_client()
+    resp = await client.post(
+        "/api/database/records/enforced_channels",
+        json=updates,
+        headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
+    )
+    resp.raise_for_status()

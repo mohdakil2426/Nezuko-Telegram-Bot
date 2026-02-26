@@ -44,9 +44,9 @@ Nezuko acts as an **automated gatekeeper** that:
 | Page | Purpose |
 | --- | --- |
 | **Dashboard** | Overview stats, animated verification charts, activity feeds. |
-| **Analytics** | Verification trends, growth metrics, performance. |
-| **Groups** | Manage protected groups, view settings. |
-| **Channels** | Manage enforced channels, link to groups. |
+| **Analytics** | Verification trends, growth metrics, performance (responsive charts). |
+| **Groups** | Manage protected groups, member counts, linked channels. |
+| **Channels** | Manage enforced channels, subscriber counts, linked groups. |
 | **Bots** | Add/manage multiple bot instances. |
 | **Logs** | Real-time log streaming with filters. |
 | **Settings** | Theme, account info, preferences. |
@@ -88,4 +88,4 @@ Dashboard ← InsForge Realtime (WebSocket) ← PostgreSQL Triggers
 
 ---
 
-_Last Updated: 2026-02-25 (Phase 67)_
+_Last Updated: 2026-02-26 (Phase 69)_
