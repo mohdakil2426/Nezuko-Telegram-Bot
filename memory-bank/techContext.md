@@ -1,6 +1,6 @@
 # Technical Context: Stack & Development
 
-> **Status**: Phase 70 — Frontend Audit & Performance Optimization 🎉
+> **Status**: Phase 72 — Security Audit Fixes v5 Complete ✅
 
 ## Technology Stack
 
@@ -8,14 +8,17 @@
 
 | Package | Version | Purpose |
 | --- | --- | --- |
-| python-telegram-bot | 22.6+ | Telegram Bot API (includes JobQueue for scheduled jobs) |
-| httpx | 0.27+ | InsForge REST API client (`insforge_client.py`) |
+| python-telegram-bot | 22.6+ [webhooks,callback-data,http2] | Telegram Bot API (includes JobQueue for scheduled jobs) |
+| httpx | <0.29 (pinned) | InsForge REST API client (`insforge_client.py`) |
+| aiohttp | 3.13+ | Health check HTTP server (`/health`, `/metrics`, `/ready`) |
 | SQLAlchemy | 2.0+ | **Tests only** — SQLite in-memory (never in production code) |
 | aiosqlite | 0.21+ | **Tests only** — SQLite async driver for pytest |
 | Pydantic | 2.12+ | Data validation / config |
-| Redis (aioredis) | 7.1+ | Caching layer |
+| Redis (aioredis) | 7.1+ | Caching layer (membership + admin status; graceful degradation) |
 | **uv** | Latest | Dependency management & environment virtualization |
-| cryptography | 43+ | AES-GCM & Fernet encryption (`core/encryption.py`) |
+| cryptography | 45+ | AES-256-GCM encryption (`core/encryption.py`) |
+| orjson | Latest | Fast JSON serialization |
+| tenacity | Latest | Retry logic for transient failures |
 
 > **⚠️ asyncpg**: Completely removed from production. No direct PG connection.
 > **⚠️ SQLAlchemy**: Only present for offline test speed (SQLite). Never imported
@@ -34,6 +37,7 @@
 | shadcn/ui | Latest | Accessible UI components |
 | Recharts | 2.15+ | Dashboard charts (via shadcn/ui ChartContainer) |
 | @insforge/sdk | Latest | InsForge BaaS client (DB, Realtime, Storage, Functions) |
+| @insforge/nextjs | 1.1.7+ | InsForge authentication for Next.js (useAuth, useUser, InsforgeBrowserProvider) |
 | motion | 12.27+ | React micro-animations (LazyMotion optimized) |
 | zod | 3.24+ | Schema validation |
 | react-hook-form | 7.54+ | Form management |

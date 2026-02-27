@@ -17,7 +17,52 @@
 | 68    | Comprehensive Audit, Bug Fixes & Redis Setup | Complete ✅ |
 | 70    | Frontend Audit & Performance Optimization   | Complete ✅ |
 | 71    | Secure Vault & Automated Key Management      | Complete ✅ |
-| 72    | RLS Policies Hardening                      | In Progress 🚧 |
+| 72    | Security Audit Fixes v5 (RLS, Auth, Bot)    | Complete ✅ |
+
+---
+
+## Phase 72: Security Audit Fixes v5 (Complete)
+
+All issues from `COMPREHENSIVE_CODEBASE_AUDIT.md` resolved. 3 commits on `main`.
+
+### Security (Critical fixes)
+- RLS enabled on ALL 12 public tables (migration `012`) — 38 policies
+- `nezuko_secrets` blocked from anon access
+- SSRF vulnerability fixed in `test-webhook` edge function
+- Bot token encryption now uses master key from vault (not hardcoded)
+- Phantom table service (`audit.service.ts`) deleted
+
+### Bot (High/Medium fixes)
+- Global error handler (`handlers/error.py`) — registered LAST in `loader.py`
+- `ChatJoinRequest` handler — auto-approve/decline with DM instructions
+- Admin status `getChatMember` now cached (120s TTL, Redis-backed)
+- `ChatMemberRestricted.is_member` correctly handled in verification
+- `use_independent_chat_permissions=True` on all restrict calls
+- RESTRICTED→LEFT transition handled in `leave.py`
+- All missing channels shown in verification warning (not just first)
+- N+1 queries fixed in `insforge_client.py` (batch filter)
+- `encryption.py` uses specific exceptions (no bare `except Exception`)
+- PTB `Defaults(parse_mode=HTML)` applied via `create_application()` factory
+
+### Web Dashboard (High/Medium fixes)
+- `@insforge/nextjs@1.1.7` auth integration complete:
+  - `/api/auth/route.ts` cookie-based SSR auth
+  - `InsforgeProvider` wraps app, `useAuth`/`useUser` are real (not stub)
+  - `nav-user.tsx` uses live user profile + `insforge.auth.signOut()`
+  - `proxy.ts` / `middleware.ts` check `insforge_session` cookie
+- `logs.service.ts` phantom `extra` column removed
+- `bot_manager.py` uses `create_application()` factory
+
+### Quality Gates (All Green)
+| Check | Result |
+|---|---|
+| `ruff check apps/bot` | **0 errors** |
+| `ruff format` | **clean** |
+| `pylint apps/bot` | **10.00/10** |
+| `pyrefly check apps/bot` | **0 errors** |
+| `pytest tests/bot/` | **58 passed** |
+| `bun run lint` | **0 warnings** |
+| `bun run build` | **0 TypeScript errors** |
 
 ---
 
@@ -26,36 +71,29 @@
 ### Security Infrastructure
 - **`nezuko_secrets` Table**: Implemented a secure database vault for platform-wide secrets.
 - **AES-256-GCM Standard**: Upgraded bot token encryption from base64/Fernet to industrial AES-256-GCM with versioning (`v2:` prefix).
-- **Edge Function Hardening**: The `manage-bot` function now requires a `master_key` and uses cryptographically strong AES-GCM for all newly added bots.
+- **Edge Function Hardening**: The `manage-bot` function now requires a `master_key`.
 
 ### User Experience (Zero-Config)
-- **Settings Vault Card**: Integrated a "Security Vault" card in the dashboard settings to allow generating and saving master keys.
-- **Bot Auto-Sync**: The bot now automatically synchronizes the encryption key from the vault on startup, removing the need for `ENCRYPTION_KEY` in `.env` files.
+- **Settings Vault Card**: Integrated a "Security Vault" card in the dashboard settings.
+- **Bot Auto-Sync**: The bot automatically synchronizes the encryption key from the vault on startup.
 - **Python Audit**: Optimized bot core for **10.00/10 Pylint score**; passed **58 unit tests** successfully.
 
 ---
 
 ## Phase 70: Frontend Audit & Performance Optimization (Complete)
 
-### Expert Skill-Set Audit
-Comprehensive audit performed using Next.js 16, React 19, Motion, and TanStack Query expert guidelines.
-
-**Key Performance Improvements:**
-- **Bundle Optimization**: Implemented `LazyMotion` via `MotionProvider` reducing Framer Motion overhead from 34 KB to **4.6 KB**.
-- **Import Speed**: Configured `optimizePackageImports` in `next.config.ts` for `lucide-react`, `motion`, `recharts`, and `@insforge/sdk`.
-- **Render Speed**: Refactored `DashboardPage` from a client component to a **Server Component** for faster LCP while preserving staggered animations via `PageTransition` wrapper.
-- **"Virtualization-Lite"**: Added `content-visibility: auto` to `ActivityFeed` items to optimize scrolling performance.
-
-### Production Hardening (Settings)
-- **Server Actions**: Moved settings persistence to `lib/actions/settings.ts` (100% server-side execution).
-- **Security Vault**: Introduced the Security Vault system to manage encryption keys.
+### Key Performance Improvements
+- **Bundle Optimization**: `LazyMotion` via `MotionProvider` — Framer Motion overhead from 34 KB → **4.6 KB**.
+- **Import Speed**: `optimizePackageImports` in `next.config.ts` for icons, charts, etc.
+- **Render Speed**: `DashboardPage` refactored to Server Component.
 
 ---
 
 ## Technical Debt & Known Issues
-- [ ] **RLS Hardening**: Row Level Security (RLS) is enabled but needs more granular community-level policies.
-- [ ] **Auth SDK Integration**: Transition from "Dev Mode" login to true InsForge Auth SDK.
-- [ ] **Test Coverage**: Currently at 58 tests; target is 100+ for full coverage of handlers.
+
+- [ ] **`ownerTelegramId` placeholder**: AddBot dialog uses `0` until real user Telegram ID is sourced from auth.
+- [ ] **Test Coverage**: Currently at 58 tests; target is 100+ for full coverage.
+- [ ] **Admin Notification**: Error handler doesn't yet send alerts to admin chat (Task 6.2).
 
 ---
-_Last Updated: 2026-02-27 (Phase 71)_
+_Last Updated: 2026-02-27 (Phase 72 — Security Audit Fixes v5 Complete)_

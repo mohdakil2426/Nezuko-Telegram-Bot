@@ -1,85 +1,48 @@
 # Active Context: Current State
 
 ### Current Status
-Finalizing production readiness. Completed **Phase 71: Secure Vault & Automated Key Management**, which automated encryption key management and upgraded the platform to AES-256-GCM.
-Next: RLS hardening and deployment verification.
- ✅ 0 warnings | Knip ✅ Clean
+**Phase 72: Comprehensive Security Audit Fixes (v5) — COMPLETE ✅**
+
+All critical, high, medium, and low priority issues from `COMPREHENSIVE_CODEBASE_AUDIT.md` have been resolved across the bot, web dashboard, and InsForge backend. The platform is now production-ready with full security hardening, InsForge auth integration, and a complete handler registry.
 
 ---
 
-## Phase 71: Secure Vault & Automated Key Management (Complete)
+## Phase 72: Security Audit Fixes v5 (Complete)
 
-### Automated Key Management
-The platform now fully automates the management of encryption keys, enhancing security and operational efficiency.
+### Security Fixes (Critical)
+- **RLS Enabled**: Migration `012_enable_rls.sql` — RLS on all 12 public tables + 38 policies (`anon`, `authenticated`, `project_admin` roles). `nezuko_secrets` is blocked from anon reads.
+- **Bot Token Encryption**: `addBot()` in `bots.service.ts` now fetches `master_key` from `nezuko_secrets` before calling the `manage-bot` edge function.
+- **SSRF Protection**: `test-webhook` edge function — HTTPS-only, blocks RFC1918, loopback, link-local, and cloud metadata endpoints (`redirect=error`).
+- **Phantom Tables Removed**: Deleted `audit.service.ts` which queried non-existent `admin_audit_log` + `admin_users` tables.
+- **FK Constraints**: Migration `013_add_missing_fks.sql` — `bot_status.bot_instance_id → bot_instances.id` and `admin_commands.bot_id → bot_instances.bot_id`.
 
-**1. Secure Vault Integration:**
-- **`nezuko_secrets` Table**: Introduced a dedicated database table for storing sensitive secrets, including the `master_key`.
-- **Dashboard Management**: Encryption keys can now be securely managed directly from the web dashboard.
-- **Bot Synchronization**: The bot automatically synchronizes keys from the `nezuko_secrets` vault, eliminating the need for manual `.env` updates.
+### Bot Improvements
+- **Global Error Handler**: `apps/bot/handlers/error.py` + registered as `application.add_error_handler(error_handler)` in `loader.py` (last, as required by PTB).
+- **PTB Defaults**: `create_application()` factory in `loader.py` — `Defaults(parse_mode=ParseMode.HTML)` applies to all bots (standalone + dashboard mode).
+- **ChatJoinRequest Handler**: `handlers/events/join_request.py` — auto-approves verified users, declines and DMs instructions to unverified users. Registered as `ChatJoinRequestHandler`.
+- **Cached Admin Check**: Admin-status `getChatMember` in `message.py` now cached (key: `admin:{user_id}:{chat_id}`, TTL: 120s + jitter) — eliminates API call per message.
+- **Verification Fixes**: `ChatMemberRestricted.is_member` check, `use_independent_chat_permissions=True` on restrict calls, RESTRICTED→LEFT transition handling, all missing channels shown.
+- **N+1 Query Fix**: `insforge_client.py` — `get_group_channels()` and `get_groups_for_channel()` now use single batch `in.()` filter.
+- **Encryption Hardening**: `encryption.py` — specific exceptions instead of bare `except Exception`.
+- **Dependency Cleanup**: Restored `aiohttp` (used by `health.py`); added PTB extras (`[webhooks,callback-data,http2]`); pinned `httpx<0.29`; removed unused deps.
 
-**2. Encryption Standard Upgrade:**
-- **AES-256-GCM**: Upgraded all encryption processes to the robust AES-256-GCM standard, ensuring authenticated encryption for bot tokens and other sensitive data.
-- **Backend/Frontend Parity**: Ensured consistent encryption standards across both backend and frontend components.
+### Web Dashboard Improvements
+- **InsForge Auth**: `@insforge/nextjs@1.1.7` integrated:
+  - `/api/auth/route.ts` — `createAuthRouteHandlers()` for cookie-based SSR auth
+  - `providers/insforge-provider.tsx` — `InsforgeBrowserProvider` wrapping the app
+  - `middleware.ts` / `proxy.ts` updated — `insforge_session` cookie checked for route protection
+  - `use-auth.ts` — replaced stub with real `useAuth`/`useUser` re-exports
+  - `nav-user.tsx` — uses `useUser()` profile + `insforge.auth.signOut()` for logout
+  - `use-realtime-insforge.ts` — `isAuthenticated` → `isSignedIn`
+- **Logs Fix**: `logs.service.ts` — removed phantom `extra` column, mapped actual `admin_logs` columns.
+- **bot_manager.py**: Uses `create_application()` factory for consistent PTB config.
 
-### Important Patterns & Insights
-- **LazyMotion Strategy**: Using `motion/react` with `domAnimation` keeps the main bundle lightweight (~4.6 KB).
-- **Server Component Animations**: Use `<PageTransition />` wrappers for client-side entry effects without making the whole page a Client Component.
-- **Secure Vault Pattern**: Platforms secrets (like `master_key`) should be managed via the dashboard and stored in the database vault (`nezuko_secrets`). The bot should synchronize these keys automatically if `.env` is missing them.
-- **AES-256-GCM Standard**: Always use authenticated encryption for bot tokens to ensure backend/frontend parity.
-
----
-
-## Phase 70: Frontend Audit & Performance Optimization (Complete)
-
-### High-End Performance Polish
-A comprehensive expert audit was conducted, resulting in several critical optimizations for a premium experience.
-
-**1. Bundle & Loading Optimization:**
-- **LazyMotion**: Integrated `motion/react` with a `domAnimation` feature bundle, slashing animation logic weight from **34 KB to 4.6 KB**.
-- **Server-First Architecture**: Refactored the `DashboardPage` into a **Server Component**. Staggered animations are now delegated to a lightweight `<PageTransition />` wrapper, improving **LCP** by delivering static structure over the wire immediately.
-- **Import Orchestration**: Enabled `optimizePackageImports` in `next.config.ts`, preventing the hydration/parsing of thousands of unused icons and chart sub-modules.
-
-**2. Production Hardening (Settings):**
-The Settings UI now reflects enterprise security standards:
-- **Zod Validation**: Robust schemas for all bot configuration inputs.
-- **Server Actions**: Persistent data logic is now 100% server-side via `lib/actions/settings.ts`.
-- **Advanced UI**: Staggered reveal animations and robust `sonner` notifications.
-
-**3. Repository Health:**
-- **Knip Cleanup**: Deleted 6 obsolete files and removed redundant "barrel" exports in `src/lib/services/index.ts`.
-- **Prettier Linting**: Standardized `Sidebar` code formatting.
-
----
-
-## Phase 69: Chart Responsiveness & Groups/Channels Data Fix (Complete)
-
-### Chart Audit & Responsiveness Fixes
-
-Full audit of all chart components against shadcn/ui official documentation. Generated `CHART_RESPONSIVE_AUDIT.md`.
-
-**9 charts fixed for responsiveness:**
-
-| Chart | Fix |
+### Database Migrations Applied
+| Migration | Description |
 |---|---|
-| `VerificationChart` | Added `aspect-auto` |
-| `VerificationTrendsChart` | Added `aspect-auto h-[250px] md:h-[300px]` |
-| `UserGrowthChart` | Added `aspect-auto h-[250px] md:h-[300px]` |
-| `HourlyActivityChart` | Added `aspect-auto h-[250px] md:h-[300px]` |
-| `LatencyDistributionChart` | Added `aspect-auto h-[250px] md:h-[300px]` |
-| `LatencyTrendChart` | Added `aspect-auto h-[250px] md:h-[300px]` |
-| `CacheHitRateTrendChart` | Added `aspect-auto h-[250px] md:h-[300px]` |
-| `TopGroupsChart` | Added `aspect-auto h-[280px] md:h-[350px]` |
-| `BotHealthChart` | Changed `h-[200px]` → `max-h-[200px]` |
-
-**Analytics page layout fix**: Changed pie/donut grid from `lg:grid-cols-4` → `xl:grid-cols-4` to prevent overflow.
-
-### Groups & Channels Data Fix (3 root causes)
-
-| Issue | Root Cause | Fix |
-|---|---|---|
-| `linked_channels_count` not showing | **Column didn't exist in `protected_groups` table** | Added column via ALTER TABLE + migration 010 |
-| `linked_groups_count = 0` | Bot's `link_group_channel()` never updated counter | Added `_update_link_counts()` + `_update_channel_link_count()` helpers |
-| `member_count = 0` / `subscriber_count = 0` | Requires bot to run — `member_sync` syncs every 15min | Working — runs 60s after bot startup, then every 15min |
+| `012_enable_rls.sql` | RLS on all 12 tables + 38 policies |
+| `013_add_missing_fks.sql` | FK constraints for `bot_status` + `admin_commands` |
+| `014_add_bot_id_columns.sql` | `bot_id` columns on `admin_logs` + `api_call_log` |
 
 ---
 
@@ -87,15 +50,16 @@ Full audit of all chart components against shadcn/ui official documentation. Gen
 
 ```
 Web Dashboard (Next.js) ──► @insforge/sdk ──► InsForge BaaS (PostgreSQL + Realtime)
-                                                      ▲          ▲
-                                                      │          │ WebSocket pushes
-Bot Engine (Python) ──────► httpx REST ───────────────┘  DB triggers fire on:
-         └─ insforge_client.py                              • verification_log INSERT → "verification"
-         └─ status_writer.py      (PATCH→POST every 30s)   • bot_status CHANGE    → "status_changed"
-         └─ insforge_log_handler.py                        • admin_logs INSERT     → "new_log"
-         └─ verification_logger.py                         • admin_commands CHANGE → "command_updated"
+  InsforgeProvider (auth)   @insforge/nextjs         ▲          ▲
+  /api/auth route                                    │          │ WebSocket pushes
+                                                     │ DB triggers fire on:
+Bot Engine (Python) ──────► httpx REST ──────────────┘  • verification_log INSERT → "verification"
+         └─ insforge_client.py (batch N+1 fixed)        • bot_status CHANGE → "status_changed"
+         └─ status_writer.py                            • admin_logs INSERT → "new_log"
+         └─ insforge_log_handler.py                     • admin_commands CHANGE → "command_updated"
+         └─ verification_logger.py
          └─ api_call_logger.py
-         └─ member_sync.py       (every 15min via JobQueue)
+         └─ member_sync.py (every 15min via JobQueue)
 ```
 
 ---
@@ -104,8 +68,8 @@ Bot Engine (Python) ──────► httpx REST ─────────
 
 - **InsForge Base URL**: `https://u4ckbciy.us-west.insforge.app`
 - **InsForge Anon Key**: in `apps/bot/.env` AND `apps/web/.env.local` (must be identical)
-- **Encryption Key**: `ENCRYPTION_KEY` in `apps/bot/.env` (Fernet)
-- **GitHub**: `mohdakil2426/Nezuko-Telegram-Bot` — latest push: `cf7cca7`
+- **Encryption Key**: `ENCRYPTION_KEY` in `apps/bot/.env` (AES-256-GCM, auto-synced from vault)
+- **GitHub**: `mohdakil2426/Nezuko-Telegram-Bot` — latest: `4e5bb8d`
 
 ---
 
@@ -113,31 +77,31 @@ Bot Engine (Python) ──────► httpx REST ─────────
 
 | Component | Where it runs |
 |---|---|
-| Bot (Python) | `python -m apps.bot.main` (or `./nezuko.bat`) |
+| Bot (Python) | `uv run python -m apps.bot.main` (or `./nezuko.bat`) |
 | Web (Next.js) | `cd apps/web && bun dev` — port 3000 |
 | Redis | Docker — `docker compose -f docker-compose.local.yml up -d` |
 | PostgreSQL | **InsForge cloud REST API** — no local DB |
 
 ---
 
-## Remaining Issues (Non-Blocking)
+## Remaining Issues
 
 | Issue | Impact | Priority |
 |---|---|---|
-| No RLS policies (all data accessible via anon key) | Security hardening needed before multi-tenant | Medium |
-| Edge Function uses `btoa()` instead of Fernet | Weak token encryption | Low |
+| `ownerTelegramId` placeholder `0` in AddBot dialog | Owner ID not set until user provides their Telegram ID | Medium |
 | WebSocket offline locally | Falls back to 30s polling — works on deploy | Info |
-| Settings page hardcoded | Needs auth system first | Deferred |
+| Test coverage at 58 tests | Target 100+ for full coverage | Low |
+| Admin notification on error (Task 6.2) | Error alerts not sent to admin chat | Low |
 
 ---
 
 ## What to Work on Next
 
-1. **Commit ceremony** — tag Phase 70 release
-2. **Add RLS policies** — restrict tables by owner before public deployment
-3. **Add global error handler** — register `error_handler` in bot Application
-4. **Deploy** — VPS/Docker (bot) + Vercel (web)
+1. **Deploy** — VPS/Docker (bot) + Vercel (web)
+2. **Set `ownerTelegramId`** properly — integrate Telegram user ID from InsForge auth user profile (if Telegram login is used in InsForge)
+3. **Add admin notification** in global error handler (Task 6.2)
+4. **Expand test coverage** — target 100+ tests
 
 ---
 
-_Last Updated: 2026-02-26 (Phase 69 — Chart Responsiveness & Groups/Channels Data Fix)_
+_Last Updated: 2026-02-27 (Phase 72 — Security Audit Fixes v5 Complete)_

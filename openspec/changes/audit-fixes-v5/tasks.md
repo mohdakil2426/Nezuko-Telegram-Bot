@@ -39,13 +39,13 @@
 
 ## 5. Web Dashboard — Authentication (`@insforge/nextjs`)
 
-- [ ] 5.1 Install `@insforge/nextjs` package: `cd apps/web && bun add @insforge/nextjs@latest`
-- [ ] 5.2 Create `middleware.ts` in `apps/web/src/` with `InsforgeMiddleware({ baseUrl, publicRoutes: ['/'] })`
-- [ ] 5.3 Create `app/api/auth/route.ts` with `createAuthRouteHandlers()`
-- [ ] 5.4 Create `app/providers.tsx` with `InsforgeBrowserProvider` wrapping the app
-- [ ] 5.5 Update `app/layout.tsx` to wrap children in `InsforgeProvider` and add `<SignedIn>/<SignedOut>` components
-- [ ] 5.6 Replace stub `use-auth.ts` — re-export `useAuth` and `useUser` from `@insforge/nextjs`, update any components using `isAuthenticated` to use `isSignedIn`
-- [ ] 5.7 Update `.env.local` to ensure `NEXT_PUBLIC_INSFORGE_BASE_URL` and `NEXT_PUBLIC_INSFORGE_ANON_KEY` are set
+- [x] 5.1 Install `@insforge/nextjs@1.1.7`: `cd apps/web && bun add @insforge/nextjs@latest` ✅
+- [x] 5.2 Updated `proxy.ts` — checks `insforge_session` cookie alongside legacy `nezuko_session` (Next.js 16 uses `proxy.ts` not `middleware.ts`)
+- [x] 5.3 Create `app/api/auth/route.ts` with `createAuthRouteHandlers()` — syncs JWT to HTTP-only cookies ✅
+- [x] 5.4 Create `providers/insforge-provider.tsx` with `InsforgeBrowserProvider` + add to `providers/index.ts` ✅
+- [x] 5.5 Update `app/layout.tsx` to wrap children in `InsforgeProvider` (outermost client provider) ✅
+- [x] 5.6 Replace stub `use-auth.ts` — re-export `useAuth`/`useUser` from `@insforge/nextjs`; fix `nav-user.tsx` (useUser profile, signOut via insforge.auth.signOut()); fix `use-realtime-insforge.ts` (`isAuthenticated` → `isSignedIn`) ✅
+- [x] 5.7 `NEXT_PUBLIC_INSFORGE_BASE_URL` and `NEXT_PUBLIC_INSFORGE_ANON_KEY` must be set in `apps/web/.env.local` (not committed — includes real credentials)
 
 ## 6. Bot — Global Error Handler
 
@@ -62,16 +62,16 @@
 
 ## 8. Bot — getChatMember Cache
 
-- [ ] 8.1 Create `apps/bot/services/membership_cache.py` with Redis-backed cache for `getChatMember` results (key: `member:{user_id}:{chat_id}`, TTL: 300s)
-- [ ] 8.2 Modify `apps/bot/handlers/message.py` to check cache before calling `getChatMember`
-- [ ] 8.3 Ensure verification handler (`verify.py`) bypasses cache and always calls live API
-- [ ] 8.4 Add cache invalidation on member leave/join events
+- [x] 8.1 `check_membership()` in `verification.py` is already Redis-backed (key: `verify:{user_id}:{channel_id}`, TTL: 300s + jitter) ✅
+- [x] 8.2 Cache admin `getChatMember` in `message.py` (key: `admin:{user_id}:{chat_id}`, TTL: 120s + jitter) — cuts 1 API call per message for non-admins
+- [x] 8.3 `verify.py` calls `invalidate_cache()` before re-verification, bypassing cache (always live) ✅
+- [x] 8.4 `leave.py` calls `invalidate_cache()` on leave; `verify.py` invalidates on "I have joined" click ✅
 
 ## 9. Bot — Verification Improvements
 
 - [x] 9.1 Handle `ChatMemberRestricted` status in `apps/bot/services/verification.py` — check `.is_member` field to determine if restricted user is actually a member
 - [x] 9.2 Fix `apps/bot/utils/ui.py` to show ALL missing channels (not just the first) in the verify response with join links
-- [ ] 9.3 Add `ChatJoinRequest` handler in `apps/bot/handlers/` — auto-approve verified users, decline and DM instructions for unverified
+- [x] 9.3 Add `ChatJoinRequest` handler (`handlers/events/join_request.py`) — auto-approves verified users, declines unverified and DMs them the missing channel list with join links. Registered as `ChatJoinRequestHandler` in `loader.py`.
 - [x] 9.4 Move `query.answer()` to the first line of the verify callback handler (immediate acknowledgement)
 - [x] 9.5 Add `use_independent_chat_permissions=True` to all `restrictChatMember` calls in `apps/bot/services/protection.py`
 - [x] 9.6 Handle RESTRICTED → LEFT transition in `apps/bot/handlers/leave.py`

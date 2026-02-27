@@ -24,7 +24,9 @@ os.environ.setdefault("REDIS_URL", "redis://127.0.0.1:6379/0")
 def pytest_configure(config: pytest.Config) -> None:
     """Register custom markers used across the test suite."""
     config.addinivalue_line("markers", "slow: marks tests as slow (use -m 'not slow' to skip)")
-    config.addinivalue_line("markers", "integration: marks integration tests that hit real services")
+    config.addinivalue_line(
+        "markers", "integration: marks integration tests that hit real services"
+    )
     config.addinivalue_line("markers", "unit: marks pure unit tests (no I/O)")
 
 

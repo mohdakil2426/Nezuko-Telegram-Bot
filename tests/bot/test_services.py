@@ -120,9 +120,7 @@ class TestProtectionService:
         from apps.bot.services.protection import restrict_user
 
         context = MagicMock()
-        context.bot.restrict_chat_member = AsyncMock(
-            side_effect=TelegramError("Persistent error")
-        )
+        context.bot.restrict_chat_member = AsyncMock(side_effect=TelegramError("Persistent error"))
 
         with patch("apps.bot.services.protection.asyncio.sleep", new_callable=AsyncMock):
             result = await restrict_user(-1001234567890, 789, context)
@@ -172,7 +170,12 @@ class TestInsForgeClientCrud:
         """get_owner deserialises the first row into an Owner dataclass."""
         from apps.bot.core import insforge_client
 
-        fake_row = {"user_id": 99001, "username": "testuser", "created_at": None, "updated_at": None}
+        fake_row = {
+            "user_id": 99001,
+            "username": "testuser",
+            "created_at": None,
+            "updated_at": None,
+        }
         with patch.object(insforge_client, "_get", new=AsyncMock(return_value=[fake_row])):
             owner = await insforge_client.get_owner(user_id=99001)
             assert owner is not None
@@ -208,4 +211,3 @@ class TestInsForgeClientCrud:
             assert len(groups) == 2
             assert groups[0].group_id == -1001
             assert groups[1].title == "G2"
-

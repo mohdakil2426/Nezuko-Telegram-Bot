@@ -1,6 +1,6 @@
 # System Patterns: Architecture & Implementation
 
-> **Last Updated**: 2026-02-27 (Phase 71 — Secure Vault & Automated Key Management)
+> **Last Updated**: 2026-02-27 (Phase 72 — Security Audit Fixes v5 Complete)
 
 ## Architecture Overview
 
@@ -13,13 +13,13 @@ from the bot. All persistence goes through InsForge REST API or the InsForge SDK
 ┌─────────────────────────────┐    ┌──────────────────────────────────┐
 │  Web Dashboard (Next.js 16) │───►│  @insforge/sdk (TypeScript)      │
 └─────────────────────────────┘    └────────────────┬─────────────────┘
-                                                     │ HTTPS
+                                                    │ HTTPS
 ┌─────────────────────────────┐    ┌────────────────▼─────────────────┐
 │  Telegram Bot (Python 3.13) │───►│  InsForge BaaS                   │
 │                             │    │  ┌───────────┐ ┌───────────────┐ │
 │  insforge_client.py         │    │  │ PostgreSQL│ │ Realtime WS   │ │
 │  (httpx REST)               │    │  └─────┬─────┘ └───────────────┘ │
-└─────────────────────────────┘    │        │ DB Triggers              │
+└─────────────────────────────┘    │        │ DB Triggers             │
                                    │  ┌─────▼─────┐ ┌───────────────┐ │
                                    │  │  Storage  │ │ Edge Functions│ │
                                    │  └───────────┘ └───────────────┘ │

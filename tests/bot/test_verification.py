@@ -56,12 +56,8 @@ class TestCheckMembership:
         context = create_mock_context(user_status=ChatMemberStatus.MEMBER)
 
         with (
-            patch(
-                "apps.bot.services.verification.cache_get", new_callable=AsyncMock
-            ) as mock_get,
-            patch(
-                "apps.bot.services.verification.cache_set", new_callable=AsyncMock
-            ) as mock_set,
+            patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_get,
+            patch("apps.bot.services.verification.cache_set", new_callable=AsyncMock) as mock_set,
         ):
             mock_get.return_value = None  # cache miss
 
@@ -83,9 +79,7 @@ class TestCheckMembership:
         context.bot.get_chat_member = mocker.AsyncMock(return_value=left_member)
 
         with (
-            patch(
-                "apps.bot.services.verification.cache_get", new_callable=AsyncMock
-            ) as mock_get,
+            patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_get,
             patch("apps.bot.services.verification.cache_set", new_callable=AsyncMock),
         ):
             mock_get.return_value = None
@@ -101,14 +95,10 @@ class TestCheckMembership:
         from apps.bot.services.verification import check_membership
 
         context = create_mock_context()
-        context.bot.get_chat_member = mocker.AsyncMock(
-            side_effect=TelegramError("Bot was kicked")
-        )
+        context.bot.get_chat_member = mocker.AsyncMock(side_effect=TelegramError("Bot was kicked"))
 
         with (
-            patch(
-                "apps.bot.services.verification.cache_get", new_callable=AsyncMock
-            ) as mock_get,
+            patch("apps.bot.services.verification.cache_get", new_callable=AsyncMock) as mock_get,
         ):
             mock_get.return_value = None
 
@@ -160,9 +150,7 @@ class TestCheckMultiMembership:
         """No channels to check returns empty missing list."""
         from apps.bot.services.verification import check_multi_membership
 
-        missing = await check_multi_membership(
-            user_id=123, channels=[], context=mock_context
-        )
+        missing = await check_multi_membership(user_id=123, channels=[], context=mock_context)
 
         assert missing == []
 

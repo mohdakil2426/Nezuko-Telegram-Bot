@@ -28,9 +28,12 @@ async def test_sync_member_counts_batch_logic():
     # Mock insforge_client methods
     with (
         patch(
-            "apps.bot.core.insforge_client.get_all_protected_groups", AsyncMock(return_value=mock_groups)
+            "apps.bot.core.insforge_client.get_all_protected_groups",
+            AsyncMock(return_value=mock_groups),
         ),
-        patch("apps.bot.core.insforge_client.get_all_enforced_channels", AsyncMock(return_value=[])),
+        patch(
+            "apps.bot.core.insforge_client.get_all_enforced_channels", AsyncMock(return_value=[])
+        ),
         patch("apps.bot.core.insforge_client.bulk_update_member_counts", AsyncMock()) as mock_bulk,
         patch("apps.bot.services.member_sync.log_api_call_async"),
         patch("apps.bot.services.member_sync.asyncio.sleep", AsyncMock()),
@@ -63,15 +66,20 @@ async def test_sync_timestamps_with_freezegun():
                 "apps.bot.core.insforge_client.get_all_protected_groups",
                 AsyncMock(return_value=mock_groups),
             ),
-            patch("apps.bot.core.insforge_client.get_all_enforced_channels", AsyncMock(return_value=[])),
-            patch("apps.bot.core.insforge_client.bulk_update_member_counts", AsyncMock()) as mock_bulk,
+            patch(
+                "apps.bot.core.insforge_client.get_all_enforced_channels",
+                AsyncMock(return_value=[]),
+            ),
+            patch(
+                "apps.bot.core.insforge_client.bulk_update_member_counts", AsyncMock()
+            ) as mock_bulk,
             patch("apps.bot.services.member_sync.asyncio.sleep", AsyncMock()),
             patch("apps.bot.services.member_sync.log_api_call_async"),
         ):
             await sync_member_counts(mock_context)
 
             updates = mock_bulk.call_args[0][0]
-            # Check timestamp format and value (freezegun uses offset-naive by default 
+            # Check timestamp format and value (freezegun uses offset-naive by default
             # unless we specify tz or use datetime.now(UTC))
             sync_time = updates[0]["last_sync_at"]
             assert "2026-05-20T10:00:00" in sync_time

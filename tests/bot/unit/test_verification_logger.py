@@ -62,7 +62,9 @@ class TestVerificationLogger:
         from apps.bot.core import insforge_client
 
         for status in ("verified", "restricted", "error"):
-            with patch.object(insforge_client, "_post", new=AsyncMock(return_value=[])) as mock_post:
+            with patch.object(
+                insforge_client, "_post", new=AsyncMock(return_value=[])
+            ) as mock_post:
                 await log_verification(
                     user_id=1,
                     group_id=-1,
