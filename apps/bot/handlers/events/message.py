@@ -13,11 +13,16 @@ from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
 from apps.bot.core import insforge_client
+from apps.bot.core.cache import cache_get, cache_set, get_ttl_with_jitter
 from apps.bot.services.protection import restrict_user
 from apps.bot.services.verification import check_multi_membership
 from apps.bot.utils.ui import send_verification_warning
 
 logger = logging.getLogger(__name__)
+
+# Admin status cache TTL: 2 min baseline (with jitter). Short enough to detect
+# newly added/removed admins without hitting the API on every message.
+_ADMIN_CACHE_TTL = 120
 
 
 # pylint: disable=too-many-locals, too-many-branches, duplicate-code, too-many-return-statements
@@ -52,12 +57,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = update.effective_chat.id
 
         # Step 1: Check if user is admin in the group (admins are immune)
+        # Use Redis cache to avoid calling getChatMember on every single message.
+        admin_cache_key = f"admin:{user_id}:{chat_id}"
         try:
-            chat_member = await context.bot.get_chat_member(chat_id=chat_id, user_id=user_id)
-            admin_statuses = [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
-            if chat_member.status in admin_statuses:
-                logger.debug("User %s is admin in %s, skipping verification", user_id, chat_id)
-                return
+            cached_admin = await cache_get(admin_cache_key)
+            if cached_admin is not None:
+                # Cache hit — "1" means admin, "0" means not admin
+                if cached_admin == "1":
+                    logger.debug("User %s is admin in %s (cached), skipping", user_id, chat_id)
+                    return
+            else:
+                # Cache miss — call Telegram API
+                chat_member = await context.bot.get_chat_member(chat_id=chat_id, user_id=user_id)
+                admin_statuses = [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
+                is_admin = chat_member.status in admin_statuses
+
+                # Cache the result with jitter to avoid thundering herd
+                ttl = get_ttl_with_jitter(_ADMIN_CACHE_TTL)
+                await cache_set(admin_cache_key, "1" if is_admin else "0", ttl)
+
+                if is_admin:
+                    logger.debug("User %s is admin in %s, skipping", user_id, chat_id)
+                    return
         except TelegramError as e:
             logger.error("Error checking admin status: %s", e)
             # Continue with verification on error (fail-safe)

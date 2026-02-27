@@ -15,6 +15,7 @@ from telegram.error import TelegramError
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
+    ChatJoinRequestHandler,
     ChatMemberHandler,
     CommandHandler,
     Defaults,
@@ -40,6 +41,7 @@ from apps.bot.handlers.admin.settings import handle_settings, handle_status, han
 from apps.bot.handlers.admin.setup import handle_protect
 from apps.bot.handlers.error import error_handler
 from apps.bot.handlers.events.join import handle_new_member
+from apps.bot.handlers.events.join_request import handle_join_request
 from apps.bot.handlers.events.leave import handle_channel_leave
 from apps.bot.handlers.events.message import handle_message
 from apps.bot.handlers.verify import handle_callback_verify
@@ -188,6 +190,12 @@ def register_handlers(application: Application) -> None:
     application.add_handler(ChatMemberHandler(handle_channel_leave, ChatMemberHandler.CHAT_MEMBER))
     logger.debug("[OK] Registered channel leave handler")
 
+    # ChatJoinRequestHandler (approve/decline join requests)
+    # NOTE: Bot must have can_invite_users permission in the group.
+    # Enable approval mode in group settings for this to fire.
+    application.add_handler(ChatJoinRequestHandler(handle_join_request))
+    logger.debug("[OK] Registered join request handler")
+
     # ==================== MESSAGE HANDLERS ====================
     # Priority: Lowest (catch-all for unhandled messages)
 
@@ -205,5 +213,6 @@ def register_handlers(application: Application) -> None:
     logger.debug("[OK] Registered global error handler")
 
     logger.info(
-        "[SUCCESS] All handlers registered (6 commands, 7 callbacks, 2 events, 1 message, 1 error handler)"
+        "[SUCCESS] All handlers registered "
+        "(6 commands, 7 callbacks, 3 events, 1 message, 1 error handler)"
     )
