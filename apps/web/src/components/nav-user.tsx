@@ -8,6 +8,7 @@
 
 import { LogOut, Settings, User, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -25,7 +26,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useUser } from "@insforge/nextjs";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { insforge } from "@/lib/insforge";
 
 interface NavUserProps {
   /** Fallback user info (used if not authenticated) */
@@ -50,14 +53,21 @@ function getInitials(name: string): string {
 
 export function NavUser({ user: fallbackUser }: NavUserProps) {
   const { isMobile } = useSidebar();
-  const { user: authUser, isPending, logout, isLoggingOut } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
+  const { user: insforgeUser } = useUser();
+  const router = useRouter();
 
-  // Use authenticated user if available, otherwise fallback
-  const displayUser = authUser
+  const handleSignOut = async () => {
+    await insforge.auth.signOut();
+    router.push("/login");
+  };
+
+  // Build display user from InsForge profile, or fallback for unauthenticated state
+  const displayUser = insforgeUser
     ? {
-        name: authUser.first_name + (authUser.last_name ? ` ${authUser.last_name}` : ""),
-        email: authUser.username ? `@${authUser.username}` : `ID: ${authUser.telegram_id}`,
-        avatar: authUser.photo_url || "",
+        name: insforgeUser.profile?.name || insforgeUser.email || "Bot Owner",
+        email: insforgeUser.email || "",
+        avatar: insforgeUser.profile?.avatar_url || "",
       }
     : fallbackUser || {
         name: "Bot Owner",
@@ -65,9 +75,8 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
         avatar: "",
       };
 
-  const handleLogout = () => {
-    logout();
-  };
+  const isPending = !isLoaded;
+
 
   return (
     <SidebarMenu>
@@ -132,14 +141,20 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className="text-destructive focus:text-destructive"
-            >
-              {isLoggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
-              {isLoggingOut ? "Logging out..." : "Log out"}
-            </DropdownMenuItem>
+            {isSignedIn ? (
+              <DropdownMenuItem
+                onClick={handleSignOut}
+                className="text-destructive focus:text-destructive"
+              >
+                <LogOut />
+                Log out
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem disabled className="text-muted-foreground">
+                <LogOut />
+                Not signed in
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

@@ -103,7 +103,7 @@ export function useInsForgeRealtime(
   options: UseInsForgeRealtimeOptions = {}
 ): UseInsForgeRealtimeReturn {
   const { channels = [], filterTypes, autoConnect = true } = options;
-  const { isAuthenticated } = useAuth();
+  const { isSignedIn } = useAuth();
 
   const [connectionState, setConnectionState] = useState<ConnectionState>("disconnected");
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
@@ -252,8 +252,8 @@ export function useInsForgeRealtime(
   useEffect(() => {
     if (!autoConnect) return;
 
-    // If not authenticated, cleanup
-    if (!isAuthenticated) {
+    // If not signed in, pause realtime and skip auto-connect
+    if (!isSignedIn) {
       isManuallyDisconnected.current = true;
       return;
     }
@@ -270,7 +270,7 @@ export function useInsForgeRealtime(
       clearTimeout(timer);
       disconnect();
     };
-  }, [autoConnect, isAuthenticated, connect, disconnect]);
+  }, [autoConnect, isSignedIn, connect, disconnect]);
 
   return {
     connectionState,

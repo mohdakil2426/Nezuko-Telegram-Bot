@@ -1,65 +1,76 @@
 /**
- * Next.js Proxy
- * Handles session-based route protection using Telegram Login.
- * Next.js 16 uses 'proxy' convention instead of 'middleware'.
+ * Next.js Proxy (Route Protection)
+ *
+ * Next.js 16 uses the 'proxy' convention instead of 'middleware'.
+ * Handles route protection using InsForge session cookies set by
+ * the auth API route (/api/auth).
+ *
+ * Public routes: '/', '/login' — all others require authentication.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Session cookie name (matches API backend)
+ * InsForge sets this cookie via /api/auth after successful sign-in.
+ * The cookie is HTTP-only and contains the user's JWT.
  */
-const SESSION_COOKIE = "nezuko_session";
+const INSFORGE_SESSION_COOKIE = "insforge_session";
 
 /**
  * Public routes that don't require authentication.
  */
-const PUBLIC_ROUTES = ["/login"];
+const PUBLIC_ROUTES = ["/", "/login"];
 
 /**
- * Check if the path is a public route.
+ * Check if the path is a public route (no auth required).
  */
 function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+  return PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"));
 }
 
 /**
- * Check if the path is a static asset or API route.
+ * Check if the path should be skipped entirely (static assets, API routes).
  */
 function shouldSkip(pathname: string): boolean {
   return (
-    pathname.startsWith("/_next") || pathname.startsWith("/api") || pathname.includes(".") // Static files like favicon.ico, images, etc.
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname.includes(".") // Static files like favicon.ico, images, etc.
   );
 }
 
 export async function proxy(request: NextRequest) {
-  // Skip proxy for static assets
-  if (shouldSkip(request.nextUrl.pathname)) {
+  const { pathname } = request.nextUrl;
+
+  // Skip proxy for static assets and API routes (including /api/auth)
+  if (shouldSkip(pathname)) {
     return NextResponse.next();
   }
 
-  // Check for session cookie
-  const sessionId = request.cookies.get(SESSION_COOKIE)?.value;
-  const isAuthenticated = !!sessionId;
-
-  // Check if we're in mock/dev mode (allow all routes)
-  // DEV_LOGIN bypasses auth check, USE_MOCK uses mock data
+  // Dev/mock mode bypass (allows local development without auth)
   const devLogin = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
   const useMock = process.env.NEXT_PUBLIC_USE_MOCK === "true";
   if (devLogin || useMock) {
     return NextResponse.next();
   }
 
-  // Route protection: redirect unauthenticated users to login
-  if (!isAuthenticated && !isPublicRoute(request.nextUrl.pathname)) {
+  // Check for InsForge auth session cookie
+  const sessionCookie =
+    request.cookies.get(INSFORGE_SESSION_COOKIE) ||
+    // Fallback: legacy session cookie from old Telegram Login system
+    request.cookies.get("nezuko_session");
+  const isAuthenticated = !!sessionCookie?.value;
+
+  // Redirect unauthenticated users to login
+  if (!isAuthenticated && !isPublicRoute(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("redirectTo", request.nextUrl.pathname);
+    url.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from login page
-  if (isAuthenticated && request.nextUrl.pathname === "/login") {
+  // Redirect already-authenticated users away from login page
+  if (isAuthenticated && pathname === "/login") {
     const redirectTo = request.nextUrl.searchParams.get("redirectTo") || "/dashboard";
     const url = request.nextUrl.clone();
     url.pathname = redirectTo;
@@ -76,8 +87,7 @@ export const config = {
      * Match all request paths except for:
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - Public files (svg, png, jpg, etc.)
+     * - favicon.ico and other static assets
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-import { ThemeProvider, QueryProvider, MotionProvider } from "@/providers";
+import { ThemeProvider, QueryProvider, MotionProvider, InsforgeProvider } from "@/providers";
 import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
@@ -31,12 +31,15 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <ThemeProvider>
-          <QueryProvider>
-            <MotionProvider>{children}</MotionProvider>
-            <Toaster />
-          </QueryProvider>
-        </ThemeProvider>
+        {/* InsforgeProvider must be outermost client wrapper for auth context */}
+        <InsforgeProvider>
+          <ThemeProvider>
+            <QueryProvider>
+              <MotionProvider>{children}</MotionProvider>
+              <Toaster />
+            </QueryProvider>
+          </ThemeProvider>
+        </InsforgeProvider>
       </body>
     </html>
   );

@@ -1,50 +1,17 @@
 "use client";
 
 /**
- * Auth Hook
+ * Auth Hook — powered by @insforge/nextjs
  *
- * Stub for development mode — no authentication system active.
- * Will be replaced with InsForge Auth when auth is re-enabled.
+ * Re-exports `useAuth` and `useUser` from the InsForge Next.js SDK.
+ * Components across the dashboard use this hook to access auth state.
+ *
+ * Usage:
+ *   const { isSignedIn, isLoaded } = useAuth();
+ *   const { user } = useUser();
+ *
+ * Note: Previously a stub returning a hardcoded dev user.
+ * Now uses real authentication via InsForge hosted auth.
  */
 
-/**
- * Session user info (stub)
- */
-export interface SessionUser {
-  telegram_id: number;
-  username: string | null;
-  first_name: string;
-  last_name: string | null;
-  photo_url: string | null;
-}
-
-/**
- * Hook for accessing current user authentication state.
- * Returns a dev user in development mode (no auth system active).
- */
-export function useAuth() {
-  const devUser: SessionUser = {
-    telegram_id: 0,
-    username: "dev",
-    first_name: "Developer",
-    last_name: null,
-    photo_url: null,
-  };
-
-  return {
-    /** Current authenticated user (dev stub) */
-    user: devUser,
-    /** Auth check is never loading */
-    isPending: false,
-    /** Always authenticated in dev mode */
-    isAuthenticated: true,
-    /** No error */
-    error: null,
-    /** Refetch is a no-op */
-    refetch: () => Promise.resolve({ data: devUser, status: "success" as const }),
-    /** Logout is a no-op */
-    logout: () => {},
-    /** Never logging out */
-    isLoggingOut: false,
-  };
-}
+export { useAuth, useUser } from "@insforge/nextjs";
