@@ -18,6 +18,74 @@
 | 70    | Frontend Audit & Performance Optimization   | Complete ✅ |
 | 71    | Secure Vault & Automated Key Management      | Complete ✅ |
 | 72    | Security Audit Fixes v5 (RLS, Auth, Bot)    | Complete ✅ |
+| 73    | Security Vault RLS Fix (anon role policies) | Complete ✅ |
+| 74    | Login Auth Fix (InsForge middleware + SignIn)| Complete ✅ |
+| 75    | Telegram Auth Removal (InsForge sole auth)  | Complete ✅ |
+| 76    | Auth System Hardening (pages, proxy, cleanup)| Complete ✅ |
+
+---
+
+## Phase 76: Auth System Hardening (Complete)
+
+### Deleted (dead/fake code)
+- `components/settings/bot-configuration-card.tsx` — fake form with `setTimeout`, never persisted
+- `lib/actions/settings.ts` — simulated server action, no real DB write
+- `lib/schemas/settings.ts` — only used by deleted action
+
+### Added (auth pages)
+- `/verify-email` — 6-digit OTP code input + resend (backend: `verifyEmailMethod: "code"`)
+- `/forgot-password` — Step 1: email → `sendResetPasswordEmail`
+- `/reset-password` — Step 2: OTP → `exchangeResetPasswordToken` → `resetPassword`
+- `shadcn/input-otp` component installed
+
+### Fixed (auth flow)
+- `proxy.ts`: `signInUrl: "/login"` (was `/sign-in`), `afterSignInUrl: "/dashboard"` (was `/`)
+- `proxy.ts`: `DEV_LOGIN` read per-request inside `proxy()` (was stale module-level const)
+- `dashboard/layout.tsx`: server guard checks `!userId || !token`; env read at request time
+- `login-form.tsx`: `useEffect` auto-redirect + "Forgot password?" link
+- Deleted `middleware.ts` that conflicted with `proxy.ts` (Next.js 16 pattern)
+
+### Updated UI
+- `account-info-card.tsx`: real `useUser()` data; dev mode shows amber alert instead of fake strings
+- `nav-user.tsx`: dev mode shows "Dev Mode / auth bypassed"
+- `bots.service.ts`: removed dead `owner_telegram_id: 0`
+
+### Quality Gates
+| Check | Result |
+|---|---|
+| `bun run type-check` | **0 errors** ✅ |
+| `bun run lint` | **0 warnings** ✅ |
+
+---
+
+## Phase 75: Telegram Auth Removal (Complete)
+
+**InsForge is now the sole auth provider.** All Telegram login/auth remnants purged.
+
+### Deleted
+- `src/components/auth/telegram-login.tsx` — Telegram Login Widget component
+- `src/components/auth/` directory
+- `LOGIN_BOT_USERNAME` constant + `getConfig()` from `config.ts` and `api/index.ts`
+- `NEXT_PUBLIC_LOGIN_BOT_USERNAME` from `.env.local` + `.env.example`
+- `ownerTelegramId` param from `addBot()` service, `useAddBot()` hook, and `bots/page.tsx` call site
+- Stale `TODO(ISSUE-IF-8)` comment
+
+### Kept (intentionally)
+- `DEV_LOGIN` + `NEXT_PUBLIC_DEV_LOGIN` — local dev bypass via "Skip Login" button
+- `proxy.ts` `DEV_LOGIN` check — skip `InsforgeMiddleware` in dev mode
+
+### Quality Gates
+| Check | Result |
+|---|---|
+| `bun run type-check` | **0 errors** ✅ |
+| `bun run lint` | **0 warnings** ✅ |
+
+---
+
+## Phase 73–74: Security Vault Fix + Login Auth Fix (Complete)
+
+- **Phase 73**: Migration `015_fix_nezuko_secrets_rls.sql` — added `anon` SELECT/INSERT/UPDATE policies on `nezuko_secrets` (was blocking both bot startup and web vault saves)
+- **Phase 74**: Replaced broken Telegram Login Widget with InsForge `InsforgeMiddleware` + `SignInButton` hosted auth flow. `proxy.ts` uses `InsforgeMiddleware` for prod; `NextResponse.next()` in dev mode.
 
 ---
 
@@ -91,9 +159,9 @@ All issues from `COMPREHENSIVE_CODEBASE_AUDIT.md` resolved. 3 commits on `main`.
 
 ## Technical Debt & Known Issues
 
-- [ ] **`ownerTelegramId` placeholder**: AddBot dialog uses `0` until real user Telegram ID is sourced from auth.
 - [ ] **Test Coverage**: Currently at 58 tests; target is 100+ for full coverage.
 - [ ] **Admin Notification**: Error handler doesn't yet send alerts to admin chat (Task 6.2).
+- [ ] **WebSocket offline locally**: Falls back to 30s polling — works correctly on cloud deploy.
 
 ---
-_Last Updated: 2026-02-27 (Phase 72 — Security Audit Fixes v5 Complete)_
+_Last Updated: 2026-02-27 (Phase 76 — Auth System Hardening)_

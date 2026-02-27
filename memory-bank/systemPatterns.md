@@ -268,6 +268,43 @@ to verify exact field names before writing TypeScript interfaces.
 // listens for all events (command_updated)
 ```
 
+### InsForge Auth Pattern (Phase 74–75 — CANONICAL)
+
+All dashboard authentication goes through InsForge hosted auth. No custom auth implementation.
+
+**Components:**
+- `src/proxy.ts` — `InsforgeMiddleware` guards all protected routes; short-circuits to `NextResponse.next()` when `NEXT_PUBLIC_DEV_LOGIN=true`
+- `SignInButton` — redirects to InsForge hosted sign-in page (email/password, GitHub, Google)
+- `/api/auth/route.ts` — `createAuthRouteHandlers()` syncs JWT → `insforge_session` HTTP-only cookie
+- `InsforgeBrowserProvider` — wraps the entire app; exposes `useAuth()` / `useUser()`
+- `nav-user.tsx` — uses `useUser()` profile + `insforge.auth.signOut()` for logout
+- **No Telegram widget** — fully removed in Phase 75
+
+```typescript
+// proxy.ts — route guard pattern
+import { InsforgeMiddleware } from "@insforge/nextjs/middleware";
+const insforgeMiddleware = InsforgeMiddleware({ baseUrl, publicRoutes: ["/"] });
+
+export async function proxy(request: NextRequest) {
+  if (process.env.NEXT_PUBLIC_DEV_LOGIN === "true") return NextResponse.next();
+  return insforgeMiddleware(request);
+}
+
+// login-form.tsx — sign-in trigger
+<SignInButton><Button>Sign In with InsForge</Button></SignInButton>
+
+// nav-user.tsx — sign-out
+await insforge.auth.signOut(); router.push("/login");
+```
+
+**Full flow:**
+```
+Unauthenticated → proxy.ts → InsforgeMiddleware → redirect to InsForge auth page
+User signs in → /api/auth sets insforge_session cookie → useAuth().isSignedIn = true → /dashboard
+```
+
+---
+
 ### Edge Function Invocation
 
 ```typescript
@@ -476,5 +513,4 @@ The UPSERT must explicitly restore: `is_deleted: false, is_active: true, deleted
 
 ---
 
-_Last Updated: 2026-02-27 (Phase 71 — Secure Vault)_
- pieces.
+_Last Updated: 2026-02-27 (Phase 75 — Telegram Auth Removal)_

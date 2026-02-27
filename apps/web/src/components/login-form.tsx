@@ -3,18 +3,32 @@
 /**
  * Login Form Component
  *
- * Displays the Telegram Login Widget for owner authentication.
- * Falls back to dev bypass when in mock mode.
+ * Two auth paths:
+ *  1. Production: InsForge SignInButton → hosted InsForge login page → sets
+ *     insforge_session cookie → InsforgeMiddleware grants access to /dashboard/*.
+ *  2. Dev bypass: "Skip Login" button (only visible when NEXT_PUBLIC_DEV_LOGIN=true)
+ *     redirects straight to /dashboard without any auth check.
+ *
+ * The insforge_session cookie is an HTTP-only cookie set by /api/auth after the
+ * user authenticates on the InsForge hosted page and is redirected back.
  */
 
-import { useState } from "react";
+import { ShieldCheck, LogIn, Loader2, AlertCircle } from "lucide-react";
+import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, CheckCircle, Loader2, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { SignInButton, useAuth } from "@insforge/nextjs";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { TelegramLogin, type TelegramUser } from "@/components/auth/telegram-login";
+import { Separator } from "@/components/ui/separator";
 import { DEV_LOGIN } from "@/lib/api/config";
 
 export function LoginForm() {
@@ -22,42 +36,16 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/dashboard";
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const { isLoaded, isSignedIn } = useAuth();
 
-  /**
-   * Handle Telegram Login Widget callback
-   * Auth is bypassed during InsForge migration (development mode).
-   */
-  async function handleTelegramAuth(_user: TelegramUser) {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Auth is disabled during InsForge migration — auto-approve
-      setSuccess(true);
-      setTimeout(() => {
-        router.push(redirectTo);
-      }, 500);
-    } catch {
-      setError("Authentication failed. Please try again.");
-    } finally {
-      setIsLoading(false);
+  // Auto-redirect to dashboard if already signed in
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      router.replace(redirectTo);
     }
-  }
+  }, [isLoaded, isSignedIn, redirectTo, router]);
 
-  /**
-   * Handle widget load error
-   */
-  function handleWidgetError(err: Error) {
-    console.error("Telegram widget error:", err);
-    setError("Failed to load Telegram Login. Please refresh the page.");
-  }
-
-  /**
-   * Dev mode bypass - skip authentication
-   */
+  /** Dev-only: skip auth and go straight to dashboard */
   function handleDevBypass() {
     router.push(redirectTo);
   }
@@ -75,73 +63,95 @@ export function LoginForm() {
         </CardTitle>
 
         <CardDescription className="text-muted-foreground">
-          Owner-only access via Telegram
+          Owner-only access via InsForge Auth
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-6">
-        {/* Error Alert */}
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Authentication Failed</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Success Alert */}
-        {success && (
-          <Alert className="border-green-500 bg-green-500/10">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <AlertTitle className="text-green-500">Welcome!</AlertTitle>
-            <AlertDescription>Redirecting to dashboard...</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Loading State */}
-        {isLoading && (
+      <CardContent className="space-y-5">
+        {/* ── Loading ─────────────────────────────────────────────── */}
+        {!isLoaded && (
           <div className="flex flex-col items-center justify-center space-y-2 py-4">
             <Loader2 className="text-primary h-8 w-8 animate-spin" />
-            <p className="text-muted-foreground text-sm">Verifying authentication...</p>
+            <p className="text-muted-foreground text-sm">Loading...</p>
           </div>
         )}
 
-        {/* Telegram Login Widget */}
-        {!isLoading && !success && (
-          <div className="flex flex-col items-center space-y-4">
-            <TelegramLogin
-              onAuth={handleTelegramAuth}
-              onError={handleWidgetError}
-              buttonSize="large"
-              cornerRadius={8}
-            />
-
-            <p className="text-muted-foreground max-w-62.5 text-center text-xs">
-              Only the project owner can access this dashboard. Your Telegram ID will be verified.
+        {/* ── Already signed in → redirect in progress ──────────── */}
+        {isLoaded && isSignedIn && (
+          <div className="flex flex-col items-center space-y-2 py-4">
+            <Loader2 className="text-primary h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground text-sm">
+              Redirecting to dashboard…
             </p>
           </div>
         )}
 
-        {/* Dev Mode Bypass */}
-        {DEV_LOGIN && !success && (
-          <div className="border-t border-dashed pt-4">
-            <Alert className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Development Mode</AlertTitle>
-              <AlertDescription>
-                Mock auth is enabled. Click below to bypass login.
+        {/* ── Sign-in CTA ─────────────────────────────────────────── */}
+        {isLoaded && !isSignedIn && (
+          <div className="flex flex-col items-center space-y-4">
+            {/*
+             * SignInButton wraps our custom Button child.
+             * On click it redirects to the InsForge hosted auth page.
+             * After sign-in InsForge redirects back → /api/auth sets the
+             * insforge_session cookie → afterSignInUrl="/dashboard" kicks in.
+             */}
+            <SignInButton>
+              <Button
+                id="sign-in-btn"
+                size="lg"
+                className="w-full gap-2 bg-linear-to-r from-pink-500 to-violet-500 text-white hover:from-pink-600 hover:to-violet-600"
+              >
+                <LogIn className="h-5 w-5" />
+                Sign In with InsForge
+              </Button>
+            </SignInButton>
+
+            <p className="text-muted-foreground max-w-xs text-center text-xs">
+              You&apos;ll be redirected to a secure sign-in page. Only the
+              project owner can access this dashboard.
+            </p>
+
+            <Link
+              href="/forgot-password"
+              className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 transition-colors hover:underline"
+            >
+              Forgot your password?
+            </Link>
+          </div>
+        )}
+
+        {/* ── Dev bypass (NEXT_PUBLIC_DEV_LOGIN=true only) ────────── */}
+        {DEV_LOGIN && (
+          <>
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-muted-foreground text-xs">dev mode</span>
+              <Separator className="flex-1" />
+            </div>
+
+            <Alert className="border-amber-500/40 bg-amber-500/10">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <AlertTitle className="text-amber-500">
+                Development Mode
+              </AlertTitle>
+              <AlertDescription className="text-amber-500/80">
+                Auth bypass is enabled. Disable in production by setting{" "}
+                <code className="font-mono text-xs">
+                  NEXT_PUBLIC_DEV_LOGIN=false
+                </code>
+                .
               </AlertDescription>
             </Alert>
 
             <Button
+              id="dev-skip-btn"
               variant="outline"
-              className="w-full"
+              className="w-full border-dashed"
               onClick={handleDevBypass}
-              disabled={isLoading}
             >
               Skip Login (Dev Only)
             </Button>
-          </div>
+          </>
         )}
       </CardContent>
     </Card>

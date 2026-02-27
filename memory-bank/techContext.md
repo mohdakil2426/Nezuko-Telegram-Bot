@@ -1,6 +1,6 @@
 # Technical Context: Stack & Development
 
-> **Status**: Phase 72 — Security Audit Fixes v5 Complete ✅
+> **Status**: Phase 75 — Telegram Auth Removal Complete ✅
 
 ## Technology Stack
 
@@ -37,7 +37,7 @@
 | shadcn/ui | Latest | Accessible UI components |
 | Recharts | 2.15+ | Dashboard charts (via shadcn/ui ChartContainer) |
 | @insforge/sdk | Latest | InsForge BaaS client (DB, Realtime, Storage, Functions) |
-| @insforge/nextjs | 1.1.7+ | InsForge authentication for Next.js (useAuth, useUser, InsforgeBrowserProvider) |
+| @insforge/nextjs | 1.1.7+ | InsForge auth for Next.js: `InsforgeMiddleware` (proxy.ts), `InsforgeBrowserProvider`, `SignInButton`, `useAuth`, `useUser` |
 | motion | 12.27+ | React micro-animations (LazyMotion optimized) |
 | zod | 3.24+ | Schema validation |
 | react-hook-form | 7.54+ | Form management |
@@ -90,8 +90,8 @@ LOG_LEVEL=DEBUG
 NEXT_PUBLIC_INSFORGE_BASE_URL=https://u4ckbciy.us-west.insforge.app
 NEXT_PUBLIC_INSFORGE_ANON_KEY=<insforge-anon-key>   # Must match bot key
 NEXT_PUBLIC_USE_MOCK=false
-NEXT_PUBLIC_DEV_LOGIN=true
-NEXT_PUBLIC_LOGIN_BOT_USERNAME=gmakilbot
+NEXT_PUBLIC_DEV_LOGIN=false       # Set true for local dev bypass (skip InsForge auth)
+# NEXT_PUBLIC_LOGIN_BOT_USERNAME removed — Telegram widget fully removed (Phase 75)
 ```
 
 > ⚠️ **Both `INSFORGE_ANON_KEY` values must be identical** — use `get-anon-key` MCP to
@@ -206,4 +206,4 @@ bun run format        # Prettier + Tailwind Sort
 
 ---
 
-_Last Updated: 2026-02-26 (Phase 69 — Chart Responsiveness & Groups/Channels Data Fix)_
+_Last Updated: 2026-02-27 (Phase 75 — Telegram Auth Removal)_

@@ -32,19 +32,14 @@ export function useBots() {
 /**
  * Hook for adding a new bot.
  *
- * Mutation variable: `{ token: string; ownerTelegramId: number }`
+ * Mutation variable: `{ token: string }`
+ * Ownership is tracked via the active InsForge auth session.
  */
 export function useAddBot() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      token,
-      ownerTelegramId,
-    }: {
-      token: string;
-      ownerTelegramId: number;
-    }) => addBot(token, ownerTelegramId),
+    mutationFn: ({ token }: { token: string }) => addBot(token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
     },

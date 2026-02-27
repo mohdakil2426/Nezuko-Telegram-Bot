@@ -1,94 +1,77 @@
 /**
- * Next.js Proxy (Route Protection)
+ * Next.js Proxy (Route Protection) — proxy.ts
  *
- * Next.js 16 uses the 'proxy' convention instead of 'middleware'.
- * Handles route protection using InsForge session cookies set by
- * the auth API route (/api/auth).
+ * Next.js 16 uses proxy.ts (replaces middleware.ts).
  *
- * Public routes: '/', '/login' — all others require authentication.
+ * How InsforgeMiddleware works (from source):
+ *   1. Checks for access_token in URL params → stores in insforge-session cookie
+ *   2. If route is in publicRoutes → allows through
+ *   3. If no insforge-session cookie → redirects to InsForge hosted sign-in
+ *   4. If cookie exists → allows through (no server-side JWT validation)
+ *
+ * Dev bypass (NEXT_PUBLIC_DEV_LOGIN=true):
+ *   All routes pass through without any auth check.
+ *   ⚠️ REQUIRES SERVER RESTART after toggling this env var.
+ *   ⚠️ Also clear browser cookies after switching prod→dev or dev→prod.
  */
 
+import { InsforgeMiddleware } from "@insforge/nextjs/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 
-/**
- * InsForge sets this cookie via /api/auth after successful sign-in.
- * The cookie is HTTP-only and contains the user's JWT.
- */
-const INSFORGE_SESSION_COOKIE = "insforge_session";
+const BASE_URL =
+  process.env.NEXT_PUBLIC_INSFORGE_BASE_URL ||
+  "https://u4ckbciy.us-west.insforge.app";
 
-/**
- * Public routes that don't require authentication.
- */
-const PUBLIC_ROUTES = ["/", "/login"];
+// InsforgeMiddleware is created once — the returned function handles each request.
+const insforgeMiddleware = InsforgeMiddleware({
+  baseUrl: BASE_URL,
 
-/**
- * Check if the path is a public route (no auth required).
- */
-function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"));
-}
+  // Match our app's custom route names to InsForge defaults
+  signInUrl: "/login",          // Our login page (InsForge default: /sign-in)
+  signUpUrl: "/login",          // We use the same login page for both
+  forgotPasswordUrl: "/forgot-password",
 
-/**
- * Check if the path should be skipped entirely (static assets, API routes).
- */
-function shouldSkip(pathname: string): boolean {
-  return (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.includes(".") // Static files like favicon.ico, images, etc.
-  );
-}
+  // Where InsForge redirects users after successful authentication
+  // MUST match InsforgeBrowserProvider afterSignInUrl in insforge-provider.tsx
+  afterSignInUrl: "/dashboard",
 
-export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  // useBuiltInAuth: true (default) → InsForge hosted sign-in page handles auth UI
+  // When false, middleware redirects to local signInUrl instead of InsForge backend
+  useBuiltInAuth: true,
 
-  // Skip proxy for static assets and API routes (including /api/auth)
-  if (shouldSkip(pathname)) {
-    return NextResponse.next();
-  }
+  // Public routes — always accessible without authentication.
+  // Note: /login is listed so the middleware itself doesn't redirect on that route.
+  publicRoutes: [
+    "/",
+    "/login",
+    "/verify-email",
+    "/forgot-password",
+    "/reset-password",
+  ],
+});
 
-  // Dev/mock mode bypass (allows local development without auth)
+export function proxy(request: NextRequest) {
+  // Read env at request time (not module level) so changes take effect after restart.
   const devLogin = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
   const useMock = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+
   if (devLogin || useMock) {
+    // Dev/mock mode: skip all auth checks.
     return NextResponse.next();
   }
 
-  // Check for InsForge auth session cookie
-  const sessionCookie =
-    request.cookies.get(INSFORGE_SESSION_COOKIE) ||
-    // Fallback: legacy session cookie from old Telegram Login system
-    request.cookies.get("nezuko_session");
-  const isAuthenticated = !!sessionCookie?.value;
-
-  // Redirect unauthenticated users to login
-  if (!isAuthenticated && !isPublicRoute(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("redirectTo", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  // Redirect already-authenticated users away from login page
-  if (isAuthenticated && pathname === "/login") {
-    const redirectTo = request.nextUrl.searchParams.get("redirectTo") || "/dashboard";
-    const url = request.nextUrl.clone();
-    url.pathname = redirectTo;
-    url.searchParams.delete("redirectTo");
-    return NextResponse.redirect(url);
-  }
-
-  return NextResponse.next();
+  // Production: delegate to InsForge session-based middleware.
+  return insforgeMiddleware(request);
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico and other static assets
+     * Match all request paths EXCEPT:
+     * - _next/static / _next/image (Next.js static assets)
+     * - favicon + image files
+     * - /api/* — /api/auth must stay public for the InsForge cookie sync
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

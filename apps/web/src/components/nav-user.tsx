@@ -2,8 +2,7 @@
 
 /**
  * User Navigation Component
- * Displays user avatar and dropdown menu with Telegram info
- * Integrates with the auth system for logout functionality
+ * Displays InsForge user avatar and dropdown menu with logout functionality.
  */
 
 import { LogOut, Settings, User, Loader2 } from "lucide-react";
@@ -29,6 +28,7 @@ import {
 import { useUser } from "@insforge/nextjs";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { insforge } from "@/lib/insforge";
+import { DEV_LOGIN } from "@/lib/api/config";
 
 interface NavUserProps {
   /** Fallback user info (used if not authenticated) */
@@ -62,18 +62,17 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
     router.push("/login");
   };
 
-  // Build display user from InsForge profile, or fallback for unauthenticated state
+  // Build display user from InsForge profile.
+  // In dev mode there is no session, so show a clear dev-mode label.
   const displayUser = insforgeUser
     ? {
         name: insforgeUser.profile?.name || insforgeUser.email || "Bot Owner",
         email: insforgeUser.email || "",
         avatar: insforgeUser.profile?.avatar_url || "",
       }
-    : fallbackUser || {
-        name: "Bot Owner",
-        email: "Not logged in",
-        avatar: "",
-      };
+    : DEV_LOGIN
+      ? { name: "Dev Mode", email: "auth bypassed", avatar: "" }
+      : fallbackUser || { name: "Bot Owner", email: "Not signed in", avatar: "" };
 
   const isPending = !isLoaded;
 

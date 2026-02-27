@@ -7,7 +7,6 @@
 
 import { AppearanceCard } from "./appearance-card";
 import { AccountInfoCard } from "./account-info-card";
-import { BotConfigurationCard } from "./bot-configuration-card";
 import { SecurityVaultCard } from "./security-vault-card";
 import { RevealItem, PageTransition } from "@/components/page-transition";
 
@@ -22,12 +21,9 @@ export function SettingsPageContent({ masterKey }: SettingsPageContentProps) {
         <SecurityVaultCard initialKey={masterKey} />
       </RevealItem>
       <RevealItem>
-        <BotConfigurationCard />
-      </RevealItem>
-      <RevealItem>
         <AppearanceCard />
       </RevealItem>
-      <RevealItem className="md:col-span-2">
+      <RevealItem>
         <AccountInfoCard />
       </RevealItem>
     </PageTransition>

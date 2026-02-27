@@ -1,9 +1,129 @@
 # Active Context: Current State
 
 ### Current Status
-**Phase 72: Comprehensive Security Audit Fixes (v5) — COMPLETE ✅**
+**Phase 76: Auth System Hardening — COMPLETE ✅**
 
-All critical, high, medium, and low priority issues from `COMPREHENSIVE_CODEBASE_AUDIT.md` have been resolved across the bot, web dashboard, and InsForge backend. The platform is now production-ready with full security hardening, InsForge auth integration, and a complete handler registry.
+Full auth lifecycle implemented. Removed dead settings UI, wired real InsForge user data, added all missing auth pages, fixed InsforgeMiddleware misconfiguration, and resolved the cookie stale-session bug that bypassed route protection.
+
+---
+
+## Phase 76: Auth System Hardening (Complete)
+
+### Settings Cleanup
+| Changed | Detail |
+|---|---|
+| `bot-configuration-card.tsx` | **Deleted** — fake form, simulated server action, never wrote to DB |
+| `lib/actions/settings.ts` | **Deleted** — fake `setTimeout` action, no real persistence |
+| `lib/schemas/settings.ts` | **Deleted** — only used by deleted card |
+| `account-info-card.tsx` | **Rewritten** — uses real `useUser()` from InsForge; dev mode shows amber alert |
+| `settings-page-content.tsx` | Removed `BotConfigurationCard`, balanced 2-col grid |
+| `bots.service.ts` | Removed dead `owner_telegram_id: 0` + stale comment |
+| `nav-user.tsx` | Dev mode shows "Dev Mode / auth bypassed" instead of fake "Bot Owner" |
+
+### Auth Pages Added
+| Page | Purpose |
+|---|---|
+| `/verify-email` | 6-digit OTP code verification (backend: `verifyEmailMethod: "code"`) |
+| `/forgot-password` | Step 1: email → send reset code |
+| `/reset-password` | Step 2: enter code → `exchangeResetPasswordToken` → new password |
+
+### Auth Flow Fixes
+| Fix | Detail |
+|---|---|
+| `proxy.ts` — `signInUrl: "/login"` | Was defaulting to `/sign-in` (non-existent); now correctly maps our `/login` page |
+| `proxy.ts` — `afterSignInUrl: "/dashboard"` | Was defaulting to `/`; now goes directly to dashboard after auth |
+| `proxy.ts` — env read at request time | `DEV_LOGIN` was a stale module-level const; now read per-request inside `proxy()` |
+| `dashboard/layout.tsx` — server guard | Checks both `!userId \|\| !token`; env also read at request time |
+| `login-form.tsx` — auto-redirect | `useEffect` redirects to `/dashboard` if already signed in |
+| `login-form.tsx` — "Forgot password?" | Link added below sign-in button |
+| `middleware.ts` deleted | Was conflicting with `proxy.ts` (Next.js 16 uses proxy.ts only) |
+
+### Key Insight: Stale Cookie Bug
+The InsForge middleware only checks **cookie existence** (not JWT validity). Browser stale `insforge-session` + `insforge-user` cookies from dev sessions bypassed auth. Fix: clear those cookies in DevTools after switching modes.
+
+### Quality Gates
+- `bun run type-check` → **0 errors** ✅
+- `bun run lint` → **0 warnings** ✅
+
+---
+
+## Phase 75: Telegram Auth Removal (Complete)
+
+### What Was Removed
+| Deleted/Changed | Detail |
+|---|---|
+| `src/components/auth/telegram-login.tsx` | **Deleted** — Telegram Login Widget component |
+| `src/components/auth/` directory | **Deleted** — empty after above |
+| `LOGIN_BOT_USERNAME` constant | Removed from `config.ts` + `api/index.ts` re-exports |
+| `getConfig()` function | Removed from `config.ts` — was dead, nothing imported it |
+| `ownerTelegramId` param in `addBot()` | Removed from service, hook, and call site in `bots/page.tsx` |
+| `NEXT_PUBLIC_LOGIN_BOT_USERNAME` env var | Removed from `.env.local` and `.env.example` |
+| Stale TODO comment (ISSUE-IF-8) | Removed from `bots/page.tsx` |
+
+### What Was Kept
+| Kept | Why |
+|---|---|
+| `DEV_LOGIN` constant + `NEXT_PUBLIC_DEV_LOGIN` env var | Dev bypass still useful for local development |
+| `proxy.ts` `DEV_LOGIN` check | Allows `NextResponse.next()` to skip InsForge middleware in dev |
+| `login-form.tsx` dev bypass button | Renders when `NEXT_PUBLIC_DEV_LOGIN=true` |
+| `@BotFather` copy text in `bots/page.tsx` | UX help text about bot token format — not auth-related |
+| Mock data Telegram-style IDs | Group/channel entity IDs — not auth-related |
+
+### Quality Gates
+- `bun run type-check` → **0 errors** ✅
+- `bun run lint` → **0 warnings** ✅
+
+---
+
+## Phase 74: Login Auth Fix (Complete)
+
+### Problems Fixed
+| Problem | Fix |
+|---|---|
+| "Bot domain invalid" — Telegram widget broke | Removed widget; `SignInButton` redirects to InsForge hosted auth |
+| No real session ever created | InsForge `InsforgeBrowserProvider` + `/api/auth` route sets `insforge_session` cookie |
+| `proxy.ts` custom check never enforced | Replaced with `InsforgeMiddleware` from `@insforge/nextjs/middleware` |
+| Dev bypass unreachable | `proxy.ts` short-circuits to `NextResponse.next()` when `DEV_LOGIN=true` |
+
+### How Auth Works Now
+```
+Unauthenticated → any /dashboard/* route
+  → proxy.ts → InsforgeMiddleware intercepts
+  → redirect to https://u4ckbciy.us-west.insforge.app/auth/sign-in
+  → user signs in (email/password, GitHub, Google)
+  → redirect back to /api/auth → sets insforge_session HTTP-only cookie
+  → InsforgeBrowserProvider picks up session → useAuth().isSignedIn = true
+  → afterSignInUrl="/dashboard" ✅
+
+Dev mode (NEXT_PUBLIC_DEV_LOGIN=true):
+  → proxy.ts returns NextResponse.next() (no middleware check)
+  → /login page renders with amber-styled "Skip Login" button
+  → click → router.push("/dashboard") ✅
+```
+
+---
+
+## Phase 73: Security Vault RLS Fix (Complete)
+
+### Root Cause
+Migration `012_enable_rls.sql` (Phase 72) enabled RLS on `nezuko_secrets` but only defined:
+- `project_admin` → ALL
+- `authenticated` → SELECT
+
+The `anon` role had **ZERO policies**, so:
+1. Web Server Action (`saveMasterKey`) → INSERT blocked (HTTP 42501)
+2. Bot startup (`get_secret("master_key")`) → SELECT also blocked → returns `None`
+3. `is_encryption_configured()` returned `False` → bot refused to start
+
+### Fix Applied
+**Migration `015_fix_nezuko_secrets_rls.sql`** applied directly to InsForge:
+- `anon` SELECT — bot can read `master_key` on startup
+- `anon` INSERT — web Server Action can save new generated key 
+- `anon` UPDATE — web Server Action can regenerate/update key
+- `authenticated` SELECT + ALL — future-proof if SignIn is enabled
+- `project_admin` ALL — unchanged
+
+**Note**: Anon key is safe here — it's only in `apps/bot/.env` and `apps/web/.env.local` (server-side). It is never sent to the browser.
 
 ---
 
@@ -88,20 +208,21 @@ Bot Engine (Python) ──────► httpx REST ─────────
 
 | Issue | Impact | Priority |
 |---|---|---|
-| `ownerTelegramId` placeholder `0` in AddBot dialog | Owner ID not set until user provides their Telegram ID | Medium |
 | WebSocket offline locally | Falls back to 30s polling — works on deploy | Info |
 | Test coverage at 58 tests | Target 100+ for full coverage | Low |
 | Admin notification on error (Task 6.2) | Error alerts not sent to admin chat | Low |
+| InsForge JWT not server-validated | Middleware checks cookie existence only; stale cookies pass through (clear manually) | Low |
 
 ---
 
 ## What to Work on Next
 
-1. **Deploy** — VPS/Docker (bot) + Vercel (web)
-2. **Set `ownerTelegramId`** properly — integrate Telegram user ID from InsForge auth user profile (if Telegram login is used in InsForge)
-3. **Add admin notification** in global error handler (Task 6.2)
-4. **Expand test coverage** — target 100+ tests
+1. **Clear browser cookies** → `insforge-session` + `insforge-user` on localhost after switching DEV_LOGIN modes
+2. **Deploy** — VPS/Docker (bot) + Vercel (web)
+3. **Register InsForge user** — sign up at the InsForge hosted auth page to create the dashboard owner account
+4. **Add admin notification** in global error handler (Task 6.2)
+5. **Expand test coverage** — target 100+ tests
 
 ---
 
-_Last Updated: 2026-02-27 (Phase 72 — Security Audit Fixes v5 Complete)_
+_Last Updated: 2026-02-27 (Phase 76 — Auth System Hardening)_

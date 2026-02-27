@@ -83,9 +83,8 @@ export async function listBots(): Promise<BotListResponse> {
  * Throws if no master key is found — user must set it up in Settings first.
  *
  * @param token - Bot API token (plain text; encrypted by manage-bot edge function)
- * @param ownerTelegramId - Telegram user ID of the bot owner (required for ownership)
  */
-export async function addBot(token: string, ownerTelegramId: number): Promise<Bot> {
+export async function addBot(token: string): Promise<Bot> {
   // Fetch master key from Security Vault (nezuko_secrets table)
   const { data: secretRows, error: secretError } = await insforge.database
     .from("nezuko_secrets")
@@ -108,7 +107,6 @@ export async function addBot(token: string, ownerTelegramId: number): Promise<Bo
       action: "add",
       token,
       master_key: masterKey,
-      owner_telegram_id: ownerTelegramId,
     },
   });
   if (error) throw error;
