@@ -66,29 +66,37 @@ async def send_verification_warning(
 
     chat_id = update.effective_chat.id
     user = update.effective_user
-    primary_channel = missing_channels[0]
 
-    channel_mention = (
-        f"@{primary_channel.username}"
-        if primary_channel.username
-        else primary_channel.title or "the channel"
-    )
+    # Build a list of all missing channel names for the message text
+    channel_mentions = []
+    for ch in missing_channels:
+        if ch.username:
+            channel_mentions.append(f"@{ch.username}")
+        elif ch.title:
+            channel_mentions.append(ch.title)
+        else:
+            channel_mentions.append(f"channel {ch.channel_id}")
+
+    channels_text = ", ".join(channel_mentions)
 
     reply_markup = get_membership_keyboard(missing_channels)
 
     if is_new_member:
         text = (
             f"Welcome {user.mention_html()}! "
-            f"You must join {channel_mention} to speak in this group."
+            f"You must join the following channel(s) to speak in this group:\n"
+            f"<b>{channels_text}</b>"
         )
     else:
         text = (
-            f"Hello {user.mention_html()}, you must join {channel_mention} to speak in this group."
+            f"Hello {user.mention_html()}, you must join the following channel(s) to speak:\n"
+            f"<b>{channels_text}</b>"
         )
 
     try:
+        # parse_mode is not needed — Defaults(parse_mode=HTML) is set globally
         message = await context.bot.send_message(
-            chat_id=chat_id, text=text, reply_markup=reply_markup, parse_mode="HTML"
+            chat_id=chat_id, text=text, reply_markup=reply_markup
         )
         return message.message_id
     except TelegramError as e:

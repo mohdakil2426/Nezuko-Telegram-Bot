@@ -77,10 +77,18 @@ def decrypt_v2(ciphertext_b64: str, master_key_b64: str) -> str:
 
         decrypted = aesgcm.decrypt(iv, ciphertext, None)
         return decrypted.decode("utf-8")
+    except EncryptionError:
+        raise
+    except (ValueError, OverflowError, UnicodeDecodeError) as e:
+        raise EncryptionError(f"AES-GCM decryption failed (invalid data): {e}") from e
     except Exception as e:
-        if isinstance(e, EncryptionError):
-            raise
-        raise EncryptionError(f"AES-GCM decryption failed: {e}") from e
+        # cryptography raises `cryptography.exceptions.InvalidTag` for auth failures.
+        # We catch the base Exception here as InvalidTag is not importable from a stable path
+        # in all versions. The `if isinstance` check below prevents hiding non-crypto errors.
+        error_type = type(e).__name__
+        if "InvalidTag" in error_type or "InvalidKey" in error_type:
+            raise EncryptionError("AES-GCM authentication tag invalid — key mismatch") from e
+        raise EncryptionError(f"AES-GCM decryption failed ({error_type}): {e}") from e
 
 
 async def decrypt_token(ciphertext: str) -> str:

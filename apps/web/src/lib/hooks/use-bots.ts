@@ -31,12 +31,20 @@ export function useBots() {
 
 /**
  * Hook for adding a new bot.
+ *
+ * Mutation variable: `{ token: string; ownerTelegramId: number }`
  */
 export function useAddBot() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (token: string) => addBot(token),
+    mutationFn: ({
+      token,
+      ownerTelegramId,
+    }: {
+      token: string;
+      ownerTelegramId: number;
+    }) => addBot(token, ownerTelegramId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
     },

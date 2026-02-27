@@ -18,22 +18,37 @@ classifiers = [
     "Topic :: Communications :: Chat",
 ]
 dependencies = [
-    "aiohttp>=3.13.3",
-    "aiosqlite>=0.22.1",
-    "alembic>=1.18.3",
-    "asyncpg>=0.31.0",
-    "cryptography>=45.0.0",
-    "httpx>=0.28.0",
-    "prometheus-client>=0.24.1",
+    # Core bot framework with all required extras
+    "python-telegram-bot[rate-limiter,job-queue,webhooks,callback-data,http2]>=22.6",
+
+    # HTTP client — pinned for PTB compatibility (PTB requires httpx>=0.27,<0.29)
+    "httpx>=0.28.0,<0.29",
+
+    # Config & validation
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
-    "pyjwt>=2.11.0",
     "python-dotenv>=1.2.1",
-    "python-telegram-bot[rate-limiter,job-queue]>=22.6",
+
+    # Health check HTTP server (/health, /metrics endpoints for Docker/K8s probes)
+    "aiohttp>=3.13.3",
+
+    # Security
+    "cryptography>=45.0.0",
+
+    # Caching
     "redis>=7.1.0",
+    "hiredis>=3.1.0",
+
+    # Monitoring & observability
     "sentry-sdk>=2.51.0",
-    "sqlalchemy[asyncio]>=2.0.46",
+    "prometheus-client>=0.24.1",
+
+    # Logging
     "structlog>=25.5.0",
+
+    # Performance
+    "orjson>=3.10.0",
+    "tenacity>=9.0.0",
 ]
 
 [project.urls]
@@ -122,8 +137,7 @@ ignore-paths = [
 extension-pkg-allow-list = ["pydantic"]
 jobs = 0  # Auto-detect CPU cores for parallel processing
 load-plugins = []
-# Tell Pylint about dynamic members from SQLAlchemy/Alembic
-generated-members = ["alembic.context.*", "alembic.op.*"]
+generated-members = []
 
 [tool.pylint.messages_control]
 disable = [
@@ -229,6 +243,11 @@ exclude_lines = [
 
 [dependency-groups]
 dev = [
+    # Test database (SQLite in-memory — never used in production)
+    "aiosqlite>=0.22.1",
+    "sqlalchemy[asyncio]>=2.0.46",
+
+    # Testing
     "freezegun>=1.5.1",
     "mypy>=1.19.1",
     "pylint>=4.0.4",

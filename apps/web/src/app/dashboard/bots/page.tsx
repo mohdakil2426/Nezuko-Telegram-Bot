@@ -236,7 +236,9 @@ function AddBotDialog() {
     }
 
     try {
-      await addMutation.mutateAsync(token);
+      // TODO(ISSUE-IF-8): Replace ownerTelegramId with authenticated user's Telegram ID
+      // once @insforge/nextjs auth is integrated. Currently 0 as placeholder.
+      await addMutation.mutateAsync({ token, ownerTelegramId: 0 });
       setToken("");
       setOpen(false);
     } catch (err) {

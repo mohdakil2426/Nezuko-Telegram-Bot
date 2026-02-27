@@ -10,12 +10,14 @@ Features:
 import logging
 
 from telegram import BotCommand, BotCommandScopeAllGroupChats, BotCommandScopeAllPrivateChats
+from telegram.constants import ParseMode
 from telegram.error import TelegramError
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
     ChatMemberHandler,
     CommandHandler,
+    Defaults,
     MessageHandler,
     filters,
 )
@@ -36,6 +38,7 @@ from apps.bot.handlers.admin.help import (
 )
 from apps.bot.handlers.admin.settings import handle_settings, handle_status, handle_unprotect
 from apps.bot.handlers.admin.setup import handle_protect
+from apps.bot.handlers.error import error_handler
 from apps.bot.handlers.events.join import handle_new_member
 from apps.bot.handlers.events.leave import handle_channel_leave
 from apps.bot.handlers.events.message import handle_message
@@ -81,6 +84,35 @@ async def setup_bot_commands(application: Application) -> None:
 
     except TelegramError as e:
         logger.error("Failed to set bot commands: %s", e)
+
+
+def create_application(token: str, rate_limiter: object | None = None) -> Application:
+    """
+    Build a PTB Application with consistent defaults.
+
+    Sets ``Defaults(parse_mode=ParseMode.HTML)`` so every send_message / reply_text
+    call that doesn't override ``parse_mode`` automatically uses HTML.
+
+    Used by both standalone mode (``main.py``) and dashboard mode (``bot_manager.py``).
+
+    Args:
+        token: Bot API token (decrypted).
+        rate_limiter: Optional AIORateLimiter instance. Creates one if not provided.
+
+    Returns:
+        Fully configured Application (not yet started).
+    """
+    from apps.bot.core.rate_limiter import (
+        create_rate_limiter,  # pylint: disable=import-outside-toplevel
+    )
+
+    defaults = Defaults(parse_mode=ParseMode.HTML)
+    builder = Application.builder().token(token).defaults(defaults).concurrent_updates(True)
+    if rate_limiter is not None:
+        builder = builder.rate_limiter(rate_limiter)  # type: ignore[arg-type]
+    else:
+        builder = builder.rate_limiter(create_rate_limiter())
+    return builder.build()
 
 
 def register_handlers(application: Application) -> None:
@@ -166,4 +198,12 @@ def register_handlers(application: Application) -> None:
     )
     logger.debug("[OK] Registered message verification handler")
 
-    logger.info("[SUCCESS] All handlers registered (6 commands, 7 callbacks, 2 events, 1 message)")
+    # ==================== GLOBAL ERROR HANDLER ====================
+    # Catches ANY unhandled exception from handlers or jobs (PTB would silently
+    # swallow them otherwise). Must be registered LAST.
+    application.add_error_handler(error_handler)
+    logger.debug("[OK] Registered global error handler")
+
+    logger.info(
+        "[SUCCESS] All handlers registered (6 commands, 7 callbacks, 2 events, 1 message, 1 error handler)"
+    )

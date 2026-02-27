@@ -51,11 +51,18 @@ async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYP
         user_id = user.id
 
         # Check if this is a LEAVE event (member → left/banned)
-        was_member = old_status in [
+        # RESTRICTED status must also be checked as was_member because a restricted
+        # member who was previously a member can leave (RESTRICTED → LEFT).
+        # Per Bot API: ChatMemberRestricted.is_member=True means they were a member.
+        was_member_statuses = [
             ChatMemberStatus.MEMBER,
             ChatMemberStatus.ADMINISTRATOR,
             ChatMemberStatus.OWNER,
         ]
+        was_member = old_status in was_member_statuses or (
+            old_status == ChatMemberStatus.RESTRICTED
+            and bool(getattr(update.chat_member.old_chat_member, "is_member", False))
+        )
         is_left = new_status in [ChatMemberStatus.LEFT, ChatMemberStatus.BANNED]
 
         if not (was_member and is_left):
@@ -111,6 +118,7 @@ async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYP
 
                 reply_markup = InlineKeyboardMarkup(keyboard)
 
+                # parse_mode is not needed — Defaults(parse_mode=HTML) is set globally
                 await context.bot.send_message(
                     chat_id=group_id,
                     text=(
@@ -119,7 +127,6 @@ async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYP
                         "Please join back to chat."
                     ),
                     reply_markup=reply_markup,
-                    parse_mode="HTML",
                 )
 
                 logger.info("Restricted user %s in group %s", user_id, group_id)
@@ -134,3 +141,5 @@ async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYP
 
     except TelegramError as e:
         logger.error("Telegram error in channel leave handler: %s", e)
+    except (RuntimeError, ValueError, OSError, KeyError) as e:
+        logger.error("Unexpected error in channel leave handler: %s", e, exc_info=True)

@@ -20,8 +20,7 @@ from telegram.ext import Application
 
 from apps.bot.core import insforge_client
 from apps.bot.core.encryption import EncryptionError, decrypt_token, is_encryption_configured
-from apps.bot.core.loader import register_handlers, setup_bot_commands
-from apps.bot.core.rate_limiter import create_rate_limiter
+from apps.bot.core.loader import create_application, register_handlers, setup_bot_commands
 from apps.bot.core.uptime import record_bot_start
 from apps.bot.services.command_worker import CommandWorker
 from apps.bot.services.member_sync import schedule_member_sync
@@ -218,14 +217,8 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
             return False
 
         try:
-            # Build application
-            application = (
-                Application.builder()
-                .token(bot_config.token)
-                .rate_limiter(create_rate_limiter())
-                .concurrent_updates(True)
-                .build()
-            )
+            # Build application using the shared factory (Defaults, error handler, rate limiter)
+            application = create_application(bot_config.token)
 
             # Register handlers
             register_handlers(application)

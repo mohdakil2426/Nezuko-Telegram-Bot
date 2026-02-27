@@ -77,11 +77,39 @@ export async function listBots(): Promise<BotListResponse> {
 }
 
 /**
- * Add a new bot. Uses Edge Function for token verification + encryption.
+ * Add a new bot. Uses Edge Function for token verification + AES-256-GCM encryption.
+ *
+ * IMPORTANT: Requires master key to be configured in Security Vault (nezuko_secrets).
+ * Throws if no master key is found — user must set it up in Settings first.
+ *
+ * @param token - Bot API token (plain text; encrypted by manage-bot edge function)
+ * @param ownerTelegramId - Telegram user ID of the bot owner (required for ownership)
  */
-export async function addBot(token: string): Promise<Bot> {
+export async function addBot(token: string, ownerTelegramId: number): Promise<Bot> {
+  // Fetch master key from Security Vault (nezuko_secrets table)
+  const { data: secretRows, error: secretError } = await insforge.database
+    .from("nezuko_secrets")
+    .select("key_value")
+    .eq("key_name", "master_key")
+    .maybeSingle();
+
+  if (secretError) throw secretError;
+
+  if (!secretRows?.key_value) {
+    throw new Error(
+      "Security Vault not configured. Please generate a master key in Settings → Security Vault before adding bots."
+    );
+  }
+
+  const masterKey = secretRows.key_value as string;
+
   const { data, error } = await insforge.functions.invoke("manage-bot", {
-    body: { action: "add", token, owner_telegram_id: 0 },
+    body: {
+      action: "add",
+      token,
+      master_key: masterKey,
+      owner_telegram_id: ownerTelegramId,
+    },
   });
   if (error) throw error;
   return data as Bot;

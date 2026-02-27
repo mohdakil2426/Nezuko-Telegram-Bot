@@ -1,6 +1,9 @@
 /**
  * Logs Service
- * API functions for fetching system logs via InsForge SDK
+ * API functions for fetching system logs via InsForge SDK.
+ *
+ * Maps to the actual `admin_logs` table schema:
+ *   id, level, message, timestamp, logger, module, function, line_no, path
  */
 
 import { USE_MOCK } from "@/lib/api/config";
@@ -12,7 +15,16 @@ export interface LogEntry {
   level: string;
   message: string;
   timestamp: string;
-  extra?: Record<string, unknown>;
+  /** Logger name (e.g. "apps.bot.handlers.verify") */
+  logger?: string;
+  /** Python module name */
+  module?: string;
+  /** Function name where the log was emitted */
+  function?: string;
+  /** Line number in source file */
+  line_no?: number;
+  /** File path */
+  path?: string;
 }
 
 export interface LogsResponse {
@@ -21,7 +33,7 @@ export interface LogsResponse {
 }
 
 /**
- * Fetch system logs
+ * Fetch system logs from the `admin_logs` table.
  */
 export async function getLogs(limit = 100, level?: string): Promise<LogsResponse> {
   if (USE_MOCK) {
@@ -33,7 +45,9 @@ export async function getLogs(limit = 100, level?: string): Promise<LogsResponse
 
   let query = insforge.database
     .from("admin_logs")
-    .select("*", { count: "exact" })
+    .select("id, level, message, timestamp, logger, module, function, line_no, path", {
+      count: "exact",
+    })
     .order("timestamp", { ascending: false })
     .limit(limit);
 
@@ -50,13 +64,21 @@ export async function getLogs(limit = 100, level?: string): Promise<LogsResponse
       level: string;
       message: string;
       timestamp: string;
-      extra: Record<string, unknown> | null;
+      logger: string | null;
+      module: string | null;
+      function: string | null;
+      line_no: number | null;
+      path: string | null;
     }) => ({
       id: String(row.id),
       level: row.level,
       message: row.message,
       timestamp: row.timestamp,
-      extra: row.extra ?? undefined,
+      logger: row.logger ?? undefined,
+      module: row.module ?? undefined,
+      function: row.function ?? undefined,
+      line_no: row.line_no ?? undefined,
+      path: row.path ?? undefined,
     })
   );
 
