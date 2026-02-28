@@ -6,11 +6,11 @@
  */
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { AlertTriangle, CheckCircle, Clock, TrendingUp, Zap } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle, Clock, TrendingUp } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAnalyticsOverview, useRealtimeAnalytics } from "@/lib/hooks";
+import { useAnalyticsOverview, useCacheBreakdown, useRealtimeAnalytics } from "@/lib/hooks";
 
 interface OverviewCardProps {
   title: string;
@@ -73,7 +73,6 @@ export function AnalyticsOverviewCards() {
     total_verifications?: number;
     success_rate?: number;
     avg_latency_ms?: number;
-    cache_hit_rate?: number;
   }>({});
 
   // Process SSE events for stats updates
@@ -105,10 +104,6 @@ export function AnalyticsOverviewCards() {
           updates.avg_latency_ms = eventData.avg_latency_ms;
           updatedKeys.push("avg_latency_ms");
         }
-        if (typeof eventData.cache_hit_rate === "number") {
-          updates.cache_hit_rate = eventData.cache_hit_rate;
-          updatedKeys.push("cache_hit_rate");
-        }
 
         // Mark cards as updated
         if (updatedKeys.length > 0) {
@@ -131,9 +126,11 @@ export function AnalyticsOverviewCards() {
       total_verifications: realtimeStats.total_verifications ?? data?.total_verifications ?? 0,
       success_rate: realtimeStats.success_rate ?? data?.success_rate ?? 0,
       avg_latency_ms: realtimeStats.avg_latency_ms ?? data?.avg_latency_ms ?? 0,
-      cache_hit_rate: realtimeStats.cache_hit_rate ?? data?.cache_hit_rate ?? 0,
     };
   }, [data, realtimeStats]);
+
+  // API calls snapshot (cache misses)
+  const { data: cacheSnapshot } = useCacheBreakdown();
 
   if (error) {
     return (
@@ -188,11 +185,11 @@ export function AnalyticsOverviewCards() {
         isUpdated={updatedCards.has("avg_latency_ms")}
       />
       <OverviewCard
-        title="Cache Hit Rate"
-        value={`${mergedData.cache_hit_rate}%`}
-        description="Membership cache hit rate"
-        icon={<Zap className="text-muted-foreground h-4 w-4" aria-hidden="true" />}
-        isUpdated={updatedCards.has("cache_hit_rate")}
+        title="API Calls"
+        value={formatNumber(cacheSnapshot?.api ?? 0)}
+        description="Uncached Telegram API calls (7d)"
+        icon={<Activity className="text-muted-foreground h-4 w-4" aria-hidden="true" />}
+        isUpdated={false}
       />
     </div>
   );

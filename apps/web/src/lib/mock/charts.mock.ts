@@ -142,7 +142,7 @@ export async function getHourlyActivity(): Promise<HourlyActivity[]> {
 /**
  * Get latency distribution buckets
  */
-export async function getLatencyDistribution(): Promise<LatencyBucket[]> {
+export async function getLatencyDistribution(_params?: TrendsParams): Promise<LatencyBucket[]> {
   await delay();
 
   const buckets = [
@@ -212,7 +212,8 @@ export async function getCacheHitRateTrend(params?: TrendsParams): Promise<Cache
   const series = dates.map((date) => {
     const value = randomInt(830, 950) / 10; // 83.0 - 95.0
     totalRate += value;
-    return { date, value };
+    const total_count = randomInt(300, 600); // realistic daily verifications
+    return { date, value, total_count };
   });
 
   const currentRate = series[series.length - 1]?.value ?? 0;

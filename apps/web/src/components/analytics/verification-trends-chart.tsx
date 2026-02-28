@@ -80,9 +80,9 @@ export function VerificationTrendsChart() {
 
   return (
     <div role="img" aria-label="Verification trends area chart">
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div>
+    <Card className="pt-0">
+      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+        <div className="grid flex-1 gap-1">
           <CardTitle>Verification Trends</CardTitle>
           <CardDescription>
             {data?.summary.total_verifications.toLocaleString() ?? 0} total verifications (
@@ -90,17 +90,20 @@ export function VerificationTrendsChart() {
           </CardDescription>
         </div>
         <Select value={period} onValueChange={(v) => setPeriod(v as PeriodOption)} aria-label="Select time period">
-          <SelectTrigger className="w-[120px]">
+          <SelectTrigger
+            className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
+            aria-label="Select a value"
+          >
             <SelectValue placeholder={PERIOD_LABELS[period]} />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="90d">Last 3 months</SelectItem>
-            <SelectItem value="30d">Last 30 days</SelectItem>
-            <SelectItem value="7d">Last 7 days</SelectItem>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="90d" className="rounded-lg">Last 3 months</SelectItem>
+            <SelectItem value="30d" className="rounded-lg">Last 30 days</SelectItem>
+            <SelectItem value="7d" className="rounded-lg">Last 7 days</SelectItem>
           </SelectContent>
         </Select>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <div className="min-h-[200px]">
         {isPending ? (
           <Skeleton className="h-[250px] w-full" />

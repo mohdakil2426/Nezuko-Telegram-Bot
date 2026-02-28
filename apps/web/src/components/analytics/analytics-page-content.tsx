@@ -14,7 +14,6 @@ import { UserGrowthChart } from "./user-growth-chart";
 // Import new chart components
 import {
   VerificationDistributionChart,
-  CacheBreakdownChart,
   GroupsStatusChart,
   ApiCallsChart,
   HourlyActivityChart,
@@ -22,6 +21,7 @@ import {
   TopGroupsChart,
   MembersChart,
   CacheHitRateTrendChart,
+  ApiCallsTrendChart,
   LatencyTrendChart,
   BotHealthChart,
 } from "@/components/charts";
@@ -74,8 +74,8 @@ export function AnalyticsPageContent() {
             <LatencyTrendChart />
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
+            <ApiCallsTrendChart />
             <LatencyDistributionChart />
-            <CacheBreakdownChart />
           </div>
         </TabsContent>
 

@@ -1,13 +1,18 @@
 "use client";
 
 /**
- * Cache Hit Rate Trend Chart
- * Shows cache hit rate % over time as a gradient area chart.
- * Companion: ApiCallsTrendChart shows cache misses (API calls) per day.
+ * API Calls Trend Chart
+ *
+ * Shows the number of uncached (real API) calls per day as a bar chart.
+ * Data is derived from the cache hit rate trend endpoint:
+ *   api_count = total_count - Math.round(total_count * hit_rate / 100)
+ *
+ * This chart is a companion to CacheHitRateTrendChart — together they
+ * replace the retired CacheBreakdownChart donut.
  */
 
 import * as React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ReferenceLine } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -26,35 +31,49 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCacheHitRateTrend } from "@/lib/hooks";
 import type { TrendsParams } from "@/lib/services/types";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatCount } from "@/lib/format";
 
 const chartConfig = {
-  value: {
-    label: "Hit Rate",
-    color: "var(--chart-1)",
+  api_count: {
+    label: "API Calls",
+    color: "var(--chart-3)",
   },
 } satisfies ChartConfig;
 
 type PeriodOption = "7d" | "30d" | "90d";
 
-export function CacheHitRateTrendChart() {
+export function ApiCallsTrendChart() {
   const [period, setPeriod] = React.useState<PeriodOption>("30d");
   const params: TrendsParams = { period };
+
+  // Reuses the same query key as CacheHitRateTrendChart — TQ deduplicates the request
   const { data, isPending, error } = useCacheHitRateTrend(params);
 
-  const chartData = React.useMemo(() => {
-    if (!data?.series) return [];
-    return data.series.map((point) => ({
-      date: formatDate(point.date),
-      value: point.value,
-    }));
+  const { chartData, totalApiCalls, avgPerDay } = React.useMemo(() => {
+    if (!data?.series || data.series.length === 0) {
+      return { chartData: [], totalApiCalls: 0, avgPerDay: 0 };
+    }
+
+    const points = data.series
+      .filter((p) => (p.total_count ?? 0) > 0)
+      .map((point) => {
+        const total = point.total_count ?? 0;
+        const cached = Math.round((total * point.value) / 100);
+        const api_count = total - cached;
+        return { date: formatDate(point.date), api_count };
+      });
+
+    const total = points.reduce((sum, p) => sum + p.api_count, 0);
+    const avg = points.length > 0 ? Math.round(total / points.length) : 0;
+
+    return { chartData: points, totalApiCalls: total, avgPerDay: avg };
   }, [data]);
 
   if (error) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Cache Hit Rate</CardTitle>
+          <CardTitle>API Calls Trend</CardTitle>
         </CardHeader>
         <CardContent className="flex h-[300px] items-center justify-center">
           <p className="text-destructive">Failed to load data</p>
@@ -64,18 +83,23 @@ export function CacheHitRateTrendChart() {
   }
 
   return (
-    <div role="img" aria-label="Cache hit rate trend area chart">
+    <div role="img" aria-label="API calls per day bar chart">
       <Card className="pt-0">
         <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
           <div className="grid flex-1 gap-1">
-            <CardTitle>Cache Hit Rate</CardTitle>
+            <CardTitle>API Calls Trend</CardTitle>
             <CardDescription>
-              Current:{" "}
-              <span className="text-foreground font-semibold tabular-nums">
-                {data?.current_rate ?? 0}%
+              <span className="block">
+                Total:{" "}
+                <span className="text-foreground font-semibold tabular-nums">
+                  {formatCount(totalApiCalls)}
+                </span>
+                {" · "}Avg/day:{" "}
+                <span className="tabular-nums">{formatCount(avgPerDay)}</span>
               </span>
-              {" · "}Avg:{" "}
-              <span className="tabular-nums">{data?.average_rate ?? 0}%</span>
+              <span className="text-muted-foreground/70 mt-0.5 block text-xs">
+                Uncached Telegram API calls (cache misses)
+              </span>
             </CardDescription>
           </div>
 
@@ -107,14 +131,11 @@ export function CacheHitRateTrendChart() {
                 config={chartConfig}
                 className="aspect-auto h-[250px] w-full md:h-[300px]"
               >
-                <AreaChart accessibilityLayer data={chartData}>
-                  <defs>
-                    <linearGradient id="cacheHitGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-value)" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="var(--color-value)" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-
+                <BarChart
+                  accessibilityLayer
+                  data={chartData}
+                  barCategoryGap="30%"
+                >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis
                     dataKey="date"
@@ -127,35 +148,25 @@ export function CacheHitRateTrendChart() {
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
-                    domain={[70, 100]}
-                    tickFormatter={(v) => `${v}%`}
+                    tickFormatter={(v) =>
+                      v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)
+                    }
                   />
                   <ChartTooltip
                     cursor={false}
                     content={
-                      <ChartTooltipContent formatter={(value) => `${value}%`} indicator="dot" />
+                      <ChartTooltipContent
+                        formatter={(value) => formatCount(Number(value))}
+                        indicator="dot"
+                      />
                     }
                   />
-                  <ReferenceLine
-                    y={data?.average_rate ?? 0}
-                    stroke="var(--muted-foreground)"
-                    strokeDasharray="5 5"
-                    label={{
-                      value: "Avg",
-                      position: "right",
-                      className: "fill-muted-foreground text-xs",
-                    }}
+                  <Bar
+                    dataKey="api_count"
+                    fill="var(--color-api_count)"
+                    radius={[3, 3, 0, 0]}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke="var(--color-value)"
-                    strokeWidth={2}
-                    fill="url(#cacheHitGradient)"
-                    dot={false}
-                    activeDot={{ r: 4 }}
-                  />
-                </AreaChart>
+                </BarChart>
               </ChartContainer>
             )}
           </div>

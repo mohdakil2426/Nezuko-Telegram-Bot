@@ -91,7 +91,8 @@ export const queryKeys = {
     apiCalls: () => [...queryKeys.charts.all, "api-calls"] as const,
     // Bar charts
     hourlyActivity: () => [...queryKeys.charts.all, "hourly-activity"] as const,
-    latencyDistribution: () => [...queryKeys.charts.all, "latency-distribution"] as const,
+    latencyDistribution: (params?: Record<string, unknown>) =>
+      [...queryKeys.charts.all, "latency-distribution", params] as const,
     topGroups: () => [...queryKeys.charts.all, "top-groups"] as const,
     // Line charts
     cacheHitRateTrend: (params?: Record<string, unknown>) =>

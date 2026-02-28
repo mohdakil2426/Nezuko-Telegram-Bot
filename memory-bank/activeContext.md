@@ -8,12 +8,77 @@
 **Phase 79: Deep Web Standards Audit v2 — COMPLETE ✅ (34 findings in WEB_AUDIT_REPORT_V2.md)**
 **Phase 80: WEB_AUDIT_REPORT_V2 Fixes — COMPLETE ✅ (all 34 findings resolved)**
 **Phase 80+: Card Responsiveness Analysis & Fixes — COMPLETE ✅**
+**Phase 81: Cache Analytics Consolidation & Chart Standardization — COMPLETE ✅**
 
 All 34 findings from `WEB_AUDIT_REPORT_V2.md` have been fully implemented. An additional card responsiveness audit was also performed across all dashboard pages, with critical layout issues identified and fixed (Quick Insights grid breakpoint, BotHealth metrics, SecurityVault input layout, ActivityFeed scroll height).
 
 ---
 
-## Phase 80: WEB_AUDIT_REPORT_V2.md Fixes (COMPLETE ✅)
+## Phase 81: Cache Analytics Consolidation & Chart Standardization (COMPLETE ✅)
+
+### Summary
+Consolidated cache analytics into cleaner, focused charts. Retired `CacheBreakdownChart` donut and replaced with two dedicated trend charts. Standardized all time-range period selectors across every chart to match the official shadcn interactive chart pattern.
+
+### Changes Made
+
+#### New Chart
+| File | Purpose |
+|---|---|
+| `apps/web/src/components/charts/api-calls-trend-chart.tsx` | **NEW** — bar chart showing uncached Telegram API calls per day. Derives `api_count = total_count - round(total_count × hit_rate / 100)` from the existing `useCacheHitRateTrend` hook (zero extra network requests via TQ deduplication) |
+
+#### Overview Card Replacement
+- `overview-cards.tsx` — **Cache Hit Rate** stat card replaced with **API Calls** card backed by `useCacheBreakdown().data.api`. Removed `cache_hit_rate` from realtime SSE state. Icon: `Zap` → `Activity`.
+
+#### Chart Cleanup
+- `cache-hit-rate-trend-chart.tsx` — Stripped `useCacheBreakdown`, `formatCount`, and snapshot stat row. Now a pure single-axis gradient area chart (hit rate % only).
+- `CacheBreakdownChart` — Removed from `analytics-page-content.tsx` and `charts/index.ts`.
+
+#### Performance Tab Layout (analytics)
+```
+┌─────────────────────┬─────────────────────┐
+│  Cache Hit Rate     │  Latency Trend      │
+└─────────────────────┴─────────────────────┘
+┌─────────────────────┬─────────────────────┐
+│  API Calls Trend    │  Latency Distribution│
+└─────────────────────┴─────────────────────┘
+```
+
+#### Period Selector Standardization (6 charts)
+All charts with time-range dropdowns updated to **exact shadcn interactive chart pattern**:
+
+| Old | New (official) |
+|---|---|
+| `<Card>` | `<Card className="pt-0">` |
+| `flex flex-row items-center justify-between space-y-0 pb-2` CardHeader | `flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row` |
+| `<div>` title wrapper | `<div className="grid flex-1 gap-1">` |
+| `w-[120px]` SelectTrigger (always visible) | `hidden w-[160px] rounded-lg sm:ml-auto sm:flex` |
+| plain SelectContent/Item | `rounded-xl` / `rounded-lg` |
+| plain CardContent | `className="px-2 pt-4 sm:px-6 sm:pt-6"` |
+
+Files updated: `cache-hit-rate-trend-chart`, `api-calls-trend-chart`, `latency-trend-chart`, `latency-distribution-chart`, `verification-chart` (dashboard), `verification-trends-chart`, `user-growth-chart`
+
+#### LatencyDistributionChart — Period Selector Added
+- **Migration 018** (`018_latency_distribution_period_param.sql`): Added `p_period TEXT DEFAULT '7d'` to `get_latency_distribution` RPC. Applied live to InsForge.
+- `charts.service.ts` `getLatencyDistribution(params?)` — passes `p_period`
+- `use-charts.ts` `useLatencyDistribution(params?)` — scoped TQ cache key per period
+- `charts.mock.ts` — accepts `_params` (ignored, random data)
+- `query-keys.ts` `latencyDistribution(params?)` — key includes params
+
+#### Backend RPC Changes
+| Migration | RPC | Change |
+|---|---|---|
+| 017 | `get_cache_hit_rate_trend` | Returns `total_count` per day in series for api_count derivation |
+| 018 | `get_latency_distribution` | Adds `p_period TEXT DEFAULT '7d'` — supports `7d`, `30d`, `90d` |
+
+#### BotHealthChart Sizing
+- `Card className="flex flex-col"`, `CardContent className="flex-1 pb-0"` — matches donut card structure so grid row stretches all 3 cards equally.
+- Gauge stays at `max-h-[200px]` with `aspect-square`; metric grid `mt-4 gap-2 py-1` preserved.
+
+### Quality Gates
+- `bun run type-check` → **0 errors** ✅
+
+---
+
 
 All 34 findings fully resolved. Compliance score target: ≥95%.
 

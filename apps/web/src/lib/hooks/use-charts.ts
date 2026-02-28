@@ -82,10 +82,10 @@ export function useHourlyActivity() {
 /**
  * Hook for latency distribution buckets
  */
-export function useLatencyDistribution() {
+export function useLatencyDistribution(params?: TrendsParams) {
   return useQuery({
-    queryKey: queryKeys.charts.latencyDistribution(),
-    queryFn: chartsService.getLatencyDistribution,
+    queryKey: queryKeys.charts.latencyDistribution(params as Record<string, unknown>),
+    queryFn: () => chartsService.getLatencyDistribution(params),
     staleTime: STALE_TIMES.LONG,
     refetchInterval: REFETCH_INTERVALS.SLOW,
   });

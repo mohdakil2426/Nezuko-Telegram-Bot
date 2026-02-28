@@ -97,12 +97,15 @@ export async function getHourlyActivity(): Promise<HourlyActivity[]> {
 /**
  * Get latency distribution buckets
  */
-export async function getLatencyDistribution(): Promise<LatencyBucket[]> {
+export async function getLatencyDistribution(params?: TrendsParams): Promise<LatencyBucket[]> {
   if (USE_MOCK) {
-    return mockData.getLatencyDistribution();
+    return mockData.getLatencyDistribution(params);
   }
 
-  const { data, error } = await insforge.database.rpc("get_latency_distribution");
+  const period = params?.period ?? "7d";
+  const { data, error } = await insforge.database.rpc("get_latency_distribution", {
+    p_period: period,
+  });
   if (error) throw error;
   return (Array.isArray(data) ? data : []) as LatencyBucket[];
 }
@@ -146,10 +149,10 @@ export async function getCacheHitRateTrend(params?: TrendsParams): Promise<Cache
   });
   if (error) throw error;
 
-  // RPC returns { period, series: [{date, value}], current_rate, average_rate } envelope
+  // RPC returns { period, series: [{date, value, total_count}], current_rate, average_rate } envelope
   const envelope = data as Record<string, unknown> | null;
   const series = Array.isArray(envelope?.series)
-    ? (envelope.series as Array<{ date: string; value: number }>)
+    ? (envelope.series as Array<{ date: string; value: number; total_count?: number }>)
     : [];
 
   return {
@@ -157,6 +160,7 @@ export async function getCacheHitRateTrend(params?: TrendsParams): Promise<Cache
     series: series.map((item) => ({
       date: item.date,
       value: item.value,
+      total_count: typeof item.total_count === "number" ? item.total_count : undefined,
     })),
     current_rate: typeof envelope?.current_rate === "number" ? envelope.current_rate : 0,
     average_rate: typeof envelope?.average_rate === "number" ? envelope.average_rate : 0,

@@ -383,11 +383,15 @@ export interface TopGroupPerformance {
 }
 
 /**
- * Time series data point for line charts
+ * Cache hit rate trend series point — includes optional per-day total count
+ * so cached_count and api_count can be derived on the frontend:
+ *   cached_count = Math.round(total_count * value / 100)
+ *   api_count    = total_count - cached_count
  */
-export interface TimeSeriesPoint {
+export interface CacheHitRateTrendPoint {
   date: string;
   value: number;
+  total_count?: number;
 }
 
 /**
@@ -395,7 +399,7 @@ export interface TimeSeriesPoint {
  */
 export interface CacheHitRateTrend {
   period: string;
-  series: TimeSeriesPoint[];
+  series: CacheHitRateTrendPoint[];
   current_rate: number;
   average_rate: number;
 }

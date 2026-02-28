@@ -17,6 +17,7 @@ export { MembersChart } from "./members-chart";
 
 // Line Charts
 export { CacheHitRateTrendChart } from "./cache-hit-rate-trend-chart";
+export { ApiCallsTrendChart } from "./api-calls-trend-chart";
 export { LatencyTrendChart } from "./latency-trend-chart";
 
 // Radial Charts
