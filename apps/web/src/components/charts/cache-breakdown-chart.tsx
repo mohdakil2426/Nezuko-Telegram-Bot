@@ -68,12 +68,13 @@ export function CacheBreakdownChart() {
   const hitRate = data?.hit_rate ?? 0;
 
   return (
+    <div role="img" aria-label="Cache performance breakdown donut chart">
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle>Cache Performance</CardTitle>
         <CardDescription>{(data?.total ?? 0).toLocaleString()} total lookups</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pb-0">
+      <CardContent className="flex-1 min-h-[200px] pb-0">
         <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
           <PieChart accessibilityLayer>
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
@@ -128,5 +129,6 @@ export function CacheBreakdownChart() {
         </ChartContainer>
       </CardContent>
     </Card>
+    </div>
   );
 }

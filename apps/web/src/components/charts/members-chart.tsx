@@ -88,6 +88,7 @@ export function MembersChart() {
   }
 
   return (
+    <div role="img" aria-label="Members overview interactive bar chart">
     <Card className="py-0">
       <CardHeader className="flex flex-col items-stretch border-b !p-0 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 pt-4 pb-3 sm:!py-0">
@@ -114,7 +115,7 @@ export function MembersChart() {
           ))}
         </div>
       </CardHeader>
-      <CardContent className="px-2 sm:p-6">
+      <CardContent className="min-h-[200px] px-2 sm:p-6">
         <ChartContainer
           config={chartConfig}
           className="aspect-auto h-[250px] w-full"
@@ -151,5 +152,6 @@ export function MembersChart() {
         </ChartContainer>
       </CardContent>
     </Card>
+    </div>
   );
 }

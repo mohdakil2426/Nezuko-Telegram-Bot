@@ -260,7 +260,7 @@ export function ActivityFeed() {
             Live updates paused — auto-refreshing every 30s.
           </div>
         )}
-        <ScrollArea className="h-[340px] pr-3">
+        <ScrollArea className="h-[340px] sm:h-[400px] lg:h-[460px] pr-3">
           <div className="space-y-1" role="log" aria-live="polite">
             {allActivities.map((activity) => {
               const Icon = getActivityIcon(activity.type);

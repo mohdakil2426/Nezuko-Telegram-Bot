@@ -67,12 +67,13 @@ export function HourlyActivityChart() {
   );
 
   return (
+    <div role="img" aria-label="Hourly verification activity bar chart">
     <Card>
       <CardHeader className="pb-2">
         <CardTitle>Hourly Activity</CardTitle>
         <CardDescription>Peak activity at {peakHour?.label ?? "N/A"} UTC</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-[200px]">
         <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full md:h-[300px]">
           <BarChart accessibilityLayer data={data} margin={{ left: -20 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -93,5 +94,6 @@ export function HourlyActivityChart() {
         </ChartContainer>
       </CardContent>
     </Card>
+    </div>
   );
 }

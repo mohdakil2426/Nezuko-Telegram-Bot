@@ -66,12 +66,13 @@ export function GroupsStatusChart() {
   ];
 
   return (
+    <div role="img" aria-label="Groups status distribution donut chart">
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle>Groups Status</CardTitle>
         <CardDescription>{data?.total ?? 0} total groups</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pb-0">
+      <CardContent className="flex-1 min-h-[200px] pb-0">
         <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
           <PieChart accessibilityLayer>
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
@@ -126,5 +127,6 @@ export function GroupsStatusChart() {
         </ChartContainer>
       </CardContent>
     </Card>
+    </div>
   );
 }

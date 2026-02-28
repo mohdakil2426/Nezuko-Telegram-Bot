@@ -100,7 +100,7 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
           <div className="bg-primary/10 text-primary rounded-md p-1.5">
             <Key className="h-5 w-5" />
           </div>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <CardTitle>Security Vault</CardTitle>
             <CardDescription>
               Automated encryption management for bot tokens.
@@ -144,20 +144,21 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
                 {showKey ? "Hide Secret" : "Reveal Key"}
               </button>
             </div>
-            <div className="relative">
+            {/* Stack on mobile, side-by-side on sm+ */}
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Input
                 id="master_key"
                 type={showKey ? "text" : "password"}
                 placeholder="Click 'Generate' to create a secure key..."
                 {...register("master_key")}
-                className={`font-mono text-xs pr-24 ${errors.master_key ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                className={`font-mono text-xs ${errors.master_key ? "border-destructive focus-visible:ring-destructive" : ""}`}
               />
-              <Button 
+              <Button
                 type="button"
-                variant="ghost" 
+                variant="outline"
                 size="sm"
                 onClick={generateKey}
-                className="absolute right-1 top-1 h-8 text-xs gap-1 hover:bg-primary/10 hover:text-primary"
+                className="shrink-0 gap-1 text-xs"
               >
                 <RefreshCw className="h-3 w-3" />
                 Generate

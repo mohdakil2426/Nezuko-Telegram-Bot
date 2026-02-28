@@ -28,7 +28,8 @@
 | 77c   | Fix Missing Members Chart RPC (get_members_chart_data) | Complete ✅ |
 | 78    | Responsiveness Audit v1 Fixes (20 items, 14 files)     | Complete ✅ |
 | 79    | Deep Web Standards Audit v2 (34 findings, WEB_AUDIT_REPORT_V2.md) | Complete ✅ |
-| 80    | Implement WEB_AUDIT_REPORT_V2 High + Medium Findings  | **In Progress 🔄** |
+| 80    | WEB_AUDIT_REPORT_V2 Fixes (all 34 findings, 13 chart a11y, 5 loading.tsx, shared format.ts) | **Complete ✅** |
+| 80+   | Card Responsiveness Analysis — Quick Insights grid, BotHealth, SecurityVault, ActivityFeed | **Complete ✅** |
 
 ---
 
@@ -194,12 +195,12 @@ All issues from `COMPREHENSIVE_CODEBASE_AUDIT.md` resolved. 3 commits on `main`.
 
 ## Technical Debt & Known Issues
 
-- [ ] **Phase 80 (High — In Progress)**: ~14 items remaining — chart a11y (role=img on 9 charts), remaining formatDate replacements, loading.tsx skeletons, formatCount for columns, theme toggle min-h.
-- [ ] **Phase 80 (Medium)**: `Intl.NumberFormat` for counts (already in format.ts — needs wiring), viewport/safe-area (CSS + meta done, sidebar-footer class not yet applied to actual sidebar component).
+- [ ] **Run full lint + build**: `cd apps/web && bun run lint && bun run build` — post-Phase-80 verification
 - [ ] **Test Coverage**: Currently at 58 tests; target is 100+ for full coverage.
 - [ ] **Admin Notification**: Error handler doesn't yet send alerts to admin chat (Task 6.2).
 - [ ] **WebSocket offline locally**: Falls back to 30s polling — works correctly on cloud deploy.
+- [ ] **JWT Server Validation**: Middleware only checks cookie existence; InsForge JWT should be server-validated.
 - [ ] **ESLint Plugin**: `eslint-plugin-react` incompatible with ESLint 10.0.0 — needs upgrade or replacement.
 
 ---
-_Last Updated: 2026-02-28 (Phase 80 — WEB_AUDIT_REPORT_V2 Fixes — In Progress)_
+_Last Updated: 2026-03-01 (Phase 80 — WEB_AUDIT_REPORT_V2 Fixes — COMPLETE + Phase 80+ Card Responsiveness)_

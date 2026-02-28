@@ -13,7 +13,7 @@ export default async function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-balance">Settings</h1>
-        <p className="text-muted-foreground">Manage your dashboard and platform security.</p>
+        <p className="text-muted-foreground">Manage your dashboard and platform security</p>
       </div>
 
       <SettingsPageContent masterKey={masterKey} />

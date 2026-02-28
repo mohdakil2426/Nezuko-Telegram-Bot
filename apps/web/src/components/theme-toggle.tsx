@@ -50,7 +50,7 @@ export function ThemeToggle() {
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton tooltip="Toggle theme">
+            <SidebarMenuButton tooltip="Toggle theme" className="min-h-[44px]">
               {resolvedTheme === "dark" ? <Moon className="size-4" /> : <Sun className="size-4" />}
               <span>Theme</span>
             </SidebarMenuButton>

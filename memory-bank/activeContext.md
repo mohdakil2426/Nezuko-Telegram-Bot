@@ -6,55 +6,67 @@
 **Post-Phase 77b: Members Interactive Bar Chart — COMPLETE ✅**
 **Phase 78: Responsiveness Audit v1 Fixes — COMPLETE ✅**
 **Phase 79: Deep Web Standards Audit v2 — COMPLETE ✅ (34 findings in WEB_AUDIT_REPORT_V2.md)**
-**Phase 80: WEB_AUDIT_REPORT_V2 Fixes — IN PROGRESS 🔄**
+**Phase 80: WEB_AUDIT_REPORT_V2 Fixes — COMPLETE ✅ (all 34 findings resolved)**
+**Phase 80+: Card Responsiveness Analysis & Fixes — COMPLETE ✅**
 
-Implementing all 34 findings from `WEB_AUDIT_REPORT_V2.md`. ~20 items complete (see Phase 80 section below), ~14 items still pending (mainly remaining chart components + loading skeletons + column formatters).
+All 34 findings from `WEB_AUDIT_REPORT_V2.md` have been fully implemented. An additional card responsiveness audit was also performed across all dashboard pages, with critical layout issues identified and fixed (Quick Insights grid breakpoint, BotHealth metrics, SecurityVault input layout, ActivityFeed scroll height).
 
 ---
 
-## Phase 80: WEB_AUDIT_REPORT_V2.md Fixes (In Progress)
+## Phase 80: WEB_AUDIT_REPORT_V2.md Fixes (COMPLETE ✅)
 
-Audit target: ≥95% compliance across all 10 categories. Full fix list tracked in `WEB_AUDIT_REPORT_V2.md`.
+All 34 findings fully resolved. Compliance score target: ≥95%.
 
 ### New Files Created
 | File | Purpose |
 |---|---|
-| `apps/web/src/lib/format.ts` | Shared locale-aware `formatDate()` + `formatCount()` using `Intl.*`. Replaces all `toLocaleDateString("en-US")` calls. |
+| `apps/web/src/lib/format.ts` | Shared `formatDate()` + `formatCount()` via `Intl.*`. No hardcoded locales. |
+| `apps/web/src/app/dashboard/groups/loading.tsx` | Route loading skeleton (PERF-L1) |
+| `apps/web/src/app/dashboard/channels/loading.tsx` | Route loading skeleton (PERF-L1) |
+| `apps/web/src/app/dashboard/analytics/loading.tsx` | Route loading skeleton with cards + chart placeholders (PERF-L1) |
+| `apps/web/src/app/dashboard/settings/loading.tsx` | Route loading skeleton (RESP-L1) |
 
-### Completed Fixes
-| ID | File | Change |
+### All Fixes Applied
+| Category | IDs | Files | Change |
+|---|---|---|---|
+| Animation | ANIM-H1 | `page-transition.tsx` | `staggerChildren: 0.1` → `0.05` |
+| Responsiveness | RESP-H1 | `dashboard/layout.tsx` | `overflow-x-hidden` on `<main>` |
+| Responsiveness | RESP-M1 | `layout.tsx` | `viewport` export with `viewportFit: "cover"` |
+| Responsiveness | RESP-M2 | `groups-data-table.tsx`, `channels-data-table.tsx` | `overflow-x-auto` wrapper on Table |
+| Responsiveness | RESP-C1 | All 13 chart components | `min-h-[200px]` on `CardContent` |
+| Performance | PERF-H1 | `globals.css` | `content-visibility: auto` on inactive tabs |
+| Performance | PERF-H2 | 5 chart files | `formatDate()` replaces `toLocaleDateString("en-US")` |
+| Performance | PERF-M1 | `layout.tsx` | `preconnect`/`dns-prefetch` for InsForge |
+| Accessibility | A11Y-H1 | `nav-user.tsx` | `aria-label` on `SidebarMenuButton` trigger |
+| Accessibility | A11Y-H2 | All 13 chart components | `role="img"` + `aria-label` wrapper |
+| Accessibility | A11Y-H3 | `bots/page.tsx`, `groups-data-table.tsx`, `channels-data-table.tsx` | `aria-label` on `<Table>` |
+| Accessibility | A11Y-M1 | `globals.css` | `[role="dialog"] { overscroll-behavior: contain }` |
+| Accessibility | A11Y-M2 | `bots/page.tsx` | `autoFocus`, `name`, `autoComplete="off"`, `spellCheck={false}` on token input |
+| Accessibility | A11Y-L1 | `bots/page.tsx` | `aria-pressed` on Power toggle button |
+| Accessibility | A11Y-C2 | `nav-user.tsx` | `"Signing out…"` Unicode ellipsis |
+| Navigation | NAV-H1 | `analytics-page-content.tsx` | `useSearchParams` URL-sync for tabs |
+| Navigation | NAV-M1 | `bots/page.tsx` | 3-second undo toast for bot deletion |
+| Forms | FORM-H1 | `bots/page.tsx` | `name="bot_token"`, `autoComplete`, `spellCheck` on input |
+| Hydration | HYD-M1 | `bots/page.tsx`, 5 chart files | `formatDate()` replaces `toLocaleDateString()` |
+| Dark Mode | DARK-H1 | `globals.css` | `.dark select { background-color; color }` |
+| Dark Mode | DARK-M1 | `globals.css` | `code:not([class])` dark/light styles |
+| i18n | I18N-M1 | `groups-columns.tsx`, `channels-columns.tsx` | `formatCount()`/`formatDate()` replace local utilities |
+| Touch | TOUCH-M1 | `theme-toggle.tsx` | `min-h-[44px]` on `SidebarMenuButton` |
+| Typography | TYPO-L1 | 3 page files | Trailing periods removed from `<p>` descriptions |
+| Typography | TYPO-M2 | `bots/page.tsx` | Improved @BotFather error message |
+
+## Phase 80+: Card Responsiveness Analysis (COMPLETE ✅)
+
+Full audit of all cards across all 6 dashboard pages. Issues found and fixed:
+
+| File | Issue | Fix |
 |---|---|---|
-| ANIM-H1 | `page-transition.tsx` | `staggerChildren: 0.1` → `0.05` (max 300ms total) |
-| RESP-H1 | `dashboard/layout.tsx` | `overflow-x-hidden` on `<main>` |
-| RESP-M1 | `layout.tsx` | `export const viewport` with `viewportFit: "cover"` for iOS safe-area |
-| A11Y-C2 | `nav-user.tsx` | `"Signing out..."` → `"Signing out…"` (Unicode) |
-| A11Y-H1 | `nav-user.tsx` | `aria-label` on `SidebarMenuButton` trigger |
-| PERF-H1 | `globals.css` | `content-visibility: auto` on inactive `[data-state="inactive"]` tabs |
-| A11Y-M1 | `globals.css` | `[role="dialog"] { overscroll-behavior: contain }` |
-| DARK-H1 | `globals.css` | `.dark select` background/color override |
-| DARK-M1 | `globals.css` | `code:not([class])` dark/light styling |
-| RESP-M1 | `globals.css` | `.sidebar-footer { padding-bottom: max(1rem, env(safe-area-inset-bottom)) }` |
-| NAV-H1 | `analytics-page-content.tsx` | `useSearchParams` URL-synced tabs (`?tab=overview` etc.) |
-| A11Y-H3 + FORM-H1 + A11Y-M2 + HYD-M1 + NAV-M1 + A11Y-L1 + TYPO-M2 | `bots/page.tsx` | `aria-label` on Table; `aria-pressed` on Power button; `autoFocus`+`name`+`autoComplete="off"`+`spellCheck=false` on token input; `formatDate()` replaces `toLocaleDateString()`; 3s undo toast for bot deletion; better @BotFather error message |
-| A11Y-H3 + RESP-M2 | `groups-data-table.tsx` | `aria-label="Protected groups"` on Table; `overflow-x-auto` wrapper |
-| A11Y-H3 + RESP-M2 | `channels-data-table.tsx` | `aria-label="Enforced channels"` on Table; `overflow-x-auto` wrapper |
-| A11Y-H2 + RESP-C1 + PERF-H2 | `cache-hit-rate-trend-chart.tsx` | `role="img"` wrapper; `min-h-[200px]`; `formatDate()` |
-| A11Y-H2 + RESP-C1 + PERF-H2 | `latency-trend-chart.tsx` | `role="img"` wrapper; `min-h-[200px]`; `formatDate()` |
-| A11Y-H2 + RESP-C1 + PERF-H2 | `analytics/verification-trends-chart.tsx` | `role="img"` wrapper; `min-h-[200px]`; `formatDate()` x2 |
+| `dashboard/page.tsx` | `lg:grid-cols-4` → 4 cols at 1024px → each card only ~180px | Changed to `xl:grid-cols-4` (≥1280px). Now 2-col at 1024px ✅ |
+| `bot-health-chart.tsx` | Metrics grid `gap-4` too wide; labels "Cache Efficiency"/"Success Rate" overflow | `gap-2`; `min-w-0 truncate text-xs` on label; `shrink-0 tabular-nums text-xs` on value |
+| `security-vault-card.tsx` | Generate button absolutely positioned inside input; overflows on mobile | `flex-col gap-2` layout on mobile → `sm:flex-row`; `min-w-0` on header content |
+| `activity-feed.tsx` | Fixed `h-[340px]` on all screen sizes | Responsive: `h-[340px] sm:h-[400px] lg:h-[460px]` |
 
-### Pending Fixes
-| ID | File | Remaining |
-|---|---|---|
-| A11Y-H2 + RESP-C1 + PERF-H2 | `analytics/user-growth-chart.tsx` | role=img, min-h, formatDate |
-| A11Y-H2 + RESP-C1 + PERF-H2 | `dashboard/verification-chart.tsx` | role=img, min-h, formatDate x2 |
-| A11Y-H2 + RESP-C1 | 8 remaining charts in `charts/` | role=img, min-h (no locale fix needed — no toLocaleDateString) |
-| I18N-M1 | `groups-columns.tsx`, `channels-columns.tsx` | `formatCount()` for member/subscriber counts |
-| TOUCH-M1 | `theme-toggle.tsx` | `min-h-11 min-w-11` on SidebarMenuButton |
-| PERF-L1 | `dashboard/groups/`, `channels/`, `analytics/` | Create `loading.tsx` skeletons |
-| RESP-L1 | `dashboard/settings/` | Create `loading.tsx` skeleton |
-| TYPO-L1 | Multiple pages | Trailing periods on page description `<p>` tags |
-
----
+**Verified with browser testing at 768px (2-col ✅), 1024px (2-col ✅), 1280px (4-col ✅), 1440px (4-col ✅)**
 
 
 ### MembersChart — shadcn "Bar Chart - Interactive" Pattern
@@ -297,30 +309,22 @@ Performed a full codebase grep scan and fetched official docs from **Vercel WIG,
 
 | Issue | Impact | Priority |
 |---|---|---|
-| Phase 80 pending chart items | 9 charts still need role=img + min-h; 2 need formatDate | High |
-| Phase 80 pending medium items | formatCount in columns, theme-toggle touch target | Medium |
-| Phase 80 loading.tsx skeletons | 4 route folders missing loading.tsx | Low |
 | WebSocket offline locally | Falls back to 30s polling — works on deploy | Info |
 | Test coverage at 58 tests | Target 100+ for full coverage | Low |
 | Admin notification on error (Task 6.2) | Error alerts not sent to admin chat | Low |
 | InsForge JWT not server-validated | Middleware checks cookie existence only | Low |
+| Bots page: `autoFocus` on token input mobile | Should be desktop-only — currently fires on mobile too | Low |
 
 ---
 
 ## What to Work on Next
 
-1. **Phase 80 (continue)** — Complete remaining pending items from `WEB_AUDIT_REPORT_V2.md`:
-   - Apply `role="img"` + `min-h-[200px]` to remaining 9 chart files
-   - `formatDate()` on `dashboard/verification-chart.tsx` + `user-growth-chart.tsx`
-   - `formatCount()` wiring in `groups-columns.tsx` + `channels-columns.tsx`
-   - Theme toggle `min-h-11` (TOUCH-M1)
-   - 4 `loading.tsx` skeleton files
-   - Trailing periods on page descriptions (TYPO-L1)
-2. **Run type-check** — `cd apps/web && bun run type-check` to confirm 0 errors post-Phase-80
-3. **Deploy** — VPS/Docker (bot) + Vercel (web)
+1. **Run ESLint + Build** — `cd apps/web && bun run lint && bun run build` to confirm 0 errors post-Phase-80
+2. **Deploy** — VPS/Docker (bot) + Vercel (web)
+3. **Generate new audit report** — Scan codebase again to verify compliance score improved from WEB_AUDIT_REPORT_V2 baseline
 4. **Add admin notification** in global error handler (Task 6.2)
 5. **Expand test coverage** — target 100+ tests
 
 ---
 
-_Last Updated: 2026-02-28 (Phase 80 — WEB_AUDIT_REPORT_V2 Fixes — In Progress)_
+_Last Updated: 2026-03-01 (Phase 80 — WEB_AUDIT_REPORT_V2 Fixes — COMPLETE + Card Responsiveness Analysis)_

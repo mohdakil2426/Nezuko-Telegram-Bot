@@ -68,12 +68,13 @@ export function BotHealthChart() {
   };
 
   return (
+    <div role="img" aria-label="Bot health radial chart">
     <Card>
       <CardHeader className="pb-2">
         <CardTitle>Bot Health Score</CardTitle>
         <CardDescription>Overall system performance</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-[200px]">
         <div className="relative">
           <ChartContainer config={dynamicConfig} className="mx-auto aspect-square max-h-[200px]">
             <RadialBarChart
@@ -102,7 +103,7 @@ export function BotHealthChart() {
         </div>
 
         {/* Metrics breakdown */}
-        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+        <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
           <MetricItem label="Uptime" value={`${data?.uptime_percent ?? 0}%`} />
           <MetricItem label="Success Rate" value={`${data?.success_rate ?? 0}%`} />
           <MetricItem label="Cache Efficiency" value={`${data?.cache_efficiency ?? 0}%`} />
@@ -110,14 +111,15 @@ export function BotHealthChart() {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }
 
 function MetricItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-muted/50 flex items-center justify-between rounded-md px-2 py-1">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+    <div className="bg-muted/50 flex items-center justify-between gap-1 rounded-md px-2 py-1">
+      <span className="text-muted-foreground min-w-0 truncate text-xs">{label}</span>
+      <span className="shrink-0 font-medium text-xs tabular-nums">{value}</span>
     </div>
   );
 }

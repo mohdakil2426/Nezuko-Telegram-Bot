@@ -60,9 +60,8 @@ export function AnalyticsPageContent() {
             <VerificationTrendsChart />
             <UserGrowthChart />
           </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <VerificationDistributionChart />
-            <CacheBreakdownChart />
             <GroupsStatusChart />
             <BotHealthChart />
           </div>
@@ -82,9 +81,8 @@ export function AnalyticsPageContent() {
 
         {/* Distribution Tab - Breakdown charts */}
         <TabsContent value="distribution" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <VerificationDistributionChart />
-            <CacheBreakdownChart />
             <GroupsStatusChart />
             <ApiCallsChart />
           </div>

@@ -79,6 +79,7 @@ export function TopGroupsChart() {
   const totalVerifications = chartData.reduce((sum, g) => sum + g.verifications, 0);
 
   return (
+    <div role="img" aria-label="Top groups by verification activity bar chart">
     <Card>
       <CardHeader className="pb-2">
         <CardTitle>Top Groups by Activity</CardTitle>
@@ -86,7 +87,7 @@ export function TopGroupsChart() {
           {totalVerifications.toLocaleString()} verifications across top {chartData.length} groups
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-[200px]">
         <ChartContainer config={chartConfig} className="aspect-auto h-[280px] w-full md:h-[350px]">
           <BarChart
             accessibilityLayer
@@ -131,5 +132,6 @@ export function TopGroupsChart() {
         </ChartContainer>
       </CardContent>
     </Card>
+    </div>
   );
 }

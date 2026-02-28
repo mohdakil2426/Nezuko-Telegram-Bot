@@ -75,12 +75,13 @@ export function ApiCallsChart() {
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
   return (
+    <div role="img" aria-label="API calls distribution pie chart">
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle>API Calls Distribution</CardTitle>
         <CardDescription>{total.toLocaleString()} total calls</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pb-0">
+      <CardContent className="flex-1 min-h-[200px] pb-0">
         <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
           <PieChart accessibilityLayer>
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
@@ -104,5 +105,6 @@ export function ApiCallsChart() {
         </ChartContainer>
       </CardContent>
     </Card>
+    </div>
   );
 }

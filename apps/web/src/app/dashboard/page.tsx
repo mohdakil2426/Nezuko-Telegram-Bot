@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { StatCards, VerificationChart, ActivityFeed } from "@/components/dashboard";
 import {
   BotHealthChart,
-  CacheBreakdownChart,
   GroupsStatusChart,
   VerificationDistributionChart,
 } from "@/components/charts";
@@ -22,7 +21,7 @@ export default function DashboardPage() {
       <RevealItem className="flex flex-wrap items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-balance">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome to your Nezuko bot dashboard.</p>
+          <p className="text-muted-foreground">Welcome to your Nezuko bot dashboard</p>
         </div>
         <Button asChild variant="outline">
           <Link href="/dashboard/analytics">
@@ -55,15 +54,12 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="min-w-0">
             <VerificationDistributionChart />
           </div>
           <div className="min-w-0">
             <GroupsStatusChart />
-          </div>
-          <div className="min-w-0">
-            <CacheBreakdownChart />
           </div>
           <div className="min-w-0">
             <BotHealthChart />

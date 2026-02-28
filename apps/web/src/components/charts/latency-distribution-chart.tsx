@@ -86,12 +86,13 @@ export function LatencyDistributionChart() {
   const fastPercentage = total > 0 ? Math.round((fastRequests / total) * 100) : 0;
 
   return (
+    <div role="img" aria-label="Latency distribution horizontal bar chart">
     <Card>
       <CardHeader className="pb-2">
         <CardTitle>Latency Distribution</CardTitle>
         <CardDescription>{fastPercentage}% of requests complete in &lt;50ms</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-[200px]">
         <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full md:h-[300px]">
           <BarChart accessibilityLayer data={data} layout="vertical" margin={{ left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
@@ -119,5 +120,6 @@ export function LatencyDistributionChart() {
         </ChartContainer>
       </CardContent>
     </Card>
+    </div>
   );
 }

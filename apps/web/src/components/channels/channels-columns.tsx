@@ -20,30 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Channel } from "@/lib/services/types";
-
-/**
- * Format date for display
- */
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-/**
- * Format large numbers with K/M suffixes
- */
-function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return `${(num / 1000000).toFixed(1)}M`;
-  }
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}K`;
-  }
-  return num.toString();
-}
+import { formatDate, formatCount } from "@/lib/format";
 
 export interface ChannelsColumnsProps {
   onDelete?: (id: number) => void;
@@ -135,7 +112,7 @@ export function createChannelsColumns({
       ),
       cell: ({ row }) => {
         const count = row.getValue("subscriber_count") as number;
-        return <div className="text-center font-medium">{formatNumber(count)}</div>;
+        return <div className="text-center font-medium">{formatCount(count)}</div>;
       },
     },
     {

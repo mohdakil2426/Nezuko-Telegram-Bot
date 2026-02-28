@@ -25,6 +25,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserGrowth } from "@/lib/hooks";
 import type { TrendsParams } from "@/lib/services/types";
+import { formatDate } from "@/lib/format";
 
 const chartConfig = {
   new_users: {
@@ -47,10 +48,7 @@ export function UserGrowthChart() {
   const chartData = React.useMemo(() => {
     if (!data?.series) return [];
     return data.series.map((point) => ({
-      date: new Date(point.date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      }),
+      date: formatDate(point.date),
       new_users: point.new_users,
       total_users: point.total_users,
     }));
@@ -75,6 +73,7 @@ export function UserGrowthChart() {
   };
 
   return (
+    <div role="img" aria-label="User growth bar chart">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
@@ -96,6 +95,7 @@ export function UserGrowthChart() {
         </Select>
       </CardHeader>
       <CardContent>
+        <div className="min-h-[200px]">
         {isPending ? (
           <Skeleton className="h-[300px] w-full" />
         ) : (
@@ -112,7 +112,9 @@ export function UserGrowthChart() {
             </BarChart>
           </ChartContainer>
         )}
+        </div>
       </CardContent>
     </Card>
+    </div>
   );
 }
