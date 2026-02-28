@@ -51,20 +51,28 @@ export function SiteHeader() {
         <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
         <Breadcrumb>
           <BreadcrumbList>
-            {breadcrumbs.map((crumb, index) => (
-              <React.Fragment key={crumb.href}>
-                {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
-                <BreadcrumbItem>
-                  {crumb.isLast ? (
-                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink href={crumb.href} className="hidden md:block">
-                      {crumb.label}
-                    </BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
-              </React.Fragment>
-            ))}
+            {breadcrumbs.map((crumb, index) => {
+              // Always show: current page (isLast) and immediate parent (length-2).
+              // Hide deeper ancestors on mobile to avoid overflow.
+              const isImmediateParent = index === breadcrumbs.length - 2;
+              return (
+                <React.Fragment key={crumb.href}>
+                  {index > 0 && <BreadcrumbSeparator className={isImmediateParent ? undefined : "hidden md:block"} />}
+                  <BreadcrumbItem>
+                    {crumb.isLast ? (
+                      <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink
+                        href={crumb.href}
+                        className={isImmediateParent ? undefined : "hidden md:block"}
+                      >
+                        {crumb.label}
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+                </React.Fragment>
+              );
+            })}
           </BreadcrumbList>
         </Breadcrumb>
       </div>

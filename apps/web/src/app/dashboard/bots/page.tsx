@@ -62,7 +62,7 @@ export default function BotsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Bot Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-balance">Bot Management</h1>
           <p className="text-muted-foreground">Add and manage your Telegram bots</p>
         </div>
         <div className="flex gap-2">
@@ -191,6 +191,7 @@ function BotRow({ bot }: { bot: BotType }) {
             onClick={handleToggleActive}
             disabled={updateMutation.isPending}
             title={bot.is_active ? "Deactivate" : "Activate"}
+            className="min-h-11 min-w-11"
           >
             <Power
               className={`h-4 w-4 ${bot.is_active ? "text-green-500" : "text-muted-foreground"}`}
@@ -199,7 +200,7 @@ function BotRow({ bot }: { bot: BotType }) {
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" title="Delete">
+              <Button variant="ghost" size="icon" title="Delete" className="min-h-11 min-w-11">
                 <Trash2 className="text-destructive h-4 w-4" />
               </Button>
             </AlertDialogTrigger>

@@ -21,7 +21,7 @@ export default function DashboardPage() {
     <PageTransition className="space-y-6">
       <RevealItem className="flex flex-wrap items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-balance">Dashboard</h1>
           <p className="text-muted-foreground">Welcome to your Nezuko bot dashboard.</p>
         </div>
         <Button asChild variant="outline">

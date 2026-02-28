@@ -46,23 +46,21 @@ function getActivityColor(type: ActivityItem["type"]) {
   }
 }
 
+/** Locale-aware relative time formatter (Intl.RelativeTimeFormat). */
+const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+
 /**
- * Format relative time
+ * Format relative time using Intl.RelativeTimeFormat
  */
 function formatRelativeTime(timestamp: string): string {
-  const now = new Date();
-  const then = new Date(timestamp);
-  const diffMs = now.getTime() - then.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+  const diffMs = Date.now() - new Date(timestamp).getTime();
+  const diffSecs = Math.round(diffMs / 1000);
+  if (Math.abs(diffSecs) < 60) return rtf.format(-diffSecs, "second");
+  const diffMins = Math.round(diffMs / 60_000);
+  if (Math.abs(diffMins) < 60) return rtf.format(-diffMins, "minute");
+  const diffHours = Math.round(diffMs / 3_600_000);
+  if (Math.abs(diffHours) < 24) return rtf.format(-diffHours, "hour");
+  return rtf.format(-Math.round(diffMs / 86_400_000), "day");
 }
 
 /**

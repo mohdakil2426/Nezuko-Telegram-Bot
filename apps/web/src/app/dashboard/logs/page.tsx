@@ -91,16 +91,15 @@ function getLogBadgeVariant(level: string): "default" | "secondary" | "destructi
 }
 
 /**
- * Format timestamp to readable format
+ * Format timestamp to readable format using locale-aware Intl.DateTimeFormat
  */
 function formatTimestamp(timestamp: string): string {
-  const date = new Date(timestamp);
-  return date.toLocaleTimeString("en-US", {
+  return new Intl.DateTimeFormat(undefined, {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
     hour12: false,
-  });
+  }).format(new Date(timestamp));
 }
 
 /**
@@ -288,7 +287,7 @@ export default function LogsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Logs</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-balance">Logs</h1>
           <p className="text-muted-foreground">Real-time system and verification logs.</p>
         </div>
         <ConnectionStatus
@@ -308,6 +307,7 @@ export default function LogsPage() {
               variant={isPaused ? "default" : "outline"}
               size="sm"
               onClick={handleTogglePause}
+              aria-label={isPaused ? "Resume log streaming" : "Pause log streaming"}
               className="gap-2"
             >
               {isPaused ? (
@@ -328,7 +328,7 @@ export default function LogsPage() {
               <Filter className="text-muted-foreground h-4 w-4" />
               <Select value={levelFilter} onValueChange={(v) => setLevelFilter(v as LogLevel)}>
                 <SelectTrigger className="w-35">
-                  <SelectValue placeholder="Filter by level" />
+                  <SelectValue placeholder="Filter by Level" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Levels</SelectItem>
@@ -345,6 +345,7 @@ export default function LogsPage() {
               size="sm"
               onClick={() => refetch()}
               disabled={isLoadingInitial}
+              aria-label="Refresh logs"
               className="gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${isLoadingInitial ? "animate-spin" : ""}`} />
@@ -356,6 +357,7 @@ export default function LogsPage() {
               variant="outline"
               size="sm"
               onClick={handleClear}
+              aria-label="Clear all logs"
               className="text-destructive hover:text-destructive gap-2"
             >
               <Trash2 className="h-4 w-4" />
@@ -410,7 +412,7 @@ export default function LogsPage() {
             </div>
           ) : (
             /* Logs List - Using ScrollArea for virtualization-like behavior */
-            <ScrollArea className="h-125" ref={scrollAreaRef}>
+            <ScrollArea className="h-[32rem] sm:h-[40rem] lg:h-[48rem]" ref={scrollAreaRef}>
               <div className="space-y-1 font-mono text-sm">
                 {filteredLogs.map((log, index) => {
                   const Icon = getLogIcon(log.level);

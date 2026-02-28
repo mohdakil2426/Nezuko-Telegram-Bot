@@ -100,6 +100,9 @@ function ForgotPasswordForm() {
                 id="email"
                 type="email"
                 autoComplete="email"
+                spellCheck={false}
+                autoCapitalize="none"
+                autoCorrect="off"
                 placeholder="you@example.com"
                 aria-describedby={errors.email ? "email-error" : undefined}
                 className={`pl-9 ${errors.email ? "border-destructive focus-visible:ring-destructive" : ""}`}
