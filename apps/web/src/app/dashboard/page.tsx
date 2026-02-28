@@ -23,12 +23,6 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight text-balance">Dashboard</h1>
           <p className="text-muted-foreground">Welcome to your Nezuko bot dashboard</p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/dashboard/analytics">
-            View Full Analytics
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
       </RevealItem>
 
       <RevealItem>
@@ -46,10 +40,10 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold tracking-tight">Quick Insights</h2>
             <p className="text-muted-foreground text-sm">Key performance metrics at a glance</p>
           </div>
-          <Button asChild variant="ghost" size="sm">
+          <Button asChild variant="outline" size="sm">
             <Link href="/dashboard/analytics">
-              See all charts
-              <ArrowRight className="ml-1 h-3 w-3" />
+              View Full Analytics
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>

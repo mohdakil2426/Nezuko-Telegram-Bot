@@ -30,7 +30,7 @@ export function BotHealthChart() {
 
   if (error) {
     return (
-      <Card>
+      <Card className="flex flex-col">
         <CardHeader>
           <CardTitle>Bot Health</CardTitle>
         </CardHeader>
@@ -43,7 +43,7 @@ export function BotHealthChart() {
 
   if (isPending) {
     return (
-      <Card>
+      <Card className="flex flex-col">
         <CardHeader>
           <Skeleton className="h-5 w-24" />
           <Skeleton className="h-4 w-32" />
@@ -69,12 +69,12 @@ export function BotHealthChart() {
 
   return (
     <div role="img" aria-label="Bot health radial chart">
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle>Bot Health Score</CardTitle>
         <CardDescription>Overall system performance</CardDescription>
       </CardHeader>
-      <CardContent className="min-h-[200px]">
+      <CardContent className="flex-1 pb-0 min-h-[200px]">
         <div className="relative">
           <ChartContainer config={dynamicConfig} className="mx-auto aspect-square max-h-[200px]">
             <RadialBarChart
@@ -103,7 +103,7 @@ export function BotHealthChart() {
         </div>
 
         {/* Metrics breakdown */}
-        <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+        <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
           <MetricItem label="Uptime" value={`${data?.uptime_percent ?? 0}%`} />
           <MetricItem label="Success Rate" value={`${data?.success_rate ?? 0}%`} />
           <MetricItem label="Cache Efficiency" value={`${data?.cache_efficiency ?? 0}%`} />
@@ -117,7 +117,7 @@ export function BotHealthChart() {
 
 function MetricItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-muted/50 flex items-center justify-between gap-1 rounded-md px-2 py-1">
+    <div className="bg-muted/50 flex items-center justify-between gap-1 rounded-md px-2 py-0.5">
       <span className="text-muted-foreground min-w-0 truncate text-xs">{label}</span>
       <span className="shrink-0 font-medium text-xs tabular-nums">{value}</span>
     </div>
