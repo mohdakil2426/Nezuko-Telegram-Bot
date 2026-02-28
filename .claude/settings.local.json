@@ -68,7 +68,9 @@
       "Bash(test:*)",
       "Bash(bun run:*)",
       "Bash(npx next:*)",
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "mcp__shadcn__search_items_in_registries",
+      "Skill(shadcn-ui)"
     ]
   },
   "enabledMcpjsonServers": [

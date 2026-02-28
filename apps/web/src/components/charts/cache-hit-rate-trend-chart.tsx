@@ -74,7 +74,7 @@ export function CacheHitRateTrendChart() {
             Current: {data?.current_rate ?? 0}% | Average: {data?.average_rate ?? 0}%
           </CardDescription>
         </div>
-        <Select value={period} onValueChange={(v) => setPeriod(v as PeriodOption)}>
+        <Select value={period} onValueChange={(v) => setPeriod(v as PeriodOption)} aria-label="Select time period">
           <SelectTrigger className="w-[120px]">
             <SelectValue />
           </SelectTrigger>

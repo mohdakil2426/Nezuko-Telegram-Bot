@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Verification Trends Chart
- * Area chart showing verification success/failure trends
+ * Verification Trends Chart — Interactive
+ * Stacked area chart with period selector showing verification success/failure trends
  */
 
 import * as React from "react";
@@ -10,7 +10,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  ChartConfig,
+  type ChartConfig,
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
@@ -29,6 +29,9 @@ import { useVerificationTrends } from "@/lib/hooks";
 import type { TrendsParams } from "@/lib/services/types";
 
 const chartConfig = {
+  verifications: {
+    label: "Verifications",
+  },
   successful: {
     label: "Successful",
     color: "var(--chart-1)",
@@ -41,6 +44,12 @@ const chartConfig = {
 
 type PeriodOption = "7d" | "30d" | "90d";
 
+const PERIOD_LABELS: Record<PeriodOption, string> = {
+  "7d": "Last 7 days",
+  "30d": "Last 30 days",
+  "90d": "Last 3 months",
+};
+
 export function VerificationTrendsChart() {
   const [period, setPeriod] = React.useState<PeriodOption>("30d");
   const params: TrendsParams = { period };
@@ -49,10 +58,7 @@ export function VerificationTrendsChart() {
   const chartData = React.useMemo(() => {
     if (!data?.series) return [];
     return data.series.map((point) => ({
-      date: new Date(point.timestamp).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      }),
+      date: point.timestamp,
       successful: point.successful,
       failed: point.failed,
     }));
@@ -83,22 +89,22 @@ export function VerificationTrendsChart() {
         </div>
         <Select value={period} onValueChange={(v) => setPeriod(v as PeriodOption)} aria-label="Select time period">
           <SelectTrigger className="w-[120px]">
-            <SelectValue />
+            <SelectValue placeholder={PERIOD_LABELS[period]} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="7d">Last 7 days</SelectItem>
+            <SelectItem value="90d">Last 3 months</SelectItem>
             <SelectItem value="30d">Last 30 days</SelectItem>
-            <SelectItem value="90d">Last 90 days</SelectItem>
+            <SelectItem value="7d">Last 7 days</SelectItem>
           </SelectContent>
         </Select>
       </CardHeader>
       <CardContent>
         {isPending ? (
-          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[250px] w-full" />
         ) : (
           <ChartContainer
             config={chartConfig}
-            className="aspect-auto h-[250px] w-full md:h-[300px]"
+            className="aspect-auto h-[250px] w-full"
           >
             <AreaChart accessibilityLayer data={chartData}>
               <defs>
@@ -111,23 +117,49 @@ export function VerificationTrendsChart() {
                   <stop offset="95%" stopColor="var(--color-failed)" stopOpacity={0.1} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
-              <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-              <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-              <Area
-                type="monotone"
-                dataKey="successful"
-                stackId="1"
-                stroke="var(--color-successful)"
-                fill="url(#fillSuccessful)"
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={32}
+                tickFormatter={(value) => {
+                  const date = new Date(value);
+                  return date.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  });
+                }}
+              />
+              <YAxis domain={[0, "auto"]} hide />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(value) => {
+                      return new Date(value).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      });
+                    }}
+                    indicator="dot"
+                  />
+                }
               />
               <Area
-                type="monotone"
                 dataKey="failed"
-                stackId="1"
-                stroke="var(--color-failed)"
+                type="natural"
                 fill="url(#fillFailed)"
+                stroke="var(--color-failed)"
+                stackId="a"
+              />
+              <Area
+                dataKey="successful"
+                type="natural"
+                fill="url(#fillSuccessful)"
+                stroke="var(--color-successful)"
+                stackId="a"
               />
               <ChartLegend content={<ChartLegendContent />} />
             </AreaChart>

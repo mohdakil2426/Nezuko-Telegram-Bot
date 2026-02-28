@@ -2,8 +2,45 @@
 
 ### Current Status
 **Phase 77: Comprehensive UI/UX Audit Fix — COMPLETE ✅**
+**Post-Phase 77: Dashboard Chart & UI Polish — COMPLETE ✅**
 
 All 104 findings from the 7-dimension UI/UX audit (`UI_UX_AUDIT_REPORT.md`) have been resolved by 5 parallel agent teams. Score improved from **62/100 → ~90/100**.
+
+---
+
+## Post-Phase 77: Dashboard Chart & UI Polish (Complete)
+
+### Verification Trends Charts — Interactive Area Charts
+Both verification trend charts fully migrated to interactive area charts (stacked, natural curve, gradient fills):
+- `apps/web/src/components/dashboard/verification-chart.tsx` — period selector (7d/30d/90d), `useChartData(days)`, `<YAxis domain={[0,"auto"]} hide />`
+- `apps/web/src/components/analytics/verification-trends-chart.tsx` — period selector, `useVerificationTrends()`, same overflow fix
+- `apps/web/src/lib/services/dashboard.service.ts` — period mapping fixed: `days <= 7 ? "7d" : days <= 30 ? "30d" : "90d"`
+
+### Dropdown Consistency (All Charts)
+All 5 charts standardized to the **compact dropdown** style:
+- `w-[120px]` SelectTrigger (no `hidden sm:flex rounded-lg`)
+- `flex flex-row items-center justify-between space-y-0 pb-2` CardHeader
+- Plain `<SelectContent>` / `<SelectItem>` (no `rounded-xl` / `rounded-lg`)
+- Plain `<CardContent>` (no `px-2 pt-4 sm:px-6 sm:pt-6`)
+- Plain `<Card>` (no `pt-0`)
+
+Files: `verification-chart.tsx`, `verification-trends-chart.tsx`, `user-growth-chart.tsx`, `latency-trend-chart.tsx`, `cache-hit-rate-trend-chart.tsx`
+
+### Activity Feed — Horizontal Layout
+`apps/web/src/components/dashboard/activity-feed.tsx` converted from vertical ScrollArea list to horizontal `overflow-x-auto` flex row of `220px` shrink-0 cards. Placed full-width below Quick Insights.
+
+### Dashboard Page Layout (Final Order)
+```
+StatCards
+VerificationChart          (full width, interactive area, period selector)
+Quick Insights:
+  VerificationDistributionChart | GroupsStatusChart | CacheBreakdownChart | BotHealthChart
+  (sm:grid-cols-2 xl:grid-cols-4)
+ActivityFeed               (full width, horizontal scroll)
+```
+
+### GroupsStatusChart Added to Dashboard
+`GroupsStatusChart` added to Quick Insights grid — no new file created, already existed in `charts/groups-status-chart.tsx` and barrel `charts/index.ts`. Just imported + placed in correct order.
 
 ---
 
@@ -141,4 +178,4 @@ Bot Engine (Python) ──────► httpx REST ─────────
 
 ---
 
-_Last Updated: 2026-02-27 (Phase 76 — Auth System Hardening)_
+_Last Updated: 2026-02-28 (Post-Phase 77 — Dashboard Chart & UI Polish)_

@@ -23,6 +23,7 @@
 | 75    | Telegram Auth Removal (InsForge sole auth)  | Complete ✅ |
 | 76    | Auth System Hardening (pages, proxy, cleanup)| Complete ✅ |
 | 77    | Comprehensive UI/UX Audit Fix (104 findings) | Complete ✅ |
+| 77+   | Dashboard Chart & UI Polish                  | Complete ✅ |
 
 ---
 

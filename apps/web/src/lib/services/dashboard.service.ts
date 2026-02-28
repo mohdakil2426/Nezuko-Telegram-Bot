@@ -29,7 +29,7 @@ export async function getChartData(days = 30): Promise<ChartDataPoint[]> {
     return mockData.getChartData(days);
   }
 
-  const period = days <= 1 ? "24h" : days <= 7 ? "7d" : "30d";
+  const period = days <= 1 ? "24h" : days <= 7 ? "7d" : days <= 30 ? "30d" : "90d";
   const granularity = days <= 1 ? "hour" : "day";
 
   const { data, error } = await insforge.database.rpc("get_verification_trends", {

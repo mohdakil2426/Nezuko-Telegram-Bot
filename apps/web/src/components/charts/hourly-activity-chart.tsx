@@ -82,7 +82,7 @@ export function HourlyActivityChart() {
               axisLine={false}
               tickMargin={8}
               interval={2}
-              tick={{ fontSize: 10 }}
+              tick={{ fontSize: 12 }}
             />
             <YAxis tickLine={false} axisLine={false} tickMargin={8} />
             <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dashed" />} />

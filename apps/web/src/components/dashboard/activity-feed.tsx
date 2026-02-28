@@ -8,7 +8,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { CheckCircle, Shield, Settings, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useActivity, useRealtimeActivity } from "@/lib/hooks";
@@ -262,8 +261,8 @@ export function ActivityFeed() {
             Live updates paused — auto-refreshing every 30s.
           </div>
         )}
-        <ScrollArea className="h-[250px] md:h-[300px]">
-          <div className="space-y-4" role="log" aria-live="polite">
+        <div className="overflow-x-auto">
+          <div className="flex gap-3 pb-3" role="log" aria-live="polite">
             {allActivities.map((activity) => {
               const Icon = getActivityIcon(activity.type);
               const colorClass = getActivityColor(activity.type);
@@ -272,29 +271,29 @@ export function ActivityFeed() {
               return (
                 <div
                   key={activity.id}
-                  className={`feed-item flex items-start gap-3 transition-all duration-500 ${
+                  className={`bg-muted/40 flex w-[220px] shrink-0 flex-col gap-2 rounded-lg border p-3 transition-all duration-500 ${
                     isNew
-                      ? "animate-in slide-in-from-top-2 fade-in-0 bg-accent/50 -mx-2 rounded-md px-2 py-1"
+                      ? "animate-in slide-in-from-left-2 fade-in-0 bg-accent/50"
                       : ""
                   }`}
                 >
-                  <div className={`mt-0.5 ${colorClass}`} aria-hidden="true">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm leading-tight">{activity.description}</p>
-                    <p className="text-muted-foreground text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className={colorClass} aria-hidden="true">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <span className="text-muted-foreground text-xs">
                       {formatRelativeTime(activity.timestamp)}
-                    </p>
+                    </span>
                   </div>
+                  <p className="text-sm leading-tight line-clamp-2">{activity.description}</p>
                 </div>
               );
             })}
             {allActivities.length === 0 && (
-              <div className="text-muted-foreground py-8 text-center">No recent activity</div>
+              <div className="text-muted-foreground w-full py-6 text-center">No recent activity</div>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );

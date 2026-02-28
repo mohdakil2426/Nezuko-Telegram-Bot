@@ -79,7 +79,7 @@ export function LatencyTrendChart() {
           <CardTitle>Latency Trend</CardTitle>
           <CardDescription>Current average: {data?.current_avg ?? 0}ms</CardDescription>
         </div>
-        <Select value={period} onValueChange={(v) => setPeriod(v as PeriodOption)}>
+        <Select value={period} onValueChange={(v) => setPeriod(v as PeriodOption)} aria-label="Select time period">
           <SelectTrigger className="w-[120px]">
             <SelectValue />
           </SelectTrigger>

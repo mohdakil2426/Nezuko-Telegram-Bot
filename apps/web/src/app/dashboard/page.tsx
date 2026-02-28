@@ -11,6 +11,7 @@ import { StatCards, VerificationChart, ActivityFeed } from "@/components/dashboa
 import {
   BotHealthChart,
   CacheBreakdownChart,
+  GroupsStatusChart,
   VerificationDistributionChart,
 } from "@/components/charts";
 import { PageTransition, RevealItem } from "@/components/page-transition";
@@ -35,18 +36,13 @@ export default function DashboardPage() {
         <StatCards />
       </RevealItem>
 
-      <RevealItem className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <div className="lg:col-span-4">
-          <VerificationChart />
-        </div>
-        <div className="lg:col-span-3">
-          <ActivityFeed />
-        </div>
+      <RevealItem>
+        <VerificationChart />
       </RevealItem>
 
       {/* Quick Insights Section */}
       <RevealItem className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-xl font-semibold tracking-tight">Quick Insights</h2>
             <p className="text-muted-foreground text-sm">Key performance metrics at a glance</p>
@@ -59,11 +55,16 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <BotHealthChart />
-          <CacheBreakdownChart />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <VerificationDistributionChart />
+          <GroupsStatusChart />
+          <CacheBreakdownChart />
+          <BotHealthChart />
         </div>
+      </RevealItem>
+
+      <RevealItem>
+        <ActivityFeed />
       </RevealItem>
     </PageTransition>
   );
