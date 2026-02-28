@@ -70,6 +70,11 @@
     "insforge"
   ],
   "enabledPlugins": {
-    "python-development@claude-code-workflows": true
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true,
+    "superpowers@superpowers-marketplace": true,
+    "agent-teams@claude-code-workflows": true,
+    "comprehensive-review@claude-code-workflows": true,
+    "python-development@claude-code-workflows": true,
+    "security-scanning@claude-code-workflows": true
   }
 }
