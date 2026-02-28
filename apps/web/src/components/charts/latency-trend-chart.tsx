@@ -27,6 +27,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLatencyTrend } from "@/lib/hooks";
 import type { TrendsParams } from "@/lib/services/types";
+import { formatDate } from "@/lib/format";
 
 const chartConfig = {
   avg_latency: {
@@ -50,10 +51,7 @@ export function LatencyTrendChart() {
   const chartData = React.useMemo(() => {
     if (!data?.series) return [];
     return data.series.map((point) => ({
-      date: new Date(point.date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      }),
+      date: formatDate(point.date),
       avg_latency: point.avg_latency,
       p95_latency: point.p95_latency,
     }));
@@ -73,6 +71,7 @@ export function LatencyTrendChart() {
   }
 
   return (
+    <div role="img" aria-label="Latency trend line chart">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
@@ -91,6 +90,7 @@ export function LatencyTrendChart() {
         </Select>
       </CardHeader>
       <CardContent>
+        <div className="min-h-[200px]">
         {isPending ? (
           <Skeleton className="h-[300px] w-full" />
         ) : (
@@ -140,7 +140,9 @@ export function LatencyTrendChart() {
             </LineChart>
           </ChartContainer>
         )}
+        </div>
       </CardContent>
     </Card>
+    </div>
   );
 }

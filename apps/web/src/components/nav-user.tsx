@@ -96,6 +96,7 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
+              aria-label={`Open user menu for ${displayUser.name}`}
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
@@ -157,7 +158,7 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
                 ) : (
                   <LogOut />
                 )}
-                {isSigningOut ? "Signing out..." : "Log out"}
+                {isSigningOut ? "Signing out…" : "Log out"}
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem disabled>

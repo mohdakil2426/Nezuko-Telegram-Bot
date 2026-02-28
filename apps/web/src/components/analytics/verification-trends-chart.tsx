@@ -27,6 +27,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useVerificationTrends } from "@/lib/hooks";
 import type { TrendsParams } from "@/lib/services/types";
+import { formatDate } from "@/lib/format";
 
 const chartConfig = {
   verifications: {
@@ -78,6 +79,7 @@ export function VerificationTrendsChart() {
   }
 
   return (
+    <div role="img" aria-label="Verification trends area chart">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
@@ -99,6 +101,7 @@ export function VerificationTrendsChart() {
         </Select>
       </CardHeader>
       <CardContent>
+        <div className="min-h-[200px]">
         {isPending ? (
           <Skeleton className="h-[250px] w-full" />
         ) : (
@@ -125,11 +128,7 @@ export function VerificationTrendsChart() {
                 tickMargin={8}
                 minTickGap={32}
                 tickFormatter={(value) => {
-                  const date = new Date(value);
-                  return date.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  });
+                  return formatDate(value as string);
                 }}
               />
               <YAxis domain={[0, "auto"]} hide />
@@ -138,10 +137,7 @@ export function VerificationTrendsChart() {
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value) => {
-                      return new Date(value).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      });
+                      return formatDate(value as string);
                     }}
                     indicator="dot"
                   />
@@ -165,7 +161,9 @@ export function VerificationTrendsChart() {
             </AreaChart>
           </ChartContainer>
         )}
+        </div>
       </CardContent>
     </Card>
+    </div>
   );
 }

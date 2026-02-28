@@ -4,12 +4,58 @@
 **Phase 77: Comprehensive UI/UX Audit Fix — COMPLETE ✅**
 **Post-Phase 77: Dashboard Chart & UI Polish — COMPLETE ✅**
 **Post-Phase 77b: Members Interactive Bar Chart — COMPLETE ✅**
+**Phase 78: Responsiveness Audit v1 Fixes — COMPLETE ✅**
+**Phase 79: Deep Web Standards Audit v2 — COMPLETE ✅ (34 findings in WEB_AUDIT_REPORT_V2.md)**
+**Phase 80: WEB_AUDIT_REPORT_V2 Fixes — IN PROGRESS 🔄**
 
-All 104 findings from the 7-dimension UI/UX audit (`UI_UX_AUDIT_REPORT.md`) have been resolved by 5 parallel agent teams. Score improved from **62/100 → ~90/100**.
+Implementing all 34 findings from `WEB_AUDIT_REPORT_V2.md`. ~20 items complete (see Phase 80 section below), ~14 items still pending (mainly remaining chart components + loading skeletons + column formatters).
 
 ---
 
-## Post-Phase 77b: Members Interactive Bar Chart (Complete)
+## Phase 80: WEB_AUDIT_REPORT_V2.md Fixes (In Progress)
+
+Audit target: ≥95% compliance across all 10 categories. Full fix list tracked in `WEB_AUDIT_REPORT_V2.md`.
+
+### New Files Created
+| File | Purpose |
+|---|---|
+| `apps/web/src/lib/format.ts` | Shared locale-aware `formatDate()` + `formatCount()` using `Intl.*`. Replaces all `toLocaleDateString("en-US")` calls. |
+
+### Completed Fixes
+| ID | File | Change |
+|---|---|---|
+| ANIM-H1 | `page-transition.tsx` | `staggerChildren: 0.1` → `0.05` (max 300ms total) |
+| RESP-H1 | `dashboard/layout.tsx` | `overflow-x-hidden` on `<main>` |
+| RESP-M1 | `layout.tsx` | `export const viewport` with `viewportFit: "cover"` for iOS safe-area |
+| A11Y-C2 | `nav-user.tsx` | `"Signing out..."` → `"Signing out…"` (Unicode) |
+| A11Y-H1 | `nav-user.tsx` | `aria-label` on `SidebarMenuButton` trigger |
+| PERF-H1 | `globals.css` | `content-visibility: auto` on inactive `[data-state="inactive"]` tabs |
+| A11Y-M1 | `globals.css` | `[role="dialog"] { overscroll-behavior: contain }` |
+| DARK-H1 | `globals.css` | `.dark select` background/color override |
+| DARK-M1 | `globals.css` | `code:not([class])` dark/light styling |
+| RESP-M1 | `globals.css` | `.sidebar-footer { padding-bottom: max(1rem, env(safe-area-inset-bottom)) }` |
+| NAV-H1 | `analytics-page-content.tsx` | `useSearchParams` URL-synced tabs (`?tab=overview` etc.) |
+| A11Y-H3 + FORM-H1 + A11Y-M2 + HYD-M1 + NAV-M1 + A11Y-L1 + TYPO-M2 | `bots/page.tsx` | `aria-label` on Table; `aria-pressed` on Power button; `autoFocus`+`name`+`autoComplete="off"`+`spellCheck=false` on token input; `formatDate()` replaces `toLocaleDateString()`; 3s undo toast for bot deletion; better @BotFather error message |
+| A11Y-H3 + RESP-M2 | `groups-data-table.tsx` | `aria-label="Protected groups"` on Table; `overflow-x-auto` wrapper |
+| A11Y-H3 + RESP-M2 | `channels-data-table.tsx` | `aria-label="Enforced channels"` on Table; `overflow-x-auto` wrapper |
+| A11Y-H2 + RESP-C1 + PERF-H2 | `cache-hit-rate-trend-chart.tsx` | `role="img"` wrapper; `min-h-[200px]`; `formatDate()` |
+| A11Y-H2 + RESP-C1 + PERF-H2 | `latency-trend-chart.tsx` | `role="img"` wrapper; `min-h-[200px]`; `formatDate()` |
+| A11Y-H2 + RESP-C1 + PERF-H2 | `analytics/verification-trends-chart.tsx` | `role="img"` wrapper; `min-h-[200px]`; `formatDate()` x2 |
+
+### Pending Fixes
+| ID | File | Remaining |
+|---|---|---|
+| A11Y-H2 + RESP-C1 + PERF-H2 | `analytics/user-growth-chart.tsx` | role=img, min-h, formatDate |
+| A11Y-H2 + RESP-C1 + PERF-H2 | `dashboard/verification-chart.tsx` | role=img, min-h, formatDate x2 |
+| A11Y-H2 + RESP-C1 | 8 remaining charts in `charts/` | role=img, min-h (no locale fix needed — no toLocaleDateString) |
+| I18N-M1 | `groups-columns.tsx`, `channels-columns.tsx` | `formatCount()` for member/subscriber counts |
+| TOUCH-M1 | `theme-toggle.tsx` | `min-h-11 min-w-11` on SidebarMenuButton |
+| PERF-L1 | `dashboard/groups/`, `channels/`, `analytics/` | Create `loading.tsx` skeletons |
+| RESP-L1 | `dashboard/settings/` | Create `loading.tsx` skeleton |
+| TYPO-L1 | Multiple pages | Trailing periods on page description `<p>` tags |
+
+---
+
 
 ### MembersChart — shadcn "Bar Chart - Interactive" Pattern
 Added a new full-width interactive bar chart to the Analytics → Distribution tab showing membership data across channels and groups.
@@ -184,25 +230,97 @@ Bot Engine (Python) ──────► httpx REST ─────────
 
 ---
 
+## Phase 78: Responsiveness Audit v1 Fixes (Complete)
+
+Verified `RESPONSIVENESS_AUDIT_REPORT.md` findings against source code and applied all confirmed fixes. `bun run type-check` → **0 errors** ✅
+
+### Fixes Applied (20 items, 14 files)
+| ID | File | Change |
+|---|---|---|
+| TOUCH-H1 | globals.css | `touch-action: manipulation` on `button, [role="button"], a` |
+| TOUCH-L1 | globals.css | `-webkit-tap-highlight-color: transparent` on `*` |
+| THEME-M1 | globals.css | `color-scheme: dark` inside `.dark {}` |
+| A11Y-L1 | layout.tsx | Skip-to-content `<a href="#main-content">` link |
+| THEME-L1 | layout.tsx | `themeColor` metadata for mobile browser chrome |
+| WIG-L1 | dashboard/layout.tsx | `id="main-content"` on `<main>` |
+| A11Y-H1 | tabs.tsx | `focus-visible:ring-2 focus-visible:ring-ring` on `TabsContent` |
+| A11Y-H2 | logs/page.tsx | Dynamic `aria-label` on Pause/Resume/Refresh/Clear buttons |
+| WIG-H1 | logs/page.tsx | `Intl.DateTimeFormat(undefined)` replaces `toLocaleTimeString("en-US")` |
+| RESP-L1 | logs/page.tsx | Fixed-height `h-125` → responsive `h-[32rem] sm:h-[40rem] lg:h-[48rem]` |
+| TYPO-M1 | logs/page.tsx | "Filter by level" → "Filter by Level" (Title Case) |
+| WIG-H2 | activity-feed.tsx | `Intl.RelativeTimeFormat(undefined)` replaces manual time arithmetic |
+| RESP-M2 | reset-password/page.tsx | Root `<div>` → `<main>` |
+| A11Y-M1 | site-header.tsx | Immediate parent breadcrumb always visible on mobile |
+| TOUCH-H2 | bots/page.tsx | `min-h-11 min-w-11` on Power & Delete icon buttons (44px touch target) |
+| WIG-M1 | forgot-password/page.tsx | `spellCheck={false} autoCapitalize="none" autoCorrect="off"` on email input |
+| TYPO-H1 | 7× dashboard pages | `text-balance` added to all `<h1>` headings |
+
+### Already Confirmed Correct (no change needed)
+- RESP-H1: login `max-w-sm` already present
+- A11Y-M2: auth `autoComplete` already present
+- TYPO-L1: Unicode `…` already used in nav-user/login-form
+- TOUCH-M2: bots page uses Table (not card click-nav)
+
+---
+
+## Phase 79: Deep Web Standards Audit v2 (Complete — Report Generated)
+
+Performed a full codebase grep scan and fetched official docs from **Vercel WIG, WCAG 2.2, Next.js 16, Tailwind v4, shadcn/ui 2025-2026**. Generated `WEB_AUDIT_REPORT_V2.md` in project root.
+
+### Audit Stats
+- **34 new findings** across 10 categories
+- **5 blocking (High)** priority items
+- **21 items now passing** (from Phase 78 + previous phases)
+- **Overall compliance score: ~74%** (target: 95%+)
+
+### Top High-Priority Findings (pending fix)
+| ID | Category | Issue |
+|---|---|---|
+| A11Y-C1 | Accessibility | Error `<Alert>` missing `role="alert"` — screen readers miss form errors |
+| A11Y-H2 | Accessibility | All 11 chart components lack `role="img"` + `aria-label` |
+| A11Y-H3 | Accessibility | Data tables missing `aria-label` |
+| RESP-C1 | Responsive | Charts have no `min-h` guard — can collapse to 0px on mobile |
+| RESP-H1 | Responsive | Dashboard `<main>` missing `overflow-x-hidden` — charts can cause h-scroll |
+| PERF-H1 | Performance | Analytics tabs all mount at once — no `content-visibility: auto` |
+| PERF-H2 | i18n | 9 files still use `toLocaleDateString("en-US")` → needs shared `formatDate()` util |
+| NAV-H1 | Navigation | Analytics tabs not URL-synced — deep-linking broken |
+| ANIM-H1 | Animation | Page transition `staggerChildren: 0.1` × 6+ items = 600ms total |
+| FORM-H1 | Forms | Bot token input missing `name` and `autoComplete="off"` |
+
+### Audit Files
+- `RESPONSIVENESS_AUDIT_REPORT.md` — v1 audit (original, from Phase 78)
+- `WEB_AUDIT_REPORT_V2.md` — v2 deep audit (Phase 79, current)
+
+---
+
 ## Remaining Issues
 
 | Issue | Impact | Priority |
 |---|---|---|
+| Phase 80 pending chart items | 9 charts still need role=img + min-h; 2 need formatDate | High |
+| Phase 80 pending medium items | formatCount in columns, theme-toggle touch target | Medium |
+| Phase 80 loading.tsx skeletons | 4 route folders missing loading.tsx | Low |
 | WebSocket offline locally | Falls back to 30s polling — works on deploy | Info |
 | Test coverage at 58 tests | Target 100+ for full coverage | Low |
 | Admin notification on error (Task 6.2) | Error alerts not sent to admin chat | Low |
-| InsForge JWT not server-validated | Middleware checks cookie existence only; stale cookies pass through (clear manually) | Low |
+| InsForge JWT not server-validated | Middleware checks cookie existence only | Low |
 
 ---
 
 ## What to Work on Next
 
-1. **Clear browser cookies** → `insforge-session` + `insforge-user` on localhost after switching DEV_LOGIN modes
-2. **Deploy** — VPS/Docker (bot) + Vercel (web)
-3. **Register InsForge user** — sign up at the InsForge hosted auth page to create the dashboard owner account
+1. **Phase 80 (continue)** — Complete remaining pending items from `WEB_AUDIT_REPORT_V2.md`:
+   - Apply `role="img"` + `min-h-[200px]` to remaining 9 chart files
+   - `formatDate()` on `dashboard/verification-chart.tsx` + `user-growth-chart.tsx`
+   - `formatCount()` wiring in `groups-columns.tsx` + `channels-columns.tsx`
+   - Theme toggle `min-h-11` (TOUCH-M1)
+   - 4 `loading.tsx` skeleton files
+   - Trailing periods on page descriptions (TYPO-L1)
+2. **Run type-check** — `cd apps/web && bun run type-check` to confirm 0 errors post-Phase-80
+3. **Deploy** — VPS/Docker (bot) + Vercel (web)
 4. **Add admin notification** in global error handler (Task 6.2)
 5. **Expand test coverage** — target 100+ tests
 
 ---
 
-_Last Updated: 2026-02-28 (Post-Phase 77 — Dashboard Chart & UI Polish)_
+_Last Updated: 2026-02-28 (Phase 80 — WEB_AUDIT_REPORT_V2 Fixes — In Progress)_

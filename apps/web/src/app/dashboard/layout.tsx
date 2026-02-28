@@ -40,7 +40,7 @@ export default async function DashboardLayout({
       <AppSidebar />
       <SidebarInset>
         <SiteHeader />
-        <main id="main-content" className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <main id="main-content" className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-x-hidden">
           <ErrorBoundary>{children}</ErrorBoundary>
         </main>
       </SidebarInset>

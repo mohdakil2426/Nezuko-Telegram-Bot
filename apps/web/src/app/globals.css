@@ -129,11 +129,33 @@
   a {
     touch-action: manipulation;
   }
+  /* A11Y-M1: Prevent background scroll when dialog is open (WIG: overscroll-behavior in modals) */
+  [role="dialog"] {
+    overscroll-behavior: contain;
+  }
+  /* DARK-H1: Ensure native <select> elements render correctly in Windows dark mode */
+  .dark select {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+  /* DARK-M1: Code blocks styled for both light and dark modes */
+  code:not([class]) {
+    @apply bg-muted text-foreground rounded px-1 py-0.5 font-mono text-sm;
+  }
 }
 
 @layer utilities {
   .feed-item {
     content-visibility: auto;
     contain-intrinsic-size: 1px 60px; /* Estimated height for feed items */
+  }
+  /* PERF-H1: Defer rendering of inactive analytics tab panels (saves CPU for off-screen Recharts) */
+  [data-state="inactive"][data-slot="tabs-content"] {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 600px;
+  }
+  /* RESP-M1: iOS safe-area inset for sidebar footer (Dynamic Island / Home indicator) */
+  .sidebar-footer {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }

@@ -100,7 +100,7 @@ nezuko/
 
 ## Current Status
 
-**Phase**: 77 — Comprehensive UI/UX Audit Fix (Complete)
+**Phase**: 80 — WEB_AUDIT_REPORT_V2 Fixes (In Progress)
 **Last Updated**: 2026-02-28
 
 - Phase 70 (Frontend Audit & Performance Optimization): Complete
@@ -110,6 +110,9 @@ nezuko/
 - Phase 75 (Telegram Auth Removal — InsForge sole auth): Complete
 - Phase 76 (Auth System Hardening — pages, proxy, cleanup): Complete
 - Phase 77 (Comprehensive UI/UX Audit Fix — 104 findings resolved): Complete
+- Phase 78 (Responsiveness Audit v1 Fixes — 20 items): Complete
+- Phase 79 (Deep Web Standards Audit v2 — 34 findings in WEB_AUDIT_REPORT_V2.md): Complete
+- Phase 80 (WEB_AUDIT_REPORT_V2 Fixes — ~20/34 complete): **In Progress**
 
 ---
 

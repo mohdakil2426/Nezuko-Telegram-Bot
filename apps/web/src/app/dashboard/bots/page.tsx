@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { Bot, Plus, Power, Trash2, RefreshCw, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/format";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -116,7 +117,7 @@ export default function BotsPage() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-            <Table>
+            <Table aria-label="Registered bots">
               <TableHeader>
                 <TableRow>
                   <TableHead>Bot</TableHead>
@@ -158,9 +159,24 @@ function BotRow({ bot }: { bot: BotType }) {
   };
 
   const handleDelete = () => {
-    deleteMutation.mutate(bot.id, {
-      onSuccess: () => toast.success("Bot deleted successfully"),
-      onError: () => toast.error("Failed to delete bot"),
+    // NAV-M1: 3-second undo window — delay the actual mutation so the user can cancel
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (!cancelled) deleteMutation.mutate(bot.id, {
+        onSuccess: () => toast.success("Bot deleted successfully"),
+        onError: () => toast.error("Failed to delete bot"),
+      });
+    }, 3000);
+
+    toast("Bot deleted", {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          cancelled = true;
+          clearTimeout(timer);
+          toast.dismiss();
+        },
+      },
     });
   };
 
@@ -181,7 +197,7 @@ function BotRow({ bot }: { bot: BotType }) {
         </Badge>
       </TableCell>
       <TableCell className="text-muted-foreground">
-        {new Date(bot.created_at).toLocaleDateString()}
+        {formatDate(bot.created_at)}
       </TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-2">
@@ -190,6 +206,7 @@ function BotRow({ bot }: { bot: BotType }) {
             size="icon"
             onClick={handleToggleActive}
             disabled={updateMutation.isPending}
+            aria-pressed={bot.is_active}
             title={bot.is_active ? "Deactivate" : "Activate"}
             className="min-h-11 min-w-11"
           >
@@ -255,7 +272,7 @@ function AddBotDialog() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to add bot";
       if (message.includes("400") || message.includes("Invalid")) {
-        setError("Invalid bot token. Please check and try again.");
+        setError("Invalid bot token. Get yours from @BotFather on Telegram.");
       } else if (message.includes("409") || message.includes("duplicate")) {
         setError("This bot has already been added.");
       } else {
@@ -294,6 +311,10 @@ function AddBotDialog() {
               <Input
                 id="token"
                 type="password"
+                name="bot-token"
+                autoComplete="off"
+                spellCheck={false}
+                autoFocus
                 placeholder="123456789:ABCdefGHIjklMNOpqrSTUvwxYZ"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
