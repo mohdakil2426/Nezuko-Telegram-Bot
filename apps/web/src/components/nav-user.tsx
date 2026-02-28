@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import { LogOut, Settings, User, Loader2 } from "lucide-react";
+import { LogOut, Settings, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -140,12 +140,6 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/settings">
-                  <User />
-                  Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings">
                   <Settings />
                   Settings
                 </Link>
@@ -154,19 +148,19 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
             <DropdownMenuSeparator />
             {isSignedIn ? (
               <DropdownMenuItem
+                variant="destructive"
                 onClick={handleSignOut}
                 disabled={isSigningOut}
-                className="text-destructive focus:text-destructive"
               >
                 {isSigningOut ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="animate-spin" />
                 ) : (
                   <LogOut />
                 )}
                 {isSigningOut ? "Signing out..." : "Log out"}
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem disabled className="text-muted-foreground">
+              <DropdownMenuItem disabled>
                 <LogOut />
                 Not signed in
               </DropdownMenuItem>

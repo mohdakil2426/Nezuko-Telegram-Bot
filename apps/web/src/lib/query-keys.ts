@@ -100,6 +100,8 @@ export const queryKeys = {
       [...queryKeys.charts.all, "latency-trend", params] as const,
     // Radial charts
     botHealth: () => [...queryKeys.charts.all, "bot-health"] as const,
+    // Members interactive chart
+    membersChart: () => [...queryKeys.charts.all, "members-chart"] as const,
   },
 
   // Logs keys

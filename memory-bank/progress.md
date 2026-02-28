@@ -24,6 +24,8 @@
 | 76    | Auth System Hardening (pages, proxy, cleanup)| Complete ✅ |
 | 77    | Comprehensive UI/UX Audit Fix (104 findings) | Complete ✅ |
 | 77+   | Dashboard Chart & UI Polish                  | Complete ✅ |
+| 77b   | Members Interactive Bar Chart (Analytics)    | Complete ✅ |
+| 77c   | Fix Missing Members Chart RPC (get_members_chart_data) | Complete ✅ |
 
 ---
 

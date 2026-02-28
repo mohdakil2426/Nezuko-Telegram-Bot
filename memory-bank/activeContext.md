@@ -3,8 +3,35 @@
 ### Current Status
 **Phase 77: Comprehensive UI/UX Audit Fix — COMPLETE ✅**
 **Post-Phase 77: Dashboard Chart & UI Polish — COMPLETE ✅**
+**Post-Phase 77b: Members Interactive Bar Chart — COMPLETE ✅**
 
 All 104 findings from the 7-dimension UI/UX audit (`UI_UX_AUDIT_REPORT.md`) have been resolved by 5 parallel agent teams. Score improved from **62/100 → ~90/100**.
+
+---
+
+## Post-Phase 77b: Members Interactive Bar Chart (Complete)
+
+### MembersChart — shadcn "Bar Chart - Interactive" Pattern
+Added a new full-width interactive bar chart to the Analytics → Distribution tab showing membership data across channels and groups.
+
+**Files added/modified (9 files):**
+- **NEW** `apps/web/src/components/charts/members-chart.tsx` — interactive bar chart, two tab buttons (Channels / Groups), active tab selected shows bars + total in header
+- **FIX** `insforge/migrations/016_add_members_chart_rpc.sql` — Added missing PostgreSQL RPC `get_members_chart_data` to fix "Failed to load data" error in dashboard.
+- `apps/web/src/lib/services/types.ts` — added `MembersChartEntry` and `MembersChartData` types
+- `apps/web/src/lib/mock/charts.mock.ts` — added `getMembersChartData()` mock (10 channels + 10 groups, sorted desc by members)
+- `apps/web/src/lib/mock/index.ts` — exported `getMembersChartData`
+- `apps/web/src/lib/query-keys.ts` — added `membersChart()` key under `charts`
+- `apps/web/src/lib/services/charts.service.ts` — added `getMembersChartData()` (mock + InsForge RPC `get_members_chart_data`)
+- `apps/web/src/lib/hooks/use-charts.ts` — added `useMembersChart()` hook
+- `apps/web/src/lib/hooks/index.ts` — exported `useMembersChart`
+- `apps/web/src/components/charts/index.ts` — exported `MembersChart`
+- `apps/web/src/components/analytics/analytics-page-content.tsx` — placed `<MembersChart />` in Distribution tab above `<TopGroupsChart />`
+
+**Chart behaviour:**
+- **Channels tab**: bars = per-channel subscriber_count; total across all channels in header button
+- **Groups tab**: bars = per-group member_count; total across all groups in header button
+- Clicking a tab header switches the active dataset
+- Sorted descending by count, full skeleton + error states, `STALE_TIMES.LONG` / `REFETCH_INTERVALS.SLOW`
 
 ---
 

@@ -16,6 +16,7 @@ import type {
   CacheHitRateTrend,
   LatencyTrend,
   BotHealthMetrics,
+  MembersChartData,
   TrendsParams,
 } from "@/lib/services/types";
 import * as mockData from "@/lib/mock";
@@ -209,4 +210,22 @@ export async function getBotHealthMetrics(): Promise<BotHealthMetrics> {
   const { data, error } = await insforge.database.rpc("get_bot_health");
   if (error) throw error;
   return data as BotHealthMetrics;
+}
+
+// =============================================================================
+// Members Interactive Chart Service
+// =============================================================================
+
+/**
+ * Get top channels (by subscriber_count) and top groups (by member_count)
+ * for the members interactive bar chart.
+ */
+export async function getMembersChartData(): Promise<MembersChartData> {
+  if (USE_MOCK) {
+    return mockData.getMembersChartData();
+  }
+
+  const { data, error } = await insforge.database.rpc("get_members_chart_data");
+  if (error) throw error;
+  return data as MembersChartData;
 }

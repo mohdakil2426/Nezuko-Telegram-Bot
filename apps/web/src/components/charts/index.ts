@@ -13,6 +13,7 @@ export { ApiCallsChart } from "./api-calls-chart";
 export { HourlyActivityChart } from "./hourly-activity-chart";
 export { LatencyDistributionChart } from "./latency-distribution-chart";
 export { TopGroupsChart } from "./top-groups-chart";
+export { MembersChart } from "./members-chart";
 
 // Line Charts
 export { CacheHitRateTrendChart } from "./cache-hit-rate-trend-chart";

@@ -32,6 +32,7 @@ export {
   useCacheHitRateTrend,
   useLatencyTrend,
   useBotHealthMetrics,
+  useMembersChart,
 } from "./use-charts";
 
 // Bots hooks (ARCH-M2)

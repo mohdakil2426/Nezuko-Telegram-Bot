@@ -414,6 +414,22 @@ export interface LatencyTrend {
 }
 
 /**
+ * Single bar entry for the members interactive chart
+ */
+export interface MembersChartEntry {
+  name: string;
+  members: number;
+}
+
+/**
+ * Data shape for the members interactive bar chart
+ */
+export interface MembersChartData {
+  channels: MembersChartEntry[];
+  groups: MembersChartEntry[];
+}
+
+/**
  * Bot health metrics for radial chart
  */
 export interface BotHealthMetrics {

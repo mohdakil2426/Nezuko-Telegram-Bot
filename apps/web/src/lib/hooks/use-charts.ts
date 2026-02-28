@@ -146,3 +146,15 @@ export function useBotHealthMetrics() {
     refetchInterval: REFETCH_INTERVALS.SLOW,
   });
 }
+
+/**
+ * Hook for members interactive bar chart (top channels + top groups by member count)
+ */
+export function useMembersChart() {
+  return useQuery({
+    queryKey: queryKeys.charts.membersChart(),
+    queryFn: chartsService.getMembersChartData,
+    staleTime: STALE_TIMES.LONG,
+    refetchInterval: REFETCH_INTERVALS.SLOW,
+  });
+}

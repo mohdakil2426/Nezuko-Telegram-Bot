@@ -34,6 +34,7 @@ export {
   getCacheHitRateTrend,
   getLatencyTrend,
   getBotHealthMetrics,
+  getMembersChartData,
 } from "./charts.mock";
 
 // Logs

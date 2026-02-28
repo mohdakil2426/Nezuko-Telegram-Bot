@@ -19,6 +19,7 @@ import {
   HourlyActivityChart,
   LatencyDistributionChart,
   TopGroupsChart,
+  MembersChart,
   CacheHitRateTrendChart,
   LatencyTrendChart,
   BotHealthChart,
@@ -71,6 +72,7 @@ export function AnalyticsPageContent() {
             <GroupsStatusChart />
             <ApiCallsChart />
           </div>
+          <MembersChart />
           <TopGroupsChart />
         </TabsContent>
 

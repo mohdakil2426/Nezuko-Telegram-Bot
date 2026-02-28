@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle, Shield, Settings, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -261,8 +262,8 @@ export function ActivityFeed() {
             Live updates paused — auto-refreshing every 30s.
           </div>
         )}
-        <div className="overflow-x-auto">
-          <div className="flex gap-3 pb-3" role="log" aria-live="polite">
+        <ScrollArea className="h-[340px] pr-3">
+          <div className="space-y-1" role="log" aria-live="polite">
             {allActivities.map((activity) => {
               const Icon = getActivityIcon(activity.type);
               const colorClass = getActivityColor(activity.type);
@@ -271,29 +272,27 @@ export function ActivityFeed() {
               return (
                 <div
                   key={activity.id}
-                  className={`bg-muted/40 flex w-[220px] shrink-0 flex-col gap-2 rounded-lg border p-3 transition-all duration-500 ${
+                  className={`flex items-start gap-3 rounded-lg px-2 py-2.5 transition-all duration-500 ${
                     isNew
-                      ? "animate-in slide-in-from-left-2 fade-in-0 bg-accent/50"
-                      : ""
+                      ? "animate-in slide-in-from-top-1 fade-in-0 bg-accent/60"
+                      : "hover:bg-muted/50"
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className={colorClass} aria-hidden="true">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <span className="text-muted-foreground text-xs">
-                      {formatRelativeTime(activity.timestamp)}
-                    </span>
+                  <div className={`mt-0.5 shrink-0 ${colorClass}`} aria-hidden="true">
+                    <Icon className="h-4 w-4" />
                   </div>
-                  <p className="text-sm leading-tight line-clamp-2">{activity.description}</p>
+                  <p className="flex-1 text-sm leading-snug line-clamp-2">{activity.description}</p>
+                  <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                    {formatRelativeTime(activity.timestamp)}
+                  </span>
                 </div>
               );
             })}
             {allActivities.length === 0 && (
-              <div className="text-muted-foreground w-full py-6 text-center">No recent activity</div>
+              <div className="text-muted-foreground py-10 text-center text-sm">No recent activity</div>
             )}
           </div>
-        </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
@@ -302,19 +301,19 @@ export function ActivityFeed() {
 function ActivityFeedSkeleton() {
   return (
     <Card>
-      <CardHeader>
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-4 w-48" />
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div className="space-y-1">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-4 w-48" />
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4" aria-busy="true">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <Skeleton className="mt-0.5 h-4 w-4" />
-              <div className="flex-1 space-y-1">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-3 w-16" />
-              </div>
+        <div className="space-y-1" aria-busy="true">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="flex items-start gap-3 rounded-lg px-2 py-2.5">
+              <Skeleton className="mt-0.5 h-4 w-4 shrink-0" />
+              <Skeleton className="h-4 flex-1" />
+              <Skeleton className="h-3 w-12 shrink-0" />
             </div>
           ))}
         </div>

@@ -13,6 +13,7 @@ import type {
   TopGroupPerformance,
   CacheHitRateTrend,
   LatencyTrend,
+  MembersChartData,
   BotHealthMetrics,
   TrendsParams,
 } from "@/lib/services/types";
@@ -293,4 +294,53 @@ export async function getBotHealthMetrics(): Promise<BotHealthMetrics> {
     error_rate: errorRate,
     overall_score: overallScore,
   };
+}
+
+// =============================================================================
+// Members Interactive Chart Data
+// =============================================================================
+
+const CHANNEL_NAMES = [
+  "Crypto Signals",
+  "Premium Alerts",
+  "Daily News",
+  "Trading Pro",
+  "Market Analysis",
+  "NFT Drops",
+  "DeFi Updates",
+  "Forex Elite",
+  "Tech News",
+  "AI Research",
+];
+
+const GROUP_NAMES = [
+  "Crypto VIP",
+  "Trading Elite",
+  "NFT Collectors",
+  "DeFi Strategies",
+  "Forex Masters",
+  "Signals Hub",
+  "Premium Club",
+  "Investors",
+  "Tech Alpha",
+  "AI Insiders",
+];
+
+/**
+ * Get members chart data — top channels (subscribers) and top groups (member_count)
+ */
+export async function getMembersChartData(): Promise<MembersChartData> {
+  await delay();
+
+  const channels = CHANNEL_NAMES.map((name) => ({
+    name,
+    members: randomInt(10000, 160000),
+  })).sort((a, b) => b.members - a.members);
+
+  const groups = GROUP_NAMES.map((name) => ({
+    name,
+    members: randomInt(2000, 32000),
+  })).sort((a, b) => b.members - a.members);
+
+  return { channels, groups };
 }
