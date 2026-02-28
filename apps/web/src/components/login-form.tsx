@@ -34,7 +34,9 @@ import { DEV_LOGIN } from "@/lib/api/config";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/dashboard";
+  const rawRedirect = searchParams.get("redirectTo") || "/dashboard";
+  // Validate: must start with "/" and not "//" (prevents open redirect to //evil.com)
+  const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
 
   const { isLoaded, isSignedIn } = useAuth();
 

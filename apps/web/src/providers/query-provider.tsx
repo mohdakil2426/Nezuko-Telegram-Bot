@@ -26,6 +26,8 @@ function makeQueryClient() {
         retry: 1,
         // Consider data stale after 30 seconds
         staleTime: 30 * 1000,
+        // Garbage collect unused queries after 10 minutes (PERF-M1)
+        gcTime: 10 * 60 * 1000,
       },
       mutations: {
         // Retry mutations once
@@ -61,7 +63,9 @@ export function QueryProvider({ children }: QueryProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
+      {process.env.NODE_ENV === "development" && (
+        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
+      )}
     </QueryClientProvider>
   );
 }

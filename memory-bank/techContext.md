@@ -1,6 +1,6 @@
 # Technical Context: Stack & Development
 
-> **Status**: Phase 75 — Telegram Auth Removal Complete ✅
+> **Status**: Phase 77 — Comprehensive UI/UX Audit Fix Complete ✅
 
 ## Technology Stack
 
@@ -126,10 +126,15 @@ uv run pytest tests/bot/ -v           # All 58 tests pass
 
 ```bash
 cd apps/web
-bun run lint          # ESLint (0 warnings)
+bun run type-check    # TypeScript (0 errors) — tsc --noEmit
+bun run lint          # ESLint — ⚠️ eslint-plugin-react v10 incompatible with ESLint 10.0.0 (known issue)
 bun run build         # TypeScript (0 errors) — exit code 0
 bun run format        # Prettier + Tailwind Sort
 ```
+
+> **⚠️ ESLint Known Issue**: `eslint-plugin-react` is incompatible with ESLint 10.0.0
+> (`contextOrFilename.getFilename is not a function`). Use `bun run type-check` (tsc) as
+> the primary TypeScript validation gate. This predates Phase 77.
 
 ---
 
@@ -143,7 +148,7 @@ bun run format        # Prettier + Tailwind Sort
 - **RPC Functions**: 14 (analytics + charts — see systemPatterns.md for full list)
 - **Realtime Channels**: 4 (`dashboard`, `bot_status`, `logs`, `commands`)
 - **Realtime Triggers**: 4 (fire on INSERT/UPDATE — push to channels via `realtime.publish()`)
-- **Edge Functions**: 2 (`manage-bot`, `test-webhook`)
+- **Edge Functions**: 2 (`manage-bot`, `test-webhook/index.js`) — legacy `test-webhook.js` deleted in Phase 77 (SSRF-vulnerable)
 - **Storage Buckets**: 2 (`bot-assets` public, `bot-exports` private)
 - **SQL Migrations**: 10 files (`001` through `010`)
 - **⚠️ No direct PG connection**: InsForge does not expose raw PostgreSQL passwords
@@ -206,4 +211,4 @@ bun run format        # Prettier + Tailwind Sort
 
 ---
 
-_Last Updated: 2026-02-27 (Phase 75 — Telegram Auth Removal)_
+_Last Updated: 2026-02-28 (Phase 77 — Comprehensive UI/UX Audit Fix)_

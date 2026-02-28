@@ -5,6 +5,7 @@
 
 import { USE_MOCK } from "@/lib/api/config";
 import { insforge } from "@/lib/insforge";
+import { addBotSecure } from "@/lib/actions/vault";
 
 /**
  * Bot instance response
@@ -85,32 +86,14 @@ export async function listBots(): Promise<BotListResponse> {
  * @param token - Bot API token (plain text; encrypted by manage-bot edge function)
  */
 export async function addBot(token: string): Promise<Bot> {
-  // Fetch master key from Security Vault (nezuko_secrets table)
-  const { data: secretRows, error: secretError } = await insforge.database
-    .from("nezuko_secrets")
-    .select("key_value")
-    .eq("key_name", "master_key")
-    .maybeSingle();
+  // Delegate to server action so the master key never touches the client
+  const result = await addBotSecure(token);
 
-  if (secretError) throw secretError;
-
-  if (!secretRows?.key_value) {
-    throw new Error(
-      "Security Vault not configured. Please generate a master key in Settings → Security Vault before adding bots."
-    );
+  if (!result.success) {
+    throw new Error(result.error || "Failed to add bot");
   }
 
-  const masterKey = secretRows.key_value as string;
-
-  const { data, error } = await insforge.functions.invoke("manage-bot", {
-    body: {
-      action: "add",
-      token,
-      master_key: masterKey,
-    },
-  });
-  if (error) throw error;
-  return data as Bot;
+  return result.data as Bot;
 }
 
 /**

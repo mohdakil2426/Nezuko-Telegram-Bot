@@ -5,9 +5,11 @@
  * Displays InsForge user avatar and dropdown menu with logout functionality.
  */
 
+import { useState } from "react";
 import { LogOut, Settings, User, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -56,10 +58,20 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
   const { isSignedIn, isLoaded } = useAuth();
   const { user: insforgeUser } = useUser();
   const router = useRouter();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
-    await insforge.auth.signOut();
-    router.push("/login");
+    setIsSigningOut(true);
+    try {
+      await insforge.auth.signOut();
+      toast.success("Signed out successfully");
+      router.push("/login");
+    } catch (err) {
+      toast.error("Failed to sign out. Please try again.");
+      console.error("[handleSignOut]", err);
+    } finally {
+      setIsSigningOut(false);
+    }
   };
 
   // Build display user from InsForge profile.
@@ -143,10 +155,15 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
             {isSignedIn ? (
               <DropdownMenuItem
                 onClick={handleSignOut}
+                disabled={isSigningOut}
                 className="text-destructive focus:text-destructive"
               >
-                <LogOut />
-                Log out
+                {isSigningOut ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <LogOut />
+                )}
+                {isSigningOut ? "Signing out..." : "Log out"}
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem disabled className="text-muted-foreground">

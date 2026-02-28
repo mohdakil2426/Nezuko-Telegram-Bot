@@ -114,21 +114,23 @@ function VerifyEmailForm() {
       <CardContent className="space-y-6">
         {/* OTP Input */}
         <div className="flex flex-col items-center gap-4">
-          <InputOTP
-            maxLength={6}
-            value={otp}
-            onChange={setOtp}
-            onComplete={handleVerify}
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
+          <div role="group" aria-label="6-digit verification code">
+            <InputOTP
+              maxLength={6}
+              value={otp}
+              onChange={setOtp}
+              onComplete={handleVerify}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
 
           <p className="text-muted-foreground text-center text-xs">
             Enter the 6-digit code from your email. It expires in 10 minutes.
@@ -181,6 +183,7 @@ function VerifyEmailFallback() {
     <Card className="bg-card/80 w-full border-0 shadow-xl backdrop-blur-sm">
       <CardContent className="flex items-center justify-center py-16">
         <Loader2 className="text-primary h-8 w-8 animate-spin" />
+        <span className="sr-only" role="status">Loading...</span>
       </CardContent>
     </Card>
   );
@@ -188,12 +191,12 @@ function VerifyEmailFallback() {
 
 export default function VerifyEmailPage() {
   return (
-    <div className="bg-muted flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+    <main className="bg-muted flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
         <Suspense fallback={<VerifyEmailFallback />}>
           <VerifyEmailForm />
         </Suspense>
       </div>
-    </div>
+    </main>
   );
 }

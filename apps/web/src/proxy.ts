@@ -18,9 +18,10 @@
 import { InsforgeMiddleware } from "@insforge/nextjs/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_INSFORGE_BASE_URL ||
-  "https://u4ckbciy.us-west.insforge.app";
+const BASE_URL = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
+if (!BASE_URL) {
+  throw new Error("NEXT_PUBLIC_INSFORGE_BASE_URL environment variable is required");
+}
 
 // InsforgeMiddleware is created once — the returned function handles each request.
 const insforgeMiddleware = InsforgeMiddleware({
@@ -55,8 +56,8 @@ export function proxy(request: NextRequest) {
   const devLogin = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
   const useMock = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
-  if (devLogin || useMock) {
-    // Dev/mock mode: skip all auth checks.
+  if ((devLogin || useMock) && process.env.NODE_ENV !== "production") {
+    // Dev/mock mode: skip all auth checks (never in production).
     return NextResponse.next();
   }
 

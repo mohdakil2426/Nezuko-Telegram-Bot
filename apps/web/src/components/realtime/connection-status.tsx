@@ -97,6 +97,7 @@ export function ConnectionStatus({ className, compact = false }: ConnectionStatu
               <Icon className={cn("h-4 w-4", config.iconColor, config.animate && "animate-spin")} />
               {/* Status dot */}
               <span
+                aria-hidden="true"
                 className={cn("absolute top-0 right-0 h-2 w-2 rounded-full", config.dotColor)}
               />
             </button>
@@ -124,6 +125,7 @@ export function ConnectionStatus({ className, compact = false }: ConnectionStatu
           >
             {/* Status dot */}
             <span
+              aria-hidden="true"
               className={cn(
                 "h-2 w-2 rounded-full",
                 config.dotColor,

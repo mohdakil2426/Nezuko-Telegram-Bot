@@ -84,10 +84,11 @@ export function createGroupsColumns({
       header: ({ column }) => (
         <Button
           variant="ghost"
+          aria-label={`Sort by group name ${column.getIsSorted() === "asc" ? "(ascending)" : column.getIsSorted() === "desc" ? "(descending)" : ""}`}
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Group Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="ml-2 h-4 w-4" aria-hidden="true" />
         </Button>
       ),
       cell: ({ row }) => {
@@ -124,10 +125,11 @@ export function createGroupsColumns({
       header: ({ column }) => (
         <Button
           variant="ghost"
+          aria-label={`Sort by members ${column.getIsSorted() === "asc" ? "(ascending)" : column.getIsSorted() === "desc" ? "(descending)" : ""}`}
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Members
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="ml-2 h-4 w-4" aria-hidden="true" />
         </Button>
       ),
       cell: ({ row }) => {
@@ -148,10 +150,11 @@ export function createGroupsColumns({
       header: ({ column }) => (
         <Button
           variant="ghost"
+          aria-label={`Sort by created date ${column.getIsSorted() === "asc" ? "(ascending)" : column.getIsSorted() === "desc" ? "(descending)" : ""}`}
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Created
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="ml-2 h-4 w-4" aria-hidden="true" />
         </Button>
       ),
       cell: ({ row }) => {

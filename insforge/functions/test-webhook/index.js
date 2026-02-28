@@ -12,6 +12,9 @@
  */
 
 module.exports = async function (request) {
+  // CORS: Wildcard is acceptable here because this edge function is invoked via
+  // the InsForge SDK which requires the anon key in the Authorization header.
+  // The anon key acts as the access control mechanism, not CORS origin checks.
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",

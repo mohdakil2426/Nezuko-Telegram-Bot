@@ -2,8 +2,8 @@
  * Services Module Exports
  */
 
-// Types
-export * from "./types";
+// Types (compile-time only — explicit type re-export for tree-shaking clarity)
+export type * from "./types";
 
 // Services
 export * as dashboardService from "./dashboard.service";

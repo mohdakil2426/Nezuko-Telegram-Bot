@@ -7,7 +7,8 @@
  */
 
 import { useState } from "react";
-import { Bot, Plus, Power, Trash2, RefreshCw, AlertCircle } from "lucide-react";
+import { Bot, Plus, Power, Trash2, RefreshCw, AlertCircle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,9 +58,9 @@ export default function BotsPage() {
   const { data, isPending, error, refetch } = useBots();
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Bot Management</h1>
           <p className="text-muted-foreground">Add and manage your Telegram bots</p>
@@ -114,6 +115,7 @@ export default function BotsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -130,6 +132,7 @@ export default function BotsPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -145,11 +148,20 @@ function BotRow({ bot }: { bot: BotType }) {
   const deleteMutation = useDeleteBot();
 
   const handleToggleActive = () => {
-    updateMutation.mutate({ botId: bot.id, isActive: !bot.is_active });
+    updateMutation.mutate(
+      { botId: bot.id, isActive: !bot.is_active },
+      {
+        onSuccess: () => toast.success("Bot status updated"),
+        onError: () => toast.error("Failed to update bot status"),
+      }
+    );
   };
 
   const handleDelete = () => {
-    deleteMutation.mutate(bot.id);
+    deleteMutation.mutate(bot.id, {
+      onSuccess: () => toast.success("Bot deleted successfully"),
+      onError: () => toast.error("Failed to delete bot"),
+    });
   };
 
   return (
@@ -300,7 +312,14 @@ function AddBotDialog() {
               Cancel
             </Button>
             <Button type="submit" disabled={addMutation.isPending}>
-              {addMutation.isPending ? "Adding..." : "Add Bot"}
+              {addMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add Bot"
+              )}
             </Button>
           </DialogFooter>
         </form>

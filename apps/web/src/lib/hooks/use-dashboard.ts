@@ -2,11 +2,11 @@
  * Dashboard React Query Hooks
  *
  * All hooks include refetchInterval for real-time updates.
- * TanStack Query v5 patterns - using isPending, refetchIntervalInBackground.
+ * TanStack Query v5 patterns — using isPending.
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
 import * as dashboardService from "@/lib/services/dashboard.service";
 
 /**
@@ -17,9 +17,8 @@ export function useDashboardStats() {
   return useQuery({
     queryKey: queryKeys.dashboard.stats(),
     queryFn: dashboardService.getDashboardStats,
-    staleTime: 15 * 1000, // 15 seconds
-    refetchInterval: 30 * 1000, // Refetch every 30 seconds
-    refetchIntervalInBackground: true, // Continue in background tabs
+    staleTime: STALE_TIMES.STANDARD,
+    refetchInterval: REFETCH_INTERVALS.STANDARD,
   });
 }
 
@@ -31,9 +30,8 @@ export function useChartData(days = 30) {
   return useQuery({
     queryKey: queryKeys.dashboard.chart(days),
     queryFn: () => dashboardService.getChartData(days),
-    staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000, // Refetch every 60 seconds
-    refetchIntervalInBackground: true,
+    staleTime: STALE_TIMES.LONG,
+    refetchInterval: REFETCH_INTERVALS.SLOW,
   });
 }
 
@@ -45,8 +43,7 @@ export function useActivity(limit = 10) {
   return useQuery({
     queryKey: queryKeys.dashboard.activity(limit),
     queryFn: () => dashboardService.getActivity(limit),
-    staleTime: 10 * 1000, // 10 seconds
-    refetchInterval: 15 * 1000, // Refetch every 15 seconds
-    refetchIntervalInBackground: true,
+    staleTime: STALE_TIMES.SHORT,
+    refetchInterval: REFETCH_INTERVALS.FAST,
   });
 }

@@ -101,12 +101,13 @@ function ForgotPasswordForm() {
                 type="email"
                 autoComplete="email"
                 placeholder="you@example.com"
+                aria-describedby={errors.email ? "email-error" : undefined}
                 className={`pl-9 ${errors.email ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 {...register("email")}
               />
             </div>
             {errors.email && (
-              <p className="text-destructive text-xs italic">
+              <p id="email-error" className="text-destructive text-xs italic">
                 {errors.email.message}
               </p>
             )}
@@ -152,12 +153,12 @@ function Fallback() {
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="bg-muted flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+    <main className="bg-muted flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
         <Suspense fallback={<Fallback />}>
           <ForgotPasswordForm />
         </Suspense>
       </div>
-    </div>
+    </main>
   );
 }

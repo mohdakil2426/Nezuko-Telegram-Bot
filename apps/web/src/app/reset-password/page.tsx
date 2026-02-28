@@ -42,7 +42,7 @@ const schema = z
   .object({
     newPassword: z
       .string()
-      .min(6, "Password must be at least 6 characters"),
+      .min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
@@ -218,15 +218,16 @@ function ResetPasswordForm() {
                   id="newPassword"
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                   className={`pr-10 ${errors.newPassword ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   {...register("newPassword")}
                 />
                 <button
                   type="button"
-                  className="text-muted-foreground hover:text-foreground absolute top-2.5 right-3 transition-colors"
+                  className="text-muted-foreground hover:text-foreground absolute top-2.5 right-3 cursor-pointer transition-colors"
                   onClick={() => setShowPassword((v) => !v)}
                   tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />

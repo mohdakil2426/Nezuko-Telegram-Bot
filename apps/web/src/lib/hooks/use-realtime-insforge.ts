@@ -12,6 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SocketMessage } from "@insforge/sdk";
 import { insforge } from "@/lib/insforge";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
 
 /**
  * Connection state (compatible with old SSE interface)
@@ -298,10 +299,10 @@ export function useDashboardRealtime() {
   // Invalidate dashboard queries on events
   useEffect(() => {
     if (realtime.events.length > 0 && realtime.isConnected) {
-      // Invalidate dashboard stats
-      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard", "activity"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+      // Invalidate dashboard stats (ARCH-M9: use queryKeys factory)
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.activity() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
     }
   }, [realtime.events.length, realtime.isConnected, queryClient]);
 
@@ -333,10 +334,8 @@ export function useCommandsRealtime() {
 // Realtime Chart Hooks (replacing use-realtime-chart.ts)
 // =============================================================================
 
-// Default refresh intervals
-const DEFAULT_STALE_TIME = 30 * 1000; // 30 seconds
-const DEFAULT_REFETCH_INTERVAL = 60 * 1000; // 1 minute
-const DISCONNECTED_REFETCH_INTERVAL = 15 * 1000; // 15 seconds when disconnected
+// Disconnected fallback uses the FAST interval from shared constants
+const DISCONNECTED_REFETCH_INTERVAL = REFETCH_INTERVALS.FAST;
 
 interface UseRealtimeChartOptions<T> {
   /** Query key for cache management */
@@ -349,8 +348,6 @@ interface UseRealtimeChartOptions<T> {
   refetchInterval?: number;
   /** Event types that should trigger a refetch */
   invalidateOnEvents?: string[];
-  /** Whether to refetch in background tabs (default: true) */
-  refetchIntervalInBackground?: boolean;
   /** Channels to subscribe to for events */
   channels?: string[];
 }
@@ -372,10 +369,9 @@ interface UseRealtimeChartOptions<T> {
 export function useRealtimeChart<T>({
   queryKey,
   queryFn,
-  staleTime = DEFAULT_STALE_TIME,
-  refetchInterval = DEFAULT_REFETCH_INTERVAL,
+  staleTime = STALE_TIMES.LONG,
+  refetchInterval = REFETCH_INTERVALS.SLOW,
   invalidateOnEvents = ["verification", "status_changed"],
-  refetchIntervalInBackground = true,
   channels = ["dashboard", "bot_status"],
 }: UseRealtimeChartOptions<T>) {
   const queryClient = useQueryClient();
@@ -398,7 +394,6 @@ export function useRealtimeChart<T>({
     staleTime,
     // Use faster refetch when realtime is disconnected as fallback
     refetchInterval: isConnected ? refetchInterval : DISCONNECTED_REFETCH_INTERVAL,
-    refetchIntervalInBackground,
   });
 }
 

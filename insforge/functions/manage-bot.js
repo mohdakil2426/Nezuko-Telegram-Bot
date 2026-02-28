@@ -37,6 +37,9 @@ async function encryptWithAES(plaintext, base64Key) {
 }
 
 export default async function(req) {
+  // CORS: Wildcard is acceptable here because this edge function is invoked via
+  // the InsForge SDK which requires the anon key in the Authorization header.
+  // The anon key acts as the access control mechanism, not CORS origin checks.
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -69,7 +72,8 @@ export default async function(req) {
       });
     }
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error('[manage-bot] Unhandled error:', err);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -137,15 +141,15 @@ async function handleAdd(body, corsHeaders) {
 
   const botInfo = verifyData.result;
 
-  // Step 2: Encrypt token (Modern AES if master_key present, else fallback b64)
-  let encryptedToken;
-  if (master_key) {
-    console.log('[manage-bot] Using AES-GCM vault encryption...');
-    encryptedToken = await encryptWithAES(token, master_key);
-  } else {
-    console.log('[manage-bot] WARNING: Using fallback base64 encoding (No master_key provided)');
-    encryptedToken = btoa(token);
+  // Step 2: Encrypt token — master_key is required (no fallback)
+  if (!master_key) {
+    return new Response(JSON.stringify({ error: 'Security Vault not configured. A master encryption key is required.' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
+  console.log('[manage-bot] Using AES-GCM vault encryption...');
+  const encryptedToken = await encryptWithAES(token, master_key);
 
   // Step 3: UPSERT into database
   const baseUrl = Deno.env.get('INSFORGE_BASE_URL');

@@ -7,7 +7,5 @@
 export {
   USE_MOCK,
   DEV_LOGIN,
-  REQUEST_TIMEOUT,
   DEFAULT_PAGE_SIZE,
-  MAX_PAGE_SIZE,
 } from "./config";

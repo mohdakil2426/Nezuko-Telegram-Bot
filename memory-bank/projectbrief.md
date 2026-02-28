@@ -23,7 +23,7 @@ Convert group participants into channel subscribers through automated verificati
 | **Web**            | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
 | **Backend (BaaS)** | InsForge (managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions) |
 | **Database**       | InsForge Managed PostgreSQL (cloud)                      |
-| **Auth**           | None (development mode, direct access)                   |
+| **Auth**           | InsForge Auth (email/password + OAuth), RLS on all tables |
 | **Infrastructure** | Docker (bot only), Caddy                                 |
 
 > **Architecture**: 2-tier (Web → InsForge BaaS + Bot → InsForge PostgreSQL). The `apps/api/` layer has been fully removed.
@@ -100,11 +100,16 @@ nezuko/
 
 ## Current Status
 
-**Phase**: 69 — Chart Responsiveness & Groups/Channels Data Fix (Complete)
-**Last Updated**: 2026-02-26
+**Phase**: 77 — Comprehensive UI/UX Audit Fix (Complete)
+**Last Updated**: 2026-02-28
 
 - Phase 70 (Frontend Audit & Performance Optimization): Complete
-- Phase 71 (Secure Vault & Automated Key Management): Complete — Automated AES-GCM vault integrated
+- Phase 71 (Secure Vault & Automated Key Management): Complete
+- Phase 72 (Security Audit Fixes v5 — RLS, Auth, Bot): Complete
+- Phase 73–74 (Security Vault RLS Fix + Login Auth Fix): Complete
+- Phase 75 (Telegram Auth Removal — InsForge sole auth): Complete
+- Phase 76 (Auth System Hardening — pages, proxy, cleanup): Complete
+- Phase 77 (Comprehensive UI/UX Audit Fix — 104 findings resolved): Complete
 
 ---
 

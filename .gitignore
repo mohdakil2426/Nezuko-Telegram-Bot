@@ -136,3 +136,6 @@ apps/*/*.db
 
 # next-agents-md
 .next-docs/
+
+# Playwright
+.playwright-cli/

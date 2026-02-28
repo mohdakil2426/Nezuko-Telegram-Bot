@@ -6,6 +6,7 @@
  */
 
 import { Bot } from "lucide-react";
+import Link from "next/link";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 
 export function BrandLogo() {
@@ -13,7 +14,7 @@ export function BrandLogo() {
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton size="lg" asChild>
-          <a href="/dashboard">
+          <Link href="/dashboard" aria-label="Nezuko Dashboard home">
             {/* suppressHydrationWarning: Dark Reader extension injects data-darkreader-inline-stroke into SVGs */}
             <div
               suppressHydrationWarning
@@ -25,7 +26,7 @@ export function BrandLogo() {
               <span className="truncate font-semibold">Nezuko</span>
               <span className="truncate text-xs">Bot Dashboard</span>
             </div>
-          </a>
+          </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>

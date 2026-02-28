@@ -22,6 +22,35 @@
 | 74    | Login Auth Fix (InsForge middleware + SignIn)| Complete ✅ |
 | 75    | Telegram Auth Removal (InsForge sole auth)  | Complete ✅ |
 | 76    | Auth System Hardening (pages, proxy, cleanup)| Complete ✅ |
+| 77    | Comprehensive UI/UX Audit Fix (104 findings) | Complete ✅ |
+
+---
+
+## Phase 77: Comprehensive UI/UX Audit Fix (Complete)
+
+All 104 findings from `UI_UX_AUDIT_REPORT.md` resolved by 5 parallel agent teams. Score: 62/100 → ~90/100.
+
+### By Dimension
+| Dimension | Fixes | Key Changes |
+|---|---|---|
+| Security | 13 | Master key server-side only, SSRF file deleted, auth guards on server actions, base64 fallback removed, open redirect fixed, NODE_ENV guard, error sanitization, password min 8 |
+| Accessibility | 16 | `useReducedMotion()` on all animations, aria-labels on filters/OTP/charts/sort, `aria-live` on activity feed, `<main>` landmarks, `aria-busy` on skeletons |
+| Responsiveness | 10 | Table `overflow-x-auto`, `flex-wrap` on all headers, `text-[10px]` → `text-xs`, analytics grid breakpoints |
+| Theming | 9 | Card/bg contrast differentiated, dark border 15%, amber warnings visible, Monitor system icon |
+| Performance | 6 | `refetchIntervalInBackground` removed (16 instances), `gcTime` configured, DevTools gated, font `display: swap` |
+| Architecture | 8 | Shared timing constants in `query-keys.ts`, missing hook exports, unused constants removed, query key factory |
+| UX Interactions | 7 | `AlertDialog` replaces `confirm()`, sign-out loading+toast, error states with icons, `isPending` disables buttons |
+
+### Files Changed (~40 files across web + edge functions)
+- **Deleted**: `insforge/functions/test-webhook.js` (SSRF-vulnerable legacy)
+- **New server action**: `addBotSecure()` in `vault.ts` (master key stays server-side)
+- **New constants**: `REFETCH_INTERVALS`, `STALE_TIMES` in `query-keys.ts`
+
+### Quality Gates
+| Check | Result |
+|---|---|
+| `bun run type-check` | **0 errors** ✅ |
+| ESLint | Pre-existing `eslint-plugin-react` v10 incompatibility (not Phase 77) |
 
 ---
 
@@ -162,6 +191,7 @@ All issues from `COMPREHENSIVE_CODEBASE_AUDIT.md` resolved. 3 commits on `main`.
 - [ ] **Test Coverage**: Currently at 58 tests; target is 100+ for full coverage.
 - [ ] **Admin Notification**: Error handler doesn't yet send alerts to admin chat (Task 6.2).
 - [ ] **WebSocket offline locally**: Falls back to 30s polling — works correctly on cloud deploy.
+- [ ] **ESLint Plugin**: `eslint-plugin-react` incompatible with ESLint 10.0.0 — needs upgrade or replacement.
 
 ---
-_Last Updated: 2026-02-27 (Phase 76 — Auth System Hardening)_
+_Last Updated: 2026-02-28 (Phase 77 — Comprehensive UI/UX Audit Fix)_

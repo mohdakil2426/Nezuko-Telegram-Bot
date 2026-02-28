@@ -3,6 +3,34 @@
  * Centralized query key definitions for cache management
  */
 
+// =============================================================================
+// Shared Timing Constants (ARCH-M6)
+// =============================================================================
+
+/** Polling intervals for refetchInterval */
+export const REFETCH_INTERVALS = {
+  /** 15s — activity feeds, fallback polling when realtime disconnected */
+  FAST: 15 * 1000,
+  /** 30s — dashboard stats, overviews */
+  STANDARD: 30 * 1000,
+  /** 60s — charts, trends, analytics */
+  SLOW: 60 * 1000,
+} as const;
+
+/** Stale times for query cache */
+export const STALE_TIMES = {
+  /** 10s — activity feeds */
+  SHORT: 10 * 1000,
+  /** 15s — dashboard stats, overviews */
+  STANDARD: 15 * 1000,
+  /** 30s — charts, trends, analytics */
+  LONG: 30 * 1000,
+} as const;
+
+// =============================================================================
+// Query Keys
+// =============================================================================
+
 export const queryKeys = {
   // Dashboard keys
   dashboard: {

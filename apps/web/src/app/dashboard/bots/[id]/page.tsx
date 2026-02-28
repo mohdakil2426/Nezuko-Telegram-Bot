@@ -118,7 +118,7 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Header with back button */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard/bots")}>
             <ArrowLeft className="h-4 w-4" />
@@ -147,7 +147,7 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Status */}
-          <div className="bg-muted/50 flex items-center justify-between rounded-lg p-4">
+          <div className="bg-muted/50 flex flex-wrap items-center justify-between rounded-lg p-4">
             <div className="flex items-center gap-3">
               <Power
                 className={`h-5 w-5 ${bot.is_active ? "text-green-500" : "text-muted-foreground"}`}

@@ -81,7 +81,7 @@ export function VerificationTrendsChart() {
             {Math.round((data?.summary.success_rate ?? 0) * 10) / 10}% success)
           </CardDescription>
         </div>
-        <Select value={period} onValueChange={(v) => setPeriod(v as PeriodOption)}>
+        <Select value={period} onValueChange={(v) => setPeriod(v as PeriodOption)} aria-label="Select time period">
           <SelectTrigger className="w-[120px]">
             <SelectValue />
           </SelectTrigger>

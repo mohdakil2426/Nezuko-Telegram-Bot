@@ -82,7 +82,7 @@ function ConnectionStatus({
         className="gap-1 border-green-200 bg-green-50 text-green-600 dark:bg-green-950/30"
       >
         <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+          <span className="absolute inline-flex h-full w-full animate-ping motion-reduce:animate-none rounded-full bg-green-400 opacity-75" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
         </span>
         Live
@@ -263,7 +263,7 @@ export function ActivityFeed() {
           </div>
         )}
         <ScrollArea className="h-[250px] md:h-[300px]">
-          <div className="space-y-4">
+          <div className="space-y-4" role="log" aria-live="polite">
             {allActivities.map((activity) => {
               const Icon = getActivityIcon(activity.type);
               const colorClass = getActivityColor(activity.type);
@@ -278,7 +278,7 @@ export function ActivityFeed() {
                       : ""
                   }`}
                 >
-                  <div className={`mt-0.5 ${colorClass}`}>
+                  <div className={`mt-0.5 ${colorClass}`} aria-hidden="true">
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="flex-1 space-y-1">
@@ -308,7 +308,7 @@ function ActivityFeedSkeleton() {
         <Skeleton className="h-4 w-48" />
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-4" aria-busy="true">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-start gap-3">
               <Skeleton className="mt-0.5 h-4 w-4" />

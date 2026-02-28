@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { CheckCircle, Clock, TrendingUp, Zap } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, TrendingUp, Zap } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,7 +39,7 @@ function OverviewCard({ title, value, description, icon, isUpdated }: OverviewCa
       </CardContent>
       {/* Real-time update indicator */}
       {isUpdated && (
-        <div className="absolute top-2 right-2 h-2 w-2 animate-ping rounded-full bg-green-500" />
+        <div className="absolute top-2 right-2 h-2 w-2 animate-ping motion-reduce:animate-none rounded-full bg-green-500" aria-hidden="true" />
       )}
     </Card>
   );
@@ -137,7 +137,13 @@ export function AnalyticsOverviewCards() {
 
   if (error) {
     return (
-      <div className="text-destructive py-8 text-center">Failed to load analytics overview</div>
+      <div className="flex flex-col items-center justify-center gap-2 py-8">
+        <AlertTriangle className="text-destructive h-8 w-8" aria-hidden="true" />
+        <p className="text-destructive font-medium">Failed to load analytics overview</p>
+        <p className="text-muted-foreground text-sm">
+          {error.message || "Please check your connection and try again."}
+        </p>
+      </div>
     );
   }
 
@@ -164,28 +170,28 @@ export function AnalyticsOverviewCards() {
         title="Total Verifications"
         value={formatNumber(mergedData.total_verifications)}
         description="Last 30 days"
-        icon={<CheckCircle className="text-muted-foreground h-4 w-4" />}
+        icon={<CheckCircle className="text-muted-foreground h-4 w-4" aria-hidden="true" />}
         isUpdated={updatedCards.has("total_verifications")}
       />
       <OverviewCard
         title="Success Rate"
         value={`${mergedData.success_rate}%`}
         description="Verification success"
-        icon={<TrendingUp className="text-muted-foreground h-4 w-4" />}
+        icon={<TrendingUp className="text-muted-foreground h-4 w-4" aria-hidden="true" />}
         isUpdated={updatedCards.has("success_rate")}
       />
       <OverviewCard
         title="Avg Response Time"
         value={`${mergedData.avg_latency_ms}ms`}
         description="Bot response latency"
-        icon={<Clock className="text-muted-foreground h-4 w-4" />}
+        icon={<Clock className="text-muted-foreground h-4 w-4" aria-hidden="true" />}
         isUpdated={updatedCards.has("avg_latency_ms")}
       />
       <OverviewCard
         title="Cache Hit Rate"
         value={`${mergedData.cache_hit_rate}%`}
         description="Membership cache hit rate"
-        icon={<Zap className="text-muted-foreground h-4 w-4" />}
+        icon={<Zap className="text-muted-foreground h-4 w-4" aria-hidden="true" />}
         isUpdated={updatedCards.has("cache_hit_rate")}
       />
     </div>

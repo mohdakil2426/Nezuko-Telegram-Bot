@@ -34,6 +34,18 @@ export {
   useBotHealthMetrics,
 } from "./use-charts";
 
+// Bots hooks (ARCH-M2)
+export {
+  useBots,
+  useAddBot,
+  useVerifyBotToken,
+  useUpdateBot,
+  useDeleteBot,
+} from "./use-bots";
+
+// Auth hooks (ARCH-M2)
+export { useAuth, useUser } from "./use-auth";
+
 // InsForge Realtime hooks (replaces SSE)
 export {
   useInsForgeRealtime,

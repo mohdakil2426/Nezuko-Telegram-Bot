@@ -14,12 +14,6 @@ export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 export const DEV_LOGIN = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
 
 /**
- * Default request timeout in milliseconds
- */
-export const REQUEST_TIMEOUT = 30000;
-
-/**
  * Default pagination settings
  */
 export const DEFAULT_PAGE_SIZE = 10;
-export const MAX_PAGE_SIZE = 100;

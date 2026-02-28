@@ -5,7 +5,7 @@
  * Switches between light, dark, and system themes
  */
 
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 
@@ -65,7 +65,7 @@ export function ThemeToggle() {
               Dark
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme("system")}>
-              <Sun className="mr-2 size-4" />
+              <Monitor className="mr-2 size-4" />
               System
             </DropdownMenuItem>
           </DropdownMenuContent>

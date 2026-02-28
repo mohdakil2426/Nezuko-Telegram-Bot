@@ -55,8 +55,8 @@ Nezuko acts as an **automated gatekeeper** that:
 
 ## Authentication
 
--   **Current**: Development mode (direct dashboard access).
--   **Future**: InsForge Auth + Row Level Security (RLS) policies.
+-   **Production**: InsForge Auth (email/password + OAuth via Google, GitHub) with `InsforgeMiddleware` route guards, `insforge_session` HTTP-only cookie, and RLS on all 12 tables.
+-   **Development**: `NEXT_PUBLIC_DEV_LOGIN=true` bypasses auth (guarded by `NODE_ENV !== "production"`).
 
 ---
 
@@ -85,7 +85,8 @@ Dashboard ← InsForge Realtime (WebSocket) ← PostgreSQL Triggers
 | Verification Latency (p99) | <150ms | ✅ Achieved |
 | Dashboard Pages | 10 | ✅ Complete |
 | Uptime | 99.9% | ✅ On Track |
+| UI/UX Audit Score | 90/100 | ✅ Phase 77 (was 62/100) |
 
 ---
 
-_Last Updated: 2026-02-27 (Phase 71 — Secure Vault)_
+_Last Updated: 2026-02-28 (Phase 77 — UI/UX Audit Fix)_

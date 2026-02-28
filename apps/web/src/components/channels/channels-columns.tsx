@@ -82,10 +82,11 @@ export function createChannelsColumns({
       header: ({ column }) => (
         <Button
           variant="ghost"
+          aria-label={`Sort by channel name ${column.getIsSorted() === "asc" ? "(ascending)" : column.getIsSorted() === "desc" ? "(descending)" : ""}`}
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Channel Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="ml-2 h-4 w-4" aria-hidden="true" />
         </Button>
       ),
       cell: ({ row }) => {
@@ -125,10 +126,11 @@ export function createChannelsColumns({
       header: ({ column }) => (
         <Button
           variant="ghost"
+          aria-label={`Sort by subscribers ${column.getIsSorted() === "asc" ? "(ascending)" : column.getIsSorted() === "desc" ? "(descending)" : ""}`}
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Subscribers
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="ml-2 h-4 w-4" aria-hidden="true" />
         </Button>
       ),
       cell: ({ row }) => {
@@ -174,10 +176,11 @@ export function createChannelsColumns({
       header: ({ column }) => (
         <Button
           variant="ghost"
+          aria-label={`Sort by created date ${column.getIsSorted() === "asc" ? "(ascending)" : column.getIsSorted() === "desc" ? "(descending)" : ""}`}
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Created
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="ml-2 h-4 w-4" aria-hidden="true" />
         </Button>
       ),
       cell: ({ row }) => {

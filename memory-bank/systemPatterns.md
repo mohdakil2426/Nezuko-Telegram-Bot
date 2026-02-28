@@ -1,6 +1,6 @@
 # System Patterns: Architecture & Implementation
 
-> **Last Updated**: 2026-02-27 (Phase 72 — Security Audit Fixes v5 Complete)
+> **Last Updated**: 2026-02-28 (Phase 77 — UI/UX Audit Fix Complete)
 
 ## Architecture Overview
 
@@ -305,6 +305,43 @@ User signs in → /api/auth sets insforge_session cookie → useAuth().isSignedI
 
 ---
 
+### Server Action Security Pattern (Phase 77 — CANONICAL)
+
+All server actions that access sensitive data MUST check for authentication:
+
+```typescript
+// ✅ Correct: Auth guard at the top of every server action
+"use server";
+import { cookies } from "next/headers";
+
+async function requireAuth() {
+  const cookieStore = await cookies();
+  const session = cookieStore.get("insforge-session");
+  if (!session?.value) throw new Error("Unauthorized");
+}
+
+export async function getMasterKey() {
+  await requireAuth();
+  // ... safe to proceed
+}
+```
+
+**Key rules:**
+- Never return raw error messages to client — log server-side, return generic message
+- `addBotSecure()` server action handles master key + edge function call entirely server-side
+- `bots.service.ts` `addBot()` delegates to `addBotSecure()` — master key never touches browser
+
+### Edge Function Security Pattern (Phase 77)
+
+```typescript
+// ✅ Edge functions require master_key — no base64 fallback
+if (!master_key) {
+  return new Response(JSON.stringify({ error: 'Security Vault not configured.' }), { status: 400 });
+}
+// ✅ Error messages sanitized — generic "Internal server error" to client
+// ✅ Legacy test-webhook.js deleted — only test-webhook/index.js (with SSRF protection) remains
+```
+
 ### Edge Function Invocation
 
 ```typescript
@@ -313,7 +350,7 @@ const { data, error } = await insforge.functions.invoke('manage-bot', {
   body: { action: 'verify', token: '...' }
 });
 
-### Animation Performance (LazyMotion)
+### Animation Performance (LazyMotion + Reduced Motion — Phase 77)
 To maintain a <10KB animation runtime, use `LazyMotion` from `motion/react`.
 
 ```typescript
@@ -328,9 +365,14 @@ function Root() {
   );
 }
 
-// ✅ Correct: Use the 'm' component Proxy in client components
-import { m } from "motion/react";
-const Div = () => <m.div animate={{ opacity: 1 }} />;
+// ✅ Correct: Respect prefers-reduced-motion (WCAG 2.3.3)
+import { useReducedMotion } from "motion/react";
+
+const prefersReduced = useReducedMotion();
+// Use static variants when reduced motion is preferred
+
+// ✅ Correct: Gate animate-ping with Tailwind
+className="animate-ping motion-reduce:animate-none"
 ```
 
 ### Server Component Animation Pattern
@@ -513,4 +555,34 @@ The UPSERT must explicitly restore: `is_deleted: false, is_active: true, deleted
 
 ---
 
-_Last Updated: 2026-02-27 (Phase 75 — Telegram Auth Removal)_
+### Shared Query Constants Pattern (Phase 77)
+
+```typescript
+// ✅ Correct: Centralized timing constants in query-keys.ts
+export const REFETCH_INTERVALS = { FAST: 15_000, STANDARD: 30_000, SLOW: 60_000 };
+export const STALE_TIMES = { SHORT: 10_000, STANDARD: 15_000, LONG: 30_000 };
+
+// ✅ Correct: Use in hooks instead of magic numbers
+refetchInterval: REFETCH_INTERVALS.STANDARD,
+staleTime: STALE_TIMES.SHORT,
+
+// ❌ Wrong: refetchIntervalInBackground: true (removed in Phase 77 — wastes 25+ req/min)
+```
+
+### Proxy Security Pattern (Phase 77)
+
+```typescript
+// ✅ Correct: Dev bypass guarded by NODE_ENV
+if ((devLogin || useMock) && process.env.NODE_ENV !== "production") {
+  return NextResponse.next();
+}
+
+// ✅ Correct: No hardcoded fallback URL — throw if env var missing
+const BASE_URL = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
+if (!BASE_URL) throw new Error("NEXT_PUBLIC_INSFORGE_BASE_URL is required");
+
+// ✅ Correct: Open redirect prevention
+const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
+```
+
+_Last Updated: 2026-02-28 (Phase 77 — UI/UX Audit Fix)_

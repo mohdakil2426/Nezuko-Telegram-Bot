@@ -63,7 +63,12 @@
       "Bash(nslookup:*)",
       "Bash(.venv/Scripts/python.exe:*)",
       "mcp__insforge__get-container-logs",
-      "mcp__insforge__run-raw-sql"
+      "mcp__insforge__run-raw-sql",
+      "Bash(python3:*)",
+      "Bash(test:*)",
+      "Bash(bun run:*)",
+      "Bash(npx next:*)",
+      "Bash(npx:*)"
     ]
   },
   "enabledMcpjsonServers": [
