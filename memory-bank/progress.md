@@ -38,6 +38,23 @@
 | 86    | Critical Bug Fix — Auth Loop, Bot CRUD RLS, Unified Sync, Sign-Out Hard Redirect | **Complete ✅** |
 | 87    | Full Realtime Overhaul — Eliminate all polling, InsForge WebSocket event-driven architecture | **Complete ✅** |
 | 88    | Socket.IO Protocol Fix — Fix raw WS → Socket.IO mismatch, migrate chart hooks to realtime | **Complete ✅** |
+| 89    | Uptime Bug & RLS Anon Write Policies Fix — Fix missing httpx[http2] and anon write policies | **Complete ✅** |
+
+---
+
+## Phase 89: Uptime Bug & RLS Anon Write Policies Fix (Complete)
+
+Resolved critical bugs causing the bot uptime to stay at 0 and the bot to crash during initialization with HTTP/2 enabled.
+
+### Root Cause
+- **RLS Missing Write Policies for `anon`**: Migration `012` restricted `bot_status`, `admin_commands`, etc., but didn't grant `INSERT`/`UPDATE` to the `anon` role. `StatusWriter` operations failed silently.
+- **Missing `h2` Package**: PTB enables HTTP/2 but `pyproject.toml` only required baseline `httpx`.
+
+### Files Changed
+| File | Change |
+| --- | --- |
+| `pyproject.toml` | Added `[http2]` extra to `httpx` |
+| `022_bot_operational_anon_policies.sql` | Created and applied migration to add `anon` write permissions to 5 operational tables |
 
 ---
 

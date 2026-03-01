@@ -45,7 +45,7 @@ show_menu() {
     echo -e "${WHITE}  │    [4] 📦 First-Time Setup (Install Dependencies)    │${NC}"
     echo -e "${WHITE}  │    [5] 🧹 Clean All Artifacts                        │${NC}"
     echo -e "${WHITE}  │    [6] ♻️  Total Reset (Clean + Reinstall)            │${NC}"
-    echo -e "${WHITE}  │                                                      │${NC}"
+    echo -e "${WHITE}  │    [7] 🔄 Pull & Sync (Update Dependencies)          │${NC}"
     echo -e "${WHITE}  │                                                      │${NC}"
     echo -e "${WHITE}  ├──────────────────────────────────────────────────────┤${NC}"
     echo -e "${WHITE}  │    [0] ❌ Exit                                       │${NC}"
@@ -212,6 +212,16 @@ main_menu() {
             4) do_setup; wait_for_keypress ;;
             5) do_clean_menu ;;
             6) do_total_reset; wait_for_keypress ;;
+            7) 
+                echo ""
+                echo -e "  ${CYAN}🔄 Pulling latest changes & syncing dependencies...${NC}"
+                # Try git pull if in a git repo
+                if [ -d "$PROJECT_ROOT/.git" ]; then
+                    git pull || echo -e "  ${YELLOW}⚠️  Git pull failed, continuing with sync...${NC}"
+                fi
+                do_setup
+                wait_for_keypress 
+                ;;
             0)
                 echo ""
                 echo -e "  ${CYAN}👋 Goodbye!${NC}"

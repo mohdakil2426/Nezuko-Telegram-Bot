@@ -208,6 +208,20 @@ function Get-VenvPython {
     return Join-Path (Get-VenvPath) "Scripts\python.exe"
 }
 
+function Get-VenvBin {
+    <#
+    .SYNOPSIS
+        Gets the path to the scripts/bin directory in the virtual environment.
+    .OUTPUTS
+        System.String - Path to Scripts folder.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+    
+    return Join-Path (Get-VenvPath) "Scripts"
+}
+
 # ============================================================
 # Prerequisite Checks
 # ============================================================
@@ -292,26 +306,28 @@ function Test-Prerequisites {
         $allGood = $false
     }
     
-    # Check Bun
-    $bunVersion = $null
+    # Check uv
+    $uvVersion = $null
     try {
-        $bunVersion = (bun --version 2>&1).ToString()
+        $uvVersion = (uv --version 2>&1).ToString()
     }
     catch {
-        $bunVersion = $null
+        $uvVersion = $null
     }
     
-    if ($bunVersion) {
+    if ($uvVersion) {
         if (-not $Quiet) {
-            Write-Host "  ✅ Bun: $bunVersion" -ForegroundColor Green
+            Write-Host "  ✅ $uvVersion" -ForegroundColor Green
         }
     }
     else {
         if (-not $Quiet) {
-            Write-Host "  ❌ Bun not found (https://bun.sh)" -ForegroundColor Red
+            Write-Host "  ❌ uv not found (https://docs.astral.sh/uv/)" -ForegroundColor Red
         }
         $allGood = $false
     }
+    
+    # Check Bun
     
     # Check Git (optional)
     $gitVersion = $null

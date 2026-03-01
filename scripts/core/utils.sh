@@ -63,6 +63,20 @@ check_prerequisites() {
         all_good=1
     fi
     
+    # Check uv
+    if command -v uv &> /dev/null; then
+        local uv_version
+        uv_version=$(uv --version 2>&1)
+        if [[ "$quiet" != "true" ]]; then
+            echo -e "  ${GREEN}✅ $uv_version${NC}"
+        fi
+    else
+        if [[ "$quiet" != "true" ]]; then
+            echo -e "  ${RED}❌ uv not found (https://docs.astral.sh/uv/)${NC}"
+        fi
+        all_good=1
+    fi
+    
     # Check Bun
     if command -v bun &> /dev/null; then
         local bun_version

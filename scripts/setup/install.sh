@@ -50,58 +50,29 @@ if ! check_prerequisites; then
 fi
 
 # ============================================================
-# Step 2: Create Virtual Environment
+# Step 2: Sync Python Environment (uv)
 # ============================================================
 
 if [[ "$SKIP_PYTHON" != "true" ]]; then
-    write_step "2/6" "Creating Python virtual environment..."
+    write_step "2/6" "Syncing Python virtual environment (uv)..."
     
     VENV_PATH="$(get_venv_path)"
     
-    if [[ -d "$VENV_PATH" ]] && [[ "$FORCE" != "true" ]]; then
-        write_info "Virtual environment already exists. Use --force to recreate."
-    else
-        if [[ -d "$VENV_PATH" ]]; then
-            rm -rf "$VENV_PATH"
-        fi
-        
-        python3 -m venv .venv
-        
-        if [[ -d "$VENV_PATH" ]]; then
-            write_success "Virtual environment created at .venv"
-        else
-            write_failure "Failed to create virtual environment"
-            exit 1
-        fi
+    if [[ "$FORCE" == "true" ]] && [[ -d "$VENV_PATH" ]]; then
+        rm -rf "$VENV_PATH"
     fi
     
-    # ============================================================
-    # Step 3: Install Python Dependencies
-    # ============================================================
+    cd "$PROJECT_ROOT"
     
-    write_step "3/6" "Installing Python dependencies..."
-    
-    VENV_PYTHON="$(get_venv_python)"
-    
-    # Upgrade pip first
-    "$VENV_PYTHON" -m pip install --upgrade pip --quiet
-    
-    # Install production requirements
-    if [[ -f "$PROJECT_ROOT/requirements.txt" ]]; then
-        "$VENV_PYTHON" -m pip install --prefer-binary -r "$PROJECT_ROOT/requirements.txt" --quiet
-        write_success "Production dependencies installed"
+    # Run uv sync
+    if uv sync; then
+        write_success "Python environment synced successfully (regular + dev dependencies)"
     else
-        write_failure "requirements.txt not found"
+        write_failure "Failed to sync Python environment"
         exit 1
     fi
-
-    # Install dev requirements (ruff, pytest, pyrefly, pylint)
-    if [[ -f "$PROJECT_ROOT/requirements-dev.txt" ]]; then
-        "$VENV_PYTHON" -m pip install --prefer-binary -r "$PROJECT_ROOT/requirements-dev.txt" --quiet
-        write_success "Dev tools installed (ruff, pytest, pyrefly, pylint)"
-    else
-        write_info "requirements-dev.txt not found — skipping dev tools"
-    fi
+    
+    write_step "3/6" "Skipping legacy pip install (using uv sync instead)"
 else
     write_step "2/6" "Skipping Python setup (--skip-python)"
     write_step "3/6" "Skipping Python dependencies (--skip-python)"

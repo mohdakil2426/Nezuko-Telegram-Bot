@@ -1,24 +1,29 @@
 # Active Context: Current State
 
 ### Current Status
-**Phase 88: Socket.IO Protocol Fix + Chart Hooks Realtime — COMPLETE ✅**
+**Phase 89: Uptime Bug & RLS Anon Write Policies Fix — COMPLETE ✅**
 
-Phase 87's raw WebSocket client (websockets library) was incompatible with InsForge Realtime (Socket.IO protocol). Phase 88 fixed this critical protocol mismatch and completed the chart hooks migration.
+Phase 88 successfully fixed the Socket.IO protocol, but two hidden bugs prevented the bot from updating its uptime in the dashboard and recovering from crashes.
 
 ---
 
-## Phase 88: Socket.IO Protocol Fix + Chart Hooks Realtime (COMPLETE ✅)
+## Phase 89: Uptime Bug & RLS Anon Write Policies Fix (COMPLETE ✅)
 
 ### Root Cause
-The Python `realtime_client.py` used raw WebSocket (`websockets==16.0`), but InsForge Realtime uses **Socket.IO** protocol. This caused:
-1. `websockets.exceptions.InvalidStatus: HTTP 502` — server rejected the handshake
-2. Bot crashed on startup when CommandWorker tried to connect
-3. All "realtime" features were actually running on 30s polling fallback
+1. **Missing RLS Write Policies:** Migration `012` enabled RLS but forgot to add `INSERT` and `UPDATE` policies for the `anon` role on operational tables (like `bot_status`, `admin_commands`, `protected_groups`). The `StatusWriter` uses the `anon` key to UPSERT the heartbeat every 30 seconds. Without policies, the PATCH/POST silently failed and `uptime_seconds` remained at 0.
+2. **Missing `h2` Dependency:** The `ptb` framework was configured for HTTP/2, but `httpx[http2]` was missing from `pyproject.toml`, trapping the bot in a crash loop due to a missing `h2` wrapper.
 
 ### What Was Fixed
+- **Added `httpx[http2]>=0.28.0,<0.29`** to `pyproject.toml` and ran `uv sync`.
+- **Created Migration `022_bot_operational_anon_policies.sql`** implementing missing `anon` RLS policies for:
+  - `bot_status` (INSERT, UPDATE)
+  - `admin_commands` (UPDATE)
+  - `protected_groups`, `enforced_channels` (UPDATE)
+  - `group_channel_links` (INSERT, UPDATE, DELETE)
 
-#### A. Python Socket.IO Client (Critical)
-- **Replaced** `websockets>=16.0` → `python-socketio[asyncio_client]>=5.14.0` in `pyproject.toml`
+---
+
+## Architecture (Current — Phase 89)
 - **Ran** `uv sync` (not just `uv lock`) to install packages and remove old ones
 - **Rewrote** `apps/bot/core/realtime_client.py` to use Socket.IO protocol:
   - Auth: `auth={'token': anon_key}` on handshake (not HTTP header)

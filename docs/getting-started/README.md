@@ -17,8 +17,9 @@ This guide will walk you through setting up the Nezuko platform using InsForge.
 
 ## Prerequisites
 
-- **Node.js 20+** (Bun recommended)
+- **Node.js 20+** (Bun 1.2+ recommended)
 - **Python 3.13+**
+- **uv**: Python package manager ([Install uv](https://docs.astral.sh/uv/getting-started/installation/))
 - **InsForge Account**: [Create one here](https://insforge.app)
 
 ---
@@ -37,17 +38,18 @@ cd Nezuko-Telegram-Bot
 1. Use the MCP tool `download-template` (if available) or create a new project in the InsForge dashboard.
 2. Get your **Project URL** and **Anon Key**.
 
-### 3. Install Dependencies
+### 3. Automated Setup
+The easiest way to set up everything is using the Nezuko CLI:
 
 ```bash
-# Frontend
-cd apps/web
-bun install
+# Windows
+.\nezuko.bat setup
 
-# Bot
-cd ../bot
-pip install -r requirements.txt
+# Linux/macOS
+./nezuko.sh setup
 ```
+
+This will automatically check prerequisites, sync Python dependencies with `uv`, and install frontend dependencies with `bun`.
 
 ---
 
@@ -70,21 +72,22 @@ INSFORGE_SERVICE_KEY=your-service-role-key  # For admin access
 
 ---
 
-## Running the Services
-
-### 1. Run Web Dashboard
-
+### 1. Using the CLI
 ```bash
-cd apps/web
-bun dev
-# Access at http://localhost:3000
+# Windows
+.\nezuko.bat start
+
+# Linux/macOS
+./nezuko.sh start
 ```
 
-### 2. Run Bot
-
+### 2. Manual Run
 ```bash
-cd apps/bot
-python -m main
+# Web Dashboard
+cd apps/web && bun dev
+
+# Telegram Bot
+uv run python -m apps.bot.main
 ```
 
 ---

@@ -134,23 +134,9 @@ Start-Sleep -Seconds 2
 # Start Telegram Bot
 if ($Service -eq "all" -or $Service -eq "bot") {
     Write-Host "  [Bot] Starting Telegram Bot..." -ForegroundColor Yellow
-    Write-Log -Message "Starting Telegram Bot (python -m apps.bot.main)" -Category "DEV"
+    Write-Log -Message "Starting Telegram Bot (uv run python -m apps.bot.main)" -Category "DEV"
     
-    # Re-verify python path inside block
-    $venvPython = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
-    $venvActivate = Join-Path $ProjectRoot ".venv\Scripts\Activate.ps1"
-
-    if (Test-Path $venvPython) {
-        # Use venv python directly (most reliable)
-        $botCmd = "Set-Location '$ProjectRoot'; Write-Host '  🤖 Telegram Bot - Polling Mode' -ForegroundColor Yellow; Write-Host ''; & '$venvPython' -m apps.bot.main"
-    }
-    elseif (Test-Path $venvActivate) {
-        # Fallback: activate venv then run python
-        $botCmd = "Set-Location '$ProjectRoot'; Write-Host '  🤖 Telegram Bot - Polling Mode' -ForegroundColor Yellow; Write-Host ''; & '$venvActivate'; python -m apps.bot.main"
-    }
-    else {
-        $botCmd = "Set-Location '$ProjectRoot'; Write-Host '  🤖 Telegram Bot - Polling Mode' -ForegroundColor Yellow; Write-Host ''; python -m apps.bot.main"
-    }
+    $botCmd = "Set-Location '$ProjectRoot'; Write-Host '  🤖 Telegram Bot' -ForegroundColor Yellow; Write-Host ''; uv run python -m apps.bot.main"
     Start-Process $PwshPath -ArgumentList "-NoExit", "-Command", $botCmd
 }
 

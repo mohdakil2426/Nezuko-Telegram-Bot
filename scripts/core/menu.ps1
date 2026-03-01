@@ -55,6 +55,7 @@ function Show-MainMenu {
     Write-Host "  ├── 🧹 UTILITIES ──────────────────────────────────────┤" -ForegroundColor Yellow
     Write-Host "  │    [5] 🧼 Clean Artifacts...                         │" -ForegroundColor White
     Write-Host "  │    [6] ♻️  Full Reset (Clean + Reinstall)             │" -ForegroundColor White
+    Write-Host "  │    [7] 🔄 Update & Sync Dependencies                 │" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
     Write-Host "  │    [0] ❌ Exit                                       │" -ForegroundColor White
     Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
@@ -430,6 +431,15 @@ function Start-MainMenu {
             # Utilities
             "5" { Invoke-CleanMenu }
             "6" { Invoke-FullReset; Wait-ForKeyPress }
+            "7" { 
+                Write-Host ""
+                Write-Host "  🔄 Pulling latest changes & syncing dependencies..." -ForegroundColor Cyan
+                if (Test-Path (Join-Path (Get-ProjectRoot) ".git")) {
+                    git pull
+                }
+                Invoke-FirstTimeSetup
+                Wait-ForKeyPress
+            }
 
             # Exit
             "0" {

@@ -61,149 +61,49 @@ if (-not (Test-Prerequisites)) {
 Write-Log -Message "Prerequisites check passed" -Level "SUCCESS" -Category "INSTALL"
 
 # ============================================================
-# Step 2: Create Virtual Environment
+# Step 2: Sync Python Environment (uv)
 # ============================================================
 
 if (-not $SkipPython) {
-    Write-Step -Step "2/6" -Message "Creating Python virtual environment..."
-    Write-Log -Message "Step 2/6: Creating Python virtual environment" -Category "PYTHON"
+    Write-Step -Step "2/6" -Message "Syncing Python virtual environment (uv)..."
+    Write-Log -Message "Step 2/6: Syncing Python environment with uv" -Category "PYTHON"
     
     $venvPath = Get-VenvPath
-    $pyvenvCfg = Join-Path $venvPath "pyvenv.cfg"
     
-    # Check if venv exists AND is valid (has pyvenv.cfg)
-    $venvIsValid = (Test-Path $venvPath) -and (Test-Path $pyvenvCfg)
-    
-    if ($venvIsValid -and -not $Force) {
-        Write-Info "Virtual environment already exists. Use -Force to recreate."
-        Write-Log -Message "Venv already exists, skipping creation" -Category "PYTHON"
+    if ($Force -and (Test-Path $venvPath)) {
+        Write-Host "        Removing existing .venv..." -ForegroundColor Gray
+        Remove-Item -Path $venvPath -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Log -Message "Removed existing .venv due to -Force" -Category "PYTHON"
     }
-    else {
-        # Remove corrupted or existing venv if present
-        if (Test-Path $venvPath) {
-            Write-Host "        Removing corrupted/existing .venv..." -ForegroundColor Gray
-            Remove-Item -Path $venvPath -Recurse -Force -ErrorAction SilentlyContinue
-            Write-Log -Message "Removed existing .venv" -Category "PYTHON"
-        }
-        
-        Push-Location $ProjectRoot
-        # Use py -3 which is more reliable on Windows than python command
-        Write-Log -Message "COMMAND: py -3 -m venv .venv" -Category "PYTHON"
-        $venvOutput = py -3 -m venv .venv 2>&1
-        Write-Log -Message "OUTPUT: $venvOutput" -Category "PYTHON"
-        Pop-Location
-        
-        # Verify venv was created properly
-        if ((Test-Path $venvPath) -and (Test-Path $pyvenvCfg)) {
-            Write-Success "Virtual environment created at .venv"
-            Write-Log -Message "Virtual environment created successfully" -Level "SUCCESS" -Category "PYTHON"
-        }
-        else {
-            Write-Failure "Failed to create virtual environment"
-            Write-Log -Message "Failed to create virtual environment" -Level "ERROR" -Category "PYTHON"
-            exit 1
-        }
-    }
+
+    $ProjectRoot = Get-ProjectRoot
+    Push-Location $ProjectRoot
     
-    # ============================================================
-    # Step 3: Install Python Dependencies
-    # ============================================================
+    Write-Log -Message "COMMAND: uv sync" -Category "PYTHON"
     
-    Write-Step -Step "3/6" -Message "Installing Python dependencies..."
-    Write-Log -Message "Step 3/6: Installing Python dependencies" -Category "PYTHON"
-    
-    $venvPython = Get-VenvPython
-    
-    # Verify venv python exists
-    if (-not (Test-Path $venvPython)) {
-        Write-Failure "Virtual environment Python not found at $venvPython"
-        Write-Log -Message "Venv Python not found" -Level "ERROR" -Category "PYTHON"
-        exit 1
-    }
-    
-    # Upgrade pip first
-    Write-Host ""
-    Write-Host "        Upgrading pip..." -ForegroundColor Gray
-    Write-Log -Message "COMMAND: pip install --upgrade pip" -Category "PYTHON"
-    & $venvPython -m pip install --upgrade pip 2>&1 | ForEach-Object {
+    # Run uv sync
+    $syncExitCode = 0
+    uv sync 2>&1 | ForEach-Object {
         $line = [string]$_
         Write-Host "        $line" -ForegroundColor DarkGray
         if ($line -and $line.Trim()) {
             Write-Log -Message $line -Category "PYTHON"
         }
     }
-    
-    # Install production requirements
-    $requirementsFile = Join-Path $ProjectRoot "requirements.txt"
+    $syncExitCode = $LASTEXITCODE
+    Pop-Location
 
-    if (Test-Path $requirementsFile) {
-        Write-Host ""
-        Write-Host "        Installing requirements.txt (production dependencies)..." -ForegroundColor Cyan
-        Write-Log -Message "COMMAND: pip install --prefer-binary -r requirements.txt" -Category "PYTHON"
-
-        $pipOutput = & $venvPython -m pip install --prefer-binary -r $requirementsFile 2>&1
-        $pipExitCode = $LASTEXITCODE
-
-        $pipOutput | ForEach-Object {
-            $line = [string]$_
-            if ($line -match "^(Installing|Collecting|Requirement|Successfully|WARNING|ERROR|Failed)" -or $line -match "already satisfied") {
-                Write-Host "        $line" -ForegroundColor DarkGray
-            }
-            if ($line -and $line.Trim()) {
-                Write-Log -Message $line -Category "PYTHON"
-            }
-        }
-
-        if ($pipExitCode -eq 0) {
-            Write-Success "Production dependencies installed"
-            Write-Log -Message "Installed from requirements.txt" -Level "SUCCESS" -Category "PYTHON"
-        }
-        else {
-            Write-Failure "Some production dependencies failed (exit code: $pipExitCode)"
-            Write-Log -Message "pip install failed with exit code: $pipExitCode" -Level "ERROR" -Category "PYTHON"
-            Write-Host "        You may need to install Microsoft C++ Build Tools" -ForegroundColor Yellow
-            Write-Host "        https://visualstudio.microsoft.com/visual-cpp-build-tools/" -ForegroundColor Gray
-        }
+    if ($syncExitCode -eq 0) {
+        Write-Success "Python environment synced successfully (regular + dev dependencies)"
+        Write-Log -Message "uv sync completed successfully" -Level "SUCCESS" -Category "PYTHON"
     }
     else {
-        Write-Failure "requirements.txt not found"
-        Write-Log -Message "requirements.txt not found" -Level "ERROR" -Category "PYTHON"
+        Write-Failure "Failed to sync Python environment (exit code: $syncExitCode)"
+        Write-Log -Message "uv sync failed with exit code: $syncExitCode" -Level "ERROR" -Category "PYTHON"
         exit 1
     }
 
-    # Install dev requirements (ruff, pytest, pyrefly, pylint)
-    $requirementsDevFile = Join-Path $ProjectRoot "requirements-dev.txt"
-
-    if (Test-Path $requirementsDevFile) {
-        Write-Host ""
-        Write-Host "        Installing requirements-dev.txt (dev tools: ruff, pytest, pyrefly, pylint)..." -ForegroundColor Cyan
-        Write-Log -Message "COMMAND: pip install --prefer-binary -r requirements-dev.txt" -Category "PYTHON"
-
-        $pipDevOutput = & $venvPython -m pip install --prefer-binary -r $requirementsDevFile 2>&1
-        $pipDevExitCode = $LASTEXITCODE
-
-        $pipDevOutput | ForEach-Object {
-            $line = [string]$_
-            if ($line -match "^(Installing|Collecting|Requirement|Successfully|WARNING|ERROR|Failed)" -or $line -match "already satisfied") {
-                Write-Host "        $line" -ForegroundColor DarkGray
-            }
-            if ($line -and $line.Trim()) {
-                Write-Log -Message $line -Category "PYTHON"
-            }
-        }
-
-        if ($pipDevExitCode -eq 0) {
-            Write-Success "Dev tools installed (ruff, pytest, pyrefly, pylint)"
-            Write-Log -Message "Installed from requirements-dev.txt" -Level "SUCCESS" -Category "PYTHON"
-        }
-        else {
-            Write-Failure "Some dev tools failed to install (exit code: $pipDevExitCode)"
-            Write-Log -Message "requirements-dev.txt install failed: $pipDevExitCode" -Level "WARN" -Category "PYTHON"
-        }
-    }
-    else {
-        Write-Info "requirements-dev.txt not found — skipping dev tools"
-    }
+    Write-Step -Step "3/6" -Message "Skipping legacy pip install (using uv sync instead)"
 }
 else {
     Write-Step -Step "2/6" -Message "Skipping Python setup (--SkipPython)"

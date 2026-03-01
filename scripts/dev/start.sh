@@ -91,11 +91,7 @@ sleep 2
 
 # Start Telegram Bot
 echo -e "  ${YELLOW}[2/2] Starting Telegram Bot...${NC}"
-if [ -f "$PROJECT_ROOT/.venv/bin/activate" ]; then
-    open_terminal "Nezuko - Bot" "source .venv/bin/activate && python -m apps.bot.main"
-else
-    open_terminal "Nezuko - Bot" "python -m apps.bot.main"
-fi
+open_terminal "Nezuko - Bot" "uv run python -m apps.bot.main"
 
 echo ""
 echo -e "${CYAN}  ====================================${NC}"

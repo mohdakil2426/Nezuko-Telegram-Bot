@@ -9,6 +9,7 @@
 #   ./nezuko stop     - Stop all services
 #   ./nezuko setup    - First-time setup
 #   ./nezuko test     - Run tests
+#   ./nezuko sync     - Update dependencies (uv sync + bun install)
 #   ./nezuko clean    - Clean node_modules and .venv
 #   ./nezuko tree     - Generate project structure
 #   ./nezuko help     - Show commands
@@ -43,6 +44,7 @@ show_help() {
     echo "    setup     First-time project setup"
     echo "    test      Run test suite"
     echo "    keygen    Generate a new Fernet encryption key"
+    echo "    sync      Update dependencies (uv sync + bun install)"
     echo "    clean     Clean node_modules and .venv"
     echo "    tree      Generate project folder structure"
     echo "    help      Show this help message"
@@ -106,6 +108,9 @@ case "${1:-menu}" in
         ;;
     "test")
         exec "$SCRIPT_DIR/scripts/test/run.sh"
+        ;;
+    "sync"|"update")
+        exec "$SCRIPT_DIR/scripts/setup/install.sh"
         ;;
     "keygen")
         echo ""
