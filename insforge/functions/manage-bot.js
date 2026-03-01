@@ -77,6 +77,10 @@ export default async function(req) {
       return await handleVerify(body, corsHeaders);
     } else if (action === 'add') {
       return await handleAdd(body, corsHeaders);
+    } else if (action === 'update') {
+      return await handleUpdate(body, corsHeaders);
+    } else if (action === 'delete') {
+      return await handleDelete(body, corsHeaders);
     } else {
       return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), {
         status: 400,
@@ -146,11 +150,14 @@ async function handleVerify(body, corsHeaders) {
 }
 
 async function handleAdd(body, corsHeaders) {
-  const { token, owner_telegram_id, master_key } = body;
+  const { token, master_key } = body;
+  // owner_telegram_id is optional since Phase 75 (Telegram auth removed).
+  // DB column has DEFAULT 0 and is NOT NULL, so we default to 0 here.
+  const owner_telegram_id = body.owner_telegram_id ?? 0;
   console.log('[manage-bot] handleAdd called. master_key present:', !!master_key);
 
-  if (!token || (owner_telegram_id === undefined || owner_telegram_id === null)) {
-    return new Response(JSON.stringify({ error: 'Token and owner_telegram_id are required' }), {
+  if (!token) {
+    return new Response(JSON.stringify({ error: 'Token is required' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -234,6 +241,103 @@ async function handleAdd(body, corsHeaders) {
 
   // Fix SQL-10: Return 200 (not 201) — upsert may update an existing row
   return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+/**
+ * Update bot is_active status.
+ * Used to bypass RLS in dev mode via authenticated Edge Function runner.
+ */
+async function handleUpdate(body, corsHeaders) {
+  const { id, is_active } = body;
+  if (!id) {
+    return new Response(JSON.stringify({ error: 'id is required' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const baseUrl = Deno.env.get('INSFORGE_BASE_URL');
+  const anonKey = Deno.env.get('ANON_KEY');
+  const client = createClient({ baseUrl, anonKey });
+
+  const { data, error } = await client.database
+    .from('bot_instances')
+    .update({ is_active })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[manage-bot] Update error:', JSON.stringify(error));
+    return new Response(JSON.stringify({ error: 'Failed to update bot' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (!data) {
+    console.error('[manage-bot] Update: No rows affected for id:', id, '— possible RLS block or missing row');
+    return new Response(JSON.stringify({ error: 'Bot not found or update blocked by RLS' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+/**
+ * Soft-delete a bot.
+ * Used to bypass RLS in dev mode via authenticated Edge Function runner.
+ */
+async function handleDelete(body, corsHeaders) {
+  const { id } = body;
+  if (!id) {
+    return new Response(JSON.stringify({ error: 'id is required' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const baseUrl = Deno.env.get('INSFORGE_BASE_URL');
+  const anonKey = Deno.env.get('ANON_KEY');
+  const client = createClient({ baseUrl, anonKey });
+
+  const { data, error } = await client.database
+    .from('bot_instances')
+    .update({
+      is_deleted: true,
+      deleted_at: new Date().toISOString(),
+      is_active: false,
+    })
+    .eq('id', id)
+    .select('id, is_deleted')
+    .single();
+
+  if (error) {
+    console.error('[manage-bot] Delete error:', JSON.stringify(error));
+    return new Response(JSON.stringify({ error: 'Failed to delete bot' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (!data) {
+    console.error('[manage-bot] Delete: No rows affected for id:', id, '— possible RLS block or missing row');
+    return new Response(JSON.stringify({ error: 'Bot not found or delete blocked by RLS' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  console.log('[manage-bot] Bot soft-deleted successfully:', JSON.stringify(data));
+  return new Response(JSON.stringify({ success: true }), {
     status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });

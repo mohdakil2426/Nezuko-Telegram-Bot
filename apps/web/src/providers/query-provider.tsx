@@ -5,29 +5,69 @@
  * Configures QueryClient with optimal settings
  */
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState, type ReactNode } from "react";
+import { toast } from "sonner";
 
 interface QueryProviderProps {
   children: ReactNode;
 }
 
 /**
+ * In mock mode data is static — use a long staleTime so navigating between
+ * pages serves from cache without re-running queryFns.
+ * In production staleTime comes from individual hooks (SHORT / STANDARD / LONG).
+ */
+const IS_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+const DEFAULT_STALE_TIME = IS_MOCK
+  ? 5 * 60 * 1000 // 5 min: mock data never changes, serve from cache
+  : 15 * 1000; // 15s: real data uses per-hook overrides
+
+/**
  * Create QueryClient with default options
  */
 function makeQueryClient() {
   return new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        // Global error handler: catch 401 Unauthorized errors (session expired or mode change)
+        const isUnauthorized =
+          error instanceof Error &&
+          (error.message.includes("401") ||
+            error.message.includes("403") ||
+            error.message.includes("Unauthorized") ||
+            error.message.toLowerCase().includes("jwt"));
+
+        if (isUnauthorized && !query.meta?.skipAuthError) {
+          console.warn("[QueryProvider] Unauthorized error detected. Forcing redirect to logout.");
+          toast.error("Session expired. Redirecting to login...");
+
+          // Force redirect via window location to ensure full reload & middleware triggers
+          setTimeout(() => {
+            window.location.href = "/login?redirectTo=" + encodeURIComponent(window.location.pathname);
+          }, 1500);
+        }
+      },
+    }),
     defaultOptions: {
       queries: {
         // Don't refetch on window focus in development
         refetchOnWindowFocus: process.env.NODE_ENV === "production",
         // Retry failed requests once
-        retry: 1,
-        // Consider data stale after 30 seconds
-        staleTime: 30 * 1000,
-        // Garbage collect unused queries after 10 minutes (PERF-M1)
-        gcTime: 10 * 60 * 1000,
+        retry: (failureCount, error: any) => {
+          // Don't retry on unauthorized errors
+          if (error?.message?.includes("401") || error?.message?.includes("Unauthorized")) {
+            return false;
+          }
+          return failureCount < 1;
+        },
+        // Default staleTime — individual hooks may override with STALE_TIMES.*
+        staleTime: DEFAULT_STALE_TIME,
+        // Garbage collect unused queries after 30 minutes
+        gcTime: 30 * 60 * 1000,
+        // In mock mode, skip polling — data doesn't change
+        refetchInterval: IS_MOCK ? false : undefined,
       },
       mutations: {
         // Retry mutations once

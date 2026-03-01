@@ -1,14 +1,14 @@
 /**
  * Mock Data Utilities
- * Helper functions for simulating API behavior
+ * Helper functions for generating mock data
  */
 
 /**
- * Simulate network delay (200-500ms)
+ * No-op: mock data is synchronous — no network round-trip to simulate.
+ * Retained for call-site compatibility; args are intentionally ignored.
  */
-export async function delay(min = 200, max = 500): Promise<void> {
-  const ms = Math.floor(Math.random() * (max - min + 1)) + min;
-  return new Promise((resolve) => setTimeout(resolve, ms));
+export async function delay(..._args: number[]): Promise<void> {
+  // Intentionally no-op: mock data returns instantly (no artificial delay)
 }
 
 /**

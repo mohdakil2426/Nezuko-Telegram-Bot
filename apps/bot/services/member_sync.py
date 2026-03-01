@@ -167,7 +167,7 @@ async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
             logger.debug("Bulk updated member counts for %d groups", len(group_updates))
 
     except (httpx.HTTPError, OSError, RuntimeError) as e:
-        logger.warning("Failed to sync groups: %s", e)
+        logger.warning("Failed to sync groups: %r", e)
 
     # 2. Collect enforced channel counts
     try:
@@ -186,7 +186,7 @@ async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
             logger.debug("Bulk updated subscriber counts for %d channels", len(channel_updates))
 
     except (httpx.HTTPError, OSError, RuntimeError) as e:
-        logger.warning("Failed to sync channels: %s", e)
+        logger.warning("Failed to sync channels: %r", e)
 
     elapsed = (datetime.now(UTC) - start_time).total_seconds()
     logger.info(

@@ -77,7 +77,7 @@ class CommandWorker:
                 },
             )
         except (httpx.HTTPError, OSError, RuntimeError) as e:
-            logger.warning("Failed to fetch admin_commands: %s", e)
+            logger.warning("Failed to fetch admin_commands: %r", e)
             return
 
         for row in rows:

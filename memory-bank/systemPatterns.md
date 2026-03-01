@@ -1,6 +1,6 @@
 # System Patterns: Architecture & Implementation
 
-> **Last Updated**: 2026-02-28 (Phase 77 — UI/UX Audit Fix Complete)
+> **Last Updated**: 2026-03-01 (Phase 86 — Critical Bug Fix: Auth Loop, Bot CRUD, Unified Sync)
 
 ## Architecture Overview
 
@@ -109,6 +109,59 @@ SQLAlchemy + SQLite is used **only** in `tests/` for fast offline test execution
 ```python
 # ✅ Only in tests/bot/
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+```
+
+### Bot Manager — Unified Sync Loop Pattern (Phase 86)
+
+`BotManager.run()` uses a **single unified loop** (30s interval) that handles ALL bot lifecycle state changes from the dashboard. No separate "empty bots" or "bots running" loops.
+
+```python
+# ✅ How the sync loop works:
+# 1. load_bots_from_database() queries: is_active=true AND is_deleted=false
+# 2. Compare DB results vs self.bot_instances (running bots)
+# 3. Start new/reactivated bots (in DB but not running)
+# 4. Stop deactivated/deleted bots (running but not in DB)
+
+# Dashboard actions → DB changes → sync loop detects in ≤30s:
+# • Add bot       → is_active=true, is_deleted=false → start_bot()
+# • Delete bot    → is_deleted=true, is_active=false  → stop_bot()
+# • Deactivate    → is_active=false                    → stop_bot()
+# • Reactivate    → is_active=true                     → start_bot()
+
+# ❌ NEVER create separate loops for "empty" vs "running" state
+# ❌ NEVER use `return` after the empty-bots check — kills the sync loop
+```
+
+### Edge Function Bot CRUD Pattern (Phase 86)
+
+All bot management operations (add, update, delete) go through the `manage-bot` Edge Function. The Edge Function uses `ANON_KEY` and relies on RLS policies.
+
+```
+bot_instances RLS policies (all 4 must exist):
+  • bot_instances_anon_read    → SELECT for anon
+  • bot_instances_anon_insert  → INSERT for anon  (Phase 86)
+  • bot_instances_anon_update  → UPDATE for anon  (Phase 86)
+  • bot_instances_auth_all     → ALL for authenticated
+
+Edge Function must verify operations:
+  ✅ .update({...}).eq('id', id).select().single() — returns the row
+  ❌ .update({...}).eq('id', id)                   — returns null silently on RLS block
+```
+
+### Auth Guard Pattern — Server-Side Only (Phase 86 Lesson)
+
+**⚠️ NEVER add a client-side AuthGuard that redirects based on `useAuth().isSignedIn`.** The `@insforge/nextjs` SDK's `isSignedIn` returns `false` during InsForge's token exchange (`POST /api/auth`), creating an infinite redirect loop.
+
+```typescript
+// ✅ Auth is enforced by TWO server-side layers (sufficient):
+//   1. proxy.ts → InsforgeMiddleware (edge-layer, every request)
+//   2. layout.tsx → auth() (SSR, catches expired cookies)
+
+// ❌ NEVER do this — causes redirect loop:
+// function AuthGuard() {
+//   const { isSignedIn } = useAuth();
+//   if (!isSignedIn) window.location.href = "/login";  // LOOP!
+// }
 ```
 
 ### Task Reference Pattern (RUF006)
@@ -366,6 +419,31 @@ export async function getMasterKey() {
 - `addBotSecure()` server action handles master key + edge function call entirely server-side
 - `bots.service.ts` `addBot()` delegates to `addBotSecure()` — master key never touches browser
 
+### getMasterKey — Raw Fetch Pattern (Phase 84 — CRITICAL)
+
+Server Actions that read from the vault MUST use raw `fetch()` with the anon key, NOT the InsForge SDK.
+The SDK forwards the user session cookie; in `DEV_LOGIN=true` mode no cookie exists → SDK returns `{}`.
+
+```typescript
+// ✅ Correct: Raw fetch with anon key — bypasses session-cookie auth
+const url = new URL("/api/database/records/nezuko_secrets", baseUrl);
+url.searchParams.set("key_name", "eq.master_key");
+url.searchParams.set("select", "key_value");
+
+const res = await fetch(url.toString(), {
+  headers: { Authorization: `Bearer ${anonKey}`, "Content-Type": "application/json" },
+  cache: "no-store",  // Security-sensitive — never cache
+});
+const rows = (await res.json()) as Array<{ key_value: string }>;
+return rows[0]?.key_value || null;
+
+// ❌ Wrong: SDK in Server Actions fails when no session cookie
+const { data, error } = await insforge.database.from("nezuko_secrets")...;
+// Returns: error = {} (empty object, not a useful error message)
+```
+
+**Rule**: The `nezuko_secrets` table has `secrets_anon_read: SELECT qual=true`, so a direct anon-key HTTP request always succeeds regardless of which user (or no user) is logged in.
+
 ### Edge Function Security Pattern (Phase 77)
 
 ```typescript
@@ -590,6 +668,20 @@ The UPSERT must explicitly restore: `is_deleted: false, is_active: true, deleted
 
 ---
 
+### ⚠️ Anon Key Sync Rule (Phase 84 — CRITICAL)
+
+Both `apps/bot/.env` (`INSFORGE_ANON_KEY`) and `apps/web/.env.local` (`NEXT_PUBLIC_INSFORGE_ANON_KEY`) MUST have the **same** anon key. When InsForge regenerates the key:
+1. Update BOTH files immediately
+2. **Full bot process restart required** — internal auto-restarts do NOT reload env vars. The `httpx.AsyncClient` singleton in `insforge_client.py` is initialized once at startup and caches the key in memory
+3. Stale bot key causes 401 on ALL `_get()` and `_post()` calls to InsForge
+
+```python
+# ✅ How to verify the key is loaded correctly at bot startup
+# The bot logs: "InsForge REST client initialised: https://..."
+# If you then see: "Failed to sync groups: 401 Unauthorized"
+# → Key mismatch: update apps/bot/.env and do full restart
+```
+
 ### Shared Query Constants Pattern (Phase 77)
 
 ```typescript
@@ -696,4 +788,34 @@ const envelope = data as Record<string, unknown> | null;
 const series = Array.isArray(envelope?.series) ? envelope.series : [];
 ```
 
-_Last Updated: 2026-03-01 (Phase 83 — Comprehensive Codebase Audit V3 Fixes)_
+### Optimistic Mutation Pattern with Rollback (Phase 84 — CANONICAL)
+
+```typescript
+// ✅ Correct: Full optimistic pattern for destructive mutations
+return useMutation({
+  mutationFn: (id: number) => deleteItem(id),
+
+  // 1. Cancel in-flight refetches + snapshot current cache
+  onMutate: async (id) => {
+    await queryClient.cancelQueries({ queryKey: queryKeys.items.list() });
+    const previous = queryClient.getQueryData(queryKeys.items.list());
+    queryClient.setQueryData(queryKeys.items.list(), (old) => /* optimistic remove */);
+    return { previous };  // ← return snapshot for rollback
+  },
+
+  // 2. Error: rollback to snapshot
+  onError: (_error, _id, context) => {
+    if (context?.previous) queryClient.setQueryData(queryKeys.items.list(), context.previous);
+  },
+
+  // 3. Always re-sync from server (prevents stale cache diverging from DB)
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.items.all });
+  },
+});
+
+// ❌ Wrong: onSuccess-only setQueryData with no invalidation
+// If mutation fails silently, next refetch restores the deleted item
+```
+
+_Last Updated: 2026-03-01 (Phase 84 — Bot & Web Production Bug Fixes)_

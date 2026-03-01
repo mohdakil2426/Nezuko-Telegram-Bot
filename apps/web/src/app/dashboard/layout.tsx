@@ -9,12 +9,22 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 /**
  * Dashboard Layout — Server Component
  *
- * Defense-in-depth auth guard (2 layers):
+ * Defense-in-depth auth guard (2 server-side layers):
  *   1. Primary:   InsforgeMiddleware in proxy.ts (runs on every request, edge-layer).
- *   2. Secondary: auth() server guard here (catches any edge cases / expired cookies).
+ *                 With useBuiltInAuth=true, unauthenticated users are redirected to
+ *                 InsForge's hosted sign-in page automatically.
+ *   2. Secondary: auth() server guard here (catches expired cookies / edge cases).
  *
  * Both guards skip auth when NEXT_PUBLIC_DEV_LOGIN=true (dev bypass).
- * ⚠️ Changing that env var requires a full server restart to take effect.
+ *
+ * ⚠️ DO NOT add a client-side AuthGuard here. useAuth() returns isSignedIn=false
+ *    during InsForge's token exchange (POST /api/auth after redirect), which creates
+ *    an infinite redirect loop: dashboard → login → InsForge auth → dashboard → ...
+ *
+ * ⚠️ Changing NEXT_PUBLIC_DEV_LOGIN requires:
+ *   1. Full server restart (Ctrl+C + bun dev)
+ *   2. Browser hard-reload (Ctrl+Shift+R) to clear cached JS bundle
+ *   3. Clear cookies if switching dev→prod: DevTools → Application → Cookies → Clear
  */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Read env at request time — Server Component layouts re-execute per request,
@@ -43,3 +53,4 @@ export default async function DashboardLayout({ children }: { children: React.Re
     </SidebarProvider>
   );
 }
+

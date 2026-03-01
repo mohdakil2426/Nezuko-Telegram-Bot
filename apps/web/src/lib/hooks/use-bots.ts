@@ -89,26 +89,57 @@ export function useUpdateBot() {
 
 /**
  * Hook for deleting a bot.
+ *
+ * Uses optimistic update with rollback:
+ * - Immediately removes bot from cache (feels instant)
+ * - On error: rolls back the cache to previous state
+ * - On settle: always re-syncs from server (invalidateQueries) to ensure
+ *   the UI reflects true DB state and prevents the "bot reappears" bug.
  */
 export function useDeleteBot() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (botId: number) => deleteBot(botId),
-    onSuccess: (_data, botId) => {
+
+    // Optimistic update: remove bot from cache immediately
+    onMutate: async (botId: number) => {
+      // Cancel any in-flight refetches to avoid them overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey: queryKeys.bots.list() });
+
+      // Snapshot the current cache value for rollback
+      const previousBots = queryClient.getQueryData<BotListResponse>(queryKeys.bots.list());
+
+      // Optimistically remove the bot from the list
       queryClient.setQueryData<BotListResponse>(queryKeys.bots.list(), (old) => {
         if (!old) return old;
         return {
           ...old,
           bots: old.bots.filter((bot) => bot.id !== botId),
-          total: old.total - 1,
+          total: Math.max(0, old.total - 1),
         };
       });
+
+      // Return snapshot so onError can roll back
+      return { previousBots };
     },
-    onError: (error: Error) => {
+
+    // On error: roll back to the snapshot so the bot reappears correctly
+    onError: (error: Error, _botId, context) => {
       console.error(`Failed to delete bot: ${error.message}`);
+      if (context?.previousBots) {
+        queryClient.setQueryData(queryKeys.bots.list(), context.previousBots);
+      }
+    },
+
+    // Always re-sync from server after success OR error to get authoritative state
+    // This is the critical fix: without this, a successful delete could be
+    // overwritten by the next STANDARD refetch interval re-fetching stale data
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
     },
   });
 }
+
 
 export type { Bot, BotListResponse, BotVerifyResponse };

@@ -33,10 +33,79 @@
 | 81    | Cache Analytics Consolidation — ApiCallsTrendChart, chart period standardization, migration 017-018 | **Complete ✅** |
 | 82    | Web UI Charts Comprehensive Audit — 42 issues fixed, tab reorg (4→3), shared components, a11y, mobile | **Complete ✅** |
 | 83    | Comprehensive Codebase Audit V3 Fixes — 163 findings resolved, 86 files changed, 8 new, 3 deleted | **Complete ✅** |
+| 84    | Bot & Web Production Bug Fixes — Stale anon key, delete reappear, getMasterKey, empty logs | **Complete ✅** |
+| 85    | Audit & Robustness — Bot Delete Restore, Auth Bypass Interceptor, manage-bot Secure CRUD | **Complete ✅** |
+| 86    | Critical Bug Fix — Auth Loop, Bot CRUD RLS, Unified Sync, Sign-Out Hard Redirect | **Complete ✅** |
+
+---
+
+## Phase 86: Critical Bug Fix — Auth Loop, Bot CRUD, Unified Sync (Complete)
+
+Fixed 5 root-cause bugs that Phase 85 didn't fully resolve. Full investigation via InsForge logs, RLS policy analysis, and code tracing.
+
+### Bugs Fixed
+
+| Bug | Root Cause | Fix |
+|---|---|---|
+| Auth redirect loop (login ↔ dashboard) | `AuthGuard` client component checked `useAuth()` during InsForge token exchange — `isSignedIn: false` transiently → redirect loop | **Removed AuthGuard**. Server-side guards (proxy.ts + layout.tsx) are sufficient. |
+| "Failed to add bot" after delete | 1) `owner_telegram_id` required but not sent (Phase 75 broke it). 2) No INSERT RLS policy for `anon`. | Made field optional (`?? 0`). Added `bot_instances_anon_insert` + `bot_instances_anon_update` policies. |
+| Bot delete respawn | Edge Function UPDATE returned `{ data: null, error: null }` — no UPDATE policy for `anon` | Added `.select().single()` verification + `!data` 404 response. |
+| Bot engine doesn't detect new bots | Two separate loops (60s empty / 30s main) — empty loop never transitions | Unified into single 30s loop with health monitor always running. |
+| Sign-out uses SPA navigation | `router.push("/login")` doesn't re-evaluate proxy middleware | Changed to `window.location.href` (hard redirect). Skip SDK call in dev mode. |
+
+### Key Lesson: No Client-Side AuthGuard
+`useAuth()` from `@insforge/nextjs` returns `isSignedIn: false` during the token exchange window after InsForge redirect. **Never add client-side auth guards that redirect based on `isSignedIn`** — the server-side proxy.ts and layout.tsx guards handle all cases.
+
+### Quality Gates
+| Check | Result |
+|---|---|
+| All 7 Python + TypeScript checks | ✅ Zero errors |
+| `pytest tests/bot/` | ✅ 58 passed |
+
+---
+
+## Phase 85: Audit & Robustness (Complete)
+
+Addressing the two major robustness issues identified in the system audit report.
+
+### Key Improvements
+
+| Improvement | Root Cause | Implementation |
+|---|---|---|
+| Bot Delete/Update Restore Fix | RLS blocked `anon` updates in dev mode; refetch restored old data | Centralized CRUD in `manage-bot` Edge Function + Server Actions |
+| Auth Bypass Logout Fix | Stale sessions/modes blocked redirection | Global 401 interceptor in `QueryClient` + "Exit Dev Mode" button |
+| manage-bot Expansion | Limited `add/verify` functionality | Added `update` and `delete` handlers to edge function |
+
+---
+
+## Phase 84: Bot & Web Production Bug Fixes (Complete)
+
+Four production bugs discovered via bot log analysis and live dashboard testing. All fixed with full quality gate verification.
+
+### Bugs Fixed
+
+| Bug | Root Cause | Fix |
+|---|---|---|
+| 401 on member sync | `INSFORGE_ANON_KEY` in `apps/bot/.env` was 7 days stale (Feb 24 key, Mar 1 was current) | Updated `.env` key; requires full bot restart to take effect |
+| Bot reappears after delete | `useDeleteBot` had no `onSettled → invalidateQueries`; silent failures let 30s refetch restore bot from DB | Full optimistic pattern: `onMutate` snapshot + `onError` rollback + `onSettled` invalidate |
+| "Failed to add bot" / `getMasterKey: {}` | InsForge SDK in Server Actions uses session cookie; in `DEV_LOGIN=true` mode no cookie exists → empty error `{}` | Raw `fetch()` with `Authorization: Bearer {anonKey}` header bypasses session auth, hits anon RLS directly |
+| Empty error log messages | `TimeoutError()` / `ReadError()` with no args format as empty string with `%s` | Changed to `%r` in `command_worker.py`, `status_writer.py`, `member_sync.py` |
+
+### Key Lesson: Anon Key Sync
+Both `apps/bot/.env` and `apps/web/.env.local` must have the SAME `INSFORGE_ANON_KEY`. If InsForge regenerates the key, update BOTH files. The bot's httpx client is initialized once at startup — internal auto-restarts do NOT reload env vars.
+
+### Quality Gates
+| Check | Result |
+|---|---|
+| `bun run type-check` | 0 errors ✅ |
+| `bun run lint` | 0 warnings ✅ |
+| `ruff check apps/bot` | 0 errors ✅ |
+| `pylint apps/bot` | 10.00/10 ✅ |
 
 ---
 
 ## Phase 83: Comprehensive Codebase Audit V3 Fixes (Complete)
+... (rest of file)
 
 Full codebase audit by 8 parallel agents found 163 findings (18 critical, 50 high, 59 medium, 36 low). All resolved by 7 parallel implementer agents across 5 work streams. 86 files changed, ~1,777 net lines removed.
 
@@ -269,6 +338,7 @@ All issues from `COMPREHENSIVE_CODEBASE_AUDIT.md` resolved. 3 commits on `main`.
 
 ## Technical Debt & Known Issues
 
+- [ ] **Re-encrypt bot token**: Legacy Base64 token in DB → delete + re-add `@gmakilbot` via dashboard (getMasterKey now fixed in Phase 84)
 - [ ] **Run full lint + build**: `cd apps/web && bun run lint && bun run build` — post-Phase-80 verification
 - [ ] **Test Coverage**: Currently at 58 tests; target is 100+ for full coverage.
 - [ ] **Admin Notification**: Error handler doesn't yet send alerts to admin chat (Task 6.2).
@@ -277,4 +347,4 @@ All issues from `COMPREHENSIVE_CODEBASE_AUDIT.md` resolved. 3 commits on `main`.
 - [ ] **ESLint Plugin**: `eslint-plugin-react` incompatible with ESLint 10.0.0 — needs upgrade or replacement.
 
 ---
-_Last Updated: 2026-03-01 (Phase 82 — Web UI Charts Comprehensive Audit & Fix — COMPLETE)_
+_Last Updated: 2026-03-01 (Phase 86 — Critical Bug Fix: Auth Loop, Bot CRUD, Unified Sync — COMPLETE)_

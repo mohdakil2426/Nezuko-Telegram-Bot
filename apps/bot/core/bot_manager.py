@@ -297,13 +297,18 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
     async def _run_polling(self, application: Application, bot_config: BotConfig) -> None:
         """Run polling for a bot instance with error isolation.
 
+        This task owns the updater lifecycle:
+        - Starts polling via updater.start_polling()
+        - Monitors both manager shutdown and per-bot shutdown events
+        - Stops the updater before returning (required for clean application.shutdown())
+
         Args:
             application: The telegram Application instance.
             bot_config: Bot configuration.
         """
         bot_instance = self.bot_instances.get(bot_config.id)
+        updater = application.updater
         try:
-            updater = application.updater
             if updater:
                 await updater.start_polling(
                     allowed_updates=[
@@ -316,32 +321,48 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
                 )
                 logger.info("Polling started for @%s", bot_config.bot_username)
 
-                # Keep running until stopped - use event wait instead of sleep loop
+                # Keep running until stopped
                 while self._running and bot_config.id in self.bot_instances:
-                    try:
-                        # Update heartbeat
-                        if bot_instance:
-                            bot_instance.last_heartbeat = datetime.now(tz=UTC)
+                    # Check per-bot shutdown signal (set by stop_bot)
+                    if bot_instance and bot_instance.shutdown_event.is_set():
+                        logger.info("Shutdown signal for @%s", bot_config.bot_username)
+                        break
 
+                    # Update heartbeat
+                    if bot_instance:
+                        bot_instance.last_heartbeat = datetime.now(tz=UTC)
+
+                    try:
                         await asyncio.wait_for(
                             self._shutdown_event.wait(),
                             timeout=1.0,
                         )
-                        break  # Event was set, shutdown
+                        break  # Manager-level shutdown
                     except TimeoutError:
-                        continue  # Timeout, check conditions again
+                        continue
 
-                await updater.stop()
+                # Stop the updater (MUST happen before application.shutdown())
+                if updater.running:
+                    await updater.stop()
+                    logger.info("Polling stopped for @%s", bot_config.bot_username)
         except asyncio.CancelledError:
             logger.info("Polling cancelled for @%s", bot_config.bot_username)
             if bot_instance:
                 bot_instance.status = BotStatus.STOPPED
+            # Best-effort updater stop even on cancel
+            if updater and updater.running:
+                with contextlib.suppress(Exception):
+                    await updater.stop()
         except (TelegramError, RuntimeError, OSError) as e:
             # Error isolation - log and mark as crashed
             error_msg = f"{type(e).__name__}: {e}"
             logger.error(
                 "Polling error for @%s: %s", bot_config.bot_username, error_msg, exc_info=True
             )
+            # Best-effort updater stop on error
+            if updater and updater.running:
+                with contextlib.suppress(Exception):
+                    await updater.stop()
 
             if bot_instance:
                 bot_instance.status = BotStatus.CRASHED
@@ -511,43 +532,49 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
 
         bot_instance = self.bot_instances[bot_id]
         bot_config = bot_instance.config
+        restart_count = bot_instance.restart_count + 1
         bot_instance.status = BotStatus.RESTARTING
-        bot_instance.restart_count += 1
 
         logger.info(
             "Restarting bot @%s (restart count: %d)",
             bot_config.bot_username,
-            bot_instance.restart_count,
+            restart_count,
         )
 
-        # Stop current instance
+        # Stop current instance using the proper shutdown sequence
         try:
-            await bot_instance.application.stop()
-            await bot_instance.application.shutdown()
+            await self._graceful_shutdown(bot_instance.application)
         except (TelegramError, RuntimeError) as e:
             logger.error("Error during bot shutdown before restart: %s", e)
 
         # Remove from instances
-        del self.bot_instances[bot_id]
+        self.bot_instances.pop(bot_id, None)
 
         # Wait a bit before restart
         await asyncio.sleep(2)
 
-        # Start new instance (preserves restart_count via config)
+        # Start new instance
         success = await self.start_bot(bot_config)
 
         # Restore restart count
         if success and bot_id in self.bot_instances:
-            self.bot_instances[bot_id].restart_count = bot_instance.restart_count
+            self.bot_instances[bot_id].restart_count = restart_count
 
         return success
 
     async def stop_bot(self, bot_id: int, shutdown_timeout: int = 10) -> bool:
         """Stop a bot instance with graceful shutdown.
 
+        Shutdown sequence:
+        1. Signal the polling loop to exit (via shutdown_event)
+        2. Wait for the polling task to finish (it stops the updater)
+        3. Stop the application and clean up HTTP clients
+        4. Stop dashboard services (StatusWriter, CommandWorker)
+        5. Remove from instances
+
         Args:
             bot_id: Internal bot instance ID.
-            timeout: Graceful shutdown_timeout in seconds (default: 10).
+            shutdown_timeout: Graceful shutdown timeout in seconds (default: 10).
 
         Returns:
             True if stopped successfully, False if not running.
@@ -559,22 +586,34 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         bot_instance.status = BotStatus.STOPPING
 
         try:
-            # Signal shutdown
+            # 1. Signal the polling loop to exit
             bot_instance.shutdown_event.set()
 
-            # Wait for graceful shutdown with timeout
+            # 2. Wait for the polling task to finish
+            #    _run_polling calls updater.stop() before returning
+            if not bot_instance.task.done():
+                try:
+                    await asyncio.wait_for(
+                        asyncio.shield(bot_instance.task), timeout=shutdown_timeout
+                    )
+                except TimeoutError:
+                    logger.warning("Bot id=%d polling task timeout, cancelling", bot_id)
+                    bot_instance.task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await bot_instance.task
+                except asyncio.CancelledError:
+                    pass
+
+            # 3. Stop and shutdown the application
+            #    Updater should already be stopped by _run_polling
             try:
-                await asyncio.wait_for(
-                    self._graceful_shutdown(bot_instance.application), timeout=shutdown_timeout
-                )
-            except TimeoutError:
-                logger.warning("Bot id=%d graceful shutdown timeout, forcing stop", bot_id)
-                await bot_instance.application.stop()
-                await bot_instance.application.shutdown()
+                await self._graceful_shutdown(bot_instance.application)
+            except (TelegramError, RuntimeError, OSError) as e:
+                logger.warning("Graceful shutdown issue for bot %d: %s", bot_id, e)
 
             bot_instance.status = BotStatus.STOPPED
 
-            # Stop dashboard services
+            # 4. Stop dashboard services
             if bot_instance.status_writer:
                 try:
                     await bot_instance.status_writer.stop()
@@ -592,19 +631,33 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
                     handler.close()
                     bot_instance.logger.removeHandler(handler)
 
+            # 5. Remove from instances
             del self.bot_instances[bot_id]
             logger.info("Stopped bot id=%d", bot_id)
             return True
         except (TelegramError, RuntimeError, OSError) as e:
             logger.error("Error stopping bot %d: %s", bot_id, e, exc_info=True)
+            # Even on error, remove from instances to prevent zombie state
+            self.bot_instances.pop(bot_id, None)
             return False
 
     async def _graceful_shutdown(self, application: Application) -> None:
         """Gracefully shutdown a bot application.
 
+        PTB requires this exact shutdown order:
+        1. updater.stop()    — stops the polling loop
+        2. application.stop() — stops the dispatcher / job queue
+        3. application.shutdown() — cleans up HTTP clients (calls updater.shutdown())
+
+        Calling application.shutdown() without updater.stop() first raises:
+        RuntimeError('This Updater is still running!')
+
         Args:
             application: The Telegram Application instance.
         """
+        # Stop updater first if still running
+        if application.updater and application.updater.running:
+            await application.updater.stop()
         await application.stop()
         await application.shutdown()
 
@@ -649,6 +702,12 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         """Run all active bots from database.
 
         This is the main entry point for dashboard mode.
+
+        Uses a single unified sync loop (30s) that handles ALL state transitions:
+        - No bots yet → new bot added via dashboard → auto-detected & started
+        - Bot deactivated via dashboard → auto-detected & stopped
+        - Bot reactivated via dashboard → auto-detected & started
+        - Bot deleted via dashboard → auto-detected & stopped
         """
         logger.info("=" * 60)
         logger.info("Nezuko Bot Manager - Dashboard Mode")
@@ -678,7 +737,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
             set_redis_connected(False)
             logger.warning("[WARN] Redis unavailable — caching disabled")
 
-        # Load bots from database
+        # Initial load — start any active bots
         try:
             bots = await self.load_bots_from_database()
         except EncryptionError as e:
@@ -690,30 +749,15 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
             logger.info("Will keep retrying in the sync loop...")
             bots = []
 
-        if not bots:
+        if bots:
+            logger.info("Found %d active bot(s)", len(bots))
+            for bot in bots:
+                await self.start_bot(bot)
+        else:
             logger.warning("No active bots found in database")
-            logger.info("Add bots via the web dashboard to get started!")
-            # Keep running to allow hot-reload when bots are added
-            while self._running:
-                await asyncio.sleep(60)
-                # Check for new bots periodically
-                try:
-                    new_bots = await self.load_bots_from_database()
-                    for bot in new_bots:
-                        if bot.id not in self.bot_instances:
-                            await self.start_bot(bot)
-                except (EncryptionError, OSError, httpx.HTTPError) as e:
-                    logger.error("Error checking for new bots: %s", e)
-            return
+            logger.info("Add bots via the web dashboard — they'll be auto-detected!")
 
-        # Start all bots
-        logger.info("Found %d active bot(s)", len(bots))
-        for bot in bots:
-            await self.start_bot(bot)
-
-        logger.info("All bots started. Press Ctrl+C to stop.")
-
-        # Start health monitor
+        # Start health monitor (always — it safely skips if no bots are running)
         health_task = asyncio.create_task(
             self.start_health_monitor(interval=60),
             name="health_monitor",
@@ -722,32 +766,61 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         health_task.add_done_callback(_background_tasks.discard)
         self._health_monitor_task = health_task
 
-        # Keep running and check for new/removed bots
+        # Unified sync loop — handles ALL state changes from the dashboard
         try:
             while self._running:
                 await asyncio.sleep(30)
-                # Periodic sync with database
                 await self._sync_bots()
         except asyncio.CancelledError:
             pass
 
     async def _sync_bots(self) -> None:
-        """Sync running bots with database state."""
+        """Sync running bots with database state.
+
+        Detects three scenarios:
+        1. New/reactivated bot: in DB (active, not deleted) but not running → start it
+        2. Deactivated/deleted bot: running but not in DB query → stop it
+        3. Already running: in both DB and running → no action
+        """
         try:
             db_bots = await self.load_bots_from_database()
             db_bot_ids = {b.id for b in db_bots}
             running_ids = set(self.bot_instances.keys())
 
-            # Start new bots
-            for bot in db_bots:
-                if bot.id not in running_ids:
-                    logger.info("New bot detected: @%s", bot.bot_username)
+            # Bots to start: in DB but not running
+            to_start = [bot for bot in db_bots if bot.id not in running_ids]
+            # Bots to stop: running but not in DB (deactivated or deleted)
+            to_stop = running_ids - db_bot_ids
+
+            if not to_start and not to_stop:
+                return  # Nothing changed — skip logging to reduce noise
+
+            if to_start:
+                for bot in to_start:
+                    logger.info(
+                        "Sync: starting new/reactivated bot @%s (id=%d)",
+                        bot.bot_username,
+                        bot.id,
+                    )
                     await self.start_bot(bot)
 
-            # Stop removed/deactivated bots
-            for bot_id in running_ids - db_bot_ids:
-                logger.info("Bot removed/deactivated: id=%d", bot_id)
-                await self.stop_bot(bot_id)
+            if to_stop:
+                for bot_id in to_stop:
+                    instance = self.bot_instances.get(bot_id)
+                    username = instance.config.bot_username if instance else "unknown"
+                    logger.info(
+                        "Sync: stopping deactivated/deleted bot @%s (id=%d)",
+                        username,
+                        bot_id,
+                    )
+                    await self.stop_bot(bot_id)
+
+            logger.info(
+                "Sync complete: started=%d, stopped=%d, total_running=%d",
+                len(to_start),
+                len(to_stop),
+                len(self.bot_instances),
+            )
 
         except (EncryptionError, OSError, httpx.HTTPError) as e:
             logger.error("Error syncing bots: %s", e)

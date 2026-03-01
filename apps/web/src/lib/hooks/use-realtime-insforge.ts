@@ -296,17 +296,18 @@ export function useDashboardRealtime() {
     filterTypes: ["verification", "status_changed"],
   });
 
-  // Invalidate dashboard queries on events
+  // Invalidate dashboard queries when a real event arrives.
+  // Use lastEvent (a reference that only changes on new events) NOT events.length
+  // to prevent re-running this effect on every polling tick in dev/mock mode.
   useEffect(() => {
-    if (realtime.events.length > 0 && realtime.isConnected) {
-      // Invalidate dashboard stats (ARCH-M9: use queryKeys factory)
+    if (realtime.lastEvent && realtime.isConnected) {
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats() });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.activity() });
       queryClient.invalidateQueries({ queryKey: queryKeys.analytics.overview() });
       queryClient.invalidateQueries({ queryKey: queryKeys.analytics.verificationTrends() });
       queryClient.invalidateQueries({ queryKey: queryKeys.analytics.userGrowth() });
     }
-  }, [realtime.events.length, realtime.isConnected, queryClient]);
+  }, [realtime.lastEvent, realtime.isConnected, queryClient]);
 
   return realtime;
 }
@@ -382,13 +383,13 @@ export function useRealtimeChart<T>({
     filterTypes: invalidateOnEvents,
   });
 
-  // Invalidate query when relevant events arrive
+  // Invalidate query when a new event arrives (first element changes, not .length)
   useEffect(() => {
-    if (events.length > 0 && isConnected) {
+    if (events[0] && isConnected) {
       // Invalidate the query to trigger a refetch
       queryClient.invalidateQueries({ queryKey });
     }
-  }, [events.length, isConnected, queryClient, queryKey]);
+  }, [events[0], isConnected, queryClient, queryKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return useQuery({
     queryKey,

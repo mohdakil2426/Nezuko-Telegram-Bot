@@ -8,8 +8,16 @@ import { vaultSecuritySchema } from "../schemas/vault";
 /**
  * Verify the caller has an active session before allowing vault operations.
  * Throws if no session cookie is present.
+ *
+ * Dev bypass: when NEXT_PUBLIC_DEV_LOGIN=true the dashboard layout already
+ * skips InsForge auth — vault actions must honour the same bypass so the
+ * Settings page doesn't crash with "Unauthorized" in dev mode.
  */
 async function requireAuth(): Promise<void> {
+  // Match the same guard used in dashboard/layout.tsx
+  const devLogin = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
+  if (devLogin) return; // Skip auth check in dev-bypass mode
+
   const cookieStore = await cookies();
   const session = cookieStore.get("insforge-session");
   if (!session?.value) {
@@ -18,29 +26,61 @@ async function requireAuth(): Promise<void> {
 }
 
 /**
- * Fetch the master encryption key from the secure vault (Server Side Only)
+ * Fetch the master encryption key from the secure vault (Server Side Only).
+ *
+ * Uses a raw fetch with the anon key instead of the InsForge SDK because
+ * Server Actions don't forward user sessions in DEV_LOGIN mode — the SDK's
+ * session-based auth returns an empty error `{}` in that case.
+ *
+ * The `nezuko_secrets` table has `secrets_anon_read: SELECT qual=true`, so
+ * a direct anon-key request always succeeds regardless of session state.
+ *
+ * In mock mode: returns null immediately (no vault configured in dev).
  */
 export async function getMasterKey() {
   await requireAuth();
 
-  try {
-    const { data, error } = await insforge.database
-      .from("nezuko_secrets")
-      .select("key_value")
-      .eq("key_name", "master_key")
-      .maybeSingle();
+  // Short-circuit in mock/dev mode — no real vault is configured
+  if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
+    return null;
+  }
 
-    if (error) {
-      console.error("[getMasterKey] Error fetching master key:", error);
+  const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY;
+
+  if (!baseUrl || !anonKey) {
+    console.error("[getMasterKey] Missing InsForge env vars — cannot fetch master key");
+    return null;
+  }
+
+  try {
+    // Use raw fetch with anon key — bypasses session-cookie auth that fails in dev bypass mode
+    const url = new URL("/api/database/records/nezuko_secrets", baseUrl);
+    url.searchParams.set("key_name", "eq.master_key");
+    url.searchParams.set("select", "key_value");
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${anonKey}`,
+        "Content-Type": "application/json",
+      },
+      // No caching — this is a security-sensitive value
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.error("[getMasterKey] HTTP error fetching master key:", res.status, res.statusText);
       return null;
     }
 
-    return data?.key_value || null;
+    const rows = (await res.json()) as Array<{ key_value: string }>;
+    return rows[0]?.key_value || null;
   } catch (err) {
     console.error("[getMasterKey] Unexpected error:", err);
     return null;
   }
 }
+
 
 /**
  * Save a new master key to the secure vault
@@ -126,4 +166,40 @@ export async function addBotSecure(token: string) {
   }
 
   return { success: true, data };
+}
+
+/**
+ * Update bot active status securely via server-side function call.
+ * This bypasses browser-side RLS restrictions for all users (including dev bypass).
+ */
+export async function updateBotSecure(botId: number, isActive: boolean) {
+  await requireAuth();
+
+  const { data, error } = await insforge.functions.invoke("manage-bot", {
+    body: { action: "update", id: botId, is_active: isActive },
+  });
+
+  if (error) {
+    return { success: false, error: (error as Error).message || "Failed to update bot" };
+  }
+
+  return { success: true, data };
+}
+
+/**
+ * Soft-delete bot securely via server-side function call.
+ * This bypasses browser-side RLS restrictions for all users (including dev bypass).
+ */
+export async function deleteBotSecure(botId: number) {
+  await requireAuth();
+
+  const { error } = await insforge.functions.invoke("manage-bot", {
+    body: { action: "delete", id: botId },
+  });
+
+  if (error) {
+    return { success: false, error: (error as Error).message || "Failed to delete bot" };
+  }
+
+  return { success: true };
 }

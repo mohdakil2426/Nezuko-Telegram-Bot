@@ -20,10 +20,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Nezuko Dashboard",
   description: "Telegram bot management dashboard",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#252525" },
-  ],
 };
 
 // RESP-M1: viewportFit=cover enables env(safe-area-inset-*) CSS variables for iOS notch support
@@ -31,6 +27,11 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // themeColor must live here in Next.js 16, not in metadata
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#252525" },
+  ],
 };
 
 export default function RootLayout({

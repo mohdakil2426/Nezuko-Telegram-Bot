@@ -52,7 +52,7 @@ class StatusWriter:
         try:
             await asyncio.wait_for(self._write_status("offline"), timeout=5.0)
         except (TimeoutError, OSError, RuntimeError) as e:
-            logger.warning("Failed to write offline status: %s", e)
+            logger.warning("Failed to write offline status: %r", e)
         logger.info("Status writer stopped for bot %d", self._bot_id)
 
     async def _write_loop(self) -> None:
@@ -64,7 +64,7 @@ class StatusWriter:
                 backoff = 1.0
                 await asyncio.sleep(self._interval)
             except (TimeoutError, OSError, RuntimeError) as e:
-                logger.warning("Failed to write bot status: %s", e)
+                logger.warning("Failed to write bot status: %r", e)
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, 60.0)
 

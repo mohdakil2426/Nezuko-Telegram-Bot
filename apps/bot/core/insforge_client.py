@@ -552,7 +552,7 @@ async def get_secret(key_name: str) -> str | None:
         rows = await _get("nezuko_secrets", {"key_name": f"eq.{key_name}"})
         if not rows:
             return None
-        return rows[0]["value"]
+        return rows[0]["key_value"]
     except KeyError:
         logger.error("Unexpected response format for secret '%s'", key_name)
         return None

@@ -1,11 +1,6 @@
-/**
- * Bots Service
- * Bot management operations via InsForge SDK
- */
-
 import { USE_MOCK } from "@/lib/api/config";
 import { insforge } from "@/lib/insforge";
-import { addBotSecure } from "@/lib/actions/vault";
+import { addBotSecure, updateBotSecure, deleteBotSecure } from "@/lib/actions/vault";
 
 /**
  * Bot instance response
@@ -109,30 +104,23 @@ export async function verifyBotToken(token: string): Promise<BotVerifyResponse> 
 
 /**
  * Update a bot's status.
+ * Uses secure server action to bypass RLS in dev bypass mode.
  */
 export async function updateBot(botId: number, isActive: boolean): Promise<Bot> {
-  const { data, error } = await insforge.database
-    .from("bot_instances")
-    .update({ is_active: isActive })
-    .eq("id", botId)
-    .select()
-    .single();
-  if (error) throw error;
-  return data as Bot;
+  const result = await updateBotSecure(botId, isActive);
+  if (!result.success) {
+    throw new Error(result.error || "Failed to update bot");
+  }
+  return result.data as Bot;
 }
 
 /**
  * Soft-delete a bot.
- * Sets BOTH `is_deleted` (boolean flag used by bot_manager) and `deleted_at` (timestamp).
+ * Uses secure server action to bypass RLS in dev bypass mode.
  */
 export async function deleteBot(botId: number): Promise<void> {
-  const { error } = await insforge.database
-    .from("bot_instances")
-    .update({
-      is_deleted: true,
-      deleted_at: new Date().toISOString(),
-      is_active: false,
-    })
-    .eq("id", botId);
-  if (error) throw error;
+  const result = await deleteBotSecure(botId);
+  if (!result.success) {
+    throw new Error(result.error || "Failed to delete bot");
+  }
 }
