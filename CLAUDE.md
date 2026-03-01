@@ -219,7 +219,7 @@ Before marking any task complete:
 
 **⚠️ MANDATORY: Read relevant skills BEFORE generating any code.**
 
-Skills are located in `.agent/skills/` or `.agents/skills/` — check the path column. Read the **SKILL.md** file inside each skill folder.
+Skills are located in `.claude/skills/` — check the path column. Read the **SKILL.md** file inside each skill folder.
 
 **Skill Reading Rules:**
 
@@ -239,61 +239,43 @@ Skills are located in `.agent/skills/` or `.agents/skills/` — check the path c
 
 | Skill                           | When to Use                                        | Path                                          |
 | ------------------------------- | -------------------------------------------------- | --------------------------------------------- |
-| **nextjs**                      | Any Next.js 16 work, App Router, Server Components | `.agents/skills/nextjs/`                      |
-| **shadcn-ui**                   | Adding/customizing shadcn components               | `.agents/skills/shadcn-ui`                    |
-| **tanstack-query**              | Data fetching, mutations, caching                  | `.agents/skills/tanstack-query/`              |
-| **typescript-expert**           | Complex TS patterns, generics                      | `.agents/skills/typescript-expert`            |
-| **typescript-advanced-types**   | Utility types, conditional types                   | `.agents/skills/typescript-advanced-types`    |
-| **vercel-react-best-practices** | React 19 patterns, performance                     | `.agents/skills/vercel-react-best-practices`  |
-| **ui-ux-pro-max**               | Design systems, color palettes, typography         | `.agents/skills/ui-ux-pro-max`                |
-| **web-design-guidelines**       | Layout, spacing, responsive design                 | `.agents/skills/web-design-guidelines`        |
-| **motion**                      | React animations, gestures, scroll effects         | `.agents/skills/motion`                       |
-| **nextjs-react-expert**         | React & Next.js core patterns, Server Components   | `.agents/skills/nextjs-react-expert`          |
-| **responsiveness-check**        | Breakpoint testing, mobile-first verification      | `.agents/skills/responsiveness-check`         |
+| **nextjs**                      | Any Next.js 16 work, App Router, Server Components | `.claude/skills/nextjs/`                      |
+| **shadcn-ui**                   | Adding/customizing shadcn components               | `.claude/skills/shadcn-ui`                    |
+| **tanstack-query**              | Data fetching, mutations, caching                  | `.claude/skills/tanstack-query/`              |
+| **typescript-expert**           | Complex TS patterns, generics                      | `.claude/skills/typescript-expert`            |
+| **typescript-advanced-types**   | Utility types, conditional types                   | `.claude/skills/typescript-advanced-types`    |
+| **vercel-react-best-practices** | React 19 patterns, performance                     | `.claude/skills/vercel-react-best-practices`  |
+| **web-design-guidelines**       | Layout, spacing, responsive design                 | `.claude/skills/web-design-guidelines`        |
+| **motion**                      | React animations, gestures, scroll effects         | `.claude/skills/motion`                       |
+| **responsiveness-check**        | Breakpoint testing, mobile-first verification      | `.claude/skills/responsiveness-check`         |
 
 ### Backend (API & Bot)
 
 | Skill                               | When to Use                                 | Path                                                                       |
 | ----------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------- |
-| **fastapi**                         | FastAPI endpoints, dependencies, middleware | `.agents/skills/fastapi`                                                   |
-| **insforge**                        | InsForge BaaS — tables, auth, SDK, storage  | `.agents/skills/insforge`                                                  |
-| **async-python-patterns**           | Async/await, concurrency, event loops       | `.agents/skills/python-development/skills/async-python-patterns/`           |
-| **python-code-style**               | PEP 8, naming conventions, formatting       | `.agents/skills/python-development/skills/python-code-style/`               |
-| **python-type-safety**              | Type hints, generics, Pydantic              | `.agents/skills/python-development/skills/python-type-safety/`              |
-| **python-error-handling**           | Exceptions, error recovery, logging         | `.agents/skills/python-development/skills/python-error-handling/`           |
-| **python-design-patterns**          | Factory, singleton, dependency injection    | `.agents/skills/python-development/skills/python-design-patterns/`          |
-| **python-testing-patterns**         | pytest, fixtures, mocking                   | `.agents/skills/python-development/skills/python-testing-patterns/`         |
-| **python-performance-optimization** | Profiling, caching, memory management       | `.agents/skills/python-development/skills/python-performance-optimization/` |
-| **python-anti-patterns**            | Common mistakes to avoid                    | `.agents/skills/python-development/skills/python-anti-patterns/`            |
-| **python-resilience**               | Retry, circuit breaker, fallbacks           | `.agents/skills/python-development/skills/python-resilience/`               |
-| **python-background-jobs**          | Task queues, scheduled jobs                 | `.agents/skills/python-development/skills/python-background-jobs/`          |
-| **python-observability**            | Logging, metrics, tracing                   | `.agents/skills/python-development/skills/python-observability/`            |
-| **python-configuration**            | Config management, env vars, settings       | `.agents/skills/python-development/skills/python-configuration/`            |
-| **python-packaging**                | Package structure, pyproject, build         | `.agents/skills/python-development/skills/python-packaging/`                |
-| **python-project-structure**        | Layout, modules, imports organisation       | `.agents/skills/python-development/skills/python-project-structure/`        |
-| **python-resource-management**      | Context managers, file handles, cleanup     | `.agents/skills/python-development/skills/python-resource-management/`      |
-| **uv-package-manager**              | uv install, lockfiles, virtualenvs          | `.agents/skills/python-development/skills/uv-package-manager/`              |
-| **websocket-engineer**              | Real-time bi-directional communication      | `.agents/skills/websocket-engineer`           |
+| **fastapi**                         | FastAPI endpoints, dependencies, middleware | `.claude/skills/fastapi`                                                   |
+| **insforge**                        | InsForge BaaS — tables, auth, SDK, storage  | `.claude/skills/insforge`                                                  |
+| **websocket-engineer**              | Real-time bi-directional communication      | `.claude/skills/websocket-engineer`           |
 
 ### Database
 
 | Skill                                | When to Use                              | Path                                               |
 | ------------------------------------ | ---------------------------------------- | -------------------------------------------------- |
-| **postgresql-table-design**          | Schema design, indexes, constraints      | `.agents/skills/postgresql-table-design/`          |
-| **postgresql-best-practices**        | Query optimization, admin, performance   | `.agents/skills/postgresql-best-practices`         |
-| **postgres-pro**                     | Advanced queries, EXPLAIN, JSONB, VACUUM | `.agents/skills/postgres-pro`                      |
+| **postgresql-table-design**          | Schema design, indexes, constraints      | `.claude/skills/postgresql-table-design/`          |
+| **postgresql-best-practices**        | Query optimization, admin, performance   | `.claude/skills/postgresql-best-practices`         |
+| **postgres-pro**                     | Advanced queries, EXPLAIN, JSONB, VACUUM | `.claude/skills/postgres-pro`                      |
 
 ### DevOps & Tooling
 
 | Skill                        | When to Use                           | Path                                       |
 | ---------------------------- | ------------------------------------- | ------------------------------------------ |
-| **docker-expert**            | Containerization, Multi-stage builds, Compose | `.agents/skills/docker-expert`               |
-| **git-commit**               | Conventional commits, staging         | `.agents/skills/git-commit/`                |
-| **github-actions-templates** | CI/CD workflows                       | `.agents/skills/github-actions-templates/`  |
-| **mermaid-diagrams**         | UML, Flowcharts, Sequence diagrams    | `.agents/skills/mermaid-diagrams`            |
-| **playwright-cli**           | Browser automation, testing, scraping | `.agents/skills/playwright-cli`            |
-| **powershell-expert**        | Windows scripts, automation           | `.agents/skills/powershell-expert`         |
-| **skill-creator**            | Create or update agent skills         | `.agents/skills/skill-creator`             |
+| **docker-expert**            | Containerization, Multi-stage builds, Compose | `.claude/skills/docker-expert`             |
+| **git-commit**               | Conventional commits, staging         | `.claude/skills/git-commit/`               |
+| **github-actions-templates** | CI/CD workflows                       | `.claude/skills/github-actions-templates/` |
+| **mermaid-diagrams**         | UML, Flowcharts, Sequence diagrams    | `.claude/skills/mermaid-diagrams`          |
+| **playwright-cli**           | Browser automation, testing, scraping | `.claude/skills/playwright-cli`            |
+| **powershell-expert**        | Windows scripts, automation           | `.claude/skills/powershell-expert`         |
+| **skill-creator**            | Create or update agent skills         | `.claude/skills/skill-creator`             |
 
 ### Project Management
 
@@ -312,4 +294,4 @@ Skills are located in `.agent/skills/` or `.agents/skills/` — check the path c
 
 ---
 
-_Last Updated: 2026-02-05_
+_Last Updated: 2026-03-01_
