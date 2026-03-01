@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMembersChart } from "@/lib/hooks";
+import { ChartEmptyState } from "./chart-empty-state";
 
 const chartConfig = {
   channels: {
@@ -87,8 +88,10 @@ export function MembersChart() {
     );
   }
 
+  const isEmpty = chartData.length === 0;
+
   return (
-    <div role="img" aria-label="Members overview interactive bar chart">
+    <div role="figure" aria-label="Members overview interactive bar chart">
     <Card className="py-0">
       <CardHeader className="flex flex-col items-stretch border-b !p-0 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 pt-4 pb-3 sm:!py-0">
@@ -97,15 +100,26 @@ export function MembersChart() {
             Top channels and groups by membership count
           </CardDescription>
         </div>
-        <div className="flex">
+        <div className="flex" role="tablist">
           {(["channels", "groups"] as ActiveTab[]).map((key) => (
             <button
               key={key}
+              role="tab"
+              aria-selected={activeTab === key}
+              aria-controls="members-chart-panel"
               data-active={activeTab === key}
-              className="data-[active=true]:bg-muted/50 relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l sm:border-t-0 sm:border-l sm:px-8 sm:py-6"
+              className={`relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l sm:border-t-0 sm:border-l sm:px-8 sm:py-6 ${
+                activeTab === key
+                  ? "bg-muted/50 border-b-2 border-b-primary"
+                  : ""
+              }`}
               onClick={() => setActiveTab(key)}
             >
-              <span className="text-muted-foreground text-xs">
+              <span className={`text-xs ${
+                activeTab === key
+                  ? "text-foreground font-semibold"
+                  : "text-muted-foreground"
+              }`}>
                 {chartConfig[key].label}
               </span>
               <span className="text-lg leading-none font-bold sm:text-3xl">
@@ -115,41 +129,49 @@ export function MembersChart() {
           ))}
         </div>
       </CardHeader>
-      <CardContent className="min-h-[200px] px-2 sm:p-6">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[250px] w-full"
-        >
-          <BarChart
-            accessibilityLayer
-            data={chartData}
-            margin={{ left: 12, right: 12 }}
+      <CardContent
+        id="members-chart-panel"
+        role="tabpanel"
+        className="min-h-[200px] px-2 sm:p-6"
+      >
+        {isEmpty ? (
+          <ChartEmptyState message={`No ${activeTab} data available`} />
+        ) : (
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-[250px] w-full"
           >
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="name"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              minTickGap={20}
-              tick={{ fontSize: 11 }}
-            />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  className="w-[160px]"
-                  nameKey={activeTab}
-                  labelFormatter={(value) => String(value)}
-                />
-              }
-            />
-            <Bar
-              dataKey="members"
-              fill={`var(--color-${activeTab})`}
-              radius={4}
-            />
-          </BarChart>
-        </ChartContainer>
+            <BarChart
+              accessibilityLayer
+              data={chartData}
+              margin={{ left: 12, right: 12 }}
+            >
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="name"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={20}
+                tick={{ fontSize: 11 }}
+              />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    className="w-[160px]"
+                    nameKey={activeTab}
+                    labelFormatter={(value) => String(value)}
+                  />
+                }
+              />
+              <Bar
+                dataKey="members"
+                fill={`var(--color-${activeTab})`}
+                radius={4}
+              />
+            </BarChart>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
     </div>

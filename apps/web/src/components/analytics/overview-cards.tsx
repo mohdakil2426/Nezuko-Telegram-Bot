@@ -12,6 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalyticsOverview, useCacheBreakdown, useRealtimeAnalytics } from "@/lib/hooks";
 
+const nf = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+function formatNumber(num: number): string {
+  return nf.format(num);
+}
+
 interface OverviewCardProps {
   title: string;
   value: string | number;
@@ -153,13 +158,6 @@ export function AnalyticsOverviewCards() {
       </div>
     );
   }
-
-  const formatNumber = (num: number) => {
-    if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K`;
-    }
-    return num.toString();
-  };
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

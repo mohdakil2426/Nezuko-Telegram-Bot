@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCacheBreakdown } from "@/lib/hooks";
+import { ChartEmptyState } from "./chart-empty-state";
 
 const chartConfig = {
   cached: {
@@ -65,19 +66,34 @@ export function CacheBreakdownChart() {
     { name: "api", value: data?.api ?? 0, fill: "var(--color-api)" },
   ];
 
+  const total = data?.total ?? 0;
   const hitRate = data?.hit_rate ?? 0;
 
+  if (total === 0) {
+    return (
+      <Card className="flex flex-col">
+        <CardHeader className="pb-2">
+          <CardTitle>Cache Performance</CardTitle>
+          <CardDescription>All time</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1">
+          <ChartEmptyState message="No cache data available" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div role="img" aria-label="Cache performance breakdown donut chart">
+    <div role="figure" aria-label="Cache performance breakdown donut chart">
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle>Cache Performance</CardTitle>
-        <CardDescription>{(data?.total ?? 0).toLocaleString()} total lookups</CardDescription>
+        <CardDescription>{total.toLocaleString()} total lookups</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 min-h-[200px] pb-0">
         <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
           <PieChart accessibilityLayer>
-            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Pie
               data={chartData}
               dataKey="value"

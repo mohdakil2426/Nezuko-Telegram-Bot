@@ -5,26 +5,16 @@
  * Displays 4 key metrics with icons and trends
  */
 
-import { Users, Radio, CheckCircle, Clock } from "lucide-react";
+import { useMemo } from "react";
+import { Users, Radio, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardStats } from "@/lib/hooks";
 
-/**
- * Format large numbers with K/M suffix
- */
-function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return `${(num / 1000000).toFixed(1)}M`;
-  }
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}K`;
-  }
-  return num.toLocaleString();
-}
+const nf = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
 /**
- * Format seconds to readable duration
+ * Format seconds to readable duration, including minutes when < 1 hour
  */
 function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400);
@@ -32,42 +22,60 @@ function formatUptime(seconds: number): string {
     return `${days}d`;
   }
   const hours = Math.floor(seconds / 3600);
-  return `${hours}h`;
+  if (hours >= 1) {
+    return `${hours}h`;
+  }
+  return `${Math.floor(seconds / 60)}m`;
 }
 
 export function StatCards() {
-  const { data: stats, isPending } = useDashboardStats();
+  const { data: stats, isPending, error } = useDashboardStats();
+
+  const cards = useMemo(
+    () => [
+      {
+        title: "Protected Groups",
+        value: nf.format(stats?.total_groups ?? 0),
+        icon: Users,
+        description: "Active groups",
+      },
+      {
+        title: "Enforced Channels",
+        value: nf.format(stats?.total_channels ?? 0),
+        icon: Radio,
+        description: "Linked channels",
+      },
+      {
+        title: "Verifications Today",
+        value: nf.format(stats?.verifications_today ?? 0),
+        icon: CheckCircle,
+        description: `${stats?.success_rate ?? 0}% success rate`,
+      },
+      {
+        title: "Bot Uptime",
+        value: formatUptime(stats?.bot_uptime_seconds ?? 0),
+        icon: Clock,
+        description: "Since last restart",
+      },
+    ],
+    [stats],
+  );
 
   if (isPending) {
     return <StatCardsSkeleton />;
   }
 
-  const cards = [
-    {
-      title: "Protected Groups",
-      value: formatNumber(stats?.total_groups ?? 0),
-      icon: Users,
-      description: "Active groups",
-    },
-    {
-      title: "Enforced Channels",
-      value: formatNumber(stats?.total_channels ?? 0),
-      icon: Radio,
-      description: "Linked channels",
-    },
-    {
-      title: "Verifications Today",
-      value: formatNumber(stats?.verifications_today ?? 0),
-      icon: CheckCircle,
-      description: `${stats?.success_rate ?? 0}% success rate`,
-    },
-    {
-      title: "Bot Uptime",
-      value: formatUptime(stats?.bot_uptime_seconds ?? 0),
-      icon: Clock,
-      description: `${stats?.cache_hit_rate ?? 0}% cache hits`,
-    },
-  ];
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 py-8">
+        <AlertTriangle className="text-destructive h-8 w-8" aria-hidden="true" />
+        <p className="text-destructive font-medium">Failed to load dashboard stats</p>
+        <p className="text-muted-foreground text-sm">
+          {error.message || "Please check your connection and try again."}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

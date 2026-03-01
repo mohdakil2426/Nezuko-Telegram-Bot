@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBotHealthMetrics } from "@/lib/hooks";
+import { ChartEmptyState } from "./chart-empty-state";
 
 function getHealthColor(score: number): string {
   if (score >= 90) return "var(--chart-1)"; // Green
@@ -56,6 +57,21 @@ export function BotHealthChart() {
   }
 
   const overallScore = data?.overall_score ?? 0;
+
+  if (!data) {
+    return (
+      <Card className="flex flex-col">
+        <CardHeader className="pb-2">
+          <CardTitle>Bot Health Score</CardTitle>
+          <CardDescription>Overall system performance</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1">
+          <ChartEmptyState message="No health data available" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   const healthColor = getHealthColor(overallScore);
   const chartData = [{ name: "health", value: overallScore, fill: healthColor }];
 
@@ -68,7 +84,7 @@ export function BotHealthChart() {
   };
 
   return (
-    <div role="img" aria-label="Bot health radial chart">
+    <div role="figure" aria-label={`Bot health score: ${overallScore} out of 100`}>
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle>Bot Health Score</CardTitle>
@@ -101,6 +117,11 @@ export function BotHealthChart() {
             <span className="text-muted-foreground text-sm">/ 100</span>
           </div>
         </div>
+
+        {/* Threshold legend */}
+        <p className="text-muted-foreground mt-1 text-center text-xs">
+          90+ Excellent · 70+ Good · 50+ Fair
+        </p>
 
         {/* Metrics breakdown */}
         <div className="mt-2 grid grid-cols-2 gap-2 text-sm">

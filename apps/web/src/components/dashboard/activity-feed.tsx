@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle, Shield, Settings, AlertCircle, Clock, Loader2 } from "lucide-react";
+import { CheckCircle, Shield, Settings, AlertCircle, Clock, Loader2, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -114,11 +114,19 @@ function ConnectionStatus({
 }
 
 export function ActivityFeed() {
-  const { data: initialActivities, isPending, refetch } = useActivity(10);
+  const { data: initialActivities, isPending, error, refetch } = useActivity(10);
   const { events, isConnected, isReconnecting } = useRealtimeActivity();
   const [realtimeActivities, setRealtimeActivities] = useState<ActivityItem[]>([]);
   const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
   const processedEventCountRef = useRef(0);
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // Force re-render every 30s to refresh relative timestamps
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Convert SSE events to ActivityItem format
   const convertEventToActivity = useCallback(
@@ -205,8 +213,11 @@ export function ActivityFeed() {
         const newIds = new Set(newActivities.map((a) => a.id));
         setNewItemIds((prev) => new Set([...prev, ...newIds]));
 
-        // Clear new status after animation
-        setTimeout(() => {
+        // Clear previous highlight timer and set new one
+        if (highlightTimerRef.current) {
+          clearTimeout(highlightTimerRef.current);
+        }
+        highlightTimerRef.current = setTimeout(() => {
           setNewItemIds((prev) => {
             const next = new Set(prev);
             newIds.forEach((id) => next.delete(id));
@@ -216,6 +227,15 @@ export function ActivityFeed() {
       });
     }
   }, [events, convertEventToActivity]);
+
+  // Cleanup highlight timer on unmount
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current);
+      }
+    };
+  }, []);
 
   // Combine SSE activities with initial data
   const allActivities = useMemo(() => {
@@ -243,6 +263,28 @@ export function ActivityFeed() {
 
   if (isPending) {
     return <ActivityFeedSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="space-y-1">
+            <CardTitle className="text-base font-medium">Recent Activity</CardTitle>
+            <CardDescription>Latest verification and system events</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center gap-2 py-10">
+            <AlertTriangle className="text-destructive h-8 w-8" aria-hidden="true" />
+            <p className="text-destructive font-medium">Failed to load activity</p>
+            <p className="text-muted-foreground text-sm">
+              {error.message || "Please check your connection and try again."}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -304,6 +346,7 @@ function ActivityFeedSkeleton() {
           <Skeleton className="h-5 w-32" />
           <Skeleton className="h-4 w-48" />
         </div>
+        <Skeleton className="h-6 w-16 rounded-full" />
       </CardHeader>
       <CardContent>
         <div className="space-y-1" aria-busy="true">

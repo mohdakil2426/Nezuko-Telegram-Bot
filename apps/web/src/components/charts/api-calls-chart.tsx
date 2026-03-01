@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApiCallsDistribution } from "@/lib/hooks";
+import { ChartEmptyState } from "./chart-empty-state";
 
 const COLORS = [
   "var(--chart-1)",
@@ -74,8 +75,22 @@ export function ApiCallsChart() {
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
+  if (chartData.length === 0 || total === 0) {
+    return (
+      <Card className="flex flex-col">
+        <CardHeader className="pb-2">
+          <CardTitle>API Calls Distribution</CardTitle>
+          <CardDescription>All time</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1">
+          <ChartEmptyState message="No API call data available" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div role="img" aria-label="API calls distribution pie chart">
+    <div role="figure" aria-label="API calls distribution pie chart">
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle>API Calls Distribution</CardTitle>
@@ -84,7 +99,7 @@ export function ApiCallsChart() {
       <CardContent className="flex-1 min-h-[200px] pb-0">
         <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
           <PieChart accessibilityLayer>
-            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Pie
               data={chartData}
               dataKey="value"

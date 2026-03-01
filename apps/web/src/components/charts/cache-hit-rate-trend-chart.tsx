@@ -16,14 +16,9 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChartEmptyState } from "@/components/charts/chart-empty-state";
+import { ChartPeriodSelector, type PeriodValue } from "@/components/charts/chart-period-selector";
 import { useCacheHitRateTrend } from "@/lib/hooks";
 import type { TrendsParams } from "@/lib/services/types";
 import { formatDate } from "@/lib/format";
@@ -35,12 +30,12 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-type PeriodOption = "7d" | "30d" | "90d";
-
 export function CacheHitRateTrendChart() {
-  const [period, setPeriod] = React.useState<PeriodOption>("30d");
+  const [period, setPeriod] = React.useState<PeriodValue>("30d");
   const params: TrendsParams = { period };
   const { data, isPending, error } = useCacheHitRateTrend(params);
+  const reactId = React.useId();
+  const gradientId = `cacheHitGradient-${reactId.replace(/:/g, "")}`;
 
   const chartData = React.useMemo(() => {
     if (!data?.series) return [];
@@ -49,6 +44,12 @@ export function CacheHitRateTrendChart() {
       value: point.value,
     }));
   }, [data]);
+
+  const yMin = React.useMemo(() => {
+    if (chartData.length === 0) return 0;
+    const minRate = Math.min(...chartData.map((s) => s.value));
+    return Math.max(0, Math.floor(minRate / 10) * 10 - 10);
+  }, [chartData]);
 
   if (error) {
     return (
@@ -64,44 +65,36 @@ export function CacheHitRateTrendChart() {
   }
 
   return (
-    <div role="img" aria-label="Cache hit rate trend area chart">
+    <div role="figure" aria-label="Cache hit rate trend area chart">
       <Card className="pt-0">
         <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
           <div className="grid flex-1 gap-1">
             <CardTitle>Cache Hit Rate</CardTitle>
             <CardDescription>
-              Current:{" "}
-              <span className="text-foreground font-semibold tabular-nums">
-                {data?.current_rate ?? 0}%
-              </span>
-              {" · "}Avg:{" "}
-              <span className="tabular-nums">{data?.average_rate ?? 0}%</span>
+              {isPending ? (
+                <Skeleton className="h-4 w-32" />
+              ) : (
+                <>
+                  Current:{" "}
+                  <span className="text-foreground font-semibold tabular-nums">
+                    {data?.current_rate ?? 0}%
+                  </span>
+                  {" · "}Avg:{" "}
+                  <span className="tabular-nums">{data?.average_rate ?? 0}%</span>
+                </>
+              )}
             </CardDescription>
           </div>
 
-          <Select
-            value={period}
-            onValueChange={(v) => setPeriod(v as PeriodOption)}
-            aria-label="Select time period"
-          >
-            <SelectTrigger
-              className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-              aria-label="Select a value"
-            >
-              <SelectValue placeholder="Last 30 days" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="90d" className="rounded-lg">Last 3 months</SelectItem>
-              <SelectItem value="30d" className="rounded-lg">Last 30 days</SelectItem>
-              <SelectItem value="7d" className="rounded-lg">Last 7 days</SelectItem>
-            </SelectContent>
-          </Select>
+          <ChartPeriodSelector value={period} onValueChange={setPeriod} />
         </CardHeader>
 
         <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
           <div className="min-h-[200px]">
             {isPending ? (
-              <Skeleton className="h-[300px] w-full" />
+              <Skeleton className="h-[250px] w-full md:h-[300px]" />
+            ) : chartData.length === 0 ? (
+              <ChartEmptyState message="No cache hit rate data available" />
             ) : (
               <ChartContainer
                 config={chartConfig}
@@ -109,7 +102,7 @@ export function CacheHitRateTrendChart() {
               >
                 <AreaChart accessibilityLayer data={chartData}>
                   <defs>
-                    <linearGradient id="cacheHitGradient" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="var(--color-value)" stopOpacity={0.25} />
                       <stop offset="95%" stopColor="var(--color-value)" stopOpacity={0.02} />
                     </linearGradient>
@@ -127,7 +120,7 @@ export function CacheHitRateTrendChart() {
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
-                    domain={[70, 100]}
+                    domain={[yMin, 100]}
                     tickFormatter={(v) => `${v}%`}
                   />
                   <ChartTooltip
@@ -151,7 +144,7 @@ export function CacheHitRateTrendChart() {
                     dataKey="value"
                     stroke="var(--color-value)"
                     strokeWidth={2}
-                    fill="url(#cacheHitGradient)"
+                    fill={`url(#${gradientId})`}
                     dot={false}
                     activeDot={{ r: 4 }}
                   />

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useVerificationDistribution } from "@/lib/hooks";
+import { ChartEmptyState } from "./chart-empty-state";
 
 const chartConfig = {
   verified: {
@@ -65,17 +66,31 @@ export function VerificationDistributionChart() {
     );
   }
 
+  const total = data?.total ?? 0;
+  const successRate = total > 0 ? Math.round(((data?.verified ?? 0) / total) * 1000) / 10 : 0;
+
+  if (total === 0) {
+    return (
+      <Card className="flex flex-col">
+        <CardHeader className="pb-2">
+          <CardTitle>Verification Distribution</CardTitle>
+          <CardDescription>All time</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1">
+          <ChartEmptyState message="No verification data available" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   const chartData = [
     { name: "verified", value: data?.verified ?? 0, fill: "var(--color-verified)" },
     { name: "restricted", value: data?.restricted ?? 0, fill: "var(--color-restricted)" },
     { name: "error", value: data?.error ?? 0, fill: "var(--color-error)" },
   ];
 
-  const total = data?.total ?? 0;
-  const successRate = total > 0 ? Math.round(((data?.verified ?? 0) / total) * 1000) / 10 : 0;
-
   return (
-    <div role="img" aria-label="Verification distribution donut chart">
+    <div role="figure" aria-label="Verification distribution donut chart">
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle>Verification Distribution</CardTitle>
@@ -84,7 +99,7 @@ export function VerificationDistributionChart() {
       <CardContent className="flex-1 min-h-[200px] pb-0">
         <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
           <PieChart accessibilityLayer>
-            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Pie
               data={chartData}
               dataKey="value"

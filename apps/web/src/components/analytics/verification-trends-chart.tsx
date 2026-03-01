@@ -17,14 +17,9 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChartEmptyState, ChartPeriodSelector } from "@/components/charts";
+import type { PeriodValue } from "@/components/charts/chart-period-selector";
 import { useVerificationTrends } from "@/lib/hooks";
 import type { TrendsParams } from "@/lib/services/types";
 import { formatDate } from "@/lib/format";
@@ -43,16 +38,8 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-type PeriodOption = "7d" | "30d" | "90d";
-
-const PERIOD_LABELS: Record<PeriodOption, string> = {
-  "7d": "Last 7 days",
-  "30d": "Last 30 days",
-  "90d": "Last 3 months",
-};
-
 export function VerificationTrendsChart() {
-  const [period, setPeriod] = React.useState<PeriodOption>("30d");
+  const [period, setPeriod] = React.useState<PeriodValue>("30d");
   const params: TrendsParams = { period };
   const { data, isPending, error } = useVerificationTrends(params);
 
@@ -79,34 +66,30 @@ export function VerificationTrendsChart() {
   }
 
   return (
-    <div role="img" aria-label="Verification trends area chart">
+    <div role="figure" aria-label="Verification trends area chart">
     <Card className="pt-0">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
           <CardTitle>Verification Trends</CardTitle>
           <CardDescription>
-            {data?.summary.total_verifications.toLocaleString() ?? 0} total verifications (
-            {Math.round((data?.summary.success_rate ?? 0) * 10) / 10}% success)
+            {isPending ? (
+              <Skeleton className="h-4 w-48" />
+            ) : (
+              <>
+                {data?.summary.total_verifications.toLocaleString() ?? 0} total verifications (
+                {Math.round((data?.summary.success_rate ?? 0) * 10) / 10}% success)
+              </>
+            )}
           </CardDescription>
         </div>
-        <Select value={period} onValueChange={(v) => setPeriod(v as PeriodOption)} aria-label="Select time period">
-          <SelectTrigger
-            className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-            aria-label="Select a value"
-          >
-            <SelectValue placeholder={PERIOD_LABELS[period]} />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="90d" className="rounded-lg">Last 3 months</SelectItem>
-            <SelectItem value="30d" className="rounded-lg">Last 30 days</SelectItem>
-            <SelectItem value="7d" className="rounded-lg">Last 7 days</SelectItem>
-          </SelectContent>
-        </Select>
+        <ChartPeriodSelector value={period} onValueChange={setPeriod} />
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <div className="min-h-[200px]">
         {isPending ? (
           <Skeleton className="h-[250px] w-full" />
+        ) : chartData.length === 0 ? (
+          <ChartEmptyState message="No verification data for this period" />
         ) : (
           <ChartContainer
             config={chartConfig}
@@ -134,7 +117,7 @@ export function VerificationTrendsChart() {
                   return formatDate(value as string);
                 }}
               />
-              <YAxis domain={[0, "auto"]} hide />
+              <YAxis domain={[0, "auto"]} tickLine={false} axisLine={false} tickMargin={8} />
               <ChartTooltip
                 cursor={false}
                 content={

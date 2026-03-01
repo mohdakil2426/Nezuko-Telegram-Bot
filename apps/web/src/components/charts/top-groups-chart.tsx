@@ -4,7 +4,7 @@
  * Top Groups Bar Chart
  * Shows top performing groups by verification count.
  * Colors follow the shadcn/ui chart pattern: define per-key colors in
- * chartConfig → inject `fill: "var(--color-KEY)"` into chart data →
+ * chartConfig -> inject `fill: "var(--color-KEY)"` into chart data ->
  * use `fill="var(--color-<dataKey>)"` or dataKey="fill" on <Bar>.
  */
 
@@ -12,12 +12,13 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  ChartConfig,
+  type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChartEmptyState } from "@/components/charts/chart-empty-state";
 import { useTopGroups } from "@/lib/hooks";
 
 // Color slots taken directly from the chart CSS variables — no hsl() wrapping
@@ -59,8 +60,24 @@ export function TopGroupsChart() {
     );
   }
 
+  if (!data?.length) {
+    return (
+      <div role="figure" aria-label="Top groups by verification activity bar chart">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>Top Groups by Activity</CardTitle>
+            <CardDescription>All time verification activity</CardDescription>
+          </CardHeader>
+          <CardContent className="min-h-[200px]">
+            <ChartEmptyState message="No group data available" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Truncate long titles for display
-  const chartData = (data ?? []).map((group, index) => ({
+  const chartData = data.map((group, index) => ({
     ...group,
     displayTitle: group.title.length > 20 ? `${group.title.substring(0, 18)}...` : group.title,
     // shadcn pattern: embed the fill value in the data row so <Bar dataKey="fill"> picks it up
@@ -79,59 +96,58 @@ export function TopGroupsChart() {
   const totalVerifications = chartData.reduce((sum, g) => sum + g.verifications, 0);
 
   return (
-    <div role="img" aria-label="Top groups by verification activity bar chart">
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle>Top Groups by Activity</CardTitle>
-        <CardDescription>
-          {totalVerifications.toLocaleString()} verifications across top {chartData.length} groups
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="min-h-[200px]">
-        <ChartContainer config={chartConfig} className="aspect-auto h-[280px] w-full md:h-[350px]">
-          <BarChart
-            accessibilityLayer
-            data={chartData}
-            layout="vertical"
-            margin={{ left: 20, right: 20 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
-            <YAxis
-              dataKey="displayTitle"
-              type="category"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              width={120}
-              tick={{ fontSize: 11 }}
-            />
-            <ChartTooltip
-              cursor={false}
-              content={
-                <ChartTooltipContent
-                  formatter={(value, _name, item) => (
-                    <div className="flex flex-col gap-1">
-                      <span className="font-medium">{item.payload.title}</span>
-                      <span>{Number(value).toLocaleString()} verifications</span>
-                      <span className="text-muted-foreground text-xs">
-                        {item.payload.success_rate}% success rate
-                      </span>
-                    </div>
-                  )}
-                />
-              }
-            />
-            {/*
-              shadcn pattern: set fill="fill" so Recharts reads the fill
-              value we embedded per-row in chartData above.
-              Alternative: <Cell> per-row is also a valid shadcn pattern.
-            */}
-            <Bar dataKey="verifications" fill="fill" radius={[0, 4, 4, 0]} />
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+    <div role="figure" aria-label="Top groups by verification activity bar chart">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Top Groups by Activity</CardTitle>
+          <CardDescription>
+            {totalVerifications.toLocaleString()} verifications across top {chartData.length} groups · All time
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="min-h-[200px]">
+          <ChartContainer config={chartConfig} className="aspect-auto h-[280px] w-full md:h-[350px]">
+            <BarChart
+              accessibilityLayer
+              data={chartData}
+              layout="vertical"
+              margin={{ left: 20, right: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
+              <YAxis
+                dataKey="displayTitle"
+                type="category"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                width={120}
+                tick={{ fontSize: 11 }}
+              />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    formatter={(value, _name, item) => (
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium">{item.payload.title}</span>
+                        <span>{Number(value).toLocaleString()} verifications</span>
+                        <span className="text-muted-foreground text-xs">
+                          {item.payload.success_rate}% success rate
+                        </span>
+                      </div>
+                    )}
+                  />
+                }
+              />
+              {/*
+                shadcn pattern: set fill="fill" so Recharts reads the fill
+                value we embedded per-row in chartData above.
+              */}
+              <Bar dataKey="verifications" fill="fill" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 }

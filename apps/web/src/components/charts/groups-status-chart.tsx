@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGroupsStatusDistribution } from "@/lib/hooks";
+import { ChartEmptyState } from "./chart-empty-state";
 
 const chartConfig = {
   active: {
@@ -60,22 +61,38 @@ export function GroupsStatusChart() {
     );
   }
 
+  const total = data?.total ?? 0;
+
+  if (total === 0) {
+    return (
+      <Card className="flex flex-col">
+        <CardHeader className="pb-2">
+          <CardTitle>Groups Status</CardTitle>
+          <CardDescription>All time</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1">
+          <ChartEmptyState message="No groups data available" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   const chartData = [
     { name: "active", value: data?.active ?? 0, fill: "var(--color-active)" },
     { name: "inactive", value: data?.inactive ?? 0, fill: "var(--color-inactive)" },
   ];
 
   return (
-    <div role="img" aria-label="Groups status distribution donut chart">
+    <div role="figure" aria-label="Groups status distribution donut chart">
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle>Groups Status</CardTitle>
-        <CardDescription>{data?.total ?? 0} total groups</CardDescription>
+        <CardDescription>{total} total groups</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 min-h-[200px] pb-0">
         <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
           <PieChart accessibilityLayer>
-            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Pie
               data={chartData}
               dataKey="value"
