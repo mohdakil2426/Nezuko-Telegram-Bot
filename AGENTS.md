@@ -14,13 +14,14 @@
 ```
 Web Dashboard (Next.js 16) ──► @insforge/sdk ──► InsForge BaaS (PostgreSQL + Realtime WS)
                                                     ▲          ▲
-Bot Engine (Python 3.13) ──────► httpx REST ────────┘          │ WebSocket pushes
+Bot Engine (Python 3.13) ──────► httpx REST ────────┘          │ Socket.IO pushes
+  └─ realtime_client.py (Socket.IO) ───────────────────────────┘
   └─ insforge_client.py                              DB triggers fire on:
   └─ status_writer.py (30s heartbeat)                • verification_log INSERT → "verification"
-  └─ command_worker.py (10s poll)                    • bot_status CHANGE → "status_changed"
+  └─ command_worker.py (WS-driven, 30s fallback)     • bot_status CHANGE → "status_changed"
   └─ member_sync.py (15min JobQueue)                 • admin_logs INSERT → "new_log"
   └─ verification_logger.py (fire-and-forget)        • admin_commands CHANGE → "command_updated"
-  └─ api_call_logger.py (fire-and-forget)
+  └─ api_call_logger.py (fire-and-forget)            • bot_instances CHANGE → "bot_instance_changed"
 ```
 
 - **No custom API server** — both bot and web talk directly to InsForge REST / SDK.
@@ -114,7 +115,7 @@ nezuko/
 
 | Layer | Stack |
 |---|---|
-| **Bot** | Python 3.13, python-telegram-bot v22.6 (with JobQueue, rate-limiter, http2), httpx <0.29, Redis 7.1+, cryptography 45+ |
+| **Bot** | Python 3.13, python-telegram-bot v22.6 (with JobQueue, rate-limiter, http2), httpx <0.29, Redis 7.1+, cryptography 45+, python-socketio 5.16+ |
 | **Frontend** | Next.js 16.1, React 19.2, TypeScript 5.9, Tailwind v4, shadcn/ui, Recharts 2.15, Motion 12.27+, TanStack Query 5.90+ |
 | **BaaS** | InsForge — managed PostgreSQL, Realtime WebSocket, Storage (2 buckets), Edge Functions |
 | **Auth** | InsForge Auth (email/password + Google/GitHub OAuth), `InsforgeMiddleware` route guard, `insforge_session` cookie, RLS |
@@ -496,4 +497,4 @@ Skills are located in `.agent/skills/` or `.agents/skills/` — check the path c
 
 ---
 
-_Last Updated: 2026-02-05_
+_Last Updated: 2026-03-02 (Phase 88 — Socket.IO Protocol Fix + Chart Hooks Realtime Migration)_
