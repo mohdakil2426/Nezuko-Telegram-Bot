@@ -12,6 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SocketMessage } from "@insforge/sdk";
 import { insforge } from "@/lib/insforge";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { DEV_LOGIN } from "@/lib/api/config";
 import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
 
 /**
@@ -224,11 +225,13 @@ export function useInsForgeRealtime(
 
     // Listen for event types that match actual DB trigger event names.
     // Triggers publish: verification, status_changed, command_updated, new_log
+    // Phase 87: bot_instance_changed added for bot lifecycle events
     const eventTypes = [
       "verification",
       "status_changed",
       "command_updated",
       "new_log",
+      "bot_instance_changed",
       "error",
       "warning",
     ];
@@ -249,12 +252,14 @@ export function useInsForgeRealtime(
     };
   }, [handleMessage]);
 
-  // Auto-connect when authenticated
+  // Auto-connect when authenticated (or in dev mode)
   useEffect(() => {
     if (!autoConnect) return;
 
-    // If not signed in, pause realtime and skip auto-connect
-    if (!isSignedIn) {
+    // In dev mode (DEV_LOGIN=true), isSignedIn is always false because there's
+    // no real InsForge session. Allow realtime connections regardless.
+    // In production, require authentication before connecting.
+    if (!isSignedIn && !DEV_LOGIN) {
       isManuallyDisconnected.current = true;
       return;
     }
@@ -287,18 +292,16 @@ export function useInsForgeRealtime(
 
 /**
  * Hook for dashboard realtime updates.
- * Subscribes to dashboard, verifications channels.
+ * Subscribes to dashboard, bot_status, bot_instances channels.
  */
 export function useDashboardRealtime() {
   const queryClient = useQueryClient();
   const realtime = useInsForgeRealtime({
-    channels: ["dashboard", "bot_status"],
-    filterTypes: ["verification", "status_changed"],
+    channels: ["dashboard", "bot_status", "bot_instances"],
+    filterTypes: ["verification", "status_changed", "bot_instance_changed"],
   });
 
   // Invalidate dashboard queries when a real event arrives.
-  // Use lastEvent (a reference that only changes on new events) NOT events.length
-  // to prevent re-running this effect on every polling tick in dev/mock mode.
   useEffect(() => {
     if (realtime.lastEvent && realtime.isConnected) {
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats() });
@@ -306,6 +309,10 @@ export function useDashboardRealtime() {
       queryClient.invalidateQueries({ queryKey: queryKeys.analytics.overview() });
       queryClient.invalidateQueries({ queryKey: queryKeys.analytics.verificationTrends() });
       queryClient.invalidateQueries({ queryKey: queryKeys.analytics.userGrowth() });
+      // Bot instance changes: invalidate bots list too
+      if (realtime.lastEvent.type === "bot_instance_changed") {
+        queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
+      }
     }
   }, [realtime.lastEvent, realtime.isConnected, queryClient]);
 
@@ -337,8 +344,8 @@ export function useCommandsRealtime() {
 // Realtime Chart Hooks (replacing use-realtime-chart.ts)
 // =============================================================================
 
-// Disconnected fallback uses the FAST interval from shared constants
-const DISCONNECTED_REFETCH_INTERVAL = REFETCH_INTERVALS.FAST;
+// Disconnected fallback — use STANDARD (30s) for reasonable polling when WS is unavailable
+const DISCONNECTED_REFETCH_INTERVAL = REFETCH_INTERVALS.STANDARD;
 
 interface UseRealtimeChartOptions<T> {
   /** Query key for cache management */
@@ -429,7 +436,7 @@ export function useRealtimeActivityChart<T>(
     queryFn,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
-    refetchInterval: REFETCH_INTERVALS.STANDARD,
+    refetchInterval: REFETCH_INTERVALS.FALLBACK,
   });
 }
 
@@ -446,7 +453,7 @@ export function useRealtimeBotHealthChart<T>(
     queryFn,
     channels: ["bot_status", "dashboard"],
     invalidateOnEvents: ["status_changed"],
-    refetchInterval: REFETCH_INTERVALS.STANDARD,
+    refetchInterval: REFETCH_INTERVALS.FALLBACK,
   });
 }
 
@@ -478,6 +485,18 @@ export function useRealtimeAnalytics() {
  */
 export function useRealtimeLogs() {
   return useLogsRealtime();
+}
+
+/**
+ * Hook for subscribing to bot instance lifecycle events.
+ * Subscribes to the bot_instances channel (Phase 87).
+ * Used by the Bots page to react instantly to add/activate/deactivate/delete.
+ */
+export function useBotsRealtime() {
+  return useInsForgeRealtime({
+    channels: ["bot_instances"],
+    filterTypes: ["bot_instance_changed"],
+  });
 }
 
 /**

@@ -1,26 +1,32 @@
 /**
- * Groups React Query Hooks
+ * Groups React Query Hooks — Phase 87 Realtime Upgrade
  */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+"use client";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
 import * as groupsService from "@/lib/services/groups.service";
 import type { GroupsParams, GroupUpdateRequest } from "@/lib/services/types";
+import { useRealtimeChart } from "@/lib/hooks/use-realtime-insforge";
 
 /**
- * Hook to fetch paginated groups list
+ * Hook to fetch paginated groups list.
+ * Invalidates on verification events — member counts update when users verify.
  */
 export function useGroups(params?: GroupsParams) {
-  return useQuery({
+  return useRealtimeChart({
     queryKey: queryKeys.groups.list(params as Record<string, unknown>),
     queryFn: () => groupsService.getGroups(params),
     staleTime: STALE_TIMES.SHORT,
-    refetchInterval: REFETCH_INTERVALS.STANDARD,
+    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    channels: ["dashboard"],
+    invalidateOnEvents: ["verification"],
   });
 }
 
 /**
- * Hook to update a group
+ * Hook to update a group.
  */
 export function useUpdateGroup() {
   const queryClient = useQueryClient();
@@ -29,7 +35,6 @@ export function useUpdateGroup() {
     mutationFn: ({ id, data }: { id: number; data: GroupUpdateRequest }) =>
       groupsService.updateGroup(id, data),
     onSuccess: (_, { id }) => {
-      // Invalidate both the list and detail queries
       queryClient.invalidateQueries({ queryKey: queryKeys.groups.lists() });
       queryClient.invalidateQueries({ queryKey: queryKeys.groups.detail(id) });
     },
@@ -37,7 +42,7 @@ export function useUpdateGroup() {
 }
 
 /**
- * Hook to delete a group
+ * Hook to delete a group.
  */
 export function useDeleteGroup() {
   const queryClient = useQueryClient();
@@ -45,14 +50,13 @@ export function useDeleteGroup() {
   return useMutation({
     mutationFn: (id: number) => groupsService.deleteGroup(id),
     onSuccess: () => {
-      // Invalidate the list query
       queryClient.invalidateQueries({ queryKey: queryKeys.groups.lists() });
     },
   });
 }
 
 /**
- * Hook to toggle group protection
+ * Hook to toggle group protection.
  */
 export function useToggleGroupProtection() {
   const queryClient = useQueryClient();

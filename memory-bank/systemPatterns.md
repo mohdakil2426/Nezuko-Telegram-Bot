@@ -1,6 +1,6 @@
 # System Patterns: Architecture & Implementation
 
-> **Last Updated**: 2026-03-01 (Phase 86 — Critical Bug Fix: Auth Loop, Bot CRUD, Unified Sync)
+> **Last Updated**: 2026-03-02 (Phase 88 — Socket.IO Protocol Fix)
 
 ## Architecture Overview
 
@@ -131,6 +131,47 @@ os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 # ❌ NEVER create separate loops for "empty" vs "running" state
 # ❌ NEVER use `return` after the empty-bots check — kills the sync loop
 ```
+
+### InsForge Realtime Client Pattern (Phase 88 — CANONICAL)
+
+`apps/bot/core/realtime_client.py` — `InsForgeRealtimeClient` is the Python Socket.IO subscriber for InsForge Realtime. Uses `python-socketio[asyncio_client]` (v5.16+).
+
+```python
+# ✅ Standard usage (in BotManager.run() and CommandWorker.start()):
+from apps.bot.core.realtime_client import InsForgeRealtimeClient
+from apps.bot.utils.tasks import fire_and_forget
+
+realtime = InsForgeRealtimeClient()
+realtime.on("bot_instance_changed", my_async_handler)  # register event handler
+
+ws_ok = await realtime.connect_and_subscribe("bot_instances", "commands")
+if ws_ok:
+    fire_and_forget(realtime.listen())              # keep-alive loop (background)
+
+# On shutdown:
+await realtime.disconnect()
+
+# ✅ In dev mode (no cloud WS):
+# connect_and_subscribe() returns False — caller's polling loop takes over
+# No crash, no hang — fail-safe by design (except Exception catch-all)
+
+# ✅ Event handler signature:
+async def my_handler(payload: dict[str, Any]) -> None:
+    # payload is the event data from Socket.IO (dict or wrapped in {"data": ...})
+    ...
+
+# ❌ NEVER pass a plain function (non-async) — fire_and_forget requires Coroutine
+# ❌ NEVER store asyncio tasks without RUF006 pattern — store + discard callback
+```
+
+**Socket.IO connection parameters**:
+- Auth: `auth={'token': anon_key}` on Socket.IO handshake (not HTTP header)
+- Subscribe: `emit('REALTIME_SUBSCRIBE', {'channel': name})` with `call()` for ack
+- Events: Socket.IO native dispatch via `sio.on(event_name)` — no JSON parsing
+- Reconnect: Built-in `reconnection=True` with exponential backoff (2s → 60s)
+- Transport: `transports=['websocket']` (no fallback to HTTP long-polling)
+- Error handling: `except Exception` catch-all — WS failure must never crash the bot
+
 
 ### Edge Function Bot CRUD Pattern (Phase 86)
 
@@ -616,7 +657,7 @@ are **denormalized counters** maintained by bot code (`insforge_client.py`).
 - `_update_channel_link_count(channel_id)` updates one channel after unlinking
 - `unlink_all_channels(group_id)` resets group counter to 0 and recalculates each channel
 
-### Realtime Triggers (Phase 65)
+### Realtime Triggers (Phase 65 + Phase 87)
 
 | Trigger Name | Table | Channel | Event | Web Hook |
 |---|---|---|---|---|
@@ -624,6 +665,7 @@ are **denormalized counters** maintained by bot code (`insforge_client.py`).
 | `bot_status_realtime` | `bot_status` | `bot_status` | `status_changed` | `useDashboardRealtime` |
 | `admin_logs_realtime` | `admin_logs` | `logs` | `new_log` | `useLogsRealtime` |
 | `admin_commands_realtime` | `admin_commands` | `commands` | `command_updated` | `useCommandsRealtime` |
+| `bot_instances_realtime` | `bot_instances` | `bot_instances` | `bot_instance_changed` | `useBotsRealtime`, `BotManager` |
 
 Triggers use `realtime.publish(channel, event, jsonb_payload)` inside `AFTER INSERT OR UPDATE` trigger functions.
 

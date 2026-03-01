@@ -79,10 +79,10 @@ nezuko/
 
 - 11 database tables with proper indexes
 - 14 PostgreSQL RPC functions for analytics/charts
-- 4 realtime triggers (verification, bot_status, commands, logs)
+- 5 realtime triggers (verification, bot_status, commands, logs, bot_instances)
 - 2 storage buckets (bot-exports private, bot-assets public)
 - Edge Functions for bot token management (AES-256-GCM) and webhook testing
-- 11 SQL migrations (001-011)
+- 20 SQL migrations (001-020)
 
 ---
 

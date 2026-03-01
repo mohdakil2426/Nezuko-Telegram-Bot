@@ -15,6 +15,7 @@
 | Redis (aioredis) | 7.1+ | Caching layer (membership + admin status; graceful degradation) |
 | **uv** | Latest | Dependency management & environment virtualization |
 | cryptography | 45+ | AES-256-GCM encryption (`core/encryption.py`) |
+| python-socketio | 5.16+ [asyncio_client] | InsForge Realtime Socket.IO client (`core/realtime_client.py`) — event-driven bot sync |
 | orjson | Latest | Fast JSON serialization |
 | tenacity | Latest | Retry logic for transient failures |
 
@@ -144,11 +145,11 @@ bun run format        # Prettier + Tailwind Sort
 - **Auth header**: `Authorization: Bearer <INSFORGE_ANON_KEY>`
 - **Tables**: 11 (created via `insforge/migrations/009_clean_schema.sql` + `010_add_linked_channels_count.sql`)
 - **RPC Functions**: 14 (analytics + charts — see systemPatterns.md for full list)
-- **Realtime Channels**: 4 (`dashboard`, `bot_status`, `logs`, `commands`)
-- **Realtime Triggers**: 4 (fire on INSERT/UPDATE — push to channels via `realtime.publish()`)
+- **Realtime Channels**: 5 (`dashboard`, `bot_status`, `logs`, `commands`, `bot_instances`)
+- **Realtime Triggers**: 5 (fire on INSERT/UPDATE — push to channels via `realtime.publish()`)
 - **Edge Functions**: 2 (`manage-bot`, `test-webhook/index.js`) — legacy `test-webhook.js` deleted in Phase 77 (SSRF-vulnerable)
 - **Storage Buckets**: 2 (`bot-assets` public, `bot-exports` private)
-- **SQL Migrations**: 10 files (`001` through `010`)
+- **SQL Migrations**: 20 files (`001` through `020`)
 - **⚠️ No direct PG connection**: InsForge does not expose raw PostgreSQL passwords
 
 ### InsForge Tables Written by Bot (all via REST)
@@ -209,4 +210,4 @@ bun run format        # Prettier + Tailwind Sort
 
 ---
 
-_Last Updated: 2026-03-01 (Phase 82 — Web UI Charts Comprehensive Audit & Fix)_
+_Last Updated: 2026-03-02 (Phase 88 — Socket.IO Protocol Fix + Chart Hooks Realtime)_

@@ -1,49 +1,61 @@
 /**
- * Dashboard React Query Hooks
+ * Dashboard React Query Hooks — Phase 87 Realtime Upgrade
  *
- * All hooks include refetchInterval for real-time updates.
- * TanStack Query v5 patterns — using isPending.
+ * All hooks are now event-driven via InsForge WebSocket.
+ * Polling (FALLBACK = 5min) only fires when WebSocket is disconnected.
  */
 
-import { useQuery } from "@tanstack/react-query";
+"use client";
+
+import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
 import * as dashboardService from "@/lib/services/dashboard.service";
+import { useRealtimeChart } from "@/lib/hooks/use-realtime-insforge";
 
 /**
- * Hook to fetch dashboard statistics
- * Refreshes every 30 seconds for near real-time updates
+ * Hook to fetch dashboard statistics.
+ * Invalidates instantly on any verification or bot status_changed event.
  */
 export function useDashboardStats() {
-  return useQuery({
+  return useRealtimeChart({
     queryKey: queryKeys.dashboard.stats(),
     queryFn: dashboardService.getDashboardStats,
     staleTime: STALE_TIMES.STANDARD,
-    refetchInterval: REFETCH_INTERVALS.STANDARD,
+    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    channels: ["dashboard", "bot_status"],
+    invalidateOnEvents: ["verification", "status_changed"],
   });
 }
 
 /**
- * Hook to fetch chart data
- * Refreshes every 60 seconds
+ * Hook to fetch chart / trend data.
+ * Historical chart data — slow FALLBACK polling only (no live events for this).
  */
 export function useChartData(days = 30) {
-  return useQuery({
+  const queryClient = useQueryClient();
+  // Chart data is aggregate — only invalidate manually or on slow fallback
+  void queryClient; // used by consumers via queryClient.invalidateQueries if needed
+  return useRealtimeChart({
     queryKey: queryKeys.dashboard.chart(days),
     queryFn: () => dashboardService.getChartData(days),
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.SLOW,
+    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    channels: ["dashboard"],
+    invalidateOnEvents: ["verification"],
   });
 }
 
 /**
- * Hook to fetch activity feed
- * Refreshes every 15 seconds for near real-time updates
+ * Hook to fetch activity feed.
+ * Invalidates instantly on every new verification event.
  */
 export function useActivity(limit = 10) {
-  return useQuery({
+  return useRealtimeChart({
     queryKey: queryKeys.dashboard.activity(limit),
     queryFn: () => dashboardService.getActivity(limit),
     staleTime: STALE_TIMES.SHORT,
-    refetchInterval: REFETCH_INTERVALS.FAST,
+    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    channels: ["dashboard"],
+    invalidateOnEvents: ["verification"],
   });
 }

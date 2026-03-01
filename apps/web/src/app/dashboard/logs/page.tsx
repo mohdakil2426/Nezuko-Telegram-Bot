@@ -19,7 +19,7 @@ import {
   AlertTriangle,
   XCircle,
   Loader2,
-  WifiOff,
+  Clock,
 } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,12 +109,10 @@ function ConnectionStatus({
   isConnected,
   isReconnecting,
   isPaused,
-  onRetry,
 }: {
   isConnected: boolean;
   isReconnecting: boolean;
   isPaused: boolean;
-  onRetry: () => void;
 }) {
   if (isPaused) {
     return (
@@ -135,7 +133,7 @@ function ConnectionStatus({
         className="gap-1 border-green-200 bg-green-50 text-green-600 dark:bg-green-950/30"
       >
         <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75 motion-reduce:animate-none" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
         </span>
         Live
@@ -150,26 +148,26 @@ function ConnectionStatus({
         className="gap-1 border-yellow-200 bg-yellow-50 text-yellow-600 dark:bg-yellow-950/30"
       >
         <Loader2 className="h-3 w-3 animate-spin" />
-        Reconnecting...
+        Connecting...
       </Badge>
     );
   }
 
+  // WebSocket unavailable — show neutral polling badge, not alarming red error
   return (
-    <Button
+    <Badge
       variant="outline"
-      size="sm"
-      onClick={onRetry}
-      className="h-6 gap-1 border-red-200 bg-red-50 px-2 text-xs text-red-600 hover:bg-red-100 dark:bg-red-950/30"
+      className="text-muted-foreground border-muted gap-1"
+      title="Real-time WebSocket unavailable. Data refreshes automatically every 30s."
     >
-      <WifiOff className="h-3 w-3" />
-      Offline (Retry)
-    </Button>
+      <Clock className="h-3 w-3" />
+      Polling
+    </Badge>
   );
 }
 
 export default function LogsPage() {
-  const { events, isConnected, isReconnecting, connect, clearEvents } = useRealtimeLogs();
+  const { events, isConnected, isReconnecting, clearEvents } = useRealtimeLogs();
   const { data: initialLogs, isPending: isLoadingInitial, refetch } = useLogs(100);
 
   const [isPaused, setIsPaused] = useState(false);
@@ -215,6 +213,8 @@ export default function LogsPage() {
 
   // Merge initial logs with real-time logs
   const [realtimeLogs, setRealtimeLogs] = useState<LogEntry[]>([]);
+  // Track whether user has cleared the view (suppresses initial data until next refresh)
+  const [isCleared, setIsCleared] = useState(false);
 
   // Process incoming SSE events when not paused
   useEffect(() => {
@@ -237,6 +237,8 @@ export default function LogsPage() {
       }
 
       if (newLogs.length > 0) {
+        // New events arrived — auto-reset cleared state
+        setIsCleared(false);
         setRealtimeLogs((prev) => {
           const combined = [...newLogs, ...prev];
           return combined.slice(0, 1000); // Keep max 1000 logs
@@ -245,22 +247,15 @@ export default function LogsPage() {
     });
   }, [events, isPaused, convertEventToLog]);
 
-  // Combined logs: realtime first, then initial
+  // Combined logs: realtime first, then initial (suppressed when cleared)
   const logs = useMemo(() => {
-    return [...realtimeLogs, ...initialLogEntries].slice(0, 1000);
-  }, [realtimeLogs, initialLogEntries]);
+    const initial = isCleared ? [] : initialLogEntries;
+    return [...realtimeLogs, ...initial].slice(0, 1000);
+  }, [realtimeLogs, initialLogEntries, isCleared]);
 
-  // Fallback polling when SSE is disconnected
-  useEffect(() => {
-    if (!isConnected && !isReconnecting) {
-      const interval = setInterval(() => {
-        refetch();
-      }, 30000);
-
-      return () => clearInterval(interval);
-    }
-    return undefined;
-  }, [isConnected, isReconnecting, refetch]);
+  // Note: Fallback polling is handled by `useLogs` hook via `useRealtimeChart`
+  // (STANDARD = 30s when disconnected, FALLBACK = 5min when connected).
+  // No duplicate setInterval needed here.
 
   // Filter logs by level
   const filteredLogs = useMemo(() => {
@@ -270,9 +265,10 @@ export default function LogsPage() {
     return logs.filter((log) => log.level.toLowerCase() === levelFilter);
   }, [logs, levelFilter]);
 
-  // Clear all logs
+  // Clear all logs from the view
   const handleClear = () => {
     setRealtimeLogs([]);
+    setIsCleared(true);
     clearEvents();
     processedEventCountRef.current = 0;
   };
@@ -294,7 +290,6 @@ export default function LogsPage() {
           isConnected={isConnected}
           isReconnecting={isReconnecting}
           isPaused={isPaused}
-          onRetry={connect}
         />
       </div>
 
@@ -343,7 +338,10 @@ export default function LogsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => refetch()}
+              onClick={() => {
+                setIsCleared(false);
+                refetch();
+              }}
               disabled={isLoadingInitial}
               aria-label="Refresh logs"
               className="gap-2"
@@ -387,8 +385,8 @@ export default function LogsPage() {
         <CardContent>
           {/* Offline Warning */}
           {!isConnected && !isReconnecting && (
-            <div className="text-muted-foreground bg-muted/50 mb-4 rounded-md p-2 text-center text-xs">
-              Real-time updates unavailable. Refreshing every 30s.
+            <div className="text-muted-foreground bg-muted/30 border-border/50 mb-4 rounded-md border p-2 text-center text-xs">
+              Live updates paused — auto-refreshing every 30s.
             </div>
           )}
 

@@ -1,13 +1,16 @@
 "use client";
 
 /**
- * Bots Hook
+ * Bots Hook — Phase 87 Realtime Upgrade
  *
  * React Query hooks for bot management operations.
+ * useBots() is now event-driven: invalidates instantly on bot_instance_changed
+ * WebSocket events (add/activate/deactivate/delete). 5min fallback when WS disconnected.
  */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
+import { useRealtimeChart } from "@/lib/hooks/use-realtime-insforge";
 import {
   listBots,
   addBot,
@@ -21,13 +24,17 @@ import {
 
 /**
  * Hook for listing all bots.
+ * Invalidates instantly on bot_instance_changed WebSocket events.
+ * 5min fallback polling when WebSocket is disconnected.
  */
 export function useBots() {
-  return useQuery<BotListResponse>({
+  return useRealtimeChart<BotListResponse>({
     queryKey: queryKeys.bots.list(),
     queryFn: listBots,
     staleTime: STALE_TIMES.STANDARD,
-    refetchInterval: REFETCH_INTERVALS.STANDARD,
+    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    channels: ["bot_instances"],
+    invalidateOnEvents: ["bot_instance_changed"],
   });
 }
 

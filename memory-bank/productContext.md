@@ -67,7 +67,8 @@ The platform uses a clean 2-tier architecture powered by InsForge BaaS. The lega
 ```
 Dashboard → InsForge SDK (direct queries) → InsForge Managed PostgreSQL
 Bot → httpx REST (insforge_client.py) → InsForge REST API → PostgreSQL
-Dashboard ← InsForge Realtime (WebSocket) ← PostgreSQL Triggers
+Dashboard ← InsForge Realtime (Socket.IO) ← PostgreSQL Triggers
+Bot ← python-socketio (realtime_client.py) ← InsForge Realtime (Socket.IO)
 ```
 
 **Key Benefits:**
@@ -89,4 +90,4 @@ Dashboard ← InsForge Realtime (WebSocket) ← PostgreSQL Triggers
 
 ---
 
-_Last Updated: 2026-03-01 (Phase 82 — Web UI Charts Comprehensive Audit & Fix)_
+_Last Updated: 2026-03-02 (Phase 88 — Socket.IO Protocol Fix + Chart Hooks Realtime)_

@@ -9,12 +9,16 @@
 
 /** Polling intervals for refetchInterval */
 export const REFETCH_INTERVALS = {
-  /** 15s — activity feeds, fallback polling when realtime disconnected */
+  /** 15s — activity feeds, legacy fast polling */
   FAST: 15 * 1000,
-  /** 30s — dashboard stats, overviews */
+  /** 30s — dashboard stats, overviews (legacy) */
   STANDARD: 30 * 1000,
-  /** 60s — charts, trends, analytics */
+  /** 60s — charts, trends, analytics (legacy) */
   SLOW: 60 * 1000,
+  /** 5min — safety-net fallback when WebSocket is disconnected.
+   * Used by all event-driven hooks as their disconnected fallback.
+   * Keeps the UI eventually-consistent without hammering the API. */
+  FALLBACK: 5 * 60 * 1000,
 } as const;
 
 /** Stale times for query cache */

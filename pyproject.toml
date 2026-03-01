@@ -20,35 +20,28 @@ classifiers = [
 dependencies = [
     # Core bot framework with all required extras
     "python-telegram-bot[rate-limiter,job-queue,webhooks,callback-data,http2]>=22.6",
-
     # HTTP client — pinned for PTB compatibility (PTB requires httpx>=0.27,<0.29)
     "httpx>=0.28.0,<0.29",
-
     # Config & validation
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
     "python-dotenv>=1.2.1",
-
     # Health check HTTP server (/health, /metrics endpoints for Docker/K8s probes)
     "aiohttp>=3.13.3",
-
     # Security
     "cryptography>=45.0.0",
-
     # Caching
     "redis>=7.1.0",
     "hiredis>=3.1.0",
-
     # Monitoring & observability
     "sentry-sdk>=2.51.0",
     "prometheus-client>=0.24.1",
-
     # Logging
     "structlog>=25.5.0",
-
     # Performance
     "orjson>=3.10.0",
     "tenacity>=9.0.0",
+    "python-socketio[asyncio_client]>=5.14.0",
 ]
 
 [project.urls]

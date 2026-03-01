@@ -21,11 +21,13 @@ from telegram.ext import Application
 from apps.bot.core import insforge_client
 from apps.bot.core.encryption import EncryptionError, decrypt_token, is_encryption_configured
 from apps.bot.core.loader import create_application, register_handlers, setup_bot_commands
+from apps.bot.core.realtime_client import InsForgeRealtimeClient
 from apps.bot.core.uptime import record_bot_start
 from apps.bot.services.command_worker import CommandWorker
 from apps.bot.services.member_sync import schedule_member_sync
 from apps.bot.services.status_writer import StatusWriter
 from apps.bot.utils.health import start_health_server, stop_health_server
+from apps.bot.utils.tasks import fire_and_forget
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +118,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         self._max_restart_count = 3
         self._heartbeat_timeout_seconds = 300  # 5 minutes
         self._restart_cooldown_seconds = 30  # Cooldown between manual restarts
+        self._realtime = InsForgeRealtimeClient()
         self._setup_log_directory()
 
     def _setup_log_directory(self) -> None:
@@ -766,7 +769,28 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         health_task.add_done_callback(_background_tasks.discard)
         self._health_monitor_task = health_task
 
-        # Unified sync loop — handles ALL state changes from the dashboard
+        # Event-driven sync via InsForge Realtime (Socket.IO)
+        async def _on_bot_changed(payload: dict) -> None:
+            """Handle bot_instance_changed event — sync immediately."""
+            operation = payload.get("operation", "unknown")
+            bot_id = payload.get("bot_id", "?")
+            logger.info(
+                "[Realtime] bot_instance_changed (op=%s, bot_id=%s) → syncing now",
+                operation,
+                bot_id,
+            )
+            await self._sync_bots()
+
+        self._realtime.on("bot_instance_changed", _on_bot_changed)
+        ws_ok = await self._realtime.connect_and_subscribe("bot_instances")
+
+        if ws_ok:
+            fire_and_forget(self._realtime.listen())
+            logger.info("[OK] Realtime sync enabled — bot changes arrive in <1s")
+        else:
+            logger.info("[INFO] Realtime unavailable — 30s polling fallback active")
+
+        # 30s polling as safety-net fallback (always runs)
         try:
             while self._running:
                 await asyncio.sleep(30)
@@ -829,6 +853,9 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         """Shutdown all bots gracefully."""
         logger.info("Shutting down all bots...")
         self._running = False
+
+        # Disconnect realtime client
+        await self._realtime.disconnect()
 
         # Cancel health monitor
         if self._health_monitor_task and not self._health_monitor_task.done():
