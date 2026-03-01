@@ -4,6 +4,7 @@ Allows group admins to setup channel verification.
 """
 
 import logging
+import re
 
 from telegram import Update
 from telegram.constants import ChatMemberStatus
@@ -11,12 +12,12 @@ from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
 from apps.bot.core import insforge_client
+from apps.bot.core.constants import AUTO_DELETE_DELAY
 from apps.bot.utils.auto_delete import schedule_delete
 
 logger = logging.getLogger(__name__)
 
-# Auto-delete delay for admin messages (seconds)
-AUTO_DELETE_DELAY = 60
+CHANNEL_USERNAME_PATTERN = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]{4,31}$")
 
 
 # pylint: disable=too-many-locals, too-many-return-statements, too-many-branches, too-many-statements
@@ -65,6 +66,11 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if channel_username.startswith("@"):
         channel_username = channel_username[1:]
 
+    # Validate username format
+    if not CHANNEL_USERNAME_PATTERN.match(channel_username):
+        await update.message.reply_text("Invalid channel username format.")
+        return
+
     # Try to get channel info
     try:
         channel_chat = await context.bot.get_chat(f"@{channel_username}")
@@ -80,8 +86,8 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 link = await context.bot.create_chat_invite_link(channel_id)
                 invite_link = link.invite_link
-            except TelegramError:
-                # Fallback to username-based link
+            except TelegramError as e:
+                logger.debug("Could not create invite link for %s: %s", channel_username, e)
                 invite_link = f"https://t.me/{channel_username}"
 
     except TelegramError as e:
@@ -104,7 +110,7 @@ async def handle_protect(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Please:\n"
                 "1️⃣ Go to the channel\n"
                 "2️⃣ Add me as administrator\n"
-                "3️⃣ Run `/protect @{channel_username}` again",
+                f"3️⃣ Run `/protect @{channel_username}` again",
                 parse_mode="Markdown",
             )
             return

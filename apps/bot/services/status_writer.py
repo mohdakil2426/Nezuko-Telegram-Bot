@@ -7,6 +7,7 @@ via the InsForge REST API (no direct PostgreSQL connection needed).
 from __future__ import annotations
 
 import asyncio
+import datetime
 import logging
 import time
 from typing import Any
@@ -24,16 +25,13 @@ _tasks: set[asyncio.Task[Any]] = set()
 class StatusWriter:
     """Writes bot status heartbeats to InsForge via REST API."""
 
-    def __init__(self, bot_id: int, anon_key: str) -> None:
+    def __init__(self, bot_id: int) -> None:
         """Initialize the status writer.
 
         Args:
             bot_id: Telegram bot ID
-            anon_key: InsForge anonymous key (unused directly — client already
-                      initialised by main.py, kept for API compatibility)
         """
         self._bot_id = bot_id
-        self._anon_key = anon_key
         self._running = False
         self._start_time = time.monotonic()
         self._interval = 30  # seconds
@@ -65,8 +63,8 @@ class StatusWriter:
                 await asyncio.wait_for(self._write_status("online"), timeout=10.0)
                 backoff = 1.0
                 await asyncio.sleep(self._interval)
-            except (TimeoutError, OSError, RuntimeError):
-                logger.exception("Failed to write bot status")
+            except (TimeoutError, OSError, RuntimeError) as e:
+                logger.warning("Failed to write bot status: %s", e)
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, 60.0)
 
@@ -84,8 +82,6 @@ class StatusWriter:
         Args:
             status: Bot status (online, offline)
         """
-        import datetime  # pylint: disable=import-outside-toplevel
-
         uptime = int(time.monotonic() - self._start_time)
         now = datetime.datetime.now(datetime.UTC).isoformat()
 

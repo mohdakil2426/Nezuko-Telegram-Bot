@@ -12,6 +12,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
+import httpx
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
@@ -119,7 +120,7 @@ async def warm_cache_for_group(
                     else:
                         stats["not_verified"] += 1
 
-                except TelegramError as e:
+                except (TelegramError, httpx.HTTPError, OSError, RuntimeError) as e:
                     logger.error("Error verifying user %s in group %s: %s", user_id, group_id, e)
                     stats["errors"] += 1
 
@@ -131,7 +132,7 @@ async def warm_cache_for_group(
                 stats["errors"],
             )
 
-    except TelegramError as e:
+    except (TelegramError, httpx.HTTPError, OSError, RuntimeError) as e:
         logger.error("Fatal error in cache warm-up for group %s: %s", group_id, e)
         stats["errors"] += 1
 
@@ -162,10 +163,9 @@ async def _get_recent_active_users(
 
     Not yet implemented — requires storing last_message_at per user.
     Pass explicit user_ids to warm_cache_for_group() in the meantime.
+
+    TODO: Implement activity tracking by storing last_message_at per user in the database.
     """
-    logger.warning(
-        "Activity tracking not implemented. Pass explicit user_ids to warm_cache_for_group()."
-    )
     return []
 
 
@@ -214,7 +214,7 @@ async def warm_cache_for_all_groups(context: ContextTypes.DEFAULT_TYPE) -> dict:
                 logger.error("Failed to warm group %s: %s", group.group_id, e)
                 agg["failed_groups"] += 1
 
-    except TelegramError as e:
+    except (TelegramError, httpx.HTTPError, OSError, RuntimeError) as e:
         logger.error("Fatal error in all-groups warm-up: %s", e)
 
     finally:

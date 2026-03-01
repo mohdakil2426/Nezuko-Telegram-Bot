@@ -104,10 +104,7 @@ export function LatencyDistributionChart() {
                 <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                 <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                   {data.map((entry, index) => (
-                    <Cell
-                      key={entry.bucket}
-                      fill={LATENCY_COLORS[index % LATENCY_COLORS.length]}
-                    />
+                    <Cell key={entry.bucket} fill={LATENCY_COLORS[index % LATENCY_COLORS.length]} />
                   ))}
                 </Bar>
                 <ChartLegend

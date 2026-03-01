@@ -121,6 +121,6 @@ async def handle_callback_verify(update: Update, context: ContextTypes.DEFAULT_T
                     "An error occurred. Please try again or contact admin.", show_alert=True
                 )
         except TelegramError:
-            pass
+            logger.debug("Failed to answer callback query after error")
     except (RuntimeError, ValueError, OSError) as e:
         logger.error("Unexpected error in verify callback handler: %s", e, exc_info=True)

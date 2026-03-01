@@ -3,7 +3,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
 import * as logsService from "@/lib/services/logs.service";
 
 /**
@@ -13,6 +13,7 @@ export function useLogs(limit = 100, level?: string) {
   return useQuery({
     queryKey: queryKeys.logs.list(limit, level),
     queryFn: () => logsService.getLogs(limit, level),
-    staleTime: 15 * 1000, // 15 seconds
+    staleTime: STALE_TIMES.SHORT,
+    refetchInterval: REFETCH_INTERVALS.FAST,
   });
 }

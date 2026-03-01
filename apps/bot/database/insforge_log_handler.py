@@ -68,7 +68,7 @@ class InsForgeLogHandler(logging.Handler):
             "module": (record.module or "")[:100] or None,
             "function": (record.funcName or "")[:100] or None,
             "line_no": record.lineno,
-            "path": (record.pathname or "")[:255] or None,
+            "path": (record.filename or "")[:255] or None,
         }
 
         # Never let a logging failure crash the bot.

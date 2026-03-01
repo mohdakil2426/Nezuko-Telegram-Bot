@@ -25,12 +25,12 @@ async def record_bot_start() -> None:
 
     Called during bot initialization to track uptime.
     """
-    try:
-        start_time = str(time.time())
-        await cache_set(BOT_START_TIME_KEY, start_time, BOT_START_TIME_TTL)
+    start_time = str(time.time())
+    success = await cache_set(BOT_START_TIME_KEY, start_time, BOT_START_TIME_TTL)
+    if success:
         logger.info("Bot start time recorded: %s", start_time)
-    except (ConnectionError, TimeoutError) as e:
-        logger.warning("Failed to record bot start time: %s", e)
+    else:
+        logger.warning("Failed to record bot start time in cache")
 
 
 async def get_bot_start_time() -> float | None:
@@ -40,14 +40,13 @@ async def get_bot_start_time() -> float | None:
     Returns:
         Unix timestamp of when the bot started, or None if not recorded
     """
-    try:
-        start_str = await cache_get(BOT_START_TIME_KEY)
-        if start_str:
+    start_str = await cache_get(BOT_START_TIME_KEY)
+    if start_str:
+        try:
             return float(start_str)
-        return None
-    except (ConnectionError, TimeoutError, ValueError) as e:
-        logger.warning("Failed to get bot start time: %s", e)
-        return None
+        except ValueError as e:
+            logger.warning("Failed to parse bot start time: %s", e)
+    return None
 
 
 async def get_bot_uptime_seconds() -> float:

@@ -43,7 +43,7 @@ class BotSettings(BaseSettings):
     DATABASE_URL: str | None = None
 
     # InsForge BaaS (REST API — replaces direct PostgreSQL)
-    INSFORGE_BASE_URL: str = "https://u4ckbciy.us-west.insforge.app"
+    INSFORGE_BASE_URL: str = ""
     INSFORGE_ANON_KEY: str | None = None
 
     # Webhook settings
@@ -76,6 +76,14 @@ class BotSettings(BaseSettings):
             return value
         # Default to PostgreSQL (Docker required)
         return "postgresql+asyncpg://nezuko:nezuko123@localhost:5432/nezuko"
+
+    @field_validator("INSFORGE_BASE_URL", mode="after")
+    @classmethod
+    def validate_insforge_url(cls, value: str) -> str:
+        """Validate that INSFORGE_BASE_URL is provided."""
+        if not value:
+            raise ValueError("INSFORGE_BASE_URL environment variable is required")
+        return value
 
     @model_validator(mode="after")
     def validate_webhook_config(self) -> "BotSettings":
@@ -237,7 +245,7 @@ class BotSettings(BaseSettings):
             "WEBHOOK_SECRET",
             "REDIS_URL",
             "SENTRY_DSN",
-            "INSFORGE_DATABASE_URL",
+            "INSFORGE_ANON_KEY",
         }
         for key in sensitive_keys:
             if data.get(key):

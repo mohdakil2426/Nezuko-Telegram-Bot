@@ -25,24 +25,12 @@ import { insforge } from "@/lib/insforge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 const schema = z
   .object({
-    newPassword: z
-      .string()
-      .min(8, "Password must be at least 8 characters"),
+    newPassword: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
@@ -158,9 +146,7 @@ function ResetPasswordForm() {
               >
                 {label}
               </span>
-              {idx < STEPS.length - 1 && (
-                <div className="bg-border h-px w-4" />
-              )}
+              {idx < STEPS.length - 1 && <div className="bg-border h-px w-4" />}
             </div>
           ))}
         </div>
@@ -176,12 +162,7 @@ function ResetPasswordForm() {
         {/* ── Step 1: OTP ─────────────────────────────────────────────── */}
         {step === 1 && (
           <div className="flex flex-col items-center gap-4">
-            <InputOTP
-              maxLength={6}
-              value={otp}
-              onChange={setOtp}
-              onComplete={handleExchangeCode}
-            >
+            <InputOTP maxLength={6} value={otp} onChange={setOtp} onComplete={handleExchangeCode}>
               <InputOTPGroup>
                 <InputOTPSlot index={0} />
                 <InputOTPSlot index={1} />
@@ -229,17 +210,11 @@ function ResetPasswordForm() {
                   tabIndex={-1}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {errors.newPassword && (
-                <p className="text-destructive text-xs italic">
-                  {errors.newPassword.message}
-                </p>
+                <p className="text-destructive text-xs italic">{errors.newPassword.message}</p>
               )}
             </div>
 
@@ -251,16 +226,12 @@ function ResetPasswordForm() {
                 autoComplete="new-password"
                 placeholder="Repeat password"
                 className={
-                  errors.confirmPassword
-                    ? "border-destructive focus-visible:ring-destructive"
-                    : ""
+                  errors.confirmPassword ? "border-destructive focus-visible:ring-destructive" : ""
                 }
                 {...register("confirmPassword")}
               />
               {errors.confirmPassword && (
-                <p className="text-destructive text-xs italic">
-                  {errors.confirmPassword.message}
-                </p>
+                <p className="text-destructive text-xs italic">{errors.confirmPassword.message}</p>
               )}
             </div>
 

@@ -32,7 +32,7 @@ export default function AnalyticsLoading() {
       </div>
 
       {/* Tab bar skeleton — 3 tabs */}
-      <div className="grid w-full grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+      <div className="bg-muted grid w-full grid-cols-3 gap-1 rounded-lg p-1">
         <Skeleton className="h-8 rounded-md" />
         <Skeleton className="h-8 rounded-md" />
         <Skeleton className="h-8 rounded-md" />

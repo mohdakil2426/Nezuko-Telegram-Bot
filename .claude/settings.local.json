@@ -71,7 +71,11 @@
       "Bash(npx:*)",
       "mcp__shadcn__search_items_in_registries",
       "Skill(shadcn-ui)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(bun x:*)",
+      "Bash(uv run:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)"
     ]
   },
   "enabledMcpjsonServers": [

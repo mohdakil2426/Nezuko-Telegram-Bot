@@ -8,40 +8,43 @@ async function encryptWithAES(plaintext, base64Key) {
   try {
     const binaryKey = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
     const key = await crypto.subtle.importKey(
-      'raw', 
-      binaryKey, 
-      { name: 'AES-GCM' }, 
-      false, 
+      'raw',
+      binaryKey,
+      { name: 'AES-GCM' },
+      false,
       ['encrypt']
     );
-    
+
     // 12-byte IV is standard for AES-GCM
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const ciphertext = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv }, 
-      key, 
+      { name: 'AES-GCM', iv },
+      key,
       new TextEncoder().encode(plaintext)
     );
-    
+
     // Combine IV (12 bytes) + Ciphertext
     const combined = new Uint8Array(iv.length + ciphertext.byteLength);
     combined.set(iv);
     combined.set(new Uint8Array(ciphertext), iv.length);
-    
+
     // Prefix with v2: to identify the new format
     return 'v2:' + btoa(String.fromCharCode(...combined));
   } catch (err) {
-    console.error('[encryptWithAES] Encryption failed:', err);
+    // Fix SEC-16: Sanitize error log — only log message, not full error object
+    console.error('[encryptWithAES] Encryption failed:', err.message);
     throw new Error('Secret vault encryption failed');
   }
 }
 
+// Fix SEC-08: Token format regex — must match BEFORE any Telegram API call
+const TOKEN_REGEX = /^\d{8,15}:[A-Za-z0-9_-]{35,}$/;
+
 export default async function(req) {
-  // CORS: Wildcard is acceptable here because this edge function is invoked via
-  // the InsForge SDK which requires the anon key in the Authorization header.
-  // The anon key acts as the access control mechanism, not CORS origin checks.
+  // Fix SEC-04: Replace wildcard CORS with env-based origin
+  const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || '*';
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
@@ -53,6 +56,15 @@ export default async function(req) {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Fix SEC-20: Validate Content-Type before parsing JSON
+  const contentType = req.headers.get('Content-Type') || '';
+  if (!contentType.includes('application/json')) {
+    return new Response(JSON.stringify({ error: 'Content-Type must be application/json' }), {
+      status: 415,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
@@ -89,8 +101,21 @@ async function handleVerify(body, corsHeaders) {
     });
   }
 
+  // Fix SEC-08: Validate token format before hitting Telegram API
+  if (!TOKEN_REGEX.test(token)) {
+    return new Response(JSON.stringify({ error: 'Invalid token format' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Fix SEC-13: AbortController with 8s timeout on Telegram API fetch
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+    const response = await fetch(`https://api.telegram.org/bot${token}/getMe`, {
+      signal: controller.signal,
+    });
     const data = await response.json();
 
     if (!data.ok) {
@@ -110,10 +135,13 @@ async function handleVerify(body, corsHeaders) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ is_valid: false, error: err.message }), {
+    // Fix EF-01/SEC-07: Replace err.message with generic error to avoid leaking internals
+    return new Response(JSON.stringify({ is_valid: false, error: 'Token verification failed' }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -128,9 +156,26 @@ async function handleAdd(body, corsHeaders) {
     });
   }
 
-  // Step 1: Verify token with Telegram
-  const verifyResponse = await fetch(`https://api.telegram.org/bot${token}/getMe`);
-  const verifyData = await verifyResponse.json();
+  // Fix SEC-08: Validate token format before hitting Telegram API
+  if (!TOKEN_REGEX.test(token)) {
+    return new Response(JSON.stringify({ error: 'Invalid token format' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Step 1: Verify token with Telegram — Fix SEC-13: AbortController with 8s timeout
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  let verifyData;
+  try {
+    const verifyResponse = await fetch(`https://api.telegram.org/bot${token}/getMe`, {
+      signal: controller.signal,
+    });
+    verifyData = await verifyResponse.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!verifyData.ok) {
     return new Response(JSON.stringify({ error: 'Invalid bot token' }), {
@@ -160,6 +205,7 @@ async function handleAdd(body, corsHeaders) {
     anonKey,
   });
 
+  // Fix SEC-22: Remove updated_at — DB trigger handles this automatically
   const upsertPayload = {
     owner_telegram_id: owner_telegram_id,
     bot_id: botInfo.id,
@@ -169,7 +215,6 @@ async function handleAdd(body, corsHeaders) {
     is_active: true,
     is_deleted: false,
     deleted_at: null,
-    updated_at: new Date().toISOString(),
   };
 
   const { data, error } = await client.database
@@ -179,15 +224,17 @@ async function handleAdd(body, corsHeaders) {
     .single();
 
   if (error) {
+    // Fix SEC-12: Log full error server-side, return generic message to client
     console.error('[manage-bot] DB upsert error:', JSON.stringify(error));
-    return new Response(JSON.stringify({ error: error.message || 'Database upsert failed' }), {
+    return new Response(JSON.stringify({ error: 'Database operation failed' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
+  // Fix SQL-10: Return 200 (not 201) — upsert may update an existing row
   return new Response(JSON.stringify(data), {
-    status: 201,
+    status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }

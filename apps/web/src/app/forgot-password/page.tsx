@@ -63,9 +63,7 @@ function ForgotPasswordForm() {
 
       if (data?.success) {
         toast.success("Check your email for the 6-digit reset code.");
-        router.push(
-          `/reset-password?email=${encodeURIComponent(email)}`
-        );
+        router.push(`/reset-password?email=${encodeURIComponent(email)}`);
       }
     } catch {
       toast.error("An unexpected error occurred. Please try again.");

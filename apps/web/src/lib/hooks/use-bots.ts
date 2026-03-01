@@ -7,7 +7,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
 import {
   listBots,
   addBot,
@@ -26,6 +26,8 @@ export function useBots() {
   return useQuery<BotListResponse>({
     queryKey: queryKeys.bots.list(),
     queryFn: listBots,
+    staleTime: STALE_TIMES.STANDARD,
+    refetchInterval: REFETCH_INTERVALS.STANDARD,
   });
 }
 
@@ -43,6 +45,9 @@ export function useAddBot() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
     },
+    onError: (error: Error) => {
+      console.error(`Failed to add bot: ${error.message}`);
+    },
   });
 }
 
@@ -52,6 +57,9 @@ export function useAddBot() {
 export function useVerifyBotToken() {
   return useMutation<BotVerifyResponse, Error, string>({
     mutationFn: (token: string) => verifyBotToken(token),
+    onError: (error: Error) => {
+      console.error(`Failed to verify bot token: ${error.message}`);
+    },
   });
 }
 
@@ -73,6 +81,9 @@ export function useUpdateBot() {
         };
       });
     },
+    onError: (error: Error) => {
+      console.error(`Failed to update bot: ${error.message}`);
+    },
   });
 }
 
@@ -93,6 +104,9 @@ export function useDeleteBot() {
           total: old.total - 1,
         };
       });
+    },
+    onError: (error: Error) => {
+      console.error(`Failed to delete bot: ${error.message}`);
     },
   });
 }

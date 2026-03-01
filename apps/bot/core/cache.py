@@ -8,17 +8,21 @@ to prevent thundering herd problem.
 
 import logging
 import random
+import time
 from collections.abc import Awaitable
 from typing import cast
 
 from redis.asyncio import ConnectionError as RedisConnectionError
 from redis.asyncio import Redis
 
+from apps.bot.core.constants import REDIS_RECONNECT_INTERVAL
+
 logger = logging.getLogger(__name__)
 
 # Global Redis client (initialized on first use)
 _redis_client: Redis | None = None  # pylint: disable=invalid-name
 _redis_available = True  # pylint: disable=invalid-name
+_last_reconnect_attempt: float = 0.0  # pylint: disable=invalid-name
 
 
 async def get_redis_client(redis_url: str | None = None) -> Redis | None:
@@ -73,9 +77,17 @@ async def cache_get(key: str) -> str | None:
     Returns:
         Cached value or None if not found/unavailable
     """
-    global _redis_available
+    global _redis_available, _last_reconnect_attempt
 
-    if not _redis_available or _redis_client is None:
+    if not _redis_available:
+        if time.monotonic() - _last_reconnect_attempt >= REDIS_RECONNECT_INTERVAL:
+            _last_reconnect_attempt = time.monotonic()
+            _redis_available = True  # Allow retry
+            logger.info("Attempting Redis reconnection...")
+        else:
+            return None
+
+    if _redis_client is None:
         return None
 
     try:
@@ -101,9 +113,17 @@ async def cache_set(key: str, value: str, ttl: int) -> bool:
     Returns:
         True if successful, False otherwise
     """
-    global _redis_available
+    global _redis_available, _last_reconnect_attempt
 
-    if not _redis_available or _redis_client is None:
+    if not _redis_available:
+        if time.monotonic() - _last_reconnect_attempt >= REDIS_RECONNECT_INTERVAL:
+            _last_reconnect_attempt = time.monotonic()
+            _redis_available = True  # Allow retry
+            logger.info("Attempting Redis reconnection...")
+        else:
+            return False
+
+    if _redis_client is None:
         return False
 
     try:

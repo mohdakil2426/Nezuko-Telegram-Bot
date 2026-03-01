@@ -8,6 +8,7 @@ All DB operations use the anon key with the Authorization header.
 The same key used by the web dashboard.
 """
 
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -38,6 +39,7 @@ def init_client(base_url: str, anon_key: str) -> None:
             "Content-Type": "application/json",
         },
         timeout=httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=10.0),
+        http2=True,
     )
     logger.info("InsForge REST client initialised: %s", _BASE_URL)
 
@@ -342,25 +344,36 @@ async def create_enforced_channel(
 
 
 async def get_group_channels(group_id: int) -> list[EnforcedChannel]:
-    """Get all channels enforced for a group via group_channel_links join."""
-    # Get links for this group
-    links = await _get("group_channel_links", {"group_id": f"eq.{group_id}"})
+    """Get all enforced channels linked to a group (batched query)."""
+    links = await _get(
+        "group_channel_links", {"group_id": f"eq.{group_id}", "select": "channel_id"}
+    )
     if not links:
         return []
-
-    channels: list[EnforcedChannel] = []
-    for link in links:
-        ch = await get_enforced_channel(link["channel_id"])
-        if ch:
-            channels.append(ch)
-    return channels
+    channel_ids = [str(link["channel_id"]) for link in links]
+    channels_data = await _get(
+        "enforced_channels",
+        {"channel_id": f"in.({','.join(channel_ids)})"},
+    )
+    return [
+        EnforcedChannel(
+            channel_id=ch["channel_id"],
+            title=ch.get("title") or f"Channel {ch['channel_id']}",
+            username=ch.get("username"),
+            invite_link=ch.get("invite_link"),
+        )
+        for ch in channels_data
+    ]
 
 
 async def _update_link_counts(group_id: int, channel_id: int) -> None:
     """Recalculate linked_channels_count and linked_groups_count from actual links."""
-    now = datetime.now(UTC).isoformat()
+    await asyncio.gather(_update_group_link_count(group_id), _update_channel_link_count(channel_id))
 
-    # Count channels linked to this group
+
+async def _update_group_link_count(group_id: int) -> None:
+    """Recalculate linked_channels_count for a single group."""
+    now = datetime.now(UTC).isoformat()
     group_links = await _get("group_channel_links", {"group_id": f"eq.{group_id}"})
     await _patch(
         "protected_groups",
@@ -368,9 +381,6 @@ async def _update_link_counts(group_id: int, channel_id: int) -> None:
         {"linked_channels_count": len(group_links), "updated_at": now},
         prefer="return=minimal",
     )
-
-    # Count groups linked to this channel
-    await _update_channel_link_count(channel_id)
 
 
 async def _update_channel_link_count(channel_id: int) -> None:
@@ -411,33 +421,36 @@ async def link_group_channel(
 
 
 async def unlink_all_channels(group_id: int) -> None:
-    """Remove all channel links for a group and update link counters."""
-    # Get current links before deleting so we can decrement channel counters
+    """Remove all channel links for a group and update counters."""
     links = await _get("group_channel_links", {"group_id": f"eq.{group_id}"})
     await _delete("group_channel_links", {"group_id": f"eq.{group_id}"})
-
-    # Reset group's linked_channels_count to 0
-    now = datetime.now(UTC).isoformat()
-    await _patch(
-        "protected_groups",
-        {"group_id": f"eq.{group_id}"},
-        {"linked_channels_count": 0, "updated_at": now},
-        prefer="return=minimal",
-    )
-    # Decrement each channel's linked_groups_count
-    for link in links:
-        await _update_channel_link_count(link["channel_id"])
+    await _update_group_link_count(group_id)
+    if links:
+        await asyncio.gather(*[_update_channel_link_count(link["channel_id"]) for link in links])
 
 
 async def get_groups_for_channel(channel_id: int) -> list[ProtectedGroup]:
-    """Get all enabled groups that require this channel (leave detection)."""
-    links = await _get("group_channel_links", {"channel_id": f"eq.{channel_id}"})
-    groups: list[ProtectedGroup] = []
-    for link in links:
-        g = await get_protected_group(link["group_id"])
-        if g and g.enabled:
-            groups.append(g)
-    return groups
+    """Get all enabled groups that require this channel (batched query)."""
+    links = await _get(
+        "group_channel_links", {"channel_id": f"eq.{channel_id}", "select": "group_id"}
+    )
+    if not links:
+        return []
+    group_ids = [str(link["group_id"]) for link in links]
+    groups_data = await _get(
+        "protected_groups",
+        {"group_id": f"in.({','.join(group_ids)})", "enabled": "eq.true"},
+    )
+    return [
+        ProtectedGroup(
+            group_id=g["group_id"],
+            owner_id=g["owner_id"],
+            title=g.get("title") or f"Group {g['group_id']}",
+            enabled=g.get("enabled", True),
+            member_count=g.get("member_count", 0),
+        )
+        for g in groups_data
+    ]
 
 
 async def get_all_protected_groups() -> list[ProtectedGroup]:
@@ -536,11 +549,13 @@ async def get_secret(key_name: str) -> str | None:
     Used for fetching the master_key for AES-GCM decryption.
     """
     try:
-        # Use existing private _get helper
         rows = await _get("nezuko_secrets", {"key_name": f"eq.{key_name}"})
         if not rows:
             return None
-        return rows[0].get("key_value")
-    except (httpx.HTTPError, OSError, ValueError, KeyError) as e:
+        return rows[0]["value"]
+    except KeyError:
+        logger.error("Unexpected response format for secret '%s'", key_name)
+        return None
+    except (httpx.HTTPError, OSError, ValueError) as e:
         logger.error("Failed to fetch secret '%s' from vault: %s", key_name, e)
         return None

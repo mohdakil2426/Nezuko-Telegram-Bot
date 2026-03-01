@@ -108,12 +108,15 @@ export async function getUserGrowth(params?: TrendsParams): Promise<UserGrowthRe
 /**
  * Get analytics overview via RPC
  */
-export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
+export async function getAnalyticsOverview(period?: string): Promise<AnalyticsOverview> {
   if (USE_MOCK) {
     return mockData.getAnalyticsOverview();
   }
 
-  const { data, error } = await insforge.database.rpc("get_analytics_overview");
+  const { data, error } = await insforge.database.rpc(
+    "get_analytics_overview",
+    period ? { p_period: period } : undefined
+  );
   if (error) throw error;
   return data as AnalyticsOverview;
 }

@@ -3,10 +3,25 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Save, ShieldAlert, Key, RefreshCw, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  Loader2,
+  Save,
+  ShieldAlert,
+  Key,
+  RefreshCw,
+  CheckCircle2,
+  AlertTriangle,
+} from "lucide-react";
 import { toast } from "sonner";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -19,7 +34,7 @@ interface SecurityVaultCardProps {
 
 /**
  * Security Vault Card
- * 
+ *
  * Implements automated encryption management (Secure Vault Phase)
  * - Allows generation of AES-256-GCM master keys
  * - Persists keys to the database vault via Server Actions
@@ -66,7 +81,7 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
       const array = new Uint8Array(32); // 256-bit
       window.crypto.getRandomValues(array);
       const base64Key = toBase64(array);
-      
+
       setValue("master_key", base64Key, { shouldDirty: true });
       setShowKey(true);
       toast.info("New secure encryption key generated!");
@@ -77,10 +92,10 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
 
   const onSubmit = async (data: VaultSecurityInput) => {
     setIsPending(true);
-    
+
     try {
       const result = await saveMasterKey(data.master_key, data.description);
-      
+
       if (result.success) {
         toast.success(result.message);
       } else {
@@ -94,7 +109,7 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
   };
 
   return (
-    <Card className="border-primary/20 shadow-sm overflow-hidden">
+    <Card className="border-primary/20 overflow-hidden shadow-sm">
       <CardHeader className="relative">
         <div className="flex items-center gap-2">
           <div className="bg-primary/10 text-primary rounded-md p-1.5">
@@ -102,33 +117,31 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
           </div>
           <div className="min-w-0 flex-1">
             <CardTitle>Security Vault</CardTitle>
-            <CardDescription>
-              Automated encryption management for bot tokens.
-            </CardDescription>
+            <CardDescription>Automated encryption management for bot tokens.</CardDescription>
           </div>
           {isConfigured ? (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-500 dark:bg-emerald-500/10 text-xs font-bold uppercase tracking-wider rounded-full border border-emerald-500/20">
+            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/15 px-2 py-1 text-xs font-bold tracking-wider text-emerald-600 uppercase dark:bg-emerald-500/10 dark:text-emerald-500">
               <CheckCircle2 className="h-3 w-3" />
               Active
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-500/15 text-amber-600 dark:text-amber-500 dark:bg-amber-500/10 text-xs font-bold uppercase tracking-wider rounded-full border border-amber-500/20">
+            <div className="flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/15 px-2 py-1 text-xs font-bold tracking-wider text-amber-600 uppercase dark:bg-amber-500/10 dark:text-amber-500">
               <ShieldAlert className="h-3 w-3" />
               Unconfigured
             </div>
           )}
         </div>
       </CardHeader>
-      
+
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
           {!isConfigured && (
-            <div className="bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-600 dark:text-amber-500 flex gap-3">
+            <div className="flex gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-600 dark:bg-amber-500/5 dark:text-amber-500">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <p>
-                <strong>Security Risk:</strong> No master encryption key detected. 
-                Bot tokens added will be stored using insecure encoding. 
-                Please generate a key below to enable <strong>AES-256-GCM</strong> encryption.
+                <strong>Security Risk:</strong> No master encryption key detected. Bot tokens added
+                will be stored using insecure encoding. Please generate a key below to enable{" "}
+                <strong>AES-256-GCM</strong> encryption.
               </p>
             </div>
           )}
@@ -136,10 +149,10 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="master_key">Master Encryption Key</Label>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setShowKey(!showKey)}
-                className="text-xs text-muted-foreground hover:text-primary transition-colors uppercase font-bold tracking-tighter"
+                className="text-muted-foreground hover:text-primary text-xs font-bold tracking-tighter uppercase transition-colors"
               >
                 {showKey ? "Hide Secret" : "Reveal Key"}
               </button>
@@ -167,23 +180,19 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
             {errors.master_key && (
               <p className="text-destructive text-xs italic">{errors.master_key.message}</p>
             )}
-            <p className="text-xs text-muted-foreground italic">
-              This master key is used to encrypt all bot tokens in the database. 
+            <p className="text-muted-foreground text-xs italic">
+              This master key is used to encrypt all bot tokens in the database.
               <strong> Keep it safe!</strong>
             </p>
           </div>
         </CardContent>
 
         <CardFooter className="bg-muted/50 flex items-center justify-between border-t px-6 py-4">
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
+          <p className="text-muted-foreground flex items-center gap-1 text-xs">
             <Key className="h-3 w-3" />
             AES-256-GCM Standard
           </p>
-          <Button 
-            type="submit" 
-            disabled={isPending || !isDirty} 
-            className="gap-2 h-9 px-4"
-          >
+          <Button type="submit" disabled={isPending || !isDirty} className="h-9 gap-2 px-4">
             {isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (

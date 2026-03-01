@@ -49,6 +49,25 @@ def get_back_button_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
+def _build_welcome_message(user_name: str) -> str:
+    """Build the welcome message for start/menu commands."""
+    return (
+        f"👋 **Hey {user_name}!**\n\n"
+        "Welcome to **Nezuko** - your powerful all-in-one bot!\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
+        "🛡️ **What I Do:**\n"
+        "I ensure users must join your channel before they can chat in your group.\n\n"
+        "✨ **Key Features:**\n"
+        "• Instant verification on join\n"
+        "• Auto-mute non-subscribers\n"
+        "• Leave detection (revokes access)\n"
+        "• Multi-channel support\n"
+        "• Zero config - just one command!\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "👇 **Use the buttons below to get started:**"
+    )
+
+
 async def safe_edit_message(query, text: str, reply_markup=None, **kwargs):
     """
     Safely edit a message, ignoring 'Message is not modified' errors.
@@ -93,21 +112,7 @@ async def handle_start(update: Update, _context: ContextTypes.DEFAULT_TYPE):
     # Get user's first name
     user_name = update.effective_user.first_name if update.effective_user else "there"
 
-    welcome_message = (
-        f"👋 **Hey {user_name}!**\n\n"
-        "Welcome to **Nezuko** - your powerful all-in-one bot!\n\n"
-        "━━━━━━━━━━━━━━━━━━━━━━\n"
-        "🛡️ **What I Do:**\n"
-        "I ensure users must join your channel before they can chat in your group.\n\n"
-        "✨ **Key Features:**\n"
-        "• Instant verification on join\n"
-        "• Auto-mute non-subscribers\n"
-        "• Leave detection (revokes access)\n"
-        "• Multi-channel support\n"
-        "• Zero config - just one command!\n"
-        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "👇 **Use the buttons below to get started:**"
-    )
+    welcome_message = _build_welcome_message(user_name)
 
     await update.message.reply_text(
         welcome_message, parse_mode="Markdown", reply_markup=get_main_menu_keyboard()
@@ -176,21 +181,7 @@ async def show_main_menu(query):
     """Show the main menu."""
     user_name = query.from_user.first_name if query.from_user else "there"
 
-    welcome_message = (
-        f"👋 **Hey {user_name}!**\n\n"
-        "Welcome to **Nezuko** - your powerful all-in-one bot!\n\n"
-        "━━━━━━━━━━━━━━━━━━━━━━\n"
-        "🛡️ **What I Do:**\n"
-        "I ensure users must join your channel before they can chat in your group.\n\n"
-        "✨ **Key Features:**\n"
-        "• Instant verification on join\n"
-        "• Auto-mute non-subscribers\n"
-        "• Leave detection (revokes access)\n"
-        "• Multi-channel support\n"
-        "• Zero config - just one command!\n"
-        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "👇 **Use the buttons below to get started:**"
-    )
+    welcome_message = _build_welcome_message(user_name)
 
     await safe_edit_message(
         query, welcome_message, parse_mode="Markdown", reply_markup=get_main_menu_keyboard()

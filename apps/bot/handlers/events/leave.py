@@ -19,6 +19,15 @@ from apps.bot.services.verification import invalidate_cache
 
 logger = logging.getLogger(__name__)
 
+# Module-level frozenset for 'was a member' status checks
+_WAS_MEMBER_STATUSES: frozenset[str] = frozenset(
+    {
+        ChatMemberStatus.MEMBER,
+        ChatMemberStatus.ADMINISTRATOR,
+        ChatMemberStatus.OWNER,
+    }
+)
+
 
 # pylint: disable=too-many-locals
 async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -54,16 +63,11 @@ async def handle_channel_leave(update: Update, context: ContextTypes.DEFAULT_TYP
         # RESTRICTED status must also be checked as was_member because a restricted
         # member who was previously a member can leave (RESTRICTED → LEFT).
         # Per Bot API: ChatMemberRestricted.is_member=True means they were a member.
-        was_member_statuses = [
-            ChatMemberStatus.MEMBER,
-            ChatMemberStatus.ADMINISTRATOR,
-            ChatMemberStatus.OWNER,
-        ]
-        was_member = old_status in was_member_statuses or (
+        was_member = old_status in _WAS_MEMBER_STATUSES or (
             old_status == ChatMemberStatus.RESTRICTED
             and bool(getattr(update.chat_member.old_chat_member, "is_member", False))
         )
-        is_left = new_status in [ChatMemberStatus.LEFT, ChatMemberStatus.BANNED]
+        is_left = new_status in {ChatMemberStatus.LEFT, ChatMemberStatus.BANNED}
 
         if not (was_member and is_left):
             # Not a leave event, ignore

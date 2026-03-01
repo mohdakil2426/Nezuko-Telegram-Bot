@@ -79,8 +79,7 @@ export function CacheHitRateTrendChart() {
                   <span className="text-foreground font-semibold tabular-nums">
                     {data?.current_rate ?? 0}%
                   </span>
-                  {" · "}Avg:{" "}
-                  <span className="tabular-nums">{data?.average_rate ?? 0}%</span>
+                  {" · "}Avg: <span className="tabular-nums">{data?.average_rate ?? 0}%</span>
                 </>
               )}
             </CardDescription>

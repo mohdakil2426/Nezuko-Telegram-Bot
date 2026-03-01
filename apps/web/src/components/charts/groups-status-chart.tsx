@@ -84,66 +84,69 @@ export function GroupsStatusChart() {
 
   return (
     <div role="figure" aria-label="Groups status distribution donut chart">
-    <Card className="flex flex-col">
-      <CardHeader className="pb-2">
-        <CardTitle>Groups Status</CardTitle>
-        <CardDescription>{total} total groups</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1 min-h-[200px] pb-0">
-        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
-          <PieChart accessibilityLayer>
-            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-            <Pie
-              data={chartData}
-              dataKey="value"
-              nameKey="name"
-              innerRadius={60}
-              outerRadius={100}
-              strokeWidth={2}
-              stroke="var(--background)"
-            >
-              {chartData.map((entry) => (
-                <Cell key={entry.name} fill={entry.fill} />
-              ))}
-              <Label
-                content={({ viewBox }) => {
-                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                    return (
-                      <text
-                        x={viewBox.cx}
-                        y={viewBox.cy}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                      >
-                        <tspan
+      <Card className="flex flex-col">
+        <CardHeader className="pb-2">
+          <CardTitle>Groups Status</CardTitle>
+          <CardDescription>{total} total groups</CardDescription>
+        </CardHeader>
+        <CardContent className="min-h-[200px] flex-1 pb-0">
+          <ChartContainer
+            config={chartConfig}
+            className="mx-auto aspect-square max-h-[250px] w-full"
+          >
+            <PieChart accessibilityLayer>
+              <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+              <Pie
+                data={chartData}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={60}
+                outerRadius={100}
+                strokeWidth={2}
+                stroke="var(--background)"
+              >
+                {chartData.map((entry) => (
+                  <Cell key={entry.name} fill={entry.fill} />
+                ))}
+                <Label
+                  content={({ viewBox }) => {
+                    if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                      return (
+                        <text
                           x={viewBox.cx}
                           y={viewBox.cy}
-                          className="fill-foreground text-2xl font-bold"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
                         >
-                          {data?.active ?? 0}
-                        </tspan>
-                        <tspan
-                          x={viewBox.cx}
-                          y={(viewBox.cy ?? 0) + 20}
-                          className="fill-muted-foreground text-xs"
-                        >
-                          Active
-                        </tspan>
-                      </text>
-                    );
-                  }
-                  return null;
-                }}
+                          <tspan
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            className="fill-foreground text-2xl font-bold"
+                          >
+                            {data?.active ?? 0}
+                          </tspan>
+                          <tspan
+                            x={viewBox.cx}
+                            y={(viewBox.cy ?? 0) + 20}
+                            className="fill-muted-foreground text-xs"
+                          >
+                            Active
+                          </tspan>
+                        </text>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </Pie>
+              <ChartLegend
+                content={<ChartLegendContent nameKey="name" />}
+                className="flex-wrap gap-2 pt-2 [&>*]:basis-auto [&>*]:justify-center"
               />
-            </Pie>
-            <ChartLegend
-              content={<ChartLegendContent nameKey="name" />}
-              className="flex-wrap gap-2 pt-2 [&>*]:basis-auto [&>*]:justify-center"
-            />
-          </PieChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+            </PieChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 }

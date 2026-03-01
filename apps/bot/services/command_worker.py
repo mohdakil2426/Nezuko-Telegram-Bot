@@ -7,6 +7,7 @@ using the bot's Telegram API context.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from typing import Any
 
@@ -28,18 +29,15 @@ _POLL_INTERVAL = 10
 class CommandWorker:
     """Polls and executes admin commands from InsForge REST API."""
 
-    def __init__(self, bot: Bot, bot_id: int, anon_key: str) -> None:
+    def __init__(self, bot: Bot, bot_id: int) -> None:
         """Initialize the command worker.
 
         Args:
             bot: Telegram Bot instance
             bot_id: Telegram bot ID
-            anon_key: InsForge anonymous key (unused directly — client already
-                      initialised by main.py, kept for API compatibility)
         """
         self._bot = bot
         self._bot_id = bot_id
-        self._anon_key = anon_key
         self._running = False
 
     async def start(self) -> None:
@@ -97,14 +95,19 @@ class CommandWorker:
 
             payload = row.get("payload") or {}
             if isinstance(payload, str):
-                import json  # pylint: disable=import-outside-toplevel
-
-                payload = json.loads(payload)
+                try:
+                    payload = json.loads(payload)
+                except (json.JSONDecodeError, ValueError) as e:
+                    logger.error("Invalid JSON payload for command %s: %s", row["id"], e)
+                    await self._update_status(
+                        row["id"], "failed", {"error": "Invalid JSON payload"}
+                    )
+                    continue
 
             await self._execute_command(row["id"], row["command_type"], payload)
 
     async def _execute_command(
-        self, command_id: Any, command_type: str, payload: dict[str, Any]
+        self, command_id: int, command_type: str, payload: dict[str, Any]
     ) -> None:
         """Execute a single command.
 
@@ -122,20 +125,22 @@ class CommandWorker:
                 raise ValueError(f"Unknown command: {command_type}")
             await self._update_status(command_id, "completed", {"success": True})
         except (ValueError, TypeError, KeyError, TelegramError) as exc:
-            logger.exception("Command %s failed", command_id)
+            logger.exception("Command %s failed for bot %s", command_id, self._bot_id)
             await self._update_status(command_id, "failed", {"error": str(exc)})
 
     async def _ban_user(self, payload: dict[str, Any]) -> None:
         """Ban a user from a chat."""
-        await self._bot.ban_chat_member(chat_id=payload["chat_id"], user_id=payload["user_id"])
+        chat_id = int(payload["chat_id"])
+        user_id = int(payload["user_id"])
+        await self._bot.ban_chat_member(chat_id=chat_id, user_id=user_id)
 
     async def _unban_user(self, payload: dict[str, Any]) -> None:
         """Unban a user from a chat."""
-        await self._bot.unban_chat_member(
-            chat_id=payload["chat_id"], user_id=payload["user_id"], only_if_banned=True
-        )
+        chat_id = int(payload["chat_id"])
+        user_id = int(payload["user_id"])
+        await self._bot.unban_chat_member(chat_id=chat_id, user_id=user_id, only_if_banned=True)
 
-    async def _update_status(self, command_id: Any, status: str, result: dict[str, Any]) -> None:
+    async def _update_status(self, command_id: int, status: str, result: dict[str, Any]) -> None:
         """Update command status in InsForge via REST API.
 
         Args:
@@ -143,8 +148,6 @@ class CommandWorker:
             status: New status (completed, failed)
             result: Result data
         """
-        import json  # pylint: disable=import-outside-toplevel
-
         try:
             await asyncio.wait_for(
                 insforge_client._patch(  # pylint: disable=protected-access

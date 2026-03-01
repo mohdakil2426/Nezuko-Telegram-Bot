@@ -18,7 +18,8 @@ export interface PaginationMeta {
 }
 
 /**
- * Generic success response wrapper
+ * Generic success response wrapper (kept for potential future use)
+ * @internal
  */
 export interface SuccessResponse<T> {
   status: "success";
@@ -33,15 +34,6 @@ export interface PaginatedResponse<T> {
   status: "success";
   data: T[];
   meta: PaginationMeta;
-}
-
-/**
- * Error response
- */
-export interface ErrorResponse {
-  status: "error";
-  error: Record<string, unknown>;
-  meta?: Record<string, unknown>;
 }
 
 // =============================================================================
@@ -62,16 +54,6 @@ export interface DashboardStats {
 }
 
 /**
- * Individual stat item for display
- */
-export interface StatItem {
-  label: string;
-  value: number | string;
-  change?: number;
-  trend?: "up" | "down" | "neutral";
-}
-
-/**
  * Activity feed item
  */
 export interface ActivityItem {
@@ -80,13 +62,6 @@ export interface ActivityItem {
   description: string;
   timestamp: string;
   metadata?: Record<string, unknown>;
-}
-
-/**
- * Activity feed response
- */
-export interface ActivityResponse {
-  items: ActivityItem[];
 }
 
 // =============================================================================
@@ -443,14 +418,4 @@ export interface BotHealthMetrics {
   avg_latency_ms: number;
   error_rate: number;
   overall_score: number;
-}
-
-/**
- * Webhook test result
- */
-export interface WebhookTestResult {
-  success: boolean;
-  status: number;
-  latency_ms: number;
-  error?: string;
 }

@@ -12,11 +12,14 @@ Manual ENCRYPTION_KEY in .env is no longer supported for dashboard mode.
 import base64
 import binascii
 import logging
+import time
 
+from cryptography.exceptions import InvalidTag
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from apps.bot.core import insforge_client
+from apps.bot.core.constants import MASTER_KEY_TTL
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +30,7 @@ class EncryptionError(Exception):
 
 # Internal cache for the master key to avoid repeated DB lookups
 _MASTER_KEY_B64: str | None = None
+_MASTER_KEY_FETCHED_AT: float = 0.0
 
 
 async def get_master_key() -> str | None:
@@ -36,15 +40,16 @@ async def get_master_key() -> str | None:
     Returns:
         Base64 encoded 256-bit key string or None.
     """
-    global _MASTER_KEY_B64  # pylint: disable=global-statement
+    global _MASTER_KEY_B64, _MASTER_KEY_FETCHED_AT  # pylint: disable=global-statement
 
-    if _MASTER_KEY_B64:
+    if _MASTER_KEY_B64 is not None and (time.monotonic() - _MASTER_KEY_FETCHED_AT) < MASTER_KEY_TTL:
         return _MASTER_KEY_B64
 
     # Fetch from Security Vault (Exclusive source for Dashboard Mode)
     remote_key = await insforge_client.get_secret("master_key")
     if remote_key:
         _MASTER_KEY_B64 = remote_key
+        _MASTER_KEY_FETCHED_AT = time.monotonic()
         logger.info("Master encryption key synchronized from Security Vault.")
         return _MASTER_KEY_B64
 
@@ -81,14 +86,10 @@ def decrypt_v2(ciphertext_b64: str, master_key_b64: str) -> str:
         raise
     except (ValueError, OverflowError, UnicodeDecodeError) as e:
         raise EncryptionError(f"AES-GCM decryption failed (invalid data): {e}") from e
+    except InvalidTag:
+        raise EncryptionError("AES-GCM authentication tag invalid — key mismatch") from None
     except Exception as e:
-        # cryptography raises `cryptography.exceptions.InvalidTag` for auth failures.
-        # We catch the base Exception here as InvalidTag is not importable from a stable path
-        # in all versions. The `if isinstance` check below prevents hiding non-crypto errors.
-        error_type = type(e).__name__
-        if "InvalidTag" in error_type or "InvalidKey" in error_type:
-            raise EncryptionError("AES-GCM authentication tag invalid — key mismatch") from e
-        raise EncryptionError(f"AES-GCM decryption failed ({error_type}): {e}") from e
+        raise EncryptionError(f"AES-GCM decryption failed ({type(e).__name__}): {e}") from e
 
 
 async def decrypt_token(ciphertext: str) -> str:
@@ -119,13 +120,16 @@ async def decrypt_token(ciphertext: str) -> str:
             f = Fernet(master_key.encode())
             return f.decrypt(ciphertext.encode()).decode("utf-8")
         except (InvalidToken, ValueError, binascii.Error):
-            pass  # Not a Fernet token, fall through to b64
+            logger.debug("Fernet decryption failed, trying Base64 fallback")
 
     # ── Attempt 3: Legacy Base64 Fallback ──
     try:
         decoded = base64.b64decode(ciphertext).decode("utf-8")
         # Basic sanity: Telegram tokens look like "123456:ABC-DEF..."
         if ":" in decoded and len(decoded) > 20:
+            logger.warning(
+                "Token decrypted using legacy Base64 encoding — consider re-encrypting with AES-GCM"
+            )
             return decoded
     except (ValueError, binascii.Error, UnicodeDecodeError):
         pass

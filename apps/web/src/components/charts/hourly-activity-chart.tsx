@@ -88,12 +88,13 @@ export function HourlyActivityChart() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Hourly Activity</CardTitle>
-          <CardDescription>
-            Last 24 hours · Peak at {peakHour.label} UTC
-          </CardDescription>
+          <CardDescription>Last 24 hours · Peak at {peakHour.label} UTC</CardDescription>
         </CardHeader>
         <CardContent className="min-h-[200px]">
-          <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full md:h-[300px]">
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-[250px] w-full md:h-[300px]"
+          >
             <BarChart accessibilityLayer data={data} margin={{ left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
@@ -106,7 +107,11 @@ export function HourlyActivityChart() {
               />
               <YAxis tickLine={false} axisLine={false} tickMargin={8} />
               <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dashed" />} />
-              <Bar dataKey="verifications" fill="var(--color-verifications)" radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="verifications"
+                fill="var(--color-verifications)"
+                radius={[4, 4, 0, 0]}
+              />
               <Bar dataKey="restrictions" fill="var(--color-restrictions)" radius={[4, 4, 0, 0]} />
               <ChartLegend content={<ChartLegendContent />} />
             </BarChart>

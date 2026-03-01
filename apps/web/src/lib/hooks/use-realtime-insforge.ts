@@ -302,7 +302,9 @@ export function useDashboardRealtime() {
       // Invalidate dashboard stats (ARCH-M9: use queryKeys factory)
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats() });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.activity() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.analytics.overview() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.analytics.verificationTrends() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.analytics.userGrowth() });
     }
   }, [realtime.events.length, realtime.isConnected, queryClient]);
 
@@ -426,7 +428,7 @@ export function useRealtimeActivityChart<T>(
     queryFn,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
-    refetchInterval: 30 * 1000, // Faster refresh for activity
+    refetchInterval: REFETCH_INTERVALS.STANDARD,
   });
 }
 
@@ -443,18 +445,13 @@ export function useRealtimeBotHealthChart<T>(
     queryFn,
     channels: ["bot_status", "dashboard"],
     invalidateOnEvents: ["status_changed"],
-    refetchInterval: 30 * 1000, // Faster refresh for health
+    refetchInterval: REFETCH_INTERVALS.STANDARD,
   });
 }
 
 /**
- * Compatibility exports (old hook names)
- * These provide backward compatibility with existing components.
- */
-
-/**
  * Hook for subscribing to activity events only.
- * @deprecated Use useDashboardRealtime() instead
+ * Used by activity-feed.tsx.
  */
 export function useRealtimeActivity() {
   return useInsForgeRealtime({
@@ -465,7 +462,7 @@ export function useRealtimeActivity() {
 
 /**
  * Hook for subscribing to analytics events only.
- * @deprecated Use useDashboardRealtime() instead
+ * Used by overview-cards.tsx.
  */
 export function useRealtimeAnalytics() {
   return useInsForgeRealtime({
@@ -476,15 +473,15 @@ export function useRealtimeAnalytics() {
 
 /**
  * Hook for subscribing to log events only.
- * @deprecated Use useLogsRealtime() instead
+ * Used by logs/page.tsx.
  */
 export function useRealtimeLogs() {
   return useLogsRealtime();
 }
 
 /**
- * Core realtime hook (backward compatibility).
- * @deprecated Use useInsForgeRealtime() instead
+ * Core realtime hook alias.
+ * Used by connection-status.tsx.
  */
 export function useRealtime(options: UseInsForgeRealtimeOptions = {}) {
   return useInsForgeRealtime(options);

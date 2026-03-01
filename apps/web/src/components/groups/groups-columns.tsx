@@ -22,7 +22,6 @@ import {
 import type { Group } from "@/lib/services/types";
 import { formatDate, formatCount } from "@/lib/format";
 
-
 export interface GroupsColumnsProps {
   onToggleProtection?: (id: number, enabled: boolean) => void;
   onDelete?: (id: number) => void;
@@ -171,10 +170,7 @@ export function createGroupsColumns({
                 {group.enabled ? "Disable Protection" : "Enable Protection"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => onDelete?.(group.group_id)}
-              >
+              <DropdownMenuItem variant="destructive" onClick={() => onDelete?.(group.group_id)}>
                 Delete Group
               </DropdownMenuItem>
             </DropdownMenuContent>

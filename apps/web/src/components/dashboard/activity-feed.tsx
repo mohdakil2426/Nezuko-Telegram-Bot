@@ -7,7 +7,15 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle, Shield, Settings, AlertCircle, Clock, Loader2, AlertTriangle } from "lucide-react";
+import {
+  CheckCircle,
+  Shield,
+  Settings,
+  AlertCircle,
+  Clock,
+  Loader2,
+  AlertTriangle,
+} from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -80,7 +88,7 @@ function ConnectionStatus({
         className="gap-1 border-green-200 bg-green-50 text-green-600 dark:bg-green-950/30"
       >
         <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping motion-reduce:animate-none rounded-full bg-green-400 opacity-75" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75 motion-reduce:animate-none" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
         </span>
         Live
@@ -114,7 +122,7 @@ function ConnectionStatus({
 }
 
 export function ActivityFeed() {
-  const { data: initialActivities, isPending, error, refetch } = useActivity(10);
+  const { data: initialActivities, isPending, error } = useActivity(10);
   const { events, isConnected, isReconnecting } = useRealtimeActivity();
   const [realtimeActivities, setRealtimeActivities] = useState<ActivityItem[]>([]);
   const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
@@ -249,18 +257,6 @@ export function ActivityFeed() {
     return unique.slice(0, 20);
   }, [initialActivities, realtimeActivities]);
 
-  // Fallback polling when SSE is disconnected
-  useEffect(() => {
-    if (!isConnected && !isReconnecting) {
-      const interval = setInterval(() => {
-        refetch();
-      }, 30000); // Poll every 30 seconds
-
-      return () => clearInterval(interval);
-    }
-    return undefined;
-  }, [isConnected, isReconnecting, refetch]);
-
   if (isPending) {
     return <ActivityFeedSkeleton />;
   }
@@ -302,7 +298,7 @@ export function ActivityFeed() {
             Live updates paused — auto-refreshing every 30s.
           </div>
         )}
-        <ScrollArea className="h-[340px] sm:h-[400px] lg:h-[460px] pr-3">
+        <ScrollArea className="h-[340px] pr-3 sm:h-[400px] lg:h-[460px]">
           <div className="space-y-1" role="log" aria-live="polite">
             {allActivities.map((activity) => {
               const Icon = getActivityIcon(activity.type);
@@ -321,7 +317,7 @@ export function ActivityFeed() {
                   <div className={`mt-0.5 shrink-0 ${colorClass}`} aria-hidden="true">
                     <Icon className="h-4 w-4" />
                   </div>
-                  <p className="flex-1 text-sm leading-snug line-clamp-2">{activity.description}</p>
+                  <p className="line-clamp-2 flex-1 text-sm leading-snug">{activity.description}</p>
                   <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
                     {formatRelativeTime(activity.timestamp)}
                   </span>
@@ -329,7 +325,9 @@ export function ActivityFeed() {
               );
             })}
             {allActivities.length === 0 && (
-              <div className="text-muted-foreground py-10 text-center text-sm">No recent activity</div>
+              <div className="text-muted-foreground py-10 text-center text-sm">
+                No recent activity
+              </div>
             )}
           </div>
         </ScrollArea>

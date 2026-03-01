@@ -28,8 +28,8 @@ const insforgeMiddleware = InsforgeMiddleware({
   baseUrl: BASE_URL,
 
   // Match our app's custom route names to InsForge defaults
-  signInUrl: "/login",          // Our login page (InsForge default: /sign-in)
-  signUpUrl: "/login",          // We use the same login page for both
+  signInUrl: "/login", // Our login page (InsForge default: /sign-in)
+  signUpUrl: "/login", // We use the same login page for both
   forgotPasswordUrl: "/forgot-password",
 
   // Where InsForge redirects users after successful authentication
@@ -42,13 +42,7 @@ const insforgeMiddleware = InsforgeMiddleware({
 
   // Public routes — always accessible without authentication.
   // Note: /login is listed so the middleware itself doesn't redirect on that route.
-  publicRoutes: [
-    "/",
-    "/login",
-    "/verify-email",
-    "/forgot-password",
-    "/reset-password",
-  ],
+  publicRoutes: ["/", "/login", "/verify-email", "/forgot-password", "/reset-password"],
 });
 
 export function proxy(request: NextRequest) {
@@ -73,6 +67,6 @@ export const config = {
      * - favicon + image files
      * - /api/* — /api/auth must stay public for the InsForge cookie sync
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

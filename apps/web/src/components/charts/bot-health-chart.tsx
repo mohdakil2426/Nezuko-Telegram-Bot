@@ -85,53 +85,57 @@ export function BotHealthChart() {
 
   return (
     <div role="figure" aria-label={`Bot health score: ${overallScore} out of 100`}>
-    <Card className="flex flex-col">
-      <CardHeader className="pb-2">
-        <CardTitle>Bot Health Score</CardTitle>
-        <CardDescription>Overall system performance</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1 pb-0 min-h-[200px]">
-        <div className="relative">
-          <ChartContainer config={dynamicConfig} className="mx-auto aspect-square max-h-[200px]">
-            <RadialBarChart
-              accessibilityLayer
-              cx="50%"
-              cy="50%"
-              innerRadius="60%"
-              outerRadius="90%"
-              barSize={20}
-              data={chartData}
-              startAngle={180}
-              endAngle={0}
-            >
-              <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel formatter={(value) => `${value}/100`} />}
-              />
-              <RadialBar background={{ fill: "var(--muted)" }} dataKey="value" cornerRadius={10} />
-            </RadialBarChart>
-          </ChartContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-4xl font-bold">{overallScore}</span>
-            <span className="text-muted-foreground text-sm">/ 100</span>
+      <Card className="flex flex-col">
+        <CardHeader className="pb-2">
+          <CardTitle>Bot Health Score</CardTitle>
+          <CardDescription>Overall system performance</CardDescription>
+        </CardHeader>
+        <CardContent className="min-h-[200px] flex-1 pb-0">
+          <div className="relative">
+            <ChartContainer config={dynamicConfig} className="mx-auto aspect-square max-h-[200px]">
+              <RadialBarChart
+                accessibilityLayer
+                cx="50%"
+                cy="50%"
+                innerRadius="60%"
+                outerRadius="90%"
+                barSize={20}
+                data={chartData}
+                startAngle={180}
+                endAngle={0}
+              >
+                <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel formatter={(value) => `${value}/100`} />}
+                />
+                <RadialBar
+                  background={{ fill: "var(--muted)" }}
+                  dataKey="value"
+                  cornerRadius={10}
+                />
+              </RadialBarChart>
+            </ChartContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-4xl font-bold">{overallScore}</span>
+              <span className="text-muted-foreground text-sm">/ 100</span>
+            </div>
           </div>
-        </div>
 
-        {/* Threshold legend */}
-        <p className="text-muted-foreground mt-1 text-center text-xs">
-          90+ Excellent · 70+ Good · 50+ Fair
-        </p>
+          {/* Threshold legend */}
+          <p className="text-muted-foreground mt-1 text-center text-xs">
+            90+ Excellent · 70+ Good · 50+ Fair
+          </p>
 
-        {/* Metrics breakdown */}
-        <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-          <MetricItem label="Uptime" value={`${data?.uptime_percent ?? 0}%`} />
-          <MetricItem label="Success Rate" value={`${data?.success_rate ?? 0}%`} />
-          <MetricItem label="Cache Efficiency" value={`${data?.cache_efficiency ?? 0}%`} />
-          <MetricItem label="Error Rate" value={`${data?.error_rate ?? 0}%`} />
-        </div>
-      </CardContent>
-    </Card>
+          {/* Metrics breakdown */}
+          <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+            <MetricItem label="Uptime" value={`${data?.uptime_percent ?? 0}%`} />
+            <MetricItem label="Success Rate" value={`${data?.success_rate ?? 0}%`} />
+            <MetricItem label="Cache Efficiency" value={`${data?.cache_efficiency ?? 0}%`} />
+            <MetricItem label="Error Rate" value={`${data?.error_rate ?? 0}%`} />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -140,7 +144,7 @@ function MetricItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-muted/50 flex items-center justify-between gap-1 rounded-md px-2 py-0.5">
       <span className="text-muted-foreground min-w-0 truncate text-xs">{label}</span>
-      <span className="shrink-0 font-medium text-xs tabular-nums">{value}</span>
+      <span className="shrink-0 text-xs font-medium tabular-nums">{value}</span>
     </div>
   );
 }

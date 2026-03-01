@@ -91,35 +91,38 @@ export function ApiCallsChart() {
 
   return (
     <div role="figure" aria-label="API calls distribution pie chart">
-    <Card className="flex flex-col">
-      <CardHeader className="pb-2">
-        <CardTitle>API Calls Distribution</CardTitle>
-        <CardDescription>{total.toLocaleString()} total calls</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1 min-h-[200px] pb-0">
-        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
-          <PieChart accessibilityLayer>
-            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-            <Pie
-              data={chartData}
-              dataKey="value"
-              nameKey="name"
-              outerRadius={100}
-              strokeWidth={2}
-              stroke="var(--background)"
-            >
-              {chartData.map((entry) => (
-                <Cell key={entry.name} fill={entry.fill} />
-              ))}
-            </Pie>
-            <ChartLegend
-              content={<ChartLegendContent nameKey="name" />}
-              className="flex-wrap gap-2 pt-2 [&>*]:basis-auto [&>*]:justify-center"
-            />
-          </PieChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+      <Card className="flex flex-col">
+        <CardHeader className="pb-2">
+          <CardTitle>API Calls Distribution</CardTitle>
+          <CardDescription>{total.toLocaleString()} total calls</CardDescription>
+        </CardHeader>
+        <CardContent className="min-h-[200px] flex-1 pb-0">
+          <ChartContainer
+            config={chartConfig}
+            className="mx-auto aspect-square max-h-[250px] w-full"
+          >
+            <PieChart accessibilityLayer>
+              <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+              <Pie
+                data={chartData}
+                dataKey="value"
+                nameKey="name"
+                outerRadius={100}
+                strokeWidth={2}
+                stroke="var(--background)"
+              >
+                {chartData.map((entry) => (
+                  <Cell key={entry.name} fill={entry.fill} />
+                ))}
+              </Pie>
+              <ChartLegend
+                content={<ChartLegendContent nameKey="name" />}
+                className="flex-wrap gap-2 pt-2 [&>*]:basis-auto [&>*]:justify-center"
+              />
+            </PieChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 }

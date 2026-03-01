@@ -3,7 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
 import * as channelsService from "@/lib/services/channels.service";
 import type { ChannelsParams, ChannelCreateRequest } from "@/lib/services/types";
 
@@ -14,19 +14,8 @@ export function useChannels(params?: ChannelsParams) {
   return useQuery({
     queryKey: queryKeys.channels.list(params as Record<string, unknown>),
     queryFn: () => channelsService.getChannels(params),
-    staleTime: 30 * 1000, // 30 seconds
-  });
-}
-
-/**
- * Hook to fetch single channel details
- */
-export function useChannel(id: number | null) {
-  return useQuery({
-    queryKey: queryKeys.channels.detail(id ?? 0),
-    queryFn: () => channelsService.getChannel(id!),
-    enabled: id !== null,
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: STALE_TIMES.SHORT,
+    refetchInterval: REFETCH_INTERVALS.STANDARD,
   });
 }
 

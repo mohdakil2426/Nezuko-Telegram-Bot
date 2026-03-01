@@ -3,7 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
 import * as groupsService from "@/lib/services/groups.service";
 import type { GroupsParams, GroupUpdateRequest } from "@/lib/services/types";
 
@@ -14,19 +14,8 @@ export function useGroups(params?: GroupsParams) {
   return useQuery({
     queryKey: queryKeys.groups.list(params as Record<string, unknown>),
     queryFn: () => groupsService.getGroups(params),
-    staleTime: 30 * 1000, // 30 seconds
-  });
-}
-
-/**
- * Hook to fetch single group details
- */
-export function useGroup(id: number | null) {
-  return useQuery({
-    queryKey: queryKeys.groups.detail(id ?? 0),
-    queryFn: () => groupsService.getGroup(id!),
-    enabled: id !== null,
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: STALE_TIMES.SHORT,
+    refetchInterval: REFETCH_INTERVALS.STANDARD,
   });
 }
 

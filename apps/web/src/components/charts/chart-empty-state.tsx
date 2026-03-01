@@ -20,12 +20,8 @@ export function ChartEmptyState({
 }: ChartEmptyStateProps) {
   return (
     <div
-      role="status"
       aria-live="polite"
-      className={cn(
-        "flex min-h-[200px] flex-col items-center justify-center gap-2",
-        className,
-      )}
+      className={cn("flex min-h-[200px] flex-col items-center justify-center gap-2", className)}
     >
       <BarChart3 className="text-muted-foreground/50 h-10 w-10" />
       <p className="text-muted-foreground text-sm">{message}</p>

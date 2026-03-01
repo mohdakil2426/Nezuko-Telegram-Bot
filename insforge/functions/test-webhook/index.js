@@ -9,9 +9,11 @@
  * - Block private IP ranges: 10.x, 172.16-31.x, 192.168.x, 127.x, ::1, 169.254.x (link-local)
  * - Block metadata endpoints (169.254.169.254)
  * - Block localhost and loopback
+ * - Block IPv6 private/link-local/ULA ranges
  */
 
-module.exports = async function (request) {
+// Fix ARCH-14: Convert module.exports to ES module export default
+export default async function (request) {
   // CORS: Wildcard is acceptable here because this edge function is invoked via
   // the InsForge SDK which requires the anon key in the Authorization header.
   // The anon key acts as the access control mechanism, not CORS origin checks.
@@ -32,12 +34,32 @@ module.exports = async function (request) {
     });
   }
 
+  // Fix SEC-20 (same pattern as manage-bot): Validate Content-Type before parsing JSON
+  const contentType = request.headers.get("Content-Type") || "";
+  if (!contentType.includes("application/json")) {
+    return new Response(
+      JSON.stringify({ error: "Content-Type must be application/json" }),
+      {
+        status: 415,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
   try {
     const body = await request.json();
     const { url } = body;
 
     if (!url || typeof url !== "string") {
       return new Response(JSON.stringify({ error: "URL is required and must be a string" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fix SEC-21: Reject URLs that exceed a safe maximum length
+    if (url.length > 2048) {
+      return new Response(JSON.stringify({ error: "URL exceeds maximum allowed length" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -53,38 +75,47 @@ module.exports = async function (request) {
     }
 
     // ── Perform the webhook test ─────────────────────────────
+    // Fix SEC-13: AbortController with 10s timeout on outbound fetch
+    const controller = new AbortController();
+    const fetchTimeout = setTimeout(() => controller.abort(), 10000);
     const start = Date.now();
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        test: true,
-        timestamp: new Date().toISOString(),
-        source: "nezuko-webhook-test",
-      }),
-      // Prevent redirect to internal network
-      redirect: "error",
-    });
-    const latencyMs = Date.now() - start;
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          test: true,
+          timestamp: new Date().toISOString(),
+          source: "nezuko-webhook-test",
+        }),
+        // Prevent redirect to internal network
+        redirect: "error",
+        signal: controller.signal,
+      });
+      const latencyMs = Date.now() - start;
 
-    return new Response(
-      JSON.stringify({
-        success: response.ok,
-        status: response.status,
-        latency_ms: latencyMs,
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+      return new Response(
+        JSON.stringify({
+          success: response.ok,
+          status: response.status,
+          latency_ms: latencyMs,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    } finally {
+      clearTimeout(fetchTimeout);
+    }
   } catch (err) {
+    // Fix SEC-19: Replace err.message with generic error to avoid leaking internals
     return new Response(
       JSON.stringify({
         success: false,
         status: 0,
         latency_ms: 0,
-        error: err.message ?? "Unknown error",
+        error: "Webhook test failed",
       }),
       {
         status: 200,
@@ -92,11 +123,17 @@ module.exports = async function (request) {
       }
     );
   }
-};
+}
 
 /**
  * Validates a URL for SSRF safety.
  * Returns an error message string if the URL is invalid/unsafe, or null if OK.
+ *
+ * NOTE: DNS rebinding is a known limitation. This function validates URLs at parse-time
+ * before DNS resolution. An attacker controlling DNS could rebind to a private IP after
+ * validation passes. Full mitigation requires checking resolved IPs, which is not feasible
+ * with standard fetch(). The HTTPS-only requirement and redirect: "error" provide partial
+ * mitigation against the most common rebinding scenarios.
  *
  * @param {string} rawUrl - The URL to validate
  * @returns {string|null} Error message or null if safe
@@ -160,6 +197,31 @@ function validateUrl(rawUrl) {
     if (a === 127) {
       return "Access to loopback IP range is not allowed";
     }
+  }
+
+  // Fix SEC-15: Block IPv6 private/ULA/link-local ranges
+  // Check bracketed form e.g. [fc00::1]
+  if (hostname.startsWith("[")) {
+    const ipv6 = hostname.slice(1, -1); // Remove surrounding brackets
+    if (
+      ipv6.startsWith("fc") || ipv6.startsWith("fd") ||           // fc00::/7 ULA
+      ipv6.startsWith("fe8") || ipv6.startsWith("fe9") ||         // fe80::/10 link-local
+      ipv6.startsWith("fea") || ipv6.startsWith("feb") ||
+      ipv6.startsWith("::ffff:")                                   // IPv4-mapped IPv6
+    ) {
+      return "IPv6 private/link-local addresses are not allowed";
+    }
+  }
+
+  // Also check bare IPv6 (some URL parsers strip brackets)
+  if (
+    hostname.startsWith("fc") || hostname.startsWith("fd") ||
+    hostname.startsWith("fe8") || hostname.startsWith("fe9") ||
+    hostname.startsWith("fea") || hostname.startsWith("feb") ||
+    hostname.startsWith("::ffff:") ||
+    hostname === "::" || hostname === "0:0:0:0:0:0:0:0"
+  ) {
+    return "IPv6 private/link-local addresses are not allowed";
   }
 
   return null; // URL is safe

@@ -22,6 +22,7 @@ import apps.bot.utils.logging as _  # noqa: F401  # pyright: ignore[reportUnused
 from apps.bot.config import config
 from apps.bot.core import insforge_client
 from apps.bot.core.cache import close_redis_connection, get_redis_client
+from apps.bot.core.encryption import EncryptionError
 from apps.bot.core.loader import register_handlers, setup_bot_commands
 from apps.bot.core.rate_limiter import create_rate_limiter
 from apps.bot.core.uptime import record_bot_start
@@ -116,11 +117,11 @@ async def post_init(_application: Application) -> None:
             bot_info = await _application.bot.get_me()
             bot_id = bot_info.id
 
-            _status_writer = StatusWriter(bot_id, config.insforge_anon_key)
+            _status_writer = StatusWriter(bot_id)
             await _status_writer.start()
             logger.info("[OK] Status writer started for bot %d", bot_id)
 
-            _command_worker = CommandWorker(_application.bot, bot_id, config.insforge_anon_key)
+            _command_worker = CommandWorker(_application.bot, bot_id)
             await _command_worker.start()
             logger.info("[OK] Command worker started for bot %d", bot_id)
         except (TimeoutError, OSError, ConnectionRefusedError) as e:
@@ -274,7 +275,7 @@ def main():
 
     except (KeyboardInterrupt, SystemExit):
         logger.info("Bot stopped")
-    except (OSError, RuntimeError, ValueError, ImportError, AttributeError) as e:
+    except (OSError, RuntimeError, ValueError, ImportError, AttributeError, EncryptionError) as e:
         logger.error("Fatal error: %s", e, exc_info=True)
         sys.exit(1)
 

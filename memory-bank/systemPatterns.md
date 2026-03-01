@@ -620,4 +620,80 @@ if (!BASE_URL) throw new Error("NEXT_PUBLIC_INSFORGE_BASE_URL is required");
 const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
 ```
 
-_Last Updated: 2026-03-01 (Phase 82 — Web UI Charts Comprehensive Audit & Fix)_
+### Shared Constants Pattern (Phase 83 — CANONICAL)
+
+Core bot constants centralized in `apps/bot/core/constants.py`:
+
+```python
+from apps.bot.core.constants import AUTO_DELETE_DELAY, ADMIN_STATUSES, MASTER_KEY_TTL
+
+# ✅ Correct: Use shared constants
+if member.status not in ADMIN_STATUSES:  # frozenset
+
+# ❌ Wrong: Duplicated magic values
+AUTO_DELETE_DELAY = 60  # in each handler file
+```
+
+### Fire-and-Forget Task Pattern (Phase 83 — CANONICAL)
+
+```python
+from apps.bot.utils.tasks import fire_and_forget
+
+# ✅ Correct: Use shared utility (handles _background_tasks + done callback)
+fire_and_forget(some_coroutine())
+
+# ❌ Wrong: Duplicate boilerplate in every module
+_background_tasks: set[asyncio.Task[None]] = set()
+task = asyncio.create_task(coro())
+_background_tasks.add(task)
+task.add_done_callback(_background_tasks.discard)
+```
+
+### Redis Reconnection Pattern (Phase 83)
+
+```python
+# cache.py auto-reconnects every 60s after failure
+# Uses time.monotonic() for cooldown tracking (immune to clock changes)
+_last_reconnect_attempt: float = 0.0
+if time.monotonic() - _last_reconnect_attempt > REDIS_RECONNECT_INTERVAL:
+    # Try reconnecting...
+```
+
+### Master Key TTL Cache (Phase 83)
+
+```python
+# encryption.py caches master key with 3600s TTL
+# Supports key rotation without bot restart
+_master_key_fetched_at: float = 0.0
+if time.monotonic() - _master_key_fetched_at > MASTER_KEY_TTL:
+    _MASTER_KEY_B64 = None  # Force re-fetch
+```
+
+### Generic DataTable Pattern (Phase 83 — Web)
+
+```tsx
+// ✅ Correct: Use shared DataTable<T> for all table views
+import { DataTable } from "@/components/shared/data-table";
+<DataTable columns={columns} data={data} filterColumn="name" filterPlaceholder="Search..." />
+
+// ✅ Shared components available:
+import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
+import { PageErrorState } from "@/components/shared/page-error-state";
+import { ChartErrorBoundary } from "@/components/charts/chart-error-boundary";
+```
+
+### RPC Envelope Helper (Phase 83 — Web)
+
+```tsx
+import { unwrapEnvelopeSeries, extractEnvelopeMetadata } from "@/lib/utils/rpc-helpers";
+
+// ✅ Correct: Use helper for envelope RPCs
+const series = unwrapEnvelopeSeries<TrendPoint>(data);
+const { period, summary } = extractEnvelopeMetadata(data);
+
+// ❌ Wrong: Inline casting duplicated in every service
+const envelope = data as Record<string, unknown> | null;
+const series = Array.isArray(envelope?.series) ? envelope.series : [];
+```
+
+_Last Updated: 2026-03-01 (Phase 83 — Comprehensive Codebase Audit V3 Fixes)_

@@ -57,7 +57,11 @@ export function SiteHeader() {
               const isImmediateParent = index === breadcrumbs.length - 2;
               return (
                 <React.Fragment key={crumb.href}>
-                  {index > 0 && <BreadcrumbSeparator className={isImmediateParent ? undefined : "hidden md:block"} />}
+                  {index > 0 && (
+                    <BreadcrumbSeparator
+                      className={isImmediateParent ? undefined : "hidden md:block"}
+                    />
+                  )}
                   <BreadcrumbItem>
                     {crumb.isLast ? (
                       <BreadcrumbPage>{crumb.label}</BreadcrumbPage>

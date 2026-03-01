@@ -91,8 +91,7 @@ export function ApiCallsTrendChart() {
                     <span className="text-foreground font-semibold tabular-nums">
                       {formatCount(totalApiCalls)}
                     </span>
-                    {" · "}Avg/day:{" "}
-                    <span className="tabular-nums">{formatCount(avgPerDay)}</span>
+                    {" · "}Avg/day: <span className="tabular-nums">{formatCount(avgPerDay)}</span>
                   </span>
                   <span className="text-muted-foreground/70 mt-0.5 block text-xs">
                     Uncached Telegram API calls (cache misses)
@@ -116,11 +115,7 @@ export function ApiCallsTrendChart() {
                 config={chartConfig}
                 className="aspect-auto h-[250px] w-full md:h-[300px]"
               >
-                <BarChart
-                  accessibilityLayer
-                  data={chartData}
-                  barCategoryGap="30%"
-                >
+                <BarChart accessibilityLayer data={chartData} barCategoryGap="30%">
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis
                     dataKey="date"
@@ -133,9 +128,7 @@ export function ApiCallsTrendChart() {
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
-                    tickFormatter={(v) =>
-                      v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)
-                    }
+                    tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))}
                   />
                   <ChartTooltip
                     cursor={false}
@@ -146,11 +139,7 @@ export function ApiCallsTrendChart() {
                       />
                     }
                   />
-                  <Bar
-                    dataKey="api_count"
-                    fill="var(--color-api_count)"
-                    radius={[3, 3, 0, 0]}
-                  />
+                  <Bar dataKey="api_count" fill="var(--color-api_count)" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ChartContainer>
             )}

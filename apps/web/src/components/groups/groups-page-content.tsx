@@ -9,16 +9,7 @@ import { useState } from "react";
 import { useGroups, useToggleGroupProtection, useDeleteGroup } from "@/lib/hooks";
 import { GroupsDataTable } from "./groups-data-table";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 
 export function GroupsPageContent() {
   const { data, isPending, error } = useGroups();
@@ -59,11 +50,6 @@ export function GroupsPageContent() {
     });
   };
 
-  const handleViewDetails = (id: number) => {
-    // TODO: Navigate to group details or open modal
-    toast.info(`View details for group ${id}`);
-  };
-
   if (error) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -82,39 +68,16 @@ export function GroupsPageContent() {
         isPending={isPending}
         onToggleProtection={handleToggleProtection}
         onDelete={handleDelete}
-        onViewDetails={handleViewDetails}
       />
-      <AlertDialog
+      <DeleteConfirmDialog
         open={deleteTargetId !== null}
         onOpenChange={(open) => {
           if (!open && !deleteGroup.isPending) setDeleteTargetId(null);
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete group</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. The group will be permanently removed
-              from the bot&apos;s management list.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteGroup.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                confirmDelete();
-              }}
-              disabled={deleteGroup.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteGroup.isPending ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onConfirm={confirmDelete}
+        entityName="group"
+        isDeleting={deleteGroup.isPending}
+      />
     </>
   );
 }

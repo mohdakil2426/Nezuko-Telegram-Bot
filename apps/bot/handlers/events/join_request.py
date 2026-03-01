@@ -119,15 +119,17 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         channel_lines = []
         for ch in missing_channels:
             title = getattr(ch, "title", None) or f"Channel {ch.channel_id}"
-            channel_id = ch.channel_id
-            # Build a t.me link if it looks like a username, otherwise show the title
-            if isinstance(channel_id, str) and not channel_id.lstrip("-").isdigit():
-                link = f'<a href="https://t.me/{channel_id.lstrip("@")}">{title}</a>'
+            username = getattr(ch, "username", None)
+            invite_link = getattr(ch, "invite_link", None)
+            if username:
+                link = f'<a href="https://t.me/{username}">{title}</a>'
+            elif invite_link:
+                link = f'<a href="{invite_link}">{title}</a>'
             else:
-                link = f"• {title}"
+                link = title
             channel_lines.append(link)
 
-        channel_list_text = "\n".join(f"• {line}" for line in channel_lines)
+        channel_list_text = "\n".join(channel_lines)
 
         dm_text = _DECLINE_MESSAGE.format(
             name=user.first_name,

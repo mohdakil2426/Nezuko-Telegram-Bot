@@ -13,12 +13,10 @@ from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
 from apps.bot.core import insforge_client
+from apps.bot.core.constants import AUTO_DELETE_DELAY
 from apps.bot.utils.auto_delete import schedule_delete
 
 logger = logging.getLogger(__name__)
-
-# Auto-delete delay for admin messages (seconds)
-AUTO_DELETE_DELAY = 60
 
 
 async def handle_status(update: Update, _context: ContextTypes.DEFAULT_TYPE):
@@ -39,7 +37,6 @@ async def handle_status(update: Update, _context: ContextTypes.DEFAULT_TYPE):
 
         chat_id = update.effective_chat.id
         chat_title = update.effective_chat.title or "this group"
-        assert update.message is not None
 
         # Only work in group chats
         if update.effective_chat.type == "private":
@@ -116,8 +113,9 @@ async def handle_status(update: Update, _context: ContextTypes.DEFAULT_TYPE):
         await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
 
     except TelegramError as e:
-        logging.error("Telegram error in status command: %s", e, exc_info=True)
-        assert update.message is not None
+        logger.error("Telegram error in status command: %s", e, exc_info=True)
+        if not update.message:
+            return
         response = await update.message.reply_text(
             "❌ An error occurred while checking status. Please try again."
         )
@@ -140,7 +138,6 @@ async def handle_unprotect(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         chat_id = update.effective_chat.id
         user_id = update.effective_user.id
-        assert update.message is not None
 
         # Only work in group chats
         if update.effective_chat.type == "private":
@@ -198,8 +195,9 @@ async def handle_unprotect(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info("Protection disabled for group %s", chat_id)
 
     except TelegramError as e:
-        logging.error("Telegram error in unprotect command: %s", e, exc_info=True)
-        assert update.message is not None
+        logger.error("Telegram error in unprotect command: %s", e, exc_info=True)
+        if not update.message:
+            return
         response = await update.message.reply_text(
             "❌ An error occurred while disabling protection. Please try again."
         )
@@ -222,7 +220,6 @@ async def handle_settings(update: Update, _context: ContextTypes.DEFAULT_TYPE):
             return
 
         chat_id = update.effective_chat.id
-        assert update.message is not None
 
         # Only work in group chats
         if update.effective_chat.type == "private":
@@ -260,8 +257,9 @@ async def handle_settings(update: Update, _context: ContextTypes.DEFAULT_TYPE):
         await schedule_delete(response, AUTO_DELETE_DELAY, True, update.message)
 
     except TelegramError as e:
-        logging.error("Telegram error in settings command: %s", e, exc_info=True)
-        assert update.message is not None
+        logger.error("Telegram error in settings command: %s", e, exc_info=True)
+        if not update.message:
+            return
         response = await update.message.reply_text(
             "❌ An error occurred while loading settings. Please try again."
         )

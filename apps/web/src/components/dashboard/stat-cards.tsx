@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardStats } from "@/lib/hooks";
 
-const nf = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+const nf = new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 });
 
 /**
  * Format seconds to readable duration, including minutes when < 1 hour
@@ -58,7 +58,7 @@ export function StatCards() {
         description: "Since last restart",
       },
     ],
-    [stats],
+    [stats]
   );
 
   if (isPending) {

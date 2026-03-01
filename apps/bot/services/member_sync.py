@@ -16,6 +16,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import httpx
 from telegram.error import RetryAfter, TelegramError
 from telegram.ext import Application, ContextTypes
 
@@ -165,8 +166,8 @@ async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
             await insforge_client.bulk_update_member_counts(group_updates)
             logger.debug("Bulk updated member counts for %d groups", len(group_updates))
 
-    except (OSError, RuntimeError) as e:
-        logger.error("Failed to sync groups: %s", e)
+    except (httpx.HTTPError, OSError, RuntimeError) as e:
+        logger.warning("Failed to sync groups: %s", e)
 
     # 2. Collect enforced channel counts
     try:
@@ -184,8 +185,8 @@ async def sync_member_counts(context: ContextTypes.DEFAULT_TYPE) -> None:
             await insforge_client.bulk_update_subscriber_counts(channel_updates)
             logger.debug("Bulk updated subscriber counts for %d channels", len(channel_updates))
 
-    except (OSError, RuntimeError) as e:
-        logger.error("Failed to sync channels: %s", e)
+    except (httpx.HTTPError, OSError, RuntimeError) as e:
+        logger.warning("Failed to sync channels: %s", e)
 
     elapsed = (datetime.now(UTC) - start_time).total_seconds()
     logger.info(

@@ -6,16 +6,10 @@
 export { useDashboardStats, useChartData, useActivity } from "./use-dashboard";
 
 // Groups hooks
-export {
-  useGroups,
-  useGroup,
-  useUpdateGroup,
-  useDeleteGroup,
-  useToggleGroupProtection,
-} from "./use-groups";
+export { useGroups, useUpdateGroup, useDeleteGroup, useToggleGroupProtection } from "./use-groups";
 
 // Channels hooks
-export { useChannels, useChannel, useCreateChannel, useDeleteChannel } from "./use-channels";
+export { useChannels, useCreateChannel, useDeleteChannel } from "./use-channels";
 
 // Analytics hooks
 export { useVerificationTrends, useUserGrowth, useAnalyticsOverview } from "./use-analytics";
@@ -36,13 +30,7 @@ export {
 } from "./use-charts";
 
 // Bots hooks (ARCH-M2)
-export {
-  useBots,
-  useAddBot,
-  useVerifyBotToken,
-  useUpdateBot,
-  useDeleteBot,
-} from "./use-bots";
+export { useBots, useAddBot, useVerifyBotToken, useUpdateBot, useDeleteBot } from "./use-bots";
 
 // Auth hooks (ARCH-M2)
 export { useAuth, useUser } from "./use-auth";

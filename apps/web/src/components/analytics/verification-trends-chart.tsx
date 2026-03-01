@@ -67,89 +67,86 @@ export function VerificationTrendsChart() {
 
   return (
     <div role="figure" aria-label="Verification trends area chart">
-    <Card className="pt-0">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-        <div className="grid flex-1 gap-1">
-          <CardTitle>Verification Trends</CardTitle>
-          <CardDescription>
+      <Card className="pt-0">
+        <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+          <div className="grid flex-1 gap-1">
+            <CardTitle>Verification Trends</CardTitle>
+            <CardDescription>
+              {isPending ? (
+                <Skeleton className="h-4 w-48" />
+              ) : (
+                <>
+                  {data?.summary.total_verifications.toLocaleString() ?? 0} total verifications (
+                  {Math.round((data?.summary.success_rate ?? 0) * 10) / 10}% success)
+                </>
+              )}
+            </CardDescription>
+          </div>
+          <ChartPeriodSelector value={period} onValueChange={setPeriod} />
+        </CardHeader>
+        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+          <div className="min-h-[200px]">
             {isPending ? (
-              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-[250px] w-full" />
+            ) : chartData.length === 0 ? (
+              <ChartEmptyState message="No verification data for this period" />
             ) : (
-              <>
-                {data?.summary.total_verifications.toLocaleString() ?? 0} total verifications (
-                {Math.round((data?.summary.success_rate ?? 0) * 10) / 10}% success)
-              </>
-            )}
-          </CardDescription>
-        </div>
-        <ChartPeriodSelector value={period} onValueChange={setPeriod} />
-      </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <div className="min-h-[200px]">
-        {isPending ? (
-          <Skeleton className="h-[250px] w-full" />
-        ) : chartData.length === 0 ? (
-          <ChartEmptyState message="No verification data for this period" />
-        ) : (
-          <ChartContainer
-            config={chartConfig}
-            className="aspect-auto h-[250px] w-full"
-          >
-            <AreaChart accessibilityLayer data={chartData}>
-              <defs>
-                <linearGradient id="fillSuccessful" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-successful)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-successful)" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="fillFailed" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-failed)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-failed)" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="date"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                minTickGap={32}
-                tickFormatter={(value) => {
-                  return formatDate(value as string);
-                }}
-              />
-              <YAxis domain={[0, "auto"]} tickLine={false} axisLine={false} tickMargin={8} />
-              <ChartTooltip
-                cursor={false}
-                content={
-                  <ChartTooltipContent
-                    labelFormatter={(value) => {
+              <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
+                <AreaChart accessibilityLayer data={chartData}>
+                  <defs>
+                    <linearGradient id="fillSuccessful" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-successful)" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="var(--color-successful)" stopOpacity={0.1} />
+                    </linearGradient>
+                    <linearGradient id="fillFailed" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-failed)" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="var(--color-failed)" stopOpacity={0.1} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    minTickGap={32}
+                    tickFormatter={(value) => {
                       return formatDate(value as string);
                     }}
-                    indicator="dot"
                   />
-                }
-              />
-              <Area
-                dataKey="failed"
-                type="natural"
-                fill="url(#fillFailed)"
-                stroke="var(--color-failed)"
-                stackId="a"
-              />
-              <Area
-                dataKey="successful"
-                type="natural"
-                fill="url(#fillSuccessful)"
-                stroke="var(--color-successful)"
-                stackId="a"
-              />
-              <ChartLegend content={<ChartLegendContent />} />
-            </AreaChart>
-          </ChartContainer>
-        )}
-        </div>
-      </CardContent>
-    </Card>
+                  <YAxis domain={[0, "auto"]} tickLine={false} axisLine={false} tickMargin={8} />
+                  <ChartTooltip
+                    cursor={false}
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={(value) => {
+                          return formatDate(value as string);
+                        }}
+                        indicator="dot"
+                      />
+                    }
+                  />
+                  <Area
+                    dataKey="failed"
+                    type="natural"
+                    fill="url(#fillFailed)"
+                    stroke="var(--color-failed)"
+                    stackId="a"
+                  />
+                  <Area
+                    dataKey="successful"
+                    type="natural"
+                    fill="url(#fillSuccessful)"
+                    stroke="var(--color-successful)"
+                    stackId="a"
+                  />
+                  <ChartLegend content={<ChartLegendContent />} />
+                </AreaChart>
+              </ChartContainer>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -21,10 +21,7 @@ const periods: { value: PeriodValue; label: string }[] = [
   { value: "90d", label: "90d" },
 ];
 
-export function ChartPeriodSelector({
-  value,
-  onValueChange,
-}: ChartPeriodSelectorProps) {
+export function ChartPeriodSelector({ value, onValueChange }: ChartPeriodSelectorProps) {
   return (
     <div
       role="group"
@@ -40,7 +37,7 @@ export function ChartPeriodSelector({
             "rounded-sm px-2.5 py-1 text-xs font-medium transition-colors",
             value === period.value
               ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
+              : "text-muted-foreground hover:text-foreground"
           )}
           onClick={() => onValueChange(period.value)}
         >

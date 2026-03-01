@@ -88,7 +88,6 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
 
   const isPending = !isLoaded;
 
-
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -153,11 +152,7 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
                 onClick={handleSignOut}
                 disabled={isSigningOut}
               >
-                {isSigningOut ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  <LogOut />
-                )}
+                {isSigningOut ? <Loader2 className="animate-spin" /> : <LogOut />}
                 {isSigningOut ? "Signing out…" : "Log out"}
               </DropdownMenuItem>
             ) : (

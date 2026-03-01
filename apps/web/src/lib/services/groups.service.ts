@@ -92,6 +92,7 @@ export async function getGroup(id: number): Promise<GroupDetail | null> {
   return {
     ...data,
     linked_channels: linkedChannels,
+    // TODO: Fetch real per-group stats via RPC when available
     stats: {
       verifications_today: 0,
       verifications_week: 0,

@@ -45,8 +45,7 @@ export const queryKeys = {
     all: ["groups"] as const,
     lists: () => [...queryKeys.groups.all, "list"] as const,
     list: (params?: Record<string, unknown>) => [...queryKeys.groups.lists(), params] as const,
-    details: () => [...queryKeys.groups.all, "detail"] as const,
-    detail: (id: number) => [...queryKeys.groups.details(), id] as const,
+    detail: (id: number) => [...queryKeys.groups.all, "detail", id] as const,
   },
 
   // Channels keys
@@ -54,8 +53,7 @@ export const queryKeys = {
     all: ["channels"] as const,
     lists: () => [...queryKeys.channels.all, "list"] as const,
     list: (params?: Record<string, unknown>) => [...queryKeys.channels.lists(), params] as const,
-    details: () => [...queryKeys.channels.all, "detail"] as const,
-    detail: (id: number) => [...queryKeys.channels.details(), id] as const,
+    detail: (id: number) => [...queryKeys.channels.all, "detail", id] as const,
   },
 
   // Analytics keys
@@ -78,7 +76,6 @@ export const queryKeys = {
   bots: {
     all: ["bots"] as const,
     list: () => [...queryKeys.bots.all, "list"] as const,
-    detail: (id: number) => [...queryKeys.bots.all, "detail", id] as const,
   },
 
   // Charts keys (Advanced Analytics)

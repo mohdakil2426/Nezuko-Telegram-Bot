@@ -101,11 +101,15 @@ export function TopGroupsChart() {
         <CardHeader className="pb-2">
           <CardTitle>Top Groups by Activity</CardTitle>
           <CardDescription>
-            {totalVerifications.toLocaleString()} verifications across top {chartData.length} groups · All time
+            {totalVerifications.toLocaleString()} verifications across top {chartData.length} groups
+            · All time
           </CardDescription>
         </CardHeader>
         <CardContent className="min-h-[200px]">
-          <ChartContainer config={chartConfig} className="aspect-auto h-[280px] w-full md:h-[350px]">
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-[280px] w-full md:h-[350px]"
+          >
             <BarChart
               accessibilityLayer
               data={chartData}

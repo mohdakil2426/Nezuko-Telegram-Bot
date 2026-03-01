@@ -212,7 +212,4 @@ def register_handlers(application: Application) -> None:
     application.add_error_handler(error_handler)
     logger.debug("[OK] Registered global error handler")
 
-    logger.info(
-        "[SUCCESS] All handlers registered "
-        "(6 commands, 7 callbacks, 3 events, 1 message, 1 error handler)"
-    )
+    logger.info("[SUCCESS] All handlers registered successfully")

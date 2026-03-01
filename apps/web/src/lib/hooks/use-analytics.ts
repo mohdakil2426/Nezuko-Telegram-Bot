@@ -43,7 +43,7 @@ export function useUserGrowth(params?: TrendsParams) {
 export function useAnalyticsOverview(period?: string) {
   return useQuery({
     queryKey: queryKeys.analytics.overview(period),
-    queryFn: analyticsService.getAnalyticsOverview,
+    queryFn: () => analyticsService.getAnalyticsOverview(period),
     staleTime: STALE_TIMES.STANDARD,
     refetchInterval: REFETCH_INTERVALS.STANDARD,
   });

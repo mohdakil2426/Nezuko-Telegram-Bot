@@ -117,22 +117,22 @@ export default function BotsPage() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-            <Table aria-label="Registered bots">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Bot</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Added</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.bots.map((bot) => (
-                  <BotRow key={bot.id} bot={bot} />
-                ))}
-              </TableBody>
-            </Table>
+              <Table aria-label="Registered bots">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Bot</TableHead>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Added</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.bots.map((bot) => (
+                    <BotRow key={bot.id} bot={bot} />
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
@@ -162,10 +162,11 @@ function BotRow({ bot }: { bot: BotType }) {
     // NAV-M1: 3-second undo window — delay the actual mutation so the user can cancel
     let cancelled = false;
     const timer = setTimeout(() => {
-      if (!cancelled) deleteMutation.mutate(bot.id, {
-        onSuccess: () => toast.success("Bot deleted successfully"),
-        onError: () => toast.error("Failed to delete bot"),
-      });
+      if (!cancelled)
+        deleteMutation.mutate(bot.id, {
+          onSuccess: () => toast.success("Bot deleted successfully"),
+          onError: () => toast.error("Failed to delete bot"),
+        });
     }, 3000);
 
     toast("Bot deleted", {
@@ -196,9 +197,7 @@ function BotRow({ bot }: { bot: BotType }) {
           {bot.is_active ? "Active" : "Inactive"}
         </Badge>
       </TableCell>
-      <TableCell className="text-muted-foreground">
-        {formatDate(bot.created_at)}
-      </TableCell>
+      <TableCell className="text-muted-foreground">{formatDate(bot.created_at)}</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-2">
           <Button

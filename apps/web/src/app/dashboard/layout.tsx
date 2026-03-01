@@ -16,11 +16,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
  * Both guards skip auth when NEXT_PUBLIC_DEV_LOGIN=true (dev bypass).
  * ⚠️ Changing that env var requires a full server restart to take effect.
  */
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Read env at request time — Server Component layouts re-execute per request,
   // so process.env.NEXT_PUBLIC_DEV_LOGIN is always current after a server restart.
   const devLogin = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
@@ -40,7 +36,7 @@ export default async function DashboardLayout({
       <AppSidebar />
       <SidebarInset>
         <SiteHeader />
-        <main id="main-content" className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-x-hidden">
+        <main id="main-content" className="flex flex-1 flex-col gap-4 overflow-x-hidden p-4 pt-0">
           <ErrorBoundary>{children}</ErrorBoundary>
         </main>
       </SidebarInset>

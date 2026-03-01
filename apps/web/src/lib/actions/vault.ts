@@ -44,7 +44,7 @@ export async function getMasterKey() {
 
 /**
  * Save a new master key to the secure vault
- * 
+ *
  * @param keyValue The base64 encoded 256-bit key
  * @param description Optional description for the key
  */
@@ -55,7 +55,7 @@ export async function saveMasterKey(keyValue: string, description?: string) {
   const validated = vaultSecuritySchema.safeParse({
     master_key: keyValue,
     key_name: "master_key",
-    description
+    description,
   });
 
   if (!validated.success) {
@@ -68,14 +68,15 @@ export async function saveMasterKey(keyValue: string, description?: string) {
   try {
     // 2. UPSERT the secret into the database vault
     // This will create the key if it doesn't exist, or update it if it does.
-    const { error } = await insforge.database
-      .from("nezuko_secrets")
-      .upsert({
+    const { error } = await insforge.database.from("nezuko_secrets").upsert(
+      {
         key_name: "master_key",
         key_value: keyValue,
         description: description || "Main platform-wide encryption vault key",
         updated_at: new Date().toISOString(),
-      }, { onConflict: "key_name" });
+      },
+      { onConflict: "key_name" }
+    );
 
     if (error) {
       console.error("[saveMasterKey] Database error:", error);
@@ -110,7 +111,8 @@ export async function addBotSecure(token: string) {
   if (!masterKey) {
     return {
       success: false,
-      error: "Security Vault not configured. Please generate a master key in Settings before adding bots.",
+      error:
+        "Security Vault not configured. Please generate a master key in Settings before adding bots.",
     };
   }
 

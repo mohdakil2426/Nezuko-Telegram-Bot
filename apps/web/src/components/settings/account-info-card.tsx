@@ -9,13 +9,7 @@
 
 import { Mail, Shield, Loader2, FlaskConical } from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,13 +42,10 @@ export function AccountInfoCard() {
           <Alert className="border-amber-500/40 bg-amber-500/10">
             <FlaskConical className="h-4 w-4 text-amber-500" />
             <AlertDescription className="text-amber-600 dark:text-amber-400">
-              <span className="font-semibold">Dev mode active.</span> No
-              InsForge session — account info is only available when signed in
-              via InsForge Auth. Set{" "}
-              <code className="font-mono text-xs">
-                NEXT_PUBLIC_DEV_LOGIN=false
-              </code>{" "}
-              to enable real auth.
+              <span className="font-semibold">Dev mode active.</span> No InsForge session — account
+              info is only available when signed in via InsForge Auth. Set{" "}
+              <code className="font-mono text-xs">NEXT_PUBLIC_DEV_LOGIN=false</code> to enable real
+              auth.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -85,8 +76,7 @@ export function AccountInfoCard() {
   }
 
   // ── Signed-in: show real InsForge user ────────────────────────────────
-  const displayName =
-    user?.profile?.name || user?.email?.split("@")[0] || "Bot Owner";
+  const displayName = user?.profile?.name || user?.email?.split("@")[0] || "Bot Owner";
   const email = user?.email ?? "—";
   const avatar = user?.profile?.avatar_url ?? "";
 
@@ -101,11 +91,7 @@ export function AccountInfoCard() {
           <Avatar className="h-16 w-16">
             <AvatarImage src={avatar} alt={displayName} />
             <AvatarFallback className="text-lg">
-              {user ? (
-                getInitials(displayName)
-              ) : (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              )}
+              {user ? getInitials(displayName) : <Loader2 className="h-5 w-5 animate-spin" />}
             </AvatarFallback>
           </Avatar>
           <div className="space-y-1">

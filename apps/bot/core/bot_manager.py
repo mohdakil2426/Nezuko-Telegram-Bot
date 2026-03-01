@@ -8,10 +8,10 @@ import asyncio
 import contextlib
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import TypedDict
 
 import httpx
 from telegram import Update
@@ -54,13 +54,23 @@ class BotMetrics:
     errors_count: int = 0
 
 
+class BotHealthInfo(TypedDict):
+    """Type definition for bot health check result."""
+
+    bot_id: int
+    status: str
+    uptime: float | None
+    restart_count: int
+    error: str | None
+
+
 @dataclass
 class BotInstance:  # pylint: disable=too-many-instance-attributes
     """Runtime state for a bot instance."""
 
-    config: Any  # BotConfig type
-    application: Any  # Application type
-    task: asyncio.Task
+    config: "BotConfig"
+    application: Application  # type: ignore[type-arg]
+    task: asyncio.Task[None]
     status: BotStatus
     started_at: datetime
     last_heartbeat: datetime
@@ -70,7 +80,7 @@ class BotInstance:  # pylint: disable=too-many-instance-attributes
     last_restart_time: datetime | None = None
     metrics: BotMetrics = field(default_factory=BotMetrics)
     shutdown_event: asyncio.Event = field(default_factory=asyncio.Event)
-    logger: Any = None  # logging.Logger
+    logger: logging.Logger | None = None
     status_writer: StatusWriter | None = None
     command_worker: CommandWorker | None = None
 
@@ -149,19 +159,6 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         bot_logger.addHandler(console_handler)
 
         return bot_logger
-
-    @staticmethod
-    def get_bot_cache_key(bot_id: int, key: str) -> str:
-        """Generate per-bot cache key.
-
-        Args:
-            bot_id: Bot instance ID.
-            key: Cache key suffix.
-
-        Returns:
-            Namespaced cache key: bot:{id}:{key}
-        """
-        return f"bot:{bot_id}:{key}"
 
     async def load_bots_from_database(self) -> list[BotConfig]:
         """Load active bot configurations from InsForge bot_instances table.
@@ -250,32 +247,32 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
                 application=application,
                 task=task,
                 status=BotStatus.RUNNING,
-                started_at=datetime.now(),
-                last_heartbeat=datetime.now(),
+                started_at=datetime.now(tz=UTC),
+                last_heartbeat=datetime.now(tz=UTC),
                 logger=self._setup_bot_logger(bot_config.id, bot_config.bot_username),
             )
             self.bot_instances[bot_config.id] = bot_instance
 
             # Log to per-bot logger
-            bot_instance.logger.info(
-                "Started bot: @%s (id=%d)", bot_config.bot_username, bot_config.id
-            )
+            if bot_instance.logger:
+                bot_instance.logger.info(
+                    "Started bot: @%s (id=%d)", bot_config.bot_username, bot_config.id
+                )
             logger.info("Started bot: @%s", bot_config.bot_username)
 
             # Start dashboard services (StatusWriter + CommandWorker)
             from apps.bot.config import config as app_config
 
-            anon_key = app_config.insforge_anon_key
-            if anon_key:
+            if app_config.insforge_anon_key:
                 try:
                     bot_info = await application.bot.get_me()
                     telegram_bot_id = bot_info.id
 
-                    sw = StatusWriter(telegram_bot_id, anon_key)
+                    sw = StatusWriter(telegram_bot_id)
                     await sw.start()
                     bot_instance.status_writer = sw
 
-                    cw = CommandWorker(application.bot, telegram_bot_id, anon_key)
+                    cw = CommandWorker(application.bot, telegram_bot_id)
                     await cw.start()
                     bot_instance.command_worker = cw
 
@@ -324,7 +321,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
                     try:
                         # Update heartbeat
                         if bot_instance:
-                            bot_instance.last_heartbeat = datetime.now()
+                            bot_instance.last_heartbeat = datetime.now(tz=UTC)
 
                         await asyncio.wait_for(
                             self._shutdown_event.wait(),
@@ -399,7 +396,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
             return {"status": "crashed", "error": error}
 
         # Check 2: Heartbeat freshness
-        heartbeat_age = (datetime.now() - instance.last_heartbeat).total_seconds()
+        heartbeat_age = (datetime.now(tz=UTC) - instance.last_heartbeat).total_seconds()
         if heartbeat_age > 300:  # 5 minutes
             logger.warning("Bot id=%d heartbeat stale (age: %s seconds)", bot_id, heartbeat_age)
             return {"status": "unresponsive", "last_heartbeat_seconds_ago": heartbeat_age}
@@ -478,7 +475,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
 
         # Check cooldown
         if bot_instance.last_restart_time:
-            time_since_restart = datetime.now() - bot_instance.last_restart_time
+            time_since_restart = datetime.now(tz=UTC) - bot_instance.last_restart_time
             if time_since_restart < timedelta(seconds=self._restart_cooldown_seconds):
                 wait_seconds = self._restart_cooldown_seconds - int(
                     time_since_restart.total_seconds()
@@ -495,7 +492,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         if success:
             # Update last restart time
             if bot_id in self.bot_instances:
-                self.bot_instances[bot_id].last_restart_time = datetime.now()
+                self.bot_instances[bot_id].last_restart_time = datetime.now(tz=UTC)
             return {"status": "success"}
 
         return {"status": "error", "error": "Failed to restart bot"}
@@ -628,26 +625,25 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         logger.info("Stopping all bots (total: %d)", total)
 
         # Stop all bots concurrently
-        stop_tasks = []
-        for bot_id in list(self.bot_instances.keys()):
-            task = asyncio.create_task(self.stop_bot(bot_id, shutdown_timeout=shutdown_timeout))
-            stop_tasks.append((bot_id, task))
+        bot_ids = list(self.bot_instances.keys())
+        stop_tasks = [
+            asyncio.create_task(self.stop_bot(bot_id, shutdown_timeout=shutdown_timeout))
+            for bot_id in bot_ids
+        ]
 
-        # Wait for all stops to complete
-        for bot_id, task in stop_tasks:
-            try:
-                success = await task
-                if success:
-                    stopped += 1
-                else:
-                    failed += 1
-            except (TelegramError, RuntimeError, OSError) as e:
-                logger.error("Error stopping bot %d: %s", bot_id, e)
+        results = await asyncio.gather(*stop_tasks, return_exceptions=True)
+        for bot_id, result in zip(bot_ids, results, strict=True):
+            if isinstance(result, Exception):
+                logger.error("Failed to stop bot %s: %s", bot_id, result)
+                failed += 1
+            elif result:
+                stopped += 1
+            else:
                 failed += 1
 
-        result = {"stopped": stopped, "failed": failed, "total": total}
-        logger.info("Stop all bots complete: %s", result)
-        return result
+        result_dict = {"stopped": stopped, "failed": failed, "total": total}
+        logger.info("Stop all bots complete: %s", result_dict)
+        return result_dict
 
     async def run(self) -> None:
         """Run all active bots from database.

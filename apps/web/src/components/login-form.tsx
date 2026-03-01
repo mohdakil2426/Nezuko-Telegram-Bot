@@ -20,13 +20,7 @@ import Link from "next/link";
 import { SignInButton, useAuth } from "@insforge/nextjs";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { DEV_LOGIN } from "@/lib/api/config";
@@ -36,7 +30,8 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const rawRedirect = searchParams.get("redirectTo") || "/dashboard";
   // Validate: must start with "/" and not "//" (prevents open redirect to //evil.com)
-  const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
+  const redirectTo =
+    rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
 
   const { isLoaded, isSignedIn } = useAuth();
 
@@ -82,9 +77,7 @@ export function LoginForm() {
         {isLoaded && isSignedIn && (
           <div className="flex flex-col items-center space-y-2 py-4">
             <Loader2 className="text-primary h-8 w-8 animate-spin" />
-            <p className="text-muted-foreground text-sm">
-              Redirecting to dashboard…
-            </p>
+            <p className="text-muted-foreground text-sm">Redirecting to dashboard…</p>
           </div>
         )}
 
@@ -109,8 +102,8 @@ export function LoginForm() {
             </SignInButton>
 
             <p className="text-muted-foreground max-w-xs text-center text-xs">
-              You&apos;ll be redirected to a secure sign-in page. Only the
-              project owner can access this dashboard.
+              You&apos;ll be redirected to a secure sign-in page. Only the project owner can access
+              this dashboard.
             </p>
 
             <Link
@@ -133,15 +126,10 @@ export function LoginForm() {
 
             <Alert className="border-amber-500/40 bg-amber-500/10">
               <AlertCircle className="h-4 w-4 text-amber-500" />
-              <AlertTitle className="text-amber-500">
-                Development Mode
-              </AlertTitle>
+              <AlertTitle className="text-amber-500">Development Mode</AlertTitle>
               <AlertDescription className="text-amber-500/80">
                 Auth bypass is enabled. Disable in production by setting{" "}
-                <code className="font-mono text-xs">
-                  NEXT_PUBLIC_DEV_LOGIN=false
-                </code>
-                .
+                <code className="font-mono text-xs">NEXT_PUBLIC_DEV_LOGIN=false</code>.
               </AlertDescription>
             </Alert>
 

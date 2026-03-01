@@ -20,7 +20,7 @@ from aiohttp import web
 
 from apps.bot.config import config
 from apps.bot.core import cache as _cache_mod
-from apps.bot.core.database import check_db_connectivity
+from apps.bot.core import insforge_client
 from apps.bot.utils.metrics import (
     get_metrics,
     get_metrics_content_type,
@@ -45,14 +45,14 @@ def get_uptime_seconds() -> float:
 
 async def check_database() -> dict:
     """
-    Check database connectivity.
+    Check database connectivity via InsForge REST API.
 
     Returns:
         Dict with 'healthy' boolean and optional 'latency_ms'
     """
     try:
         start = time.perf_counter()
-        await check_db_connectivity()
+        await insforge_client._get("owners", {"limit": "1"})  # pylint: disable=protected-access
 
         latency_ms = (time.perf_counter() - start) * 1000
         set_db_connected(True)

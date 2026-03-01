@@ -29,11 +29,7 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 // ── Inner form that reads searchParams ─────────────────────────────────────
 function VerifyEmailForm() {
@@ -106,8 +102,7 @@ function VerifyEmailForm() {
         </CardTitle>
 
         <CardDescription className="text-muted-foreground">
-          We sent a 6-digit code to{" "}
-          <span className="font-medium">{email || "your email"}</span>
+          We sent a 6-digit code to <span className="font-medium">{email || "your email"}</span>
         </CardDescription>
       </CardHeader>
 
@@ -115,12 +110,7 @@ function VerifyEmailForm() {
         {/* OTP Input */}
         <div className="flex flex-col items-center gap-4">
           <div role="group" aria-label="6-digit verification code">
-            <InputOTP
-              maxLength={6}
-              value={otp}
-              onChange={setOtp}
-              onComplete={handleVerify}
-            >
+            <InputOTP maxLength={6} value={otp} onChange={setOtp} onComplete={handleVerify}>
               <InputOTPGroup>
                 <InputOTPSlot index={0} />
                 <InputOTPSlot index={1} />
@@ -154,9 +144,7 @@ function VerifyEmailForm() {
       </CardContent>
 
       <CardFooter className="flex flex-col gap-2 border-t pt-4">
-        <p className="text-muted-foreground text-center text-xs">
-          Didn&apos;t receive the code?
-        </p>
+        <p className="text-muted-foreground text-center text-xs">Didn&apos;t receive the code?</p>
         <Button
           id="resend-code-btn"
           variant="ghost"
@@ -183,7 +171,9 @@ function VerifyEmailFallback() {
     <Card className="bg-card/80 w-full border-0 shadow-xl backdrop-blur-sm">
       <CardContent className="flex items-center justify-center py-16">
         <Loader2 className="text-primary h-8 w-8 animate-spin" />
-        <span className="sr-only" role="status">Loading...</span>
+        <span className="sr-only" role="status">
+          Loading...
+        </span>
       </CardContent>
     </Card>
   );

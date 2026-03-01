@@ -8,12 +8,12 @@ and restricts users who aren't subscribed.
 import logging
 
 from telegram import Update
-from telegram.constants import ChatMemberStatus
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
 from apps.bot.core import insforge_client
 from apps.bot.core.cache import cache_get, cache_set, get_ttl_with_jitter
+from apps.bot.core.constants import ADMIN_STATUSES
 from apps.bot.services.protection import restrict_user
 from apps.bot.services.verification import check_multi_membership
 from apps.bot.utils.ui import send_verification_warning
@@ -69,8 +69,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 # Cache miss — call Telegram API
                 chat_member = await context.bot.get_chat_member(chat_id=chat_id, user_id=user_id)
-                admin_statuses = [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
-                is_admin = chat_member.status in admin_statuses
+                is_admin = chat_member.status in ADMIN_STATUSES
 
                 # Cache the result with jitter to avoid thundering herd
                 ttl = get_ttl_with_jitter(_ADMIN_CACHE_TTL)
@@ -97,7 +96,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Step 3: Check membership in ALL linked channels
         missing_channels = await check_multi_membership(
-            user_id=user_id, channels=channels, context=context
+            user_id=user_id, channels=channels, context=context, group_id=chat_id
         )
 
         # Step 4: If all channels verified, allow message

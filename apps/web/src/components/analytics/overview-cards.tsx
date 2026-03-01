@@ -44,7 +44,10 @@ function OverviewCard({ title, value, description, icon, isUpdated }: OverviewCa
       </CardContent>
       {/* Real-time update indicator */}
       {isUpdated && (
-        <div className="absolute top-2 right-2 h-2 w-2 animate-ping motion-reduce:animate-none rounded-full bg-green-500" aria-hidden="true" />
+        <div
+          className="absolute top-2 right-2 h-2 w-2 animate-ping rounded-full bg-green-500 motion-reduce:animate-none"
+          aria-hidden="true"
+        />
       )}
     </Card>
   );
