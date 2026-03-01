@@ -70,7 +70,8 @@
       "Bash(npx next:*)",
       "Bash(npx:*)",
       "mcp__shadcn__search_items_in_registries",
-      "Skill(shadcn-ui)"
+      "Skill(shadcn-ui)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   },
   "enabledMcpjsonServers": [

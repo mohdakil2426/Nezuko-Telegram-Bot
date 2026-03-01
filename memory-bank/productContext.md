@@ -44,7 +44,7 @@ Nezuko acts as an **automated gatekeeper** that:
 | Page | Purpose |
 | --- | --- |
 | **Dashboard** | Overview stats, animated verification charts, activity feeds. |
-| **Analytics** | Verification trends, growth metrics, performance (responsive charts). |
+| **Analytics** | 3 domain-based tabs: Bot Operations, Cache & API, Groups & Members. 13 charts with responsive period selectors, empty states, and full ARIA accessibility. |
 | **Groups** | Manage protected groups, member counts, linked channels. |
 | **Channels** | Manage enforced channels, subscriber counts, linked groups. |
 | **Bots** | Add/manage multiple bot instances. |
@@ -85,8 +85,8 @@ Dashboard ← InsForge Realtime (WebSocket) ← PostgreSQL Triggers
 | Verification Latency (p99) | <150ms | ✅ Achieved |
 | Dashboard Pages | 10 | ✅ Complete |
 | Uptime | 99.9% | ✅ On Track |
-| UI/UX Audit Score | 90/100 | ✅ Phase 77 (was 62/100) |
+| UI/UX Audit Score | 95/100 | ✅ Phase 82 (was 62→90→95) |
 
 ---
 
-_Last Updated: 2026-02-28 (Phase 77 — UI/UX Audit Fix)_
+_Last Updated: 2026-03-01 (Phase 82 — Web UI Charts Comprehensive Audit & Fix)_

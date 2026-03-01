@@ -237,7 +237,7 @@ to verify exact field names before writing TypeScript interfaces.
 | `get_bot_health` | `avg_latency_ms` | `avg_latency_score` | `avg_latency_ms` |
 | `get_latency_distribution` | `sort_order` | *(missing)* | `sort_order?: number` |
 
-### Chart Responsiveness Patterns (Phase 69 — CRITICAL)
+### Chart Responsiveness Patterns (Phase 69+82 — CRITICAL)
 
 **Standard patterns for `ChartContainer` className:**
 
@@ -252,6 +252,41 @@ to verify exact field names before writing TypeScript interfaces.
 - Use `max-h-` (not `h-`) for pie/donut/radial charts to allow shrinking
 - Add mobile height breakpoints (`h-[250px] md:h-[300px]`)
 - Grid for pie/donut charts: use `xl:grid-cols-4` not `lg:grid-cols-4` to prevent overflow
+
+### Chart Shared Components (Phase 82 — CANONICAL)
+
+**ChartPeriodSelector** — Responsive period selector for all time-series charts:
+```tsx
+import { ChartPeriodSelector, type PeriodValue } from "@/components/charts/chart-period-selector";
+// Inline button group "7d" / "30d" / "90d" — visible at ALL breakpoints (never hidden on mobile)
+// Replaces the old Select dropdown pattern that used `hidden sm:flex`
+const [period, setPeriod] = React.useState<PeriodValue>("30d");
+<ChartPeriodSelector value={period} onValueChange={setPeriod} />
+```
+
+**ChartEmptyState** — Shared empty state for when charts have no data:
+```tsx
+import { ChartEmptyState } from "@/components/charts/chart-empty-state";
+// muted BarChart3 icon + centered message + aria-live="polite"
+if (!data?.length) return <Card>...<ChartEmptyState message="No data available" /></Card>;
+```
+
+**Chart ARIA wrapper pattern** — Use `role="figure"` (not `role="img"`) for interactive charts:
+```tsx
+<div role="figure" aria-label="Descriptive chart label with current value">
+  <Card>...</Card>
+</div>
+```
+
+### Analytics Tab Organization (Phase 82 — CANONICAL)
+
+Analytics uses 3 domain-based tabs (NOT chart-type-based). Each chart appears exactly ONCE:
+
+| Tab | URL Param | Charts |
+|---|---|---|
+| Bot Operations (default) | `?tab=operations` | VerificationTrends, UserGrowth, HourlyActivity, VerificationDistribution, BotHealth |
+| Cache & API | `?tab=cache-api` | CacheHitRateTrend, LatencyTrend, ApiCallsTrend, LatencyDistribution, CacheBreakdown, ApiCalls |
+| Groups & Members | `?tab=groups-members` | Members, TopGroups, GroupsStatus |
 
 ### Realtime Hooks
 
@@ -585,4 +620,4 @@ if (!BASE_URL) throw new Error("NEXT_PUBLIC_INSFORGE_BASE_URL is required");
 const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
 ```
 
-_Last Updated: 2026-02-28 (Phase 77 — UI/UX Audit Fix)_
+_Last Updated: 2026-03-01 (Phase 82 — Web UI Charts Comprehensive Audit & Fix)_

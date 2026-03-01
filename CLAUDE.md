@@ -1,11 +1,32 @@
 # Nezuko Telegram Bot Platform
 
-> **Production-ready Telegram bot platform** for automated channel membership enforcement.  
+> **Production-ready Telegram bot platform** for automated channel membership enforcement.
 > Python 3.13.1 | uv (lockfile) | python-telegram-bot v22.6+ | Async-first architecture
 
-**Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read these all files for deep project understanding. **NEVER SKIP THIS STEP**
+**Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read ALL files for deep project understanding. **NEVER SKIP THIS STEP.**
 
-**⚠️ RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, and best practice documented below. No exceptions, no shortcuts. Violations lead to broken builds, security issues, hard coding, and technical debt. and most importantly project pattern, existing ui style consistancy to insure all ui changes alligned with project, and respect all the rules and guidelines documented below.
+**⚠️ RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, and best practice documented below. No exceptions, no shortcuts. Violations lead to broken builds, security issues, hardcoding, and technical debt. Respect project patterns, existing UI style consistency, and ensure all changes align with the project.
+
+---
+
+## 🏗️ Architecture (2-Tier InsForge BaaS)
+
+```
+Web Dashboard (Next.js 16) ──► @insforge/sdk ──► InsForge BaaS (PostgreSQL + Realtime WS)
+                                                    ▲          ▲
+Bot Engine (Python 3.13) ──────► httpx REST ────────┘          │ WebSocket pushes
+  └─ insforge_client.py                              DB triggers fire on:
+  └─ status_writer.py (30s heartbeat)                • verification_log INSERT → "verification"
+  └─ command_worker.py (10s poll)                    • bot_status CHANGE → "status_changed"
+  └─ member_sync.py (15min JobQueue)                 • admin_logs INSERT → "new_log"
+  └─ verification_logger.py (fire-and-forget)        • admin_commands CHANGE → "command_updated"
+  └─ api_call_logger.py (fire-and-forget)
+```
+
+- **No custom API server** — both bot and web talk directly to InsForge REST / SDK.
+- **SQLAlchemy is test-only** (SQLite in-memory for fast offline pytest runs). Never import `database.py`, `crud.py`, or `models.py` from production code.
+- **Bot DB access**: `insforge_client.py` (`httpx` REST) — never raw PostgreSQL.
+- **Web DB access**: `@insforge/sdk` via `import { insforge } from "@/lib/insforge"`.
 
 ---
 
@@ -14,84 +35,91 @@
 ```
 nezuko/
 ├── apps/
-│   ├── web/          # Next.js 16 Admin Dashboard (~120 TS files)
-│   └── bot/          # Telegram Bot (PTB v22, ~25 Python files)
-├── insforge/         # InsForge migration files & Edge Functions
-│   ├── migrations/   # SQL migration files (001-005)
-│   └── functions/    # Edge Functions (manage-bot, test-webhook)
+│   ├── bot/          # Telegram Bot (PTB v22, ~25 Python files)
+│   │   ├── core/     # insforge_client, bot_manager, loader, encryption, cache
+│   │   ├── handlers/ # admin/ (setup, settings, help), events/ (join, leave, message), verify, error
+│   │   ├── services/ # verification, protection, member_sync, status_writer, command_worker
+│   │   ├── database/ # verification_logger, api_call_logger, insforge_log_handler (tests: models, crud)
+│   │   └── utils/    # health, metrics, resilience, logging, sentry, auto_delete, ui
+│   └── web/          # Next.js 16 Admin Dashboard (~120 TS files)
+│       └── src/
+│           ├── app/dashboard/  # 7 route groups (analytics, groups, channels, bots, logs, settings)
+│           ├── components/     # 70+ components (charts/, analytics/, dashboard/, settings/, ui/)
+│           ├── lib/            # services/, hooks/, mock/, actions/, schemas/, query-keys.ts, insforge.ts
+│           ├── providers/      # Theme, Query, Motion, Insforge auth providers
+│           └── proxy.ts        # InsforgeMiddleware route guard (Next.js 16 proxy pattern)
+├── insforge/
+│   ├── migrations/   # SQL migration files (001-018)
+│   └── functions/    # Edge Functions (manage-bot — AES-256-GCM token encryption)
+├── tests/bot/        # ALL tests live here (58 pytest tests) — NEVER in apps/
 ├── openspec/         # OpenSpec change management artifacts
-├── config/           # Docker, Caddy, deployment configs
-├── tests/            # ALL tests (not in apps/)
-├── scripts/          # Utility scripts
-├── apps/bot/logs/    # Bot runtime logs (gitignored)
-├── memory-bank/      # Project context & progress
-└── docs/             # Documentation
+├── scripts/          # Dev utility scripts
+├── memory-bank/      # 6 context files (project brief, active context, system patterns, etc.)
+└── docs/             # Technical documentation
 ```
 
 ---
 
-## 🚨 Critical Rules
+## 🚨 Critical Rules (NEVER Violate)
 
-### File Locations (NEVER Violate)
+### File Locations
 
-| Type        | Correct Location                       | ❌ Wrong                      |
-| ----------- | -------------------------------------- | ----------------------------- |
-| Tests       | `tests/bot/`                           | `apps/*/tests/`               |
-| Database    | InsForge managed PostgreSQL (cloud)    | Local sqlite or `apps/*.db`   |
-| Migrations  | `insforge/migrations/*.sql`            | `alembic/versions/`           |
-| Logs        | `apps/bot/logs/`                       | `apps/*.log`                  |
-| Env files   | `apps/bot/.env`, `apps/web/.env.local` | Root `.env`                   |
-| Python deps | `pyproject.toml`, `uv.lock`            | `requirements.txt`, `pip`     |
+| Type | ✅ Correct Location | ❌ Wrong |
+|---|---|---|
+| Tests | `tests/bot/` | `apps/*/tests/` |
+| Database | InsForge managed PostgreSQL (cloud) | Local SQLite, `apps/*.db` |
+| Migrations | `insforge/migrations/*.sql` | `alembic/versions/` |
+| Logs | `apps/bot/logs/` (gitignored) | `apps/*.log`, root logs |
+| Bot env | `apps/bot/.env` | Root `.env` |
+| Web env | `apps/web/.env.local` | Root `.env` |
+| Python deps | `pyproject.toml` + `uv.lock` | `requirements.txt`, `pip` |
+| Frontend deps | `apps/web/package.json` (managed with `bun`) | `npm`, `yarn` |
+| Canonical schema | `insforge/migrations/009_clean_schema.sql` | Any other file |
 
-### Code Quality (ZERO TOLERANCE)
+### Database Rules
 
-**⚠️ Always use LATEST versions. Check before installing:**
+- **All Telegram IDs MUST be `BIGINT`** — they exceed INT4 max (2.1B). Bot ID `8265490825` = 8.26B.
+- **Always grant sequences** after `CREATE TABLE`: `GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon;`
+- **UPSERT conflicts**: Use PATCH-then-POST pattern when table has multiple UNIQUE columns (PostgREST 409).
+- **Denormalized counters** (`linked_channels_count`, `linked_groups_count`): Always recalculate from `group_channel_links` rows — never increment/decrement.
 
-```bash
-# Python (Bot) - 3 tools required:
-ruff check apps/bot                  # Lint (0 errors)
-ruff format --check .                # Format check
-pylint apps/bot --rcfile=pyproject.toml  # Score: 10.00/10
-.venv/Scripts/python.exe -m pyrefly check  # Type check (0 errors)
+### Security Rules
 
-# TypeScript (Web):
-cd apps/web && bun run lint          # ESLint (0 warnings)
-cd apps/web && bun run build         # TypeScript (0 errors)
-
-# MUST pass before ANY commit:
-pytest                               # All tests pass
-```
-
-### Async Patterns (RUF006)
-
-```python
-# ✅ Store task references
-_tasks: set[asyncio.Task] = set()
-task = asyncio.create_task(coro())
-_tasks.add(task)
-task.add_done_callback(_tasks.discard)
-
-# ❌ WRONG - task may be garbage collected
-asyncio.create_task(coro())
-```
+- **Master key stays server-side only** — `addBotSecure()` server action handles encryption entirely on the server.
+- **Never log secrets** — error messages sanitized to generic text for clients, real errors logged server-side.
+- **No hardcoded fallback URLs** — throw if env var missing (e.g., `NEXT_PUBLIC_INSFORGE_BASE_URL`).
+- **Dev bypass guarded** — `NEXT_PUBLIC_DEV_LOGIN=true` only works when `NODE_ENV !== "production"`.
+- **Open redirect prevention** — validate `redirectTo` doesn't start with `//`.
+- **RLS on all tables** — 38 policies across 11 tables (migration 012).
 
 ---
 
 ## 🎯 Universal Development Principles
 
-**ALWAYS follow these principles - no exceptions:**
+1. **No Hardcoding** — Use env vars, config files, or named constants. Never hardcode URLs, keys, IDs, or magic numbers.
+2. **DRY** — Extract reusable functions, components, and utilities. If you write it twice, refactor.
+3. **Single Responsibility** — Each function/class does ONE thing well. Split if doing multiple things.
+4. **Fail Fast** — Validate inputs early, throw meaningful errors, use proper error boundaries.
+5. **Type Everything** — Full type coverage in Python (Pyrefly) and TypeScript (TSC strict). No `any`, no untyped parameters.
+6. **Document Intent** — Docstrings explain WHY, not just WHAT. Comments for complex logic only.
+7. **Test Critical Paths** — Unit tests for business logic. No untested code in production.
+8. **Security First** — Sanitize inputs, validate tokens, never log secrets, use parameterized queries.
+9. **Performance Aware** — Avoid N+1 queries, cache expensive operations, lazy load when possible.
+10. **Clean Commits** — Atomic commits, conventional messages, no broken builds in history.
+11. **KISS** — Simple, readable, maintainable solutions over complex, over-engineered architectures.
 
-1. **No Hardcoding** - Use environment variables, config files, or constants. Never hardcode URLs, keys, IDs, or magic numbers.
-2. **DRY (Don't Repeat Yourself)** - Extract reusable functions, components, and utilities. If you write it twice, refactor.
-3. **Single Responsibility** - Each function/class does ONE thing well. If it does multiple things, split it.
-4. **Fail Fast** - Validate inputs early, throw meaningful errors, use proper error boundaries.
-5. **Type Everything** - Full type coverage in Python and TypeScript. No `any`, no untyped parameters.
-6. **Document Intent** - Write docstrings explaining WHY, not just WHAT. Comments for complex logic only.
-7. **Test Critical Paths** - Unit tests for business logic, integration tests for APIs, no untested code in production.
-8. **Security First** - Sanitize inputs, validate tokens, never log secrets, use parameterized queries.
-9. **Performance Aware** - Avoid N+1 queries, cache expensive operations, lazy load when possible.
-10. **Clean Commits** - Atomic commits, conventional messages, no broken builds in commit history.
-11. **KISS (Keep It Simple, Stupid)** - Prioritize simple, readable, and maintainable solutions over complex, over-engineered architectures. Simple is better than complex.
+---
+
+## ⚙️ Tech Stack
+
+| Layer | Stack |
+|---|---|
+| **Bot** | Python 3.13, python-telegram-bot v22.6 (with JobQueue, rate-limiter, http2), httpx <0.29, Redis 7.1+, cryptography 45+ |
+| **Frontend** | Next.js 16.1, React 19.2, TypeScript 5.9, Tailwind v4, shadcn/ui, Recharts 2.15, Motion 12.27+, TanStack Query 5.90+ |
+| **BaaS** | InsForge — managed PostgreSQL, Realtime WebSocket, Storage (2 buckets), Edge Functions |
+| **Auth** | InsForge Auth (email/password + Google/GitHub OAuth), `InsforgeMiddleware` route guard, `insforge_session` cookie, RLS |
+| **Infra** | Docker (bot), Vercel (web), Caddy reverse proxy |
+| **Package** | `uv` (Python), `bun` (TypeScript) |
 
 ---
 
@@ -100,103 +128,264 @@ asyncio.create_task(coro())
 ### Run Services
 
 ```bash
-uv run python -m apps.bot.main    # Bot (run from project root)
-cd apps/web && bun dev            # Web (port 3000)
+uv run python -m apps.bot.main    # Bot (from project root — detects standalone/dashboard mode)
+cd apps/web && bun dev             # Web (port 3000)
+docker compose -f docker-compose.local.yml up -d  # Redis (local)
 ```
 
 ### Lint & Format
 
-**Python (Bot):**
 ```bash
-uv run ruff check apps/bot --fix && uv run ruff format .   # Auto-fix & Format (Ruff)
-uv run pylint apps/bot --rcfile=pyproject.toml             # Deep analysis (Target: 10/10)
-```
+# ── Python (Bot) ──────────────────────────────────────────────────────────────
+uv run ruff check apps/bot --fix && uv run ruff format .   # Auto-fix + format
+uv run pylint apps/bot --rcfile=pyproject.toml              # Deep analysis (target: 10.00/10)
+.venv/Scripts/python.exe -m pyrefly check                   # Type check (0 errors)
 
-**TypeScript (Web):**
-```bash
-cd apps/web && bun run lint --fix                          # ESLint (Logic fixes)
-cd apps/web && bun x prettier src --write                  # Prettier (Tailwind & style fix)
+# ── TypeScript (Web) ──────────────────────────────────────────────────────────
+cd apps/web && bun run lint --fix                           # ESLint (0 warnings, --max-warnings 0)
+cd apps/web && bun x prettier src --write                   # Prettier + Tailwind sort
+cd apps/web && bun run type-check                           # TSC --noEmit (0 errors)
 ```
 
 ### Quality & Testing
 
-**Python (Bot):**
 ```bash
-uv run pytest tests/bot/ -v                  # Run all tests
-uv run pytest --cov=apps --cov-report=html   # Coverage report
+# ── Python ────────────────────────────────────────────────────────────────────
+uv run pytest tests/bot/ -v                   # Run all 58 tests
+uv run pytest --cov=apps --cov-report=html    # Coverage report
+
+# ── TypeScript ────────────────────────────────────────────────────────────────
+cd apps/web && bun run build                  # Full production build (0 errors)
+cd apps/web && bun x knip                     # Find dead code & unused deps
 ```
-
-**TypeScript (Web):**
-```bash
-cd apps/web && bun run type-check            # TypeScript validation (TSC)
-cd apps/web && bun x knip                    # Find dead code & unused deps
-```
-
-# Database migrations are managed via InsForge migrations:
-# → Edit insforge/migrations/*.sql and apply via InsForge dashboard
-
 
 ---
 
-## ⚙️ Tech Stack
+## 📐 Coding Standards — Python (Bot)
 
-| Layer        | Stack                                                                      |
-| ------------ | -------------------------------------------------------------------------- |
-| **Frontend** | Next.js 16.1, React 19.2, TypeScript 5.9, Tailwind v4, shadcn/ui, Recharts |
-| **Bot**      | python-telegram-bot v22.6, Python 3.13.1, AsyncIO, SQLAlchemy 2.0, AsyncPG  |
-| **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions |
-| **Auth**     | None (development mode — direct dashboard access)                          |
-| **Package**  | uv (high-performance dependency resolver & lockfile)                       |
-| **Infra**    | Docker (bot), Vercel (web hosting), Caddy                                  |
+### Formatting & Style
+
+| Setting | Value | Enforced By |
+|---|---|---|
+| Indent | 4 spaces | `.editorconfig`, Ruff |
+| Line length | 100 chars | `pyproject.toml` → `[tool.ruff] line-length = 100` |
+| Quote style | Double quotes | `[tool.ruff.format] quote-style = "double"` |
+| Target version | Python 3.13 | `target-version = "py313"` |
+| Import order | `future → stdlib → third-party → first-party → local` | `[tool.ruff.lint.isort]` |
+
+### Ruff Lint Rules (Active)
+
+```
+E     — pycodestyle errors
+W     — pycodestyle warnings
+F     — Pyflakes (unused imports, undefined names)
+I     — isort (import sorting)
+B     — flake8-bugbear (common bugs)
+C4    — flake8-comprehensions (unnecessary list/dict/set comprehensions)
+UP    — pyupgrade (modernize syntax)
+ARG   — flake8-unused-arguments
+SIM   — flake8-simplify (code simplification)
+RUF   — Ruff-specific rules (includes RUF006 asyncio task references)
+PERF  — Performance anti-patterns
+ASYNC — Async best practices
+```
+
+**Ignored**: `E501` (formatter handles), `B008` (Depends()), `B904`, `ARG001/002` (framework callbacks), `RUF001` (emoji), `RUF012` (Pydantic)
+
+### Pylint Config (Target: 10.00/10)
+
+- **Design limits**: `max-args=10`, `max-locals=25`, `max-returns=8`, `max-branches=15`, `max-statements=60`
+- **Disabled checks**: `missing-*-docstring` (handled by Ruff), `invalid-name`, `too-few-public-methods`, `too-many-arguments`, `import-error` (Pyrefly covers), `not-callable` (SQLAlchemy false positive), `import-outside-toplevel` (lazy imports), `unused-argument` (framework callbacks)
+- **Parallel**: `jobs = 0` (auto-detect CPU cores)
+
+### Pyrefly Type Checker (0 errors required)
+
+- **Strict mode**: `untyped-def-behavior = "check-and-infer-return-type"`
+- **Includes**: `apps/bot`
+- **Excludes**: `tests/`, `venv/`, `__pycache__/`, `node_modules/`, `apps/web/`
+- **Missing imports tolerated**: `alembic`, `apscheduler`, `prometheus_client`, `sentry_sdk`
+
+### Python Coding Patterns
+
+```python
+# ✅ Imports — always absolute from package root
+from apps.bot.core import insforge_client
+from apps.bot.services.verification import check_membership
+
+# ✅ DB operations — always insforge_client (never SQLAlchemy in production)
+channels = await insforge_client.get_group_channels(chat_id)
+await insforge_client.create_owner(user_id, username)
+
+# ✅ Fire-and-forget analytics
+from apps.bot.database.verification_logger import log_verification_async
+log_verification_async(user_id, group_id, channel_id, "verified", latency_ms=45)
+
+# ✅ Async task references (RUF006 — prevent garbage collection)
+_background_tasks: set[asyncio.Task[None]] = set()
+task = asyncio.create_task(some_coroutine())
+_background_tasks.add(task)
+task.add_done_callback(_background_tasks.discard)
+
+# ✅ Specific exception handling
+except TelegramError as e: ...        # Telegram SDK
+except httpx.HTTPError as e: ...      # InsForge REST API
+except (OSError, RuntimeError) as e: ... # Network/system
+except asyncio.CancelledError: ...    # Task cancellation
+
+# ❌ NEVER do these:
+asyncio.create_task(coro())           # Task lost to GC
+except Exception as e: ...            # Too broad — masks bugs
+async with get_session() as session:  # SQLAlchemy is test-only
+from apps.bot.database.crud import *  # crud.py is test-only
+```
 
 ---
 
-## 📐 Coding Standards
+## 📐 Coding Standards — TypeScript (Web)
 
-### Python (Bot)
+### Formatting & Style
 
-- **Indent**: 4 spaces | **Line**: 100 chars
-- **Format**: `ruff format` | **Lint**: ruff + pylint (target 10.00/10)
-- **Types**: Required on all functions (pyrefly enforced)
-- **Docstrings**: Required on public functions
-- **Async**: Always for I/O operations
-- **SQLAlchemy**: Use `select()` style, not ORM queries
-- **Errors**: Catch specific exceptions (`PostgresError`, `TelegramError`) — never bare `except Exception`
+| Setting | Value | Enforced By |
+|---|---|---|
+| Indent | 2 spaces | `.editorconfig`, Prettier |
+| Line length | 100 chars | `.prettierrc` → `printWidth: 100` |
+| Semicolons | Yes | `"semi": true` |
+| Quotes | Double | `"singleQuote": false` |
+| Trailing commas | ES5 | `"trailingComma": "es5"` |
+| Tailwind sort | Auto | `prettier-plugin-tailwindcss` |
 
-### TypeScript (Web)
+### ESLint Config (Flat Config — eslint.config.mjs)
 
-- **Indent**: 2 spaces | **Format**: Prettier | **Lint**: ESLint
-- **Components**: Functional with hooks
-- **TanStack Query**: Use `isPending`, not `isLoading`
+- **Base**: `eslint-config-next` (includes Next.js + React + a11y rules)
+- **Plugin**: `eslint-plugin-react-compiler` → `"react-compiler/react-compiler": "error"`
+- **Max warnings**: `0` (`--max-warnings 0` in `lint` script)
+- **Ignores**: `.next/`, `out/`, `build/`, `node_modules/`
+
+### TypeScript Coding Patterns
+
+```typescript
+// ✅ InsForge SDK — singleton client
+import { insforge } from "@/lib/insforge";
+const { data, error } = await insforge.database.rpc("get_dashboard_stats");
+
+// ✅ Service → Hook → Component pattern
+// service: fetches data via InsForge SDK
+// hook: wraps in useQuery with queryKeys.* factory
+// component: consumes hook, renders UI
+
+// ✅ TanStack Query v5 — correct API
+const { data, isPending, error } = useQuery({ ... });  // isPending, NOT isLoading
+refetchInterval: REFETCH_INTERVALS.STANDARD,            // Shared constants, NOT magic numbers
+staleTime: STALE_TIMES.SHORT,
+
+// ✅ Server Components by default, "use client" only when needed
+// ✅ Motion via LazyMotion + domAnimation (~4.6 KB, not full 34 KB)
+// ✅ Intl API for date/number formatting (no locale hardcoding)
+// ✅ ARIA patterns: role="figure", aria-label, aria-live="polite"
+// ✅ Chart containers: aspect-auto h-[250px] md:h-[300px] w-full (time-series)
+
+// ❌ NEVER do these:
+const x: any = ...;                    // No any
+refetchIntervalInBackground: true      // Wastes 25+ req/min (removed in Phase 77)
+toLocaleDateString("en-US")            // Hardcoded locale — use formatDate() from lib/format.ts
+```
 
 ---
 
 ## 🔑 Key Patterns
 
-| Pattern               | Implementation                                         |
-| --------------------- | ------------------------------------------------------ |
-| **Run Bot**           | `python -m apps.bot.main` from project root            |
-| **Imports (Bot)**     | Absolute from package root, e.g. `from apps.bot.core` |
-| **Imports (Tests)**   | `from apps.bot`                                        |
-| **Env (Bot)**         | `apps/bot/.env`                                        |
-| **Env (Web)**         | `apps/web/.env.local`                                  |
-| **Python deps**       | `pyproject.toml`, `uv.lock` (managed with `uv`)       |
-| **Frontend deps**     | `apps/web/package.json`, managed with `bun`            |
-| **DB migrations**     | Raw SQL in `insforge/migrations/`                      |
-| **InsForge SDK**      | `import { insforge } from "@/lib/insforge"` (web)      |
+| Pattern | Implementation |
+|---|---|
+| **Run Bot** | `python -m apps.bot.main` from project root |
+| **Bot Operating Modes** | `DASHBOARD_MODE=true` → multi-bot from DB; `false` → single bot from `BOT_TOKEN` |
+| **Imports (Bot)** | Absolute: `from apps.bot.core.insforge_client import get_owner` |
+| **Imports (Tests)** | `from apps.bot.services.verification import check_membership` |
+| **Imports (Web)** | `import { insforge } from "@/lib/insforge"` |
+| **Env (Bot)** | `apps/bot/.env` (template: `apps/bot/.env.example`) |
+| **Env (Web)** | `apps/web/.env.local` (template: `apps/web/.env.example`) |
+| **Python deps** | `pyproject.toml` + `uv.lock` (managed with `uv`) |
+| **Frontend deps** | `apps/web/package.json` (managed with `bun`) |
+| **DB migrations** | Raw SQL in `insforge/migrations/` (001-018) |
+| **Query keys** | `queryKeys.*` factory in `lib/query-keys.ts` |
+| **Timing constants** | `REFETCH_INTERVALS.{FAST,STANDARD,SLOW}`, `STALE_TIMES.{SHORT,STANDARD,LONG}` |
+| **Chart period selector** | `<ChartPeriodSelector>` (responsive buttons, NOT hidden Select dropdowns) |
+| **Chart empty state** | `<ChartEmptyState>` (shared, `aria-live="polite"`) |
+| **Auth guard (proxy)** | `InsforgeMiddleware` in `proxy.ts` (Next.js 16 proxy pattern) |
+| **Auth guard (actions)** | `requireAuth()` checks `insforge-session` cookie at top of every server action |
+| **Encryption** | AES-256-GCM via `core/encryption.py` (bot) + `manage-bot` Edge Function (web) |
+| **Token storage** | `nezuko_secrets` table (Security Vault) — auto-synced on bot startup |
 
 ---
 
-## ✅ Task Completion Checklist
+## ✅ Pre-Commit Checklist (ENFORCED — ZERO TOLERANCE)
 
-Before marking any task complete:
+**🚨 MANDATORY**: You MUST run these commands and verify they pass BEFORE completing ANY task. No exceptions. If a check fails, FIX IT before moving on. Do NOT leave broken lints, type errors, or failing tests for the user to deal with.
 
-- [ ] `ruff check .` passes with 0 errors
-- [ ] `pytest` all tests pass
-- [ ] Imports work correctly
-- [ ] Files in correct locations
-- [ ] Tests added for new code
-- [ ] Memory-bank updated (if significant)
+### When to Run What
+
+| Change Scope | Python Checks | TypeScript Checks |
+|---|---|---|
+| Bot code only (`apps/bot/`) | ✅ ALL 5 Python checks | ❌ Skip |
+| Web code only (`apps/web/`) | ❌ Skip | ✅ ALL 2 TypeScript checks |
+| Both bot + web | ✅ ALL 5 Python checks | ✅ ALL 2 TypeScript checks |
+| SQL migrations only | ❌ Skip | ❌ Skip |
+
+### Python Quality Gates (ALL must show 0 errors)
+
+```bash
+# 1. Lint — catch bugs, style issues, unused imports, async anti-patterns
+uv run ruff check apps/bot                           # Target: 0 errors
+
+# 2. Format — consistent code style
+uv run ruff format --check .                          # Target: no changes needed
+
+# 3. Deep analysis — code quality scoring
+uv run pylint apps/bot --rcfile=pyproject.toml        # Target: 10.00/10
+
+# 4. Type safety — full static type checking
+.venv/Scripts/python.exe -m pyrefly check             # Target: 0 errors
+
+# 5. Tests — no regressions
+uv run pytest tests/bot/ -v                           # Target: ALL tests pass
+```
+
+**Auto-fix workflow** (run this first to auto-resolve most issues):
+```bash
+uv run ruff check apps/bot --fix && uv run ruff format .
+```
+
+### TypeScript Quality Gates (ALL must show 0 errors)
+
+```bash
+# 1. Type safety — strict TypeScript compilation
+cd apps/web && bun run type-check                     # tsc --noEmit → 0 errors
+
+# 2. Production build — full Next.js build validation
+cd apps/web && bun run build                          # next build → exit code 0
+```
+
+**Auto-fix workflow** (run this first to auto-resolve most issues):
+```bash
+cd apps/web && bun run lint --fix && bun x prettier src --write
+```
+
+### Manual Verification (check these mentally)
+
+- [ ] Imports use absolute paths (`from apps.bot.core...`, `import { x } from "@/lib/..."`)
+- [ ] Files placed in correct locations (see File Location rules above)
+- [ ] Tests added for any new bot business logic
+- [ ] No hardcoded values — use constants, env vars, or config
+- [ ] No `any` types (TS), no bare `except Exception` (Python)
+- [ ] Memory-bank updated if the change is significant
+
+### ⚠️ Failure Policy
+
+- **If Ruff fails** → Run `--fix` first, then manually fix remaining issues. Do NOT ignore.
+- **If Pylint scores below 10.00** → Read the specific warning, fix the code. Do NOT add `# pylint: disable` blindly.
+- **If Pyrefly reports type errors** → Add proper type annotations. Do NOT use `# type: ignore` unless it's a genuine false positive.
+- **If tests fail** → Fix the test or the code. Do NOT skip or delete tests.
+- **If TSC fails** → Fix the type error. Do NOT use `as any` or `@ts-ignore`.
+- **If build fails** → Fix the build error. This means the app won't deploy.
 
 ---
 
@@ -209,11 +398,6 @@ Before marking any task complete:
 | **shadcn**     | Components: `view_items_in_registries`, `get_add_command_for_items`              |
 
 **🔍 Web Search Rule:** When searching the web or fetching URLs for documentation, best practices, or solutions, always append `2025-2026` to queries to ensure latest, up-to-date information.
-
-## 📚 Next.js Docs Never Skip when working on Next.js
-
-<!-- NEXT-AGENTS-MD-START -->[Next.js Docs Index]|root: ./.next-docs|STOP. What you remember about Next.js is WRONG for this project. Always search docs and read before any task.|If docs missing, run this command first: npx @next/codemod agents-md --output AGENTS.md
-<!-- NEXT-AGENTS-MD-END -->
 
 ## 🧠 Skills
 
@@ -228,12 +412,6 @@ Skills are located in `.claude/skills/` — check the path column. Read the **SK
 3. **NEVER violate rules** - Skills contain rules, principles, guidelines, and best practices that MUST be followed.
 4. **Context-aware reading** - Focus on sections relevant to your current task, but never skip critical rules.
 5. **No shortcuts** - Taking shortcuts by skipping skill content leads to errors and tech debt.
-
-**Skill Priority Guide:**
-
-- **Simple tasks** (fix a bug, add a field): Read 1-2 directly relevant skills
-- **Medium tasks** (new endpoint, new component): Read category-specific skills (e.g., all Backend skills for API work)
-- **Complex tasks** (new feature, refactoring): Read all relevant category skills + cross-cutting skills (testing, patterns)
 
 ### Frontend (Web Dashboard)
 
@@ -251,11 +429,11 @@ Skills are located in `.claude/skills/` — check the path column. Read the **SK
 
 ### Backend (API & Bot)
 
-| Skill                               | When to Use                                 | Path                                                                       |
-| ----------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------- |
-| **fastapi**                         | FastAPI endpoints, dependencies, middleware | `.claude/skills/fastapi`                                                   |
-| **insforge**                        | InsForge BaaS — tables, auth, SDK, storage  | `.claude/skills/insforge`                                                  |
-| **websocket-engineer**              | Real-time bi-directional communication      | `.claude/skills/websocket-engineer`           |
+| Skill                               | When to Use                                 | Path                                             |
+| ----------------------------------- | ------------------------------------------- | ------------------------------------------------ |
+| **fastapi**                         | FastAPI endpoints, dependencies, middleware | `.claude/skills/fastapi`                         |
+| **insforge**                        | InsForge BaaS — tables, auth, SDK, storage  | `.claude/skills/insforge`                        |
+| **websocket-engineer**              | Real-time bi-directional communication      | `.claude/skills/websocket-engineer`              |
 
 ### Database
 
@@ -269,7 +447,7 @@ Skills are located in `.claude/skills/` — check the path column. Read the **SK
 
 | Skill                        | When to Use                           | Path                                       |
 | ---------------------------- | ------------------------------------- | ------------------------------------------ |
-| **docker-expert**            | Containerization, Multi-stage builds, Compose | `.claude/skills/docker-expert`             |
+| **docker-expert**            | Containerization, Multi-stage builds, Compose | `.claude/skills/docker-expert`     |
 | **git-commit**               | Conventional commits, staging         | `.claude/skills/git-commit/`               |
 | **github-actions-templates** | CI/CD workflows                       | `.claude/skills/github-actions-templates/` |
 | **mermaid-diagrams**         | UML, Flowcharts, Sequence diagrams    | `.claude/skills/mermaid-diagrams`          |

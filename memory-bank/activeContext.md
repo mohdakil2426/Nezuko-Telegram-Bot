@@ -9,73 +9,70 @@
 **Phase 80: WEB_AUDIT_REPORT_V2 Fixes — COMPLETE ✅ (all 34 findings resolved)**
 **Phase 80+: Card Responsiveness Analysis & Fixes — COMPLETE ✅**
 **Phase 81: Cache Analytics Consolidation & Chart Standardization — COMPLETE ✅**
-
-All 34 findings from `WEB_AUDIT_REPORT_V2.md` have been fully implemented. An additional card responsiveness audit was also performed across all dashboard pages, with critical layout issues identified and fixed (Quick Insights grid breakpoint, BotHealth metrics, SecurityVault input layout, ActivityFeed scroll height).
+**Phase 82: Web UI Charts Comprehensive Audit & Fix — COMPLETE ✅ (42 issues, 24 files)**
 
 ---
 
-## Phase 81: Cache Analytics Consolidation & Chart Standardization (COMPLETE ✅)
+## Phase 82: Web UI Charts Comprehensive Audit & Fix (COMPLETE ✅)
 
 ### Summary
-Consolidated cache analytics into cleaner, focused charts. Retired `CacheBreakdownChart` donut and replaced with two dedicated trend charts. Standardized all time-range period selectors across every chart to match the official shadcn interactive chart pattern.
+Full audit of all 15 chart components, 4 analytics tabs, and dashboard pages. Found 42 issues (9 critical, 21 major, 12 minor). All resolved by 3 parallel implementer agents with strict file ownership. Audit report: `WEB_UI_CHARTS_AUDIT.md`.
 
-### Changes Made
+### Critical Fixes
+1. **Mobile period selectors** — 8 charts had `hidden sm:flex` Select dropdowns (invisible on mobile). Created new `ChartPeriodSelector` responsive button group visible at ALL breakpoints.
+2. **HourlyActivityChart crash** — `.reduce(..., data[0])` threw TypeError on empty arrays. Added guard.
+3. **MembersChart ARIA** — Tab buttons lacked `role="tab"`, `aria-selected`, `aria-controls`. Added full ARIA tab pattern.
+4. **CacheHitRateTrend Y-axis** — Hardcoded domain `[70, 100]` clipped data below 70%. Now dynamic.
 
-#### New Chart
+### Major Changes
+
+#### Analytics Tab Reorganization (4 → 3 domain-based tabs)
+```
+Before: Overview | Performance | Distribution | Trends (charts duplicated 2-3x)
+After:  Bot Operations | Cache & API | Groups & Members (each chart exactly once)
+
+Bot Operations:           Cache & API:              Groups & Members:
+  VerificationTrends        CacheHitRateTrend         MembersChart
+  UserGrowthChart           LatencyTrendChart          TopGroupsChart
+  HourlyActivity            ApiCallsTrendChart         GroupsStatusChart
+  VerificationDist.         LatencyDistribution
+  BotHealthChart            CacheBreakdownChart (rescued!)
+                            ApiCallsChart
+
+URL param: ?tab=operations (default) | ?tab=cache-api | ?tab=groups-members
+```
+
+#### New Shared Components
 | File | Purpose |
 |---|---|
-| `apps/web/src/components/charts/api-calls-trend-chart.tsx` | **NEW** — bar chart showing uncached Telegram API calls per day. Derives `api_count = total_count - round(total_count × hit_rate / 100)` from the existing `useCacheHitRateTrend` hook (zero extra network requests via TQ deduplication) |
+| `charts/chart-empty-state.tsx` | Shared empty state with `aria-live="polite"`, BarChart3 icon, centered message |
+| `charts/chart-period-selector.tsx` | Responsive inline button group "7d"/"30d"/"90d", visible at all breakpoints, exports `PeriodValue` type |
 
-#### Overview Card Replacement
-- `overview-cards.tsx` — **Cache Hit Rate** stat card replaced with **API Calls** card backed by `useCacheBreakdown().data.api`. Removed `cache_hit_rate` from realtime SSE state. Icon: `Zap` → `Activity`.
+#### All Charts Fixed (13 components)
+- `role="img"` → `role="figure"` on all 13 interactive chart wrappers
+- Empty states added to all 13 charts via `<ChartEmptyState />`
+- Tooltip `hideLabel` removed from all 4 donut/pie charts (tooltips now show segment names)
+- Header stats show `<Skeleton>` during loading instead of false "0%" / "0ms"
+- `CacheBreakdownChart` rescued (was orphaned — now in "Cache & API" tab)
+- SVG gradient ID collision fix via `useId()` in `CacheHitRateTrendChart`
+- `LatencyTrendChart` p95 legend label clarified ("P95 Latency")
+- `BotHealthChart` dynamic aria-label with score + threshold legend text
 
-#### Chart Cleanup
-- `cache-hit-rate-trend-chart.tsx` — Stripped `useCacheBreakdown`, `formatCount`, and snapshot stat row. Now a pure single-axis gradient area chart (hit rate % only).
-- `CacheBreakdownChart` — Removed from `analytics-page-content.tsx` and `charts/index.ts`.
+#### Dashboard Page Fixes
+- `stat-cards.tsx` — Error state rendering, `useMemo` on cards, `formatUptime` handles minutes, description fix
+- `activity-feed.tsx` — 30s timestamp refresh interval, `clearTimeout` cleanup, error state, skeleton fix
+- `overview-cards.tsx` — `Intl.NumberFormat` replaces custom `formatNumber`
+- `user-growth-chart.tsx` — Dead `total_users` config removed, skeleton height fix, `formatGrowth` to module scope
+- Both verification area charts — YAxis visible (removed `hide`), `ChartPeriodSelector`
 
-#### Performance Tab Layout (analytics)
-```
-┌─────────────────────┬─────────────────────┐
-│  Cache Hit Rate     │  Latency Trend      │
-└─────────────────────┴─────────────────────┘
-┌─────────────────────┬─────────────────────┐
-│  API Calls Trend    │  Latency Distribution│
-└─────────────────────┴─────────────────────┘
-```
-
-#### Period Selector Standardization (6 charts)
-All charts with time-range dropdowns updated to **exact shadcn interactive chart pattern**:
-
-| Old | New (official) |
-|---|---|
-| `<Card>` | `<Card className="pt-0">` |
-| `flex flex-row items-center justify-between space-y-0 pb-2` CardHeader | `flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row` |
-| `<div>` title wrapper | `<div className="grid flex-1 gap-1">` |
-| `w-[120px]` SelectTrigger (always visible) | `hidden w-[160px] rounded-lg sm:ml-auto sm:flex` |
-| plain SelectContent/Item | `rounded-xl` / `rounded-lg` |
-| plain CardContent | `className="px-2 pt-4 sm:px-6 sm:pt-6"` |
-
-Files updated: `cache-hit-rate-trend-chart`, `api-calls-trend-chart`, `latency-trend-chart`, `latency-distribution-chart`, `verification-chart` (dashboard), `verification-trends-chart`, `user-growth-chart`
-
-#### LatencyDistributionChart — Period Selector Added
-- **Migration 018** (`018_latency_distribution_period_param.sql`): Added `p_period TEXT DEFAULT '7d'` to `get_latency_distribution` RPC. Applied live to InsForge.
-- `charts.service.ts` `getLatencyDistribution(params?)` — passes `p_period`
-- `use-charts.ts` `useLatencyDistribution(params?)` — scoped TQ cache key per period
-- `charts.mock.ts` — accepts `_params` (ignored, random data)
-- `query-keys.ts` `latencyDistribution(params?)` — key includes params
-
-#### Backend RPC Changes
-| Migration | RPC | Change |
-|---|---|---|
-| 017 | `get_cache_hit_rate_trend` | Returns `total_count` per day in series for api_count derivation |
-| 018 | `get_latency_distribution` | Adds `p_period TEXT DEFAULT '7d'` — supports `7d`, `30d`, `90d` |
-
-#### BotHealthChart Sizing
-- `Card className="flex flex-col"`, `CardContent className="flex-1 pb-0"` — matches donut card structure so grid row stretches all 3 cards equally.
-- Gauge stays at `max-h-[200px]` with `aspect-square`; metric grid `mt-4 gap-2 py-1` preserved.
+### Files Changed (24 total: 2 new + 22 modified)
+**Stream 1 (Shared + Donuts):** `chart-empty-state.tsx`, `chart-period-selector.tsx`, `api-calls-chart.tsx`, `cache-breakdown-chart.tsx`, `groups-status-chart.tsx`, `verification-distribution-chart.tsx`, `bot-health-chart.tsx`, `members-chart.tsx`, `index.ts`
+**Stream 2 (Trends):** `api-calls-trend-chart.tsx`, `cache-hit-rate-trend-chart.tsx`, `hourly-activity-chart.tsx`, `latency-trend-chart.tsx`, `latency-distribution-chart.tsx`, `top-groups-chart.tsx`
+**Stream 3 (Tabs + Dashboard):** `analytics-page-content.tsx`, `loading.tsx`, `verification-trends-chart.tsx`, `user-growth-chart.tsx`, `verification-chart.tsx`, `stat-cards.tsx`, `activity-feed.tsx`, `overview-cards.tsx`
 
 ### Quality Gates
-- `bun run type-check` → **0 errors** ✅
+- `npx tsc --noEmit` → **0 errors** ✅
+- Branch: `fix/web-ui-charts-audit-fixes` merged to `main`
 
 ---
 
@@ -384,12 +381,11 @@ Performed a full codebase grep scan and fetched official docs from **Vercel WIG,
 
 ## What to Work on Next
 
-1. **Run ESLint + Build** — `cd apps/web && bun run lint && bun run build` to confirm 0 errors post-Phase-80
+1. **Run ESLint + Build** — `cd apps/web && bun run lint && bun run build` to confirm 0 errors
 2. **Deploy** — VPS/Docker (bot) + Vercel (web)
-3. **Generate new audit report** — Scan codebase again to verify compliance score improved from WEB_AUDIT_REPORT_V2 baseline
-4. **Add admin notification** in global error handler (Task 6.2)
-5. **Expand test coverage** — target 100+ tests
+3. **Add admin notification** in global error handler (Task 6.2)
+4. **Expand test coverage** — target 100+ tests
 
 ---
 
-_Last Updated: 2026-03-01 (Phase 80 — WEB_AUDIT_REPORT_V2 Fixes — COMPLETE + Card Responsiveness Analysis)_
+_Last Updated: 2026-03-01 (Phase 82 — Web UI Charts Comprehensive Audit & Fix — COMPLETE)_
