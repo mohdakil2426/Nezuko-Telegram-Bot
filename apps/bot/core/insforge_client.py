@@ -18,6 +18,15 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+# Maximum IDs per query to prevent URL length limits
+_CHUNK_SIZE = 50
+
+
+def _chunk_list(items: list, chunk_size: int) -> list[list]:
+    """Split a list into chunks of specified size."""
+    return [items[i : i + chunk_size] for i in range(0, len(items), chunk_size)]
+
+
 # Base URL and key are set once at startup via init_client()
 _BASE_URL: str = ""
 _ANON_KEY: str = ""
@@ -344,17 +353,23 @@ async def create_enforced_channel(
 
 
 async def get_group_channels(group_id: int) -> list[EnforcedChannel]:
-    """Get all enforced channels linked to a group (batched query)."""
+    """Get all enforced channels linked to a group (batched query with pagination)."""
     links = await _get(
         "group_channel_links", {"group_id": f"eq.{group_id}", "select": "channel_id"}
     )
     if not links:
         return []
     channel_ids = [str(link["channel_id"]) for link in links]
-    channels_data = await _get(
-        "enforced_channels",
-        {"channel_id": f"in.({','.join(channel_ids)})"},
-    )
+
+    # Paginate large queries to prevent URL length limits
+    all_channels: list[dict] = []
+    for chunk in _chunk_list(channel_ids, _CHUNK_SIZE):
+        chunk_data = await _get(
+            "enforced_channels",
+            {"channel_id": f"in.({','.join(chunk)})"},
+        )
+        all_channels.extend(chunk_data)
+
     return [
         EnforcedChannel(
             channel_id=ch["channel_id"],
@@ -362,7 +377,7 @@ async def get_group_channels(group_id: int) -> list[EnforcedChannel]:
             username=ch.get("username"),
             invite_link=ch.get("invite_link"),
         )
-        for ch in channels_data
+        for ch in all_channels
     ]
 
 
@@ -430,17 +445,23 @@ async def unlink_all_channels(group_id: int) -> None:
 
 
 async def get_groups_for_channel(channel_id: int) -> list[ProtectedGroup]:
-    """Get all enabled groups that require this channel (batched query)."""
+    """Get all enabled groups that require this channel (batched query with pagination)."""
     links = await _get(
         "group_channel_links", {"channel_id": f"eq.{channel_id}", "select": "group_id"}
     )
     if not links:
         return []
     group_ids = [str(link["group_id"]) for link in links]
-    groups_data = await _get(
-        "protected_groups",
-        {"group_id": f"in.({','.join(group_ids)})", "enabled": "eq.true"},
-    )
+
+    # Paginate large queries to prevent URL length limits
+    all_groups: list[dict] = []
+    for chunk in _chunk_list(group_ids, _CHUNK_SIZE):
+        chunk_data = await _get(
+            "protected_groups",
+            {"group_id": f"in.({','.join(chunk)})", "enabled": "eq.true"},
+        )
+        all_groups.extend(chunk_data)
+
     return [
         ProtectedGroup(
             group_id=g["group_id"],
@@ -449,7 +470,7 @@ async def get_groups_for_channel(channel_id: int) -> list[ProtectedGroup]:
             enabled=g.get("enabled", True),
             member_count=g.get("member_count", 0),
         )
-        for g in groups_data
+        for g in all_groups
     ]
 
 
