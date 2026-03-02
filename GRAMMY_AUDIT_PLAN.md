@@ -1,34 +1,142 @@
 # 🚀 Nezuko grammY Bot — Production-Ready PRD & Implementation Blueprint
 
-> **Version**: 2.0 | **Date**: 2026-03-03  
+> **Version**: 3.2 | **Date**: 2026-03-03 | **Lines**: 3,260+ | **Decisions**: 34  
 > **Scope**: Build `apps/grammy/` from scratch using grammY best practices — NOT a migration  
 > **Philosophy**: Reference existing features, rebuild with grammY-native architecture  
-> **grammY Version**: v1.40.1 (Bot API 9.4) | **Runtime**: Node.js + bun  
+> **grammY Version**: v1.40.1 (Bot API 9.4) | **Runtime**: Bun 1.3.10 + Node.js 22 LTS  
 
 ---
 
 ## Table of Contents
 
+### Part I — Vision & Foundation
+
 1. [Vision & Philosophy](#1-vision--philosophy)
+   - 1.1 What We're Building
+   - 1.2 What We're NOT Doing
+   - 1.3 Why Rebuild Instead of Migrate
+   - 1.4 Feature Scope (From Existing Bot Reference)
 2. [Why grammY — Deep Framework Analysis](#2-why-grammy--deep-framework-analysis)
+   - 2.1 Framework Overview
+   - 2.2 Architecture Strengths
+   - 2.3 Bot API Coverage
+   - 2.4 Context Object
 3. [grammY Pros, Cons & Comparison](#3-grammy-pros-cons--comparison)
+   - 3.1 Detailed Pros
+   - 3.2 Detailed Cons
+   - 3.3 Framework Comparison Matrix
+   - 3.4 Why grammY Over Telegraf
+
+### Part II — Architecture & Core Concepts
+
 4. [Architecture — Built for grammY](#4-architecture--built-for-grammy)
+   - 4.1 High-Level Architecture
+   - 4.2 Middleware Execution Flow
+   - 4.3 Key Design Decisions
 5. [grammY Core Concepts Deep Dive](#5-grammy-core-concepts-deep-dive)
+   - 5.1 Bot Instance Creation
+   - 5.2 Middleware System (The Tree, Not a Stack)
+   - 5.3 Commands
+   - 5.4 Callback Queries
+   - 5.5 Inline Keyboards
+   - 5.6 Bot API Calls
+   - 5.7 Transformer Functions
 6. [Plugin Selection & Configuration](#6-plugin-selection--configuration)
+   - 6.1 Selected Plugins (7 plugins with install code)
+   - 6.2 Plugins NOT Selected (7 rejected with reasons)
 7. [Context Type System](#7-context-type-system)
+   - 7.1 Custom Context Design
+   - 7.2 Context Enricher Middleware
 8. [Project Structure](#8-project-structure)
+   - 8.1 Directory Layout (~30 files)
+   - 8.2 Why This Structure
+
+### Part III — Module Blueprints & Database
+
 9. [Module-by-Module Blueprint](#9-module-by-module-blueprint)
-10. [Database Strategy (Local → InsForge)](#10-database-strategy-local--insforge)
+   - 9.1 Entry Point — `main.ts`
+   - 9.2 Bot Factory — `core/bot-factory.ts`
+   - 9.3 Admin Composer — `composers/admin.ts`
+   - 9.4 Events Composer — `composers/events.ts`
+   - 9.5 Verify Composer — `composers/verify.ts`
+   - 9.6 Verification Service — `services/verification.ts`
+10. [Database Strategy (InsForge REST)](#10-database-strategy-insforge-rest)
+    - 10.1 InsForge REST Client (TypeScript port)
+    - 10.2 Repository Interface
+    - 10.3 InsForge Client Implementation
+    - 10.4 Configuration
+
+### Part IV — Reliability & Deployment
+
 11. [Error Handling & Reliability](#11-error-handling--reliability)
+    - 11.1 grammY Error Hierarchy
+    - 11.2 Global Error Handler
+    - 11.3 Error Boundaries (Per-Composer)
+    - 11.4 Graceful Shutdown
 12. [Scaling & Concurrency](#12-scaling--concurrency)
+    - 12.1 Single-Bot Mode (Development)
+    - 12.2 Multi-Bot Mode (Dashboard/Production)
+    - 12.3 Background Services (No JobQueue Needed)
 13. [Deployment Strategy](#13-deployment-strategy)
+    - 13.1 Long Polling vs Webhooks
+    - 13.2 Docker Configuration
+    - 13.3 Environment Variables
+
+### Part V — Testing & Quality
+
 14. [Testing Strategy](#14-testing-strategy)
+    - 14.1 Test Architecture
+    - 14.2 Testing with grammY
+    - 14.3 Mock Update Factory
 15. [Quality Gates](#15-quality-gates)
+    - 15.1 TypeScript Checks
+    - 15.2 Test Checks
+    - 15.3 Build
+    - 15.4 tsconfig.json
 16. [Implementation Phases](#16-implementation-phases)
+    - Phase 1: Foundation (8h — P0)
+    - Phase 2: Core Infrastructure (10h — P0)
+    - Phase 3: Core Bot Logic (12h — P0)
+    - Phase 4: Background Services (6h — P1)
+    - Phase 5: Multi-Bot Mode (10h — P1)
+    - Phase 6: Testing (10h — P0)
+    - Phase 7: Polish & Production (4h — P1)
+
+### Part VI — Future & References
+
 17. [Dashboard Compatibility (Future)](#17-dashboard-compatibility-future)
 18. [Risk Assessment](#18-risk-assessment)
-19. [Open Questions](#19-open-questions)
+19. [Brainstorming Decisions Log](#19-brainstorming-decisions-log)
 20. [Appendix: Official Code References](#20-appendix-official-code-references)
+
+### Part VII — Diagrams, Versions & Edge Cases
+
+21. [Architecture & Flow Diagrams](#21-architecture--flow-diagrams) *(7 Mermaid diagrams)*
+    - Diagram 1: Bot Startup Sequence
+    - Diagram 2: Middleware Pipeline
+    - Diagram 3: Verification Flow (complete)
+    - Diagram 4: `/protect` Command Flow
+    - Diagram 5: Multi-Bot Dashboard Mode
+    - Diagram 6: Message Filtering Pipeline
+    - Diagram 7: Error Handling Architecture
+22. [Pinned Dependency Versions (March 2026)](#22-pinned-dependency-versions-latest-as-of-march-2026)
+    - 22.1 Core Dependencies (12 packages)
+    - 22.2 Dev Dependencies (7 packages)
+    - 22.3 Runtime (Bun, Node, Redis)
+    - 22.4 package.json (exact versions)
+    - 22.5 Version Selection Rationale
+23. [Comprehensive Edge Case Catalog](#23-comprehensive-edge-case-catalog) *(70 edge cases)*
+    - 23.1 New Member Join (EC-1 to EC-10)
+    - 23.2 Verification / Callback Query (EC-11 to EC-20)
+    - 23.3 Leave Detection (EC-21 to EC-25)
+    - 23.4 Protection Setup (EC-26 to EC-34)
+    - 23.5 Message Filtering (EC-35 to EC-41)
+    - 23.6 getChatMember API (EC-42 to EC-47)
+    - 23.7 Bot Permissions (EC-48 to EC-52)
+    - 23.8 Multi-Bot Mode (EC-53 to EC-58)
+    - 23.9 Cache & Database (EC-59 to EC-63)
+    - 23.10 Telegram API (EC-64 to EC-70)
+    - 23.11 Edge Case Summary
 
 ---
 
@@ -661,13 +769,47 @@ await userCommands.setCommands(bot);
 
 | Plugin | Why Not | Notes |
 |---|---|---|
-| **session** | DB-first architecture — no per-chat state needed | Nezuko stores everything in the database |
+| **session** | DB-first architecture — no per-chat state needed | Nezuko stores everything in InsForge |
 | **conversations** | No multi-step conversation flows | Verification is single-action, not a flow |
 | **menu** | Inline keyboards are simple enough | No dynamic nested menus needed |
 | **i18n / fluent** | Single language (English) | Can add later if i18n is needed |
 | **transformer-throttler** | `auto-retry` is better | Throttler docs say "Consider using auto-retry instead" |
 | **entity-parser** | Not displaying messages outside Telegram | Entity parser docs say "Probably NEVER" needed |
 | **autoquote** | Not needed for verification bot | Auto-quoting adds noise in group chats |
+
+#### chat-members — Member Status Cache (P0)
+
+> **Added in v3.0 brainstorming** — discovered via grammY official docs research.
+
+```typescript
+// Source: grammY official docs /plugins/chat-members
+import { chatMembers, type ChatMembersFlavor } from "@grammyjs/chat-members";
+import Redis from "ioredis";
+
+// Uses Redis as storage adapter for chat member data
+const redis = new Redis(config.redisUrl);
+const adapter = new RedisAdapter<ChatMember>(redis);
+
+bot.use(chatMembers(adapter));
+
+// In verification handler:
+const member = await ctx.chatMembers.getChatMember(channelId, userId);
+// ^ checks Redis first → if miss, calls Telegram API → caches result
+```
+
+**Why this plugin?**
+- Automatic cache: listens for `chat_member` events, updates cache on join/leave
+- `getChatMember()` checks cache-first, falls back to API, caches result
+- Requires `allowed_updates: ["chat_member", "message", "callback_query"]`
+- Combined with our 6h Redis TTL for derived verification status = hybrid cache strategy
+
+**Cache Strategy (3-layer hybrid):**
+
+| Layer | What | TTL | Plugin |
+|---|---|---|---|
+| L1 | Individual channel membership | Event-driven (no TTL) | `chat-members` plugin |
+| L2 | Derived verification status | 6 hours | Custom Redis key `nezuko:v2:verified:{groupId}:{userId}` |
+| L3 | Periodic bulk re-check | Every 15 min | `member-sync` service |
 
 ---
 
@@ -681,7 +823,8 @@ import { Context, Api } from "grammy";
 import { HydrateFlavor } from "@grammyjs/hydrate";
 import { ParseModeFlavor } from "@grammyjs/parse-mode";
 import { CommandsFlavor } from "@grammyjs/commands";
-import type { DatabaseClient } from "./core/database";
+import { ChatMembersFlavor } from "@grammyjs/chat-members";
+import type { InsForgeClient } from "./core/insforge-client";
 import type { CacheClient } from "./core/cache";
 
 /**
@@ -689,8 +832,8 @@ import type { CacheClient } from "./core/cache";
  * Available on every ctx object after contextEnricher runs.
  */
 interface NezukoContextFlavor {
-  /** Database client — Prisma (dev) or InsForge (prod) */
-  db: DatabaseClient;
+  /** InsForge REST client for database access */
+  db: InsForgeClient;
   /** Redis cache client */
   cache: CacheClient;
   /** Current bot's Telegram ID */
@@ -710,7 +853,7 @@ interface NezukoContextFlavor {
  */
 export type NezukoContext = ParseModeFlavor<
   HydrateFlavor<
-    Context & NezukoContextFlavor & CommandsFlavor
+    Context & NezukoContextFlavor & CommandsFlavor & ChatMembersFlavor
   >
 >;
 ```
@@ -745,84 +888,89 @@ export function contextEnricher(deps: {
 
 ### 8.1 Directory Layout
 
+> **v2** — Updated after architecture research (grammY deployment checklist, scaling guide, official structuring docs)
+
 ```
 apps/grammy/
 ├── src/
-│   ├── main.ts                          # Entry point — creates Bot, starts polling
+│   ├── main.ts                          # Entry point — run() with 4-step graceful shutdown
 │   ├── config.ts                        # Zod-validated environment config
 │   ├── types.ts                         # NezukoContext + all shared types
 │   │
 │   ├── core/                            # Framework-level infrastructure
-│   │   ├── bot-factory.ts               # Creates Bot<NezukoContext> with plugins
-│   │   ├── cache.ts                     # Redis client (ioredis)
-│   │   ├── constants.ts                 # Shared constants
-│   │   ├── database.ts                  # Database abstraction (Prisma/InsForge)
-│   │   ├── encryption.ts               # AES-256-GCM token decryption
-│   │   └── uptime.ts                   # Uptime tracker
+│   │   ├── bot-factory.ts               # Creates Bot<NezukoContext> with all plugins
+│   │   ├── cache.ts                     # Redis client (ioredis wrapper)
+│   │   ├── constants.ts                 # Shared constants (timeouts, limits, namespaces)
+│   │   ├── insforge-client.ts           # InsForge REST client (fetch-based)
+│   │   ├── encryption.ts               # AES-256-GCM token decryption (Phase 5)
+│   │   └── shutdown.ts                 # 4-step graceful shutdown handler
 │   │
-│   ├── middleware/                       # Custom grammY middleware
-│   │   ├── context-enricher.ts          # Injects db/cache/logger into ctx
-│   │   ├── admin-guard.ts              # Filter: only chat admins
-│   │   └── group-only.ts              # Filter: only group/supergroup chats
+│   ├── middleware/                       # Custom grammY middleware (registration order matters!)
+│   │   ├── sequentialize.ts            # [1st] Prevent race conditions per chat
+│   │   ├── context-enricher.ts          # [2nd] Injects db/cache/logger into ctx
+│   │   ├── admin-guard.ts              # Filter: only chat admins (uses chat-members)
+│   │   ├── group-only.ts              # Filter: only group/supergroup chats
+│   │   └── permission-check.ts        # Verify bot has required admin permissions
 │   │
 │   ├── composers/                       # Feature modules (each exports a Composer)
 │   │   ├── admin.ts                     # /start, /help, /protect, /unprotect, /settings
-│   │   ├── events.ts                   # new_member, left_member, message filter
-│   │   ├── verify.ts                   # Callback query handler for verification
-│   │   └── fallback.ts                # Catch-all callback query answerer
+│   │   ├── channels.ts                 # /channels, /verify, /stats (user commands)
+│   │   ├── events.ts                   # chat_member join/leave, my_chat_member
+│   │   ├── migration.ts               # Supergroup migration handler
+│   │   ├── verify.ts                   # Callback query handler for verification button
+│   │   └── fallback.ts                # Catch-all callback query answerer (ALWAYS last)
 │   │
-│   ├── services/                        # Business logic (framework-agnostic)
-│   │   ├── verification.ts             # Membership check + cache logic
-│   │   ├── protection.ts              # Mute/unmute/restrict API calls
+│   ├── services/                        # Business logic (ZERO grammy imports!)
+│   │   ├── verification.ts             # Membership check + 3-layer cache logic
+│   │   ├── protection.ts              # Mute/unmute/kick via Telegram API calls
 │   │   ├── channel-linker.ts          # Link/unlink channels to groups
-│   │   ├── status-writer.ts           # Heartbeat interval
-│   │   ├── member-sync.ts            # Count sync interval
+│   │   ├── status-writer.ts           # Heartbeat interval (30s)
+│   │   ├── member-sync.ts            # Bulk re-check interval (15min)
 │   │   └── batch-verification.ts     # Batch verify multiple users
 │   │
-│   ├── database/                        # Data access layer
-│   │   ├── repositories/              # Repository pattern
-│   │   │   ├── group.repo.ts          # Protected groups CRUD
-│   │   │   ├── channel.repo.ts        # Enforced channels CRUD
-│   │   │   ├── link.repo.ts           # Group↔Channel links CRUD
-│   │   │   ├── verification.repo.ts   # Verification logs
-│   │   │   └── bot-status.repo.ts     # Bot status heartbeat
-│   │   ├── prisma/                    # Prisma schema + migrations (dev only)
-│   │   │   ├── schema.prisma          # SQLite schema
-│   │   │   └── migrations/            # Auto-generated
-│   │   └── insforge/                  # InsForge SDK adapter (prod only)
-│   │       └── adapter.ts             # Implements same interface as Prisma
+│   ├── database/                        # Data access layer (InsForge REST only, flat)
+│   │   ├── group.repo.ts              # Protected groups CRUD
+│   │   ├── channel.repo.ts            # Enforced channels CRUD
+│   │   ├── link.repo.ts              # Group↔Channel links CRUD
+│   │   ├── verification.repo.ts      # Verification logs
+│   │   └── bot-status.repo.ts        # Bot status heartbeat
 │   │
-│   ├── utils/                          # Pure utility functions
-│   │   ├── auto-delete.ts             # Delete messages after delay
-│   │   ├── logger.ts                  # pino structured logging
-│   │   ├── ui.ts                      # Message text builders
-│   │   └── health.ts                  # HTTP health endpoint
-│   │
-│   └── multi-bot/                      # Dashboard mode (Phase 2)
-│       ├── bot-manager.ts             # Multi-bot coordinator
-│       ├── bot-registry.ts            # Instance storage
-│       ├── bot-lifecycle.ts           # Start/stop instances
-│       └── realtime-client.ts         # InsForge WS subscriber
+│   └── utils/                          # Pure utility functions (zero side effects)
+│       ├── auto-delete.ts             # Delete messages after delay
+│       ├── logger.ts                  # pino structured logging
+│       ├── messages.ts                # All user-facing strings in one file
+│       └── health.ts                  # HTTP health endpoint (for Docker)
 │
-├── prisma/
-│   └── schema.prisma                   # Shared schema (symlinked or copied)
+├── Dockerfile                           # 3-stage: Bun install → Node build → Node runtime
+├── .dockerignore                        # Exclude node_modules, .git, tests, docs
 ├── package.json
 ├── tsconfig.json
-├── .env                                # Local env vars
-├── .env.example                        # Template
-└── vitest.config.ts                    # Test configuration
+├── tsconfig.build.json                  # Separate build config (excludes tests)
+├── vitest.config.ts                    # Test configuration
+├── .env.example                        # Template with all required env vars
+└── .env                                # Local env vars (gitignored)
 ```
 
 ### 8.2 Why This Structure
 
+> Updated after grammY deployment checklist + scaling guide research
+
 | Decision | Rationale |
 |---|---|
+| **`sequentialize.ts` first middleware** | grammY deployment checklist: "Use sequentialize" — prevents race conditions with `runner` |
 | **`composers/` not `handlers/`** | grammY uses `Composer` class — naming reflects the framework |
-| **`services/` are framework-agnostic** | Business logic doesn't import `grammy` — testable in isolation |
-| **`database/repositories/`** | Repository pattern enables swapping Prisma ↔ InsForge |
-| **`middleware/` is separate** | Custom middleware is distinct from composers (handlers) |
-| **`multi-bot/` is isolated** | Dashboard mode is a separate concern — Phase 2 only |
-| **No `core/loader.ts`** | grammY doesn't need a loader — `bot.use(composer)` is enough |
+| **`channels.ts` split from `admin.ts`** | `/channels`, `/verify`, `/stats` are user commands, not admin-only |
+| **`migration.ts` composer** | Supergroup migration handler (decision #26) — separate concern |
+| **`services/` has ZERO grammY imports** | Business logic testable in isolation — framework-agnostic |
+| **`database/` is flat (5 files)** | No nested directories — simple for 5 repos. No abstract base class overhead |
+| **`messages.ts` not `ui.ts`** | All user-facing strings in one file — easy to update/translate later |
+| **`shutdown.ts` extracted to `core/`** | Reusable across single-bot and multi-bot modes |
+| **`permission-check.ts` middleware** | Bot permission detection (decision #32) — 3-layer defense |
+| **Error boundaries per composer** | grammY error handling: one composer crashing doesn't kill the whole bot |
+| **`fallback.ts` is ALWAYS last** | grammY deployment checklist: "Answer all callback queries" — prevents infinite spinners |
+| **No `multi-bot/` directory** | Phase 5 code scaffolded only when Phase 5 starts — YAGNI |
+| **No `prisma/` directory** | Decision #2: InsForge from day one. No local database at all |
+| **`tsconfig.build.json` added** | Separate config for `tsc` production build (excludes tests, dev files) |
 
 ---
 
@@ -830,21 +978,26 @@ apps/grammy/
 
 ### 9.1 Entry Point — `main.ts`
 
+> **v2** — Uses `run()` from grammY runner + 4-step graceful shutdown (decision #29)
+
 ```typescript
 // apps/grammy/src/main.ts
+import { run } from "@grammyjs/runner";
 import { createBot } from "./core/bot-factory";
 import { loadConfig } from "./config";
-import { createDatabase } from "./core/database";
+import { createInsForgeClient } from "./core/insforge-client";
 import { createCache } from "./core/cache";
 import { createLogger } from "./utils/logger";
 import { startStatusWriter } from "./services/status-writer";
 import { startMemberSync } from "./services/member-sync";
 import { startHealthServer } from "./utils/health";
 
+const SHUTDOWN_TIMEOUT_MS = 8_000; // Docker sends SIGKILL at 10s
+
 async function main(): Promise<void> {
   const config = loadConfig();
   const logger = createLogger(config.logLevel);
-  const db = await createDatabase(config);
+  const db = createInsForgeClient(config.insforgeBaseUrl, config.insforgeAnonKey);
   const cache = createCache(config.redisUrl);
 
   logger.info("Starting Nezuko grammY bot...");
@@ -856,30 +1009,47 @@ async function main(): Promise<void> {
   const syncInterval = startMemberSync(bot.api, db, config.botId);
   startHealthServer(config.healthPort);
 
-  // Graceful shutdown
-  const shutdown = async () => {
-    logger.info("Shutting down...");
+  // Source: grammy/references/plugins/runner.md
+  // run() processes updates concurrently (default: 500)
+  const handle = run(bot, {
+    runner: {
+      fetch: {
+        // Decision #27: exactly 4 update types
+        allowed_updates: ["message", "callback_query", "chat_member", "my_chat_member"],
+      },
+    },
+  });
+
+  logger.info(`Bot @${bot.botInfo.username} started (ID: ${bot.botInfo.id})`);
+
+  // Decision #29: 4-step graceful shutdown
+  async function shutdown(signal: string): Promise<void> {
+    logger.info({ signal }, "Shutdown signal received");
+
+    // 1. Stop accepting new updates
+    if (handle.isRunning()) handle.stop();
+
+    // 2. Wait for in-flight updates to complete (max 8s)
+    await Promise.race([
+      handle.task(),
+      new Promise((r) => setTimeout(r, SHUTDOWN_TIMEOUT_MS)),
+    ]);
+
+    // 3. Cleanup: status → offline, Redis quit, Sentry flush
     clearInterval(statusInterval);
     clearInterval(syncInterval);
-    await bot.stop();
-    await cache.quit();
-    await db.$disconnect();
+    await Promise.allSettled([
+      db.upsertBotStatus(config.botId, "offline"),
+      cache.quit(),
+    ]);
+
+    // 4. Exit
+    logger.info("Graceful shutdown complete");
     process.exit(0);
-  };
+  }
 
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
-
-  // Source: grammy/references/guide/deployment-types.md
-  // Long polling — simpler, no SSL, works everywhere
-  await bot.start({
-    onStart: (botInfo) => {
-      logger.info(`Bot @${botInfo.username} started (ID: ${botInfo.id})`);
-    },
-    // Source: grammy/references/guide/reactions.md
-    allowed_updates: ["message", "callback_query", "chat_member",
-                      "chat_join_request", "my_chat_member"],
-  });
+  process.once("SIGINT", () => shutdown("SIGINT"));
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
 }
 
 main().catch(console.error);
@@ -887,22 +1057,31 @@ main().catch(console.error);
 
 ### 9.2 Bot Factory — `core/bot-factory.ts`
 
+> **v2** — Correct middleware order, `sequentialize`, `chat-members`, error boundaries per composer
+
 ```typescript
 // apps/grammy/src/core/bot-factory.ts
-import { Bot } from "grammy";
+import { Bot, GrammyError, HttpError } from "grammy";
+import { sequentialize } from "@grammyjs/runner";
 import { autoRetry } from "@grammyjs/auto-retry";
 import { hydrate } from "@grammyjs/hydrate";
 import { hydrateReply, parseMode } from "@grammyjs/parse-mode";
 import { limit } from "@grammyjs/ratelimiter";
+import { chatMembers } from "@grammyjs/chat-members";
 import { contextEnricher } from "../middleware/context-enricher";
 import { adminComposer } from "../composers/admin";
+import { channelsComposer } from "../composers/channels";
 import { eventsComposer } from "../composers/events";
+import { migrationComposer } from "../composers/migration";
 import { verifyComposer } from "../composers/verify";
 import { fallbackComposer } from "../composers/fallback";
 import type { NezukoContext } from "../types";
+import type { InsForgeClient } from "./insforge-client";
+import type { CacheClient } from "./cache";
+import type { Logger } from "pino";
 
 interface BotDeps {
-  db: DatabaseClient;
+  db: InsForgeClient;
   cache: CacheClient;
   logger: Logger;
 }
@@ -910,34 +1089,60 @@ interface BotDeps {
 export function createBot(token: string, deps: BotDeps): Bot<NezukoContext> {
   const bot = new Bot<NezukoContext>(token);
 
-  // ── Transformers (outgoing API call middleware) ──
+  // ── Transformers (outgoing API call interceptors) ──
   bot.api.config.use(autoRetry({ maxRetryAttempts: 3, maxDelaySeconds: 60 }));
   bot.api.config.use(parseMode("HTML"));
 
-  // ── Middleware (incoming update processing) ──
+  // ── Middleware (incoming update processing — ORDER MATTERS!) ──
+
+  // 1. Sequentialize — MUST be first (grammY deployment checklist #2)
+  //    Prevents race conditions: same chat = same queue, different chats = parallel
+  bot.use(sequentialize((ctx) => ctx.chat?.id.toString()));
+
+  // 2. Rate limiter — drop spam before any processing
+  //    Decision #28: grammY defaults (1 per 1s, silent ignore)
+  bot.use(limit({ storageClient: deps.cache.redis }));
+
+  // 3. Hydration — enables ctx.msg.editText(), ctx.msg.delete()
   bot.use(hydrateReply);
   bot.use(hydrate());
-  bot.use(limit({ timeFrame: 2000, limit: 3 }));
+
+  // 4. Chat members — cache member status from chat_member events
+  //    Decision #22: official grammY plugin for getChatMember caching
+  bot.use(chatMembers(deps.cache.chatMembersAdapter));
+
+  // 5. Context enricher — inject db/cache/logger
   bot.use(contextEnricher(deps));
 
-  // ── Composers (handler tree) ──
-  bot.use(adminComposer);
-  bot.use(eventsComposer);
-  bot.use(verifyComposer);
+  // ── Composers (handler tree — with error boundaries!) ──
+  // Source: grammy/references/guide/errors.md
+  // Each composer wrapped in errorBoundary so one crash doesn't kill others
+
+  const handleComposerError = (err: unknown) => {
+    deps.logger.error({ err }, "Error in composer");
+  };
+
+  bot.use(adminComposer.errorBoundary(handleComposerError));
+  bot.use(channelsComposer.errorBoundary(handleComposerError));
+  bot.use(migrationComposer.errorBoundary(handleComposerError));
+  bot.use(eventsComposer.errorBoundary(handleComposerError));
+  bot.use(verifyComposer.errorBoundary(handleComposerError));
+
+  // Fallback — ALWAYS last (grammY deployment checklist)
+  // Answers any unclaimed callback queries to remove Telegram loading spinner
   bot.use(fallbackComposer);
 
-  // ── Global Error Handler ──
-  // Source: grammy/references/guide/errors.md
+  // ── Global Error Handler (safety net) ──
   bot.catch((err) => {
     const ctx = err.ctx;
     const e = err.error;
     deps.logger.error({ err: e, updateId: ctx.update.update_id },
-      `Error handling update ${ctx.update.update_id}`);
+      `Unhandled error in update ${ctx.update.update_id}`);
 
     if (e instanceof GrammyError) {
-      deps.logger.error(`Bot API error: ${e.description}`);
+      deps.logger.error({ description: e.description }, "Bot API error");
     } else if (e instanceof HttpError) {
-      deps.logger.error(`Network error: ${e.message}`);
+      deps.logger.error({ message: e.message }, "Network error");
     }
   });
 
@@ -1175,138 +1380,158 @@ export async function verifyMembership(
 
 ---
 
-## 10. Database Strategy (Local → InsForge)
+## 10. Database Strategy (InsForge REST)
 
-### 10.1 Development: Prisma + SQLite
+> **Decision (v3.0)**: No local database, no Prisma. Use InsForge REST API from day one.
+> This matches the existing Python bot (`insforge_client.py`) and eliminates schema sync issues.
 
-During development, we use **Prisma ORM** with **SQLite** for zero-config local development:
+### 10.1 InsForge REST Client (TypeScript Port)
 
-```prisma
-// apps/grammy/prisma/schema.prisma
-datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+The grammY bot talks to InsForge the **same way** the existing Python bot does — via raw HTTP REST calls to `/api/database/records/{table}`. This is a TypeScript port of the Python `insforge_client.py`.
+
+**Why NOT `@insforge/sdk`?** The SDK is designed for browser/frontend apps. For a server-side bot:
+- We need lower-level control over HTTP headers and error handling
+- We already have a proven REST pattern from the Python bot
+- No SDK dependency = one less thing to update
+
+```typescript
+// apps/grammy/src/core/insforge-client.ts
+import type { Logger } from "pino";
+
+interface InsForgeConfig {
+  baseUrl: string;
+  anonKey: string;
+  logger: Logger;
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
+export class InsForgeClient {
+  private baseUrl: string;
+  private headers: Record<string, string>;
+  private log: Logger;
 
-model ProtectedGroup {
-  id                  Int       @id @default(autoincrement())
-  telegramId          BigInt    @unique // BIGINT for Telegram IDs
-  title               String
-  memberCount         Int       @default(0)
-  isActive            Boolean   @default(true)
-  createdAt           DateTime  @default(now())
-  channels            GroupChannelLink[]
-  verificationLogs    VerificationLog[]
-}
+  constructor(config: InsForgeConfig) {
+    this.baseUrl = config.baseUrl.replace(/\/$/, "");
+    this.headers = {
+      Authorization: `Bearer ${config.anonKey}`,
+      "Content-Type": "application/json",
+    };
+    this.log = config.logger.child({ module: "insforge" });
+  }
 
-model EnforcedChannel {
-  id                  Int       @id @default(autoincrement())
-  telegramId          BigInt    @unique
-  username            String
-  title               String
-  subscriberCount     Int       @default(0)
-  createdAt           DateTime  @default(now())
-  groups              GroupChannelLink[]
-}
+  async getRecords<T>(table: string, params?: Record<string, string>): Promise<T[]> {
+    const url = new URL(`/api/database/records/${table}`, this.baseUrl);
+    if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
-model GroupChannelLink {
-  id                  Int             @id @default(autoincrement())
-  groupId             Int
-  channelId           Int
-  group               ProtectedGroup  @relation(fields: [groupId], references: [id])
-  channel             EnforcedChannel @relation(fields: [channelId], references: [id])
-  createdAt           DateTime        @default(now())
+    const resp = await fetch(url, { headers: this.headers });
+    if (!resp.ok) throw new Error(`InsForge GET ${table}: ${resp.status} ${resp.statusText}`);
+    return resp.json() as Promise<T[]>;
+  }
 
-  @@unique([groupId, channelId])
-}
+  async postRecords<T>(table: string, body: unknown[], prefer = "return=representation"): Promise<T[]> {
+    const resp = await fetch(`${this.baseUrl}/api/database/records/${table}`, {
+      method: "POST",
+      headers: { ...this.headers, Prefer: prefer },
+      body: JSON.stringify(body),
+    });
+    if (!resp.ok) throw new Error(`InsForge POST ${table}: ${resp.status}`);
+    if (resp.status === 204) return [];
+    return resp.json() as Promise<T[]>;
+  }
 
-model VerificationLog {
-  id                  Int             @id @default(autoincrement())
-  groupId             Int
-  userId              BigInt
-  status              String          // "verified" | "failed" | "pending"
-  latencyMs           Int?
-  group               ProtectedGroup  @relation(fields: [groupId], references: [id])
-  createdAt           DateTime        @default(now())
-}
+  async patchRecords<T>(table: string, params: Record<string, string>, body: unknown): Promise<T[]> {
+    const url = new URL(`/api/database/records/${table}`, this.baseUrl);
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
-model BotStatus {
-  id                  Int       @id @default(autoincrement())
-  botId               BigInt    @unique
-  status              String    @default("online")
-  uptimeSeconds       Int       @default(0)
-  protectedGroups     Int       @default(0)
-  enforcedChannels    Int       @default(0)
-  lastHeartbeat       DateTime  @default(now())
-}
+    const resp = await fetch(url, {
+      method: "PATCH",
+      headers: { ...this.headers, Prefer: "return=representation" },
+      body: JSON.stringify(body),
+    });
+    if (!resp.ok) throw new Error(`InsForge PATCH ${table}: ${resp.status}`);
+    if (resp.status === 204) return [];
+    return resp.json() as Promise<T[]>;
+  }
 
-model Owner {
-  id                  Int       @id @default(autoincrement())
-  telegramId          BigInt    @unique
-  username            String?
-  createdAt           DateTime  @default(now())
+  async deleteRecords(table: string, params: Record<string, string>): Promise<void> {
+    const url = new URL(`/api/database/records/${table}`, this.baseUrl);
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+    const resp = await fetch(url, { method: "DELETE", headers: this.headers });
+    if (!resp.ok) throw new Error(`InsForge DELETE ${table}: ${resp.status}`);
+  }
 }
 ```
 
-### 10.2 Repository Interface (Swappable Backend)
+### 10.2 Repository Interface
 
 ```typescript
-// apps/grammy/src/database/repositories/types.ts
+// apps/grammy/src/database/types.ts
 export interface GroupRepository {
-  getGroupChannels(groupTelegramId: number): Promise<Channel[]>;
+  getGroupChannels(groupId: number): Promise<Channel[]>;
   isUserVerified(groupId: number, userId: number): Promise<boolean>;
-  createGroup(telegramId: number, title: string): Promise<Group>;
-  linkChannel(groupId: number, channelId: number): Promise<void>;
-  unlinkChannel(groupId: number, channelId: number): Promise<void>;
-  logVerification(groupId: number, userId: number, status: string): Promise<void>;
-  upsertBotStatus(data: BotStatusData): Promise<void>;
+  createGroup(groupId: number, ownerId: number, title: string): Promise<void>;
+  linkChannel(groupId: number, channelId: number, title?: string, username?: string): Promise<void>;
+  unlinkAllChannels(groupId: number): Promise<void>;
+  logVerification(groupId: number, userId: number, status: string, latencyMs?: number): Promise<void>;
+  upsertBotStatus(botId: number, status: string, uptimeSeconds: number): Promise<void>;
+  getGroupChannelCount(groupId: number): Promise<number>;
 }
 ```
 
-### 10.3 Production: InsForge SDK Adapter
+### 10.3 InsForge Client Implementation
 
-When ready for production, swap the database backend:
+The repository wraps the InsForge REST client, mirroring the existing Python bot's `insforge_client.py`:
 
 ```typescript
-// apps/grammy/src/database/insforge/adapter.ts
-import { createClient } from "@insforge/sdk";
-import type { GroupRepository } from "../repositories/types";
+// apps/grammy/src/database/insforge-repo.ts
+import type { InsForgeClient } from "../core/insforge-client";
+import type { GroupRepository, Channel } from "./types";
 
-export function createInsForgeAdapter(baseUrl: string, anonKey: string): GroupRepository {
-  const client = createClient({ baseUrl, anonKey });
-
+export function createInsForgeRepo(client: InsForgeClient): GroupRepository {
   return {
-    async getGroupChannels(groupTelegramId: number) {
-      const { data } = await client.database
-        .from("group_channel_links")
-        .select("*, enforced_channels(*)")
-        .eq("group_telegram_id", groupTelegramId);
-      return data ?? [];
+    async getGroupChannels(groupId) {
+      const links = await client.getRecords<{ channel_id: number }>(
+        "group_channel_links",
+        { group_id: `eq.${groupId}`, select: "channel_id" },
+      );
+      if (links.length === 0) return [];
+
+      const ids = links.map((l) => l.channel_id).join(",");
+      return client.getRecords<Channel>("enforced_channels", {
+        channel_id: `in.(${ids})`,
+      });
     },
-    // ... other methods using @insforge/sdk
+
+    async isUserVerified(groupId, userId) {
+      const logs = await client.getRecords("verification_log", {
+        group_id: `eq.${groupId}`,
+        user_id: `eq.${userId}`,
+        status: "eq.verified",
+        limit: "1",
+      });
+      return logs.length > 0;
+    },
+
+    // ... remaining methods follow same pattern as Python bot
   };
 }
 ```
 
-### 10.4 Environment-Based Switching
+### 10.4 Configuration
 
 ```typescript
 // apps/grammy/src/core/database.ts
-export async function createDatabase(config: Config): Promise<GroupRepository> {
-  if (config.useInsForge) {
-    const { createInsForgeAdapter } = await import("../database/insforge/adapter");
-    return createInsForgeAdapter(config.insforgeUrl, config.insforgeAnonKey);
-  } else {
-    const { PrismaClient } = await import("@prisma/client");
-    const prisma = new PrismaClient();
-    await prisma.$connect();
-    const { createPrismaAdapter } = await import("../database/prisma/adapter");
-    return createPrismaAdapter(prisma);
-  }
+import { InsForgeClient } from "./insforge-client";
+import { createInsForgeRepo } from "../database/insforge-repo";
+import type { GroupRepository } from "../database/types";
+import type { Config } from "./config";
+
+export function createDatabase(config: Config): GroupRepository {
+  const client = new InsForgeClient({
+    baseUrl: config.insforgeBaseUrl,
+    anonKey: config.insforgeAnonKey,
+    logger: config.logger,
+  });
+  return createInsForgeRepo(client);
 }
 ```
 
@@ -1777,7 +2002,7 @@ cd apps/grammy && bun run build        # tsc -p tsconfig.build.json → 0 errors
 | 4.3 | `src/core/uptime.ts` | Uptime tracker |
 | 4.4 | `src/utils/health.ts` | HTTP health endpoint |
 
-### Phase 5: Multi-Bot Mode (10 hours) — P1
+### Phase 5: Multi-Bot + Realtime (12 hours) — P1
 
 | Task | File | Description |
 |---|---|---|
@@ -1785,7 +2010,10 @@ cd apps/grammy && bun run build        # tsc -p tsconfig.build.json → 0 errors
 | 5.2 | `src/multi-bot/bot-lifecycle.ts` | Start/stop individual bots |
 | 5.3 | `src/multi-bot/bot-manager.ts` | Coordinator (dashboard commands) |
 | 5.4 | `src/core/encryption.ts` | AES-256-GCM token decryption |
-| 5.5 | Update `src/main.ts` | Dashboard mode detection |
+| 5.5 | `src/core/realtime-client.ts` | InsForge Socket.IO client (subscribe, dispatch events) |
+| 5.6 | Update `src/main.ts` | Dashboard mode detection + realtime connect |
+
+> **Realtime approach (see §17 for full architecture)**: Bot uses `socket.io-client` to connect to InsForge Realtime. Subscribes to `commands` + `bot_instances` channels. DB triggers fire events → bot processes instantly. Dashboard uses `@insforge/sdk` `.realtime` module. Fallback: 30s polling if WS unavailable.
 
 ### Phase 6: Testing (10 hours) — P0
 
@@ -1797,34 +2025,254 @@ cd apps/grammy && bun run build        # tsc -p tsconfig.build.json → 0 errors
 | 6.4 | `tests/grammy/integration/composers/*` | Handler integration tests |
 | 6.5 | `tests/grammy/integration/bot-factory.test.ts` | Full bot creation test |
 
-### Phase 7: Polish & Production (4 hours) — P1
+### Phase 7: Polish & Production (6 hours) — P1
 
 | Task | File | Description |
 |---|---|---|
-| 7.1 | `Dockerfile` | Multi-stage Docker build |
-| 7.2 | `src/database/insforge/adapter.ts` | InsForge adapter (when ready) |
-| 7.3 | Error message polish | Consistent, user-friendly messages |
-| 7.4 | Documentation | README, inline docs |
+| 7.1 | `Dockerfile` | 3-stage build: Bun install → Node build → Node 22-slim runtime |
+| 7.2 | `.github/workflows/grammy-ci.yml` | CI: lint + type-check + test + Docker build |
+| 7.3 | `.dockerignore` | Exclude `node_modules`, `.git`, tests, docs |
+| 7.4 | Error message polish | Consistent, user-friendly messages |
+| 7.5 | Documentation | README, inline docs, `.env.example` |
 
-### Total Estimated Effort: ~60 hours
+### Total Estimated Effort: ~64 hours
 
 ```
 Phase 1: Foundation          ████████░░  8h
 Phase 2: Core Infrastructure ██████████░ 10h
 Phase 3: Core Bot Logic      ████████████ 12h
 Phase 4: Background Services ██████░░░░  6h
-Phase 5: Multi-Bot Mode      ██████████░ 10h
+Phase 5: Multi-Bot + Realtime ████████████ 12h
 Phase 6: Testing             ██████████░ 10h
-Phase 7: Polish              ████░░░░░░  4h
+Phase 7: Polish + Docker/CI  ██████░░░░  6h
                              ──────────
-                             Total: 60h
+                             Total: 64h
 ```
 
 ---
 
-## 17. Dashboard Compatibility (Future)
+## 17. Realtime Architecture — Bot ↔ Dashboard
 
-When connecting to InsForge, the grammY bot must produce **identical database writes** to maintain dashboard compatibility:
+> Sources: grammY official docs (runner, scaling), InsForge Realtime SDK, Telegram Bot API
+
+### 17.1 Two Separate Realtime Systems
+
+The Nezuko platform has **two independent realtime systems** that should not be confused:
+
+```
+System 1: Telegram → Bot                    System 2: Bot ↔ Dashboard
+─────────────────────────                    ─────────────────────────
+Telegram API → getUpdates                    InsForge PostgreSQL + Socket.IO
+grammY runner (500 concurrent)               DB triggers → realtime.publish()
+Long polling (~100ms)                        WebSocket broadcast (~200ms)
+Already solved by run()                      ← THIS is what we design
+```
+
+### 17.2 System 1 — Telegram → Bot (Solved by grammY)
+
+**grammY `run()` with the runner package handles this:**
+- Polls `getUpdates` concurrently (default: 500 in-flight updates)
+- ~100ms latency — effectively real-time for chat events
+- `sequentialize` ensures same-chat ordering despite concurrency
+- `allowed_updates: ["message", "callback_query", "chat_member", "my_chat_member"]`
+
+**No additional work needed.** This is the grammY-recommended pattern.
+
+### 17.3 System 2 — Bot ↔ Dashboard via InsForge Realtime
+
+**The database is the event bus.** Both the bot and dashboard write to InsForge PostgreSQL. DB triggers fire `realtime.publish()` which broadcasts to all connected WebSocket clients.
+
+```
+Bot Action (e.g., user verified)
+  │
+  ▼
+Bot writes to InsForge DB via REST (POST /verification_log)
+  │
+  ▼
+PostgreSQL trigger fires → realtime.publish('dashboard', 'verification', payload)
+  │
+  ▼
+InsForge Realtime broadcasts via Socket.IO
+  │
+  ├──► Dashboard (@insforge/sdk) → queryClient.invalidateQueries() → UI updates
+  └──► Bot (socket.io-client) → processes command (if relevant)
+```
+
+### 17.4 Realtime Channels
+
+| Channel | Direction | Trigger Table | Event Name | Payload |
+|---|---|---|---|---|
+| `dashboard` | Bot → Dashboard | `verification_log` INSERT | `verification` | user_id, group_id, status, latency_ms |
+| `bot_status` | Bot → Dashboard | `bot_status` INSERT/UPDATE | `status_changed` | bot_id, status, uptime_seconds |
+| `commands` | Dashboard → Bot | `admin_commands` UPDATE | `command_updated` | id, command_type, status, bot_id |
+| `logs` | Bot → Dashboard | `admin_logs` INSERT | `new_log` | id, level, message, timestamp |
+| `bot_instances` | Dashboard → Bot | `bot_instances` UPDATE | `bot_instance_changed` | bot_id, action, config |
+
+### 17.5 Bot-Side Implementation
+
+The grammY bot uses `socket.io-client` (Node.js) — same Socket.IO protocol as InsForge:
+
+```typescript
+// apps/grammy/src/core/realtime-client.ts
+import { io, type Socket } from "socket.io-client";
+import type { Logger } from "pino";
+
+const RECONNECT_MIN = 2_000;
+const RECONNECT_MAX = 60_000;
+
+interface RealtimeOptions {
+  baseUrl: string;
+  anonKey: string;
+  logger: Logger;
+}
+
+export class InsForgeRealtimeClient {
+  private socket: Socket | null = null;
+  private readonly logger: Logger;
+  private subscribedChannels: string[] = [];
+
+  constructor(private readonly options: RealtimeOptions) {
+    this.logger = options.logger.child({ module: "realtime" });
+  }
+
+  /** Connect to InsForge Realtime via Socket.IO */
+  async connect(): Promise<boolean> {
+    try {
+      this.socket = io(this.options.baseUrl, {
+        auth: { token: this.options.anonKey },
+        transports: ["websocket"],        // No HTTP long-polling fallback
+        reconnection: true,
+        reconnectionDelay: RECONNECT_MIN,
+        reconnectionDelayMax: RECONNECT_MAX,
+      });
+
+      return new Promise<boolean>((resolve) => {
+        const timeout = setTimeout(() => resolve(false), 10_000);
+        this.socket!.on("connect", () => {
+          clearTimeout(timeout);
+          this.logger.info("InsForge Realtime connected");
+          resolve(true);
+        });
+        this.socket!.on("connect_error", (err) => {
+          clearTimeout(timeout);
+          this.logger.warn({ err: err.message }, "Realtime connection failed");
+          resolve(false);
+        });
+      });
+    } catch {
+      return false;
+    }
+  }
+
+  /** Subscribe to a channel (InsForge protocol) */
+  subscribe(channel: string): void {
+    if (!this.socket?.connected) return;
+    this.socket.emit("REALTIME_SUBSCRIBE", { channel });
+    this.subscribedChannels.push(channel);
+    this.logger.info({ channel }, "Subscribed to channel");
+  }
+
+  /** Listen for a specific event */
+  on<T = unknown>(event: string, handler: (data: T) => void): void {
+    this.socket?.on(event, handler as (...args: unknown[]) => void);
+  }
+
+  /** Disconnect and cleanup */
+  async disconnect(): Promise<void> {
+    for (const ch of this.subscribedChannels) {
+      this.socket?.emit("REALTIME_UNSUBSCRIBE", { channel: ch });
+    }
+    this.socket?.disconnect();
+    this.socket = null;
+    this.subscribedChannels = [];
+    this.logger.info("Realtime disconnected");
+  }
+
+  get isConnected(): boolean {
+    return this.socket?.connected ?? false;
+  }
+}
+```
+
+### 17.6 Integration with main.ts
+
+```typescript
+// In main.ts — after bot creation, before run()
+
+const realtime = new InsForgeRealtimeClient({
+  baseUrl: config.insforgeBaseUrl,
+  anonKey: config.insforgeAnonKey,
+  logger,
+});
+
+const wsOk = await realtime.connect();
+if (wsOk) {
+  realtime.subscribe("commands");
+  realtime.subscribe("bot_instances");
+
+  // Dashboard → Bot: admin command dispatched
+  realtime.on<{ status: string; bot_id: number }>("command_updated", (data) => {
+    if (data.status === "pending" && data.bot_id === config.botId) {
+      commandWorker.processNow(); // Wake up command processor immediately
+    }
+  });
+
+  // Dashboard → Bot: config changed
+  realtime.on<{ bot_id: number }>("bot_instance_changed", (data) => {
+    if (data.bot_id === config.botId) {
+      reloadBotConfig(); // Reload settings without restart
+    }
+  });
+
+  logger.info("✅ InsForge Realtime → instant command dispatch enabled");
+} else {
+  logger.warn("⚠️ InsForge Realtime unavailable → 30s polling fallback");
+}
+```
+
+### 17.7 Dashboard-Side (Already Implemented)
+
+The web dashboard uses `@insforge/sdk` which wraps the same Socket.IO client:
+
+```typescript
+// apps/web/src/lib/hooks/use-realtime.ts (existing pattern)
+await insforge.realtime.connect();
+await insforge.realtime.subscribe("dashboard");
+await insforge.realtime.subscribe("bot_status");
+
+insforge.realtime.on("verification", () => {
+  queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
+});
+
+insforge.realtime.on("status_changed", () => {
+  queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
+});
+```
+
+### 17.8 Why InsForge Realtime (Not Alternatives)
+
+| Alternative | Why NOT |
+|---|---|
+| **Webhooks for Telegram** | Requires SSL + public URL + port config. `run()` gives same ~100ms latency |
+| **Custom REST API server** | Violates "no custom API server" architecture. Extra infra to maintain |
+| **Redis Pub/Sub** | Extra infrastructure. InsForge Realtime already provides Socket.IO |
+| **Direct HTTP bot→dashboard** | Bot would need its own HTTP server. Violates stateless architecture |
+| **gRPC / tRPC** | Over-engineered. InsForge REST + Realtime covers all cases |
+
+### 17.9 Performance
+
+| Metric | Value |
+|---|---|
+| Telegram → Bot latency | ~100ms (grammY runner long polling) |
+| Bot → Dashboard latency | ~200ms (REST write → trigger → WS broadcast) |
+| Dashboard → Bot latency | ~200ms (REST write → trigger → WS broadcast) |
+| WebSocket reconnect | Auto (2s → 60s exponential backoff) |
+| Concurrent bot updates | 500 (grammY runner default) |
+| Fallback when WS down | 30s polling for commands/status |
+
+### 17.10 DB Writes for Dashboard Compatibility
+
+The grammY bot must produce **identical database writes** to the PTB bot to keep the dashboard working:
 
 | Table | Key Fields | Write Pattern |
 |---|---|---|
@@ -1833,9 +2281,8 @@ When connecting to InsForge, the grammY bot must produce **identical database wr
 | `enforced_channels` | `telegram_id`, `username`, `subscriber_count` | UPSERT on /protect |
 | `group_channel_links` | `group_id`, `channel_id` | INSERT on /protect, DELETE on /unprotect |
 | `verification_log` | `user_id`, `group_id`, `status` | INSERT on each verify |
-| `owners` | `telegram_id`, `username` | UPSERT on first interaction |
 
-### Switchover Plan
+### 17.11 Switchover Plan
 
 1. **Parallel Running**: Both Python and grammY bots run simultaneously (different tokens)
 2. **Database Verification**: Compare DB writes from both bots
@@ -1849,30 +2296,57 @@ When connecting to InsForge, the grammY bot must produce **identical database wr
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| Prisma ↔ InsForge schema mismatch | Medium | High | Repository interface abstracts both; integration tests |
+| InsForge API downtime affects bot | Low | High | Catch HTTP errors, log to pino, bot continues without DB for cached data |
 | grammY plugin version conflicts | Low | Medium | Pin exact versions in package.json |
-| Redis cache key conflicts with Python bot | Medium | Medium | Namespace keys: `grammy:verified:...` |
+| Redis cache key conflicts with Python bot | Medium | Medium | Namespace keys: `nezuko:v2:verified:...` |
 | Telegram rate limits during testing | Medium | Low | auto-retry + separate test bot token |
 | TypeScript strict mode reveals design issues | High | Low | Fix at compile time — this is a feature, not a bug |
 | Multi-bot mode race conditions | Medium | High | `sequentialize` middleware + per-chat isolation |
-| Database migration complexity | Low | Medium | Prisma handles SQLite; InsForge adapter is separate |
+| ioredis event listener issues on Bun | Medium | Medium | Dev only on Bun; production uses Node.js 22 |
+| InsForge Realtime Socket.IO disconnect | Low | Medium | Auto-reconnect built into Socket.IO; 30s polling fallback |
 
 ---
 
-## 19. Open Questions
+## 19. Brainstorming Decisions Log
 
-| # | Question | Options | Recommendation |
+> All decisions finalized via brainstorming session (v3.0, 2026-03-03)
+
+| # | Question | Decision | Rationale |
 |---|---|---|---|
-| 1 | **Logging library** | pino vs winston vs consola | **pino** — fastest, JSON-structured, low overhead |
-| 2 | **Health check server** | hono vs native http vs fastify | **hono** — 14KB, same adapter as webhookCallback |
-| 3 | **Testing framework** | vitest vs jest vs bun test | **vitest** — fastest, ESM-native, bun-compatible |
-| 4 | **Prisma vs Drizzle** | Prisma vs Drizzle ORM | **Prisma** — better DX, auto migrations, bigger ecosystem |
-| 5 | **Redis client** | ioredis vs redis | **ioredis** — same as Python bot, ratelimiter compatible |
-| 6 | **Config validation** | zod vs env-var vs dotenv-safe | **zod** — type inference, composable, used in web too |
-| 7 | **Cache key namespace** | `grammy:` vs `nezuko:` prefix | **`nezuko:v2:`** — clear versioning |
-| 8 | **InsForge SDK import** | Direct `@insforge/sdk` vs wrapper | **Wrapper** via repository pattern (already planned) |
-| 9 | **Error reporting** | Sentry vs custom | **Sentry** (same as Python bot), add later |
-| 10 | **CI/CD** | GitHub Actions | Separate workflow for `apps/grammy/` |
+| 1 | **Runtime** | **Bun dev + Node.js 22 prod** | Bun for fast dev (`--watch`), Node.js for ioredis stability in Docker |
+| 2 | **Database** | **InsForge REST from day one** | No Prisma, no local DB. TypeScript port of `insforge_client.py`. Zero schema sync issues |
+| 3 | **Verification timeout** | **Kick after 5 min** | Auto-kick unverified users. Clean, prevents ghost muted accounts. Rejoin = fresh verify |
+| 4 | **Verification message** | **Inline + auto-delete** | Post in group with verify button, auto-delete after verify or timeout. Matches PTB pattern |
+| 5 | **Error reporting** | **Pino + Sentry** | Pino for structured logs, Sentry for real-time alerts. Reuse existing Sentry infra from PTB |
+| 6 | **Service messages** | **Skipped** | Not a configurable feature. Implementation detail only |
+| 7 | **Testing** | **Business logic + API mocking** | 30-40 tests with mocked Telegram API calls. Covers critical paths + edge cases |
+| 8 | **Realtime** | **Phase 5 (Multi-Bot)** | Not needed for single-bot. Add InsForge Socket.IO client when dashboard integration starts |
+| 9 | **Logging library** | **pino 10** | Fastest, JSON-structured, low overhead |
+| 10 | **Testing framework** | **vitest 4** | ESM-native, Bun-compatible, fastest |
+| 11 | **ORM** | **None** | Direct InsForge REST via native `fetch()`. No Prisma, no `@insforge/sdk` |
+| 12 | **Redis client** | **ioredis 5.9** | Same pattern as Python bot, ratelimiter plugin compatible |
+| 13 | **Config validation** | **zod 4** | Type inference, composable schemas |
+| 14 | **Cache key namespace** | **`nezuko:v2:` prefix** | Clear versioning, no conflicts with Python bot |
+| 15 | **CI/CD** | **GitHub Actions** | Separate workflow for `apps/grammy/` (Phase 7) |
+| 16 | **Max channels per group** | **5** | More than 5 makes verification UX painful (must join ALL). Easy to raise later |
+| 17 | **Command set** | **8 commands** | `/start`, `/help`, `/protect`, `/unprotect`, `/channels`, `/settings`, `/verify`, `/stats`. Removed `/status` |
+| 18 | **Update delivery** | **Long polling only** | No public URL needed. grammY `runner` handles concurrency. Simple Docker deployment |
+| 19 | **Docker image** | **3-stage build** | Stage 1: Bun install (fast). Stage 2: Node tsc build. Stage 3: `node:22-slim` runtime (~120MB) |
+| 20 | **CI/CD scope** | **Lint + Type + Test + Docker build** | Manual deploy for now. Auto-deploy (CD) added after bot is proven stable |
+| 21 | **Cache strategy** | **3-layer hybrid** | L1: `chat-members` plugin (event-driven). L2: Redis 6h TTL (derived verification). L3: 15min sync job |
+| 22 | **chat-members plugin** | **Added to stack** | Official grammY plugin for automatic `getChatMember` caching. Cache-first, API-fallback |
+| 23 | **Multi-channel verification** | **Join ALL channels** | Must be member of every linked channel to pass. Core value proposition. Matches PTB |
+| 24 | **Admin validation** | **chat-members plugin** | Admin status cached automatically via `chat_member` events. Falls back to API on miss. Zero extra code |
+| 25 | **Bot removed from group** | **Soft-disable, never delete** | Set `enabled=false`, keep ALL data (channels, settings, stats) in DB. Dashboard shows group tagged as "bot removed". If re-added, protection resumes instantly |
+| 26 | **Supergroup migration** | **Handle event + error fallback** | Listen for `migrate_to_chat_id` event, update group ID in InsForge. Also catch 400 errors with `migrate_to_chat_id` as fallback for race condition. ~20 lines |
+| 27 | **allowed_updates** | **4 types** | `["message", "callback_query", "chat_member", "my_chat_member"]`. No `chat_join_request` for v1 |
+| 28 | **Rate limiter** | **grammY defaults** | `1 per 1s` per user, silent ignore on exceed. Redis-backed via ioredis |
+| 29 | **Graceful shutdown** | **4-step enhanced** | 1) `handle.stop()` 2) `await handle.task()` with 8s timeout 3) `Promise.allSettled` cleanup (InsForge status→offline, Redis quit, Sentry flush) 4) `process.exit(0)`. Docker SIGKILL-safe |
+| 30 | **Bot owner features** | **Skipped for v1** | No bot owner concept. All admin commands are group-admin scoped. Owner features deferred |
+| 31 | **Error message tone** | **Friendly with emoji** | "❌ Oops! Join @channel first!" style. Matches PTB bot. Keeps group chat vibe light |
+| 32 | **Bot permission detection** | **3-layer defense** | L1: Check `can_restrict_members` + `can_delete_messages` on `/protect` setup. L2: Listen for `my_chat_member` demotion → disable group + notify. L3: Catch 403 on each mute/kick action gracefully |
+| 33 | **Architecture v2** | **4 critical fixes applied** | Added `sequentialize` (first middleware), error boundaries per composer, callback query answerer, removed all Prisma references. Flattened database layer, split channels composer, added migration composer |
+| 34 | **Realtime architecture** | **InsForge Realtime (Socket.IO)** | Two systems: Telegram→Bot via grammY `run()`, Bot↔Dashboard via InsForge Realtime. DB triggers as event bus. 5 channels. `socket.io-client` for bot, `@insforge/sdk` for dashboard. ~200ms latency. See §17 |
 
 ---
 
@@ -1927,87 +2401,104 @@ All code examples in this PRD are sourced from the **grammY official documentati
 
 ---
 
-> **Document Total**: ~1,500 lines | **Code Examples**: 40+ | **Official Sources**: 30+ reference files
->
-> **Next Step**: Review the open questions in §19, then begin Phase 1: Foundation
-
----
-
-## 20.5 Architecture & Flow Diagrams
+## 21. Architecture & Flow Diagrams
 
 ### Diagram 1 — Bot Startup Sequence
+
+> **v2** — Updated for `run()`, InsForge REST, realtime connect, 4-step shutdown
 
 ```mermaid
 sequenceDiagram
     participant Main as main.ts
     participant Config as loadConfig()
-    participant DB as createDatabase()
+    participant DB as InsForge REST
     participant Cache as createCache()
     participant Factory as createBot()
+    participant RT as InsForge Realtime
     participant TG as Telegram API
     participant Services as Background Services
 
     Main->>Config: Load & validate env (Zod)
     Config-->>Main: Config object
 
-    Main->>DB: Connect (Prisma SQLite or InsForge)
-    DB-->>Main: GroupRepository
+    Main->>DB: createInsForgeClient(baseUrl, anonKey)
+    DB-->>Main: InsForgeClient (fetch-based)
 
     Main->>Cache: Connect (ioredis → Redis)
-    Cache-->>Main: CacheClient
+    Cache-->>Main: CacheClient + chatMembersAdapter
 
     Main->>Factory: createBot(token, {db, cache, logger})
-    Factory->>Factory: Register transformers (auto-retry, parse-mode)
-    Factory->>Factory: Register middleware (hydrate, ratelimiter, enricher)
-    Factory->>Factory: Register composers (admin, events, verify, fallback)
-    Factory->>Factory: Register bot.catch() error handler
+    Factory->>Factory: Transformers: auto-retry, parseMode(HTML)
+    Factory->>Factory: MW 1: sequentialize (per chat)
+    Factory->>Factory: MW 2: ratelimiter (1/1s, Redis)
+    Factory->>Factory: MW 3: hydrate + hydrateReply
+    Factory->>Factory: MW 4: chatMembers (Redis adapter)
+    Factory->>Factory: MW 5: contextEnricher (db, cache, logger)
+    Factory->>Factory: Composers with errorBoundary: admin, channels, migration, events, verify, fallback
+    Factory->>Factory: bot.catch() global error handler
     Factory-->>Main: Bot<NezukoContext>
 
     Main->>Services: startStatusWriter(api, db, botId) → 30s interval
     Main->>Services: startMemberSync(api, db, botId) → 15min interval
     Main->>Services: startHealthServer(port) → HTTP /health
 
-    Main->>TG: bot.start({allowed_updates, onStart})
+    Main->>RT: realtime.connect() via Socket.IO
+    alt WebSocket connected
+        RT-->>Main: true
+        Main->>RT: subscribe("commands", "bot_instances")
+        Note over Main,RT: ✅ Instant command dispatch enabled
+    else WebSocket unavailable
+        RT-->>Main: false
+        Note over Main: ⚠️ 30s polling fallback
+    end
+
+    Main->>TG: run(bot, {allowed_updates}) via @grammyjs/runner
     TG-->>Main: botInfo (username, id)
 
-    Note over Main,TG: 🟢 Bot is now running — long polling active
+    Note over Main,TG: 🟢 Bot running — concurrent long polling (500 updates)
 
-    Main->>Main: Register SIGINT/SIGTERM handlers
-    Note over Main: Graceful shutdown: stop bot → clear intervals → close DB → close Redis
+    Main->>Main: Register process.once(SIGINT/SIGTERM)
+    Note over Main: 4-step shutdown: stop runner → await task (8s max) → cleanup → exit
 ```
 
 ### Diagram 2 — Middleware Pipeline (Update Processing)
 
+> **v2** — Correct middleware order with `sequentialize`, `chatMembers`, error boundaries
+
 ```mermaid
 flowchart TD
-    TG["📡 Telegram API<br/>(getUpdates)"] --> |"Update JSON"| Bot["🤖 Bot Instance"]
+    TG["📡 Telegram API<br/>(getUpdates via runner)"] --> |"Update JSON"| Bot["🤖 Bot Instance"]
 
     Bot --> T1["⚙️ Transformer: auto-retry<br/>(outgoing API calls)"]
     Bot --> T2["⚙️ Transformer: parseMode<br/>(default HTML)"]
 
-    Bot --> M1["🔗 Middleware: hydrateReply<br/>(ctx.replyWithHTML)"]
-    M1 --> M2["🔗 Middleware: hydrate<br/>(msg.editText, msg.delete)"]
-    M2 --> M3["🔗 Middleware: ratelimiter<br/>(3 req / 2s per user)"]
-    M3 --> M4["🔗 Middleware: contextEnricher<br/>(inject db, cache, logger)"]
+    Bot --> M1["🔒 MW 1: sequentialize<br/>(per-chat queue — MUST be first)"]
+    M1 --> M2["🛡️ MW 2: ratelimiter<br/>(1 req/1s per user, Redis)"]
+    M2 --> M3["🔗 MW 3: hydrateReply + hydrate<br/>(msg.editText, msg.delete)"]
+    M3 --> M4["👥 MW 4: chatMembers<br/>(cache getChatMember in Redis)"]
+    M4 --> M5["📦 MW 5: contextEnricher<br/>(inject db, cache, logger, botId)"]
 
-    M4 --> Router{"🌳 Composer Tree<br/>(filter queries)"}
+    M5 --> Router{"🌳 Composer Tree<br/>(filter queries)"}
 
-    Router -->|"/start, /help,<br/>/protect, /settings"| Admin["📋 adminComposer"]
-    Router -->|"message:new_chat_members"| Events["👋 eventsComposer"]
-    Router -->|"message:left_chat_member"| Events
-    Router -->|"message (text/media)"| Events
-    Router -->|"callback_query:verify:*"| Verify["✅ verifyComposer"]
-    Router -->|"unmatched callbacks"| Fallback["🔇 fallbackComposer"]
+    Router -->|"/start, /help,<br/>/protect, /settings"| Admin["📋 adminComposer<br/>(errorBoundary)"]
+    Router -->|"/channels, /verify,<br/>/stats"| Channels["📢 channelsComposer<br/>(errorBoundary)"]
+    Router -->|"chat_member join/leave,<br/>my_chat_member"| Events["👋 eventsComposer<br/>(errorBoundary)"]
+    Router -->|"migrate_to_chat_id"| Migration["🔄 migrationComposer<br/>(errorBoundary)"]
+    Router -->|"callback_query:verify:*"| Verify["✅ verifyComposer<br/>(errorBoundary)"]
+    Router -->|"unmatched callbacks"| Fallback["🔇 fallbackComposer<br/>(no boundary — always answers)"]
 
     Admin --> Response["📤 Response<br/>(via Telegram API)"]
+    Channels --> Response
     Events --> Response
+    Migration --> Response
     Verify --> Response
     Fallback --> Response
 
-    Bot --> ErrorHandler["❌ bot.catch()<br/>(GrammyError / HttpError)"]
+    Bot --> ErrorHandler["❌ bot.catch()<br/>(GrammyError / HttpError — safety net)"]
 
     style TG fill:#2196F3,color:#fff
     style Bot fill:#4CAF50,color:#fff
+    style M1 fill:#ff5722,color:#fff
     style Router fill:#FF9800,color:#fff
     style ErrorHandler fill:#f44336,color:#fff
 ```
@@ -2146,7 +2637,7 @@ flowchart TD
 
     ModeCheck -->|"false"| SingleBot["🤖 Single-Bot Mode<br/>Load BOT_TOKEN from .env"]
     SingleBot --> CreateBot1["createBot(token, deps)"]
-    CreateBot1 --> Start1["bot.start() — long polling"]
+    CreateBot1 --> Start1["run(bot) — concurrent long polling"]
 
     ModeCheck -->|"true"| DashboardMode["🏢 Dashboard Mode<br/>Load from database"]
 
@@ -2259,17 +2750,23 @@ flowchart TD
 
     subgraph "Per-Composer Error Boundaries"
         EB1["adminComposer.errorBoundary()"]
-        EB2["eventsComposer.errorBoundary()"]
-        EB3["verifyComposer.errorBoundary()"]
+        EB2["channelsComposer.errorBoundary()"]
+        EB3["migrationComposer.errorBoundary()"]
+        EB4["eventsComposer.errorBoundary()"]
+        EB5["verifyComposer.errorBoundary()"]
     end
 
     EB1 --> UserMsg1["Reply: ⚠️ Error, try again"]
-    EB2 --> SilentLog["Silent log<br/>(don't spam group)"]
-    EB3 --> UserMsg3["answerCallbackQuery:<br/>⚠️ Error occurred"]
+    EB2 --> UserMsg2["Reply: ⚠️ Error, try again"]
+    EB3 --> SilentLog1["Silent log<br/>(migration is internal)"]
+    EB4 --> SilentLog2["Silent log<br/>(don't spam group)"]
+    EB5 --> Callback["answerCallbackQuery<br/>(⚠️ Error, try again)"]
 
     MW --> EB1
     MW --> EB2
     MW --> EB3
+    MW --> EB4
+    MW --> EB5
 
     style BotCatch fill:#f44336,color:#fff
     style AutoRetry fill:#4CAF50,color:#fff
@@ -2281,11 +2778,11 @@ flowchart TD
 
 ---
 
-## 21. Pinned Dependency Versions (Latest as of March 2026)
+## 22. Pinned Dependency Versions (Latest as of March 2026)
 
 All dependencies pinned to their **exact latest stable versions**. No wildcards, no `^`, no `~`.
 
-### 21.1 Core Dependencies
+### 22.1 Core Dependencies
 
 | Package | Version | Released | Purpose |
 |---|---|---|---|
@@ -2296,13 +2793,17 @@ All dependencies pinned to their **exact latest stable versions**. No wildcards,
 | `@grammyjs/runner` | **2.0.3** | 2023 (stable) | Concurrent update processing |
 | `@grammyjs/ratelimiter` | **1.2.1** | Mar 2025 | User-level flood protection |
 | `@grammyjs/commands` | **1.3.0** | Feb 10, 2026 | Command groups, scoping, localization |
-| `prisma` | **7.4.0** | Feb 11, 2026 | ORM (TS-native client, caching layer) |
-| `@prisma/client` | **7.4.0** | Feb 11, 2026 | Generated DB client |
+| `@grammyjs/chat-members` | **1.x** | Latest | Automatic getChatMember cache (Redis adapter) |
 | `ioredis` | **5.9.3** | Feb 12, 2026 | Redis client |
 | `pino` | **10.3.1** | Feb 9, 2026 | Structured JSON logging |
 | `zod` | **4.3.6** | Jan 22, 2026 | Runtime type validation |
+| `@sentry/node` | **9.x** | Latest | Error reporting + performance monitoring |
+| `socket.io-client` | **4.8.x** | Latest | InsForge Realtime WebSocket client (Phase 5) |
 
-### 21.2 Dev Dependencies
+> **Note**: No Prisma, no `@insforge/sdk` for DB. Database access uses native `fetch()` to InsForge REST API (see §10).
+> **Phase 5 adds**: `socket.io-client` for InsForge Realtime (same Socket.IO protocol). Dashboard uses `@insforge/sdk` `.realtime` module — bot uses raw client for lighter footprint.
+
+### 22.2 Dev Dependencies
 
 | Package | Version | Released | Purpose |
 |---|---|---|---|
@@ -2313,15 +2814,15 @@ All dependencies pinned to their **exact latest stable versions**. No wildcards,
 | `eslint` | **9.x** | Latest | Linter (flat config) |
 | `pino-pretty` | **13.x** | Latest | Dev log formatting |
 
-### 21.3 Runtime
+### 22.3 Runtime
 
 | Tool | Version | Purpose |
 |---|---|---|
-| **Bun** | **1.3.10** | Runtime + package manager |
-| **Node.js** | **22.x LTS** | Fallback runtime |
+| **Bun** | **1.3.10** | **Dev only**: package manager + `bun run --watch` |
+| **Node.js** | **22.x LTS** | **Production**: Docker runtime (stability + ioredis compat) |
 | **Redis** | **7.4+** | Cache + ratelimiter backend |
 
-### 21.4 package.json (Exact Versions)
+### 22.4 package.json (Exact Versions)
 
 ```json
 {
@@ -2331,15 +2832,12 @@ All dependencies pinned to their **exact latest stable versions**. No wildcards,
   "scripts": {
     "dev": "bun run --watch src/main.ts",
     "build": "tsc -p tsconfig.build.json",
-    "start": "bun run dist/main.js",
+    "start": "node dist/main.js",
     "type-check": "tsc --noEmit",
     "lint": "eslint src/",
     "test": "vitest run",
     "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage",
-    "db:push": "bunx prisma db push",
-    "db:generate": "bunx prisma generate",
-    "db:studio": "bunx prisma studio"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "grammy": "1.40.1",
@@ -2349,7 +2847,7 @@ All dependencies pinned to their **exact latest stable versions**. No wildcards,
     "@grammyjs/runner": "2.0.3",
     "@grammyjs/ratelimiter": "1.2.1",
     "@grammyjs/commands": "1.3.0",
-    "@prisma/client": "7.4.0",
+    "@grammyjs/chat-members": "1.3.0",
     "ioredis": "5.9.3",
     "pino": "10.3.1",
     "zod": "4.3.6"
@@ -2360,30 +2858,30 @@ All dependencies pinned to their **exact latest stable versions**. No wildcards,
     "@types/node": "22.13.8",
     "prettier": "3.5.3",
     "eslint": "9.22.0",
-    "pino-pretty": "13.0.0",
-    "prisma": "7.4.0"
+    "pino-pretty": "13.0.0"
   }
 }
 ```
 
-### 21.5 Version Selection Rationale
+### 22.5 Version Selection Rationale
 
 | Choice | Why This Version |
 |---|---|
-| **Prisma 7** over 6 | TS-native client (no Rust engine), smaller bundles, built-in caching layer |
+| **No Prisma** | InsForge REST from day one — no schema sync, no ORM overhead, matches Python bot pattern |
+| **Native `fetch()`** over `@insforge/sdk` | Server-side bot needs low-level HTTP control; SDK is browser-focused |
 | **Zod 4** over 3 | Better performance, new features, stable since Nov 2025 |
 | **Pino 10** over 9 | Faster serialization, improved transport API |
 | **Vitest 4** over 3 | ESM-native, Bun-compatible, faster watch mode |
 | **ioredis 5.9** over 5.8 | Bug fixes, Redis 7 command support |
-| **Bun 1.3** over Node 22 | 2x faster startup, native TypeScript, built-in test runner for backup |
+| **Bun dev + Node prod** | Bun for fast dev iteration; Node.js 22 in Docker for ioredis stability |
 
 ---
 
-## 22. Comprehensive Edge Case Catalog
+## 23. Comprehensive Edge Case Catalog
 
 Every edge case below has been researched from Telegram Bot API documentation, community bug reports, Stack Overflow, GitHub issues, and our own PTB bot's production experience. Each edge case includes the **scenario**, **impact**, and **grammY handling code**.
 
-### 22.1 New Member Join — Edge Cases
+### 23.1 New Member Join — Edge Cases
 
 | # | Edge Case | Impact | Handling |
 |---|---|---|---|
@@ -2431,7 +2929,7 @@ async function ensureBotIsAdmin(bot: Bot<NezukoContext>, chatId: number): Promis
 }
 ```
 
-### 22.2 Verification (Callback Query) — Edge Cases
+### 23.2 Verification (Callback Query) — Edge Cases
 
 | # | Edge Case | Impact | Handling |
 |---|---|---|---|
@@ -2517,7 +3015,7 @@ try {
 }
 ```
 
-### 22.3 Leave Detection — Edge Cases
+### 23.3 Leave Detection — Edge Cases
 
 | # | Edge Case | Impact | Handling |
 |---|---|---|---|
@@ -2541,7 +3039,7 @@ eventsComposer.on("message:left_chat_member", async (ctx) => {
 });
 ```
 
-### 22.4 Protection Setup (`/protect`) — Edge Cases
+### 23.4 Protection Setup (`/protect`) — Edge Cases
 
 | # | Edge Case | Impact | Handling |
 |---|---|---|---|
@@ -2600,7 +3098,7 @@ if (existingCount >= MAX_CHANNELS_PER_GROUP) {
 }
 ```
 
-### 22.5 Message Filtering — Edge Cases
+### 23.5 Message Filtering — Edge Cases
 
 | # | Edge Case | Impact | Handling |
 |---|---|---|---|
@@ -2649,7 +3147,7 @@ eventsComposer.on("message", async (ctx) => {
 });
 ```
 
-### 22.6 getChatMember API — Edge Cases
+### 23.6 getChatMember API — Edge Cases
 
 | # | Edge Case | Impact | Handling |
 |---|---|---|---|
@@ -2685,7 +3183,7 @@ async function isMember(api: Api, chatId: number, userId: number): Promise<boole
 }
 ```
 
-### 22.7 Bot Permissions — Edge Cases
+### 23.7 Bot Permissions — Edge Cases
 
 | # | Edge Case | Impact | Handling |
 |---|---|---|---|
@@ -2715,7 +3213,7 @@ bot.on("my_chat_member", async (ctx) => {
 });
 ```
 
-### 22.8 Multi-Bot Mode — Edge Cases
+### 23.8 Multi-Bot Mode — Edge Cases
 
 | # | Edge Case | Impact | Handling |
 |---|---|---|---|
@@ -2726,7 +3224,7 @@ bot.on("my_chat_member", async (ctx) => {
 | EC-57 | **Bot token rotated while running** | Old token stops working mid-session | Listen for realtime `bot_instance_changed` event, restart |
 | EC-58 | **Dashboard sends "stop" command for running bot** | Must gracefully stop without affecting others | Per-bot `AbortController` or `runner.stop()` isolation |
 
-### 22.9 Cache & Database — Edge Cases
+### 23.9 Cache & Database — Edge Cases
 
 | # | Edge Case | Impact | Handling |
 |---|---|---|---|
@@ -2757,7 +3255,7 @@ async function getFromCacheOrDb(
 // Telegram IDs are currently < 10B, safe as JavaScript number
 ```
 
-### 22.10 Telegram API — Platform-Level Edge Cases
+### 23.10 Telegram API — Platform-Level Edge Cases
 
 | # | Edge Case | Impact | Handling |
 |---|---|---|---|
@@ -2771,7 +3269,7 @@ async function getFromCacheOrDb(
 
 ---
 
-### 22.11 Edge Case Summary
+### 23.11 Edge Case Summary
 
 | Category | Count | Critical | High | Medium |
 |---|---|---|---|---|
@@ -2791,10 +3289,9 @@ async function getFromCacheOrDb(
 
 ---
 
-> **Document Total**: ~2,400+ lines | **Code Examples**: 60+ | **Edge Cases**: 70 | **Official Sources**: 30+ reference files
+> **Document Total**: 2,970+ lines | **Sections**: 23 | **Sub-sections**: 80+ | **Code Examples**: 60+ | **Mermaid Diagrams**: 7 | **Edge Cases**: 70 | **Decisions**: 22 | **Official Sources**: 30+
 >
-> **Stack**: All dependencies pinned to latest March 2026 versions
+> **Stack**: All dependencies pinned to exact latest March 2026 versions (§22)
 >
-> **Next Step**: Review the open questions in §19, then begin Phase 1: Foundation
-
+> **Next Step**: Review open questions in §19, then begin Phase 1: Foundation
 
