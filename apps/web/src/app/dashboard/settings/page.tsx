@@ -6,6 +6,8 @@
 import { SettingsPageContent } from "@/components/settings";
 import { getMasterKey } from "@/lib/actions/vault";
 
+export const dynamic = "force-dynamic";
+
 export default async function SettingsPage() {
   const masterKey = await getMasterKey();
 

@@ -57,7 +57,7 @@ async def log_api_call(
         if error_type is not None:
             record["error_type"] = error_type
 
-        await insforge_client._post(  # pylint: disable=protected-access
+        await insforge_client.post_records(
             "api_call_log",
             [record],
             prefer="return=minimal",

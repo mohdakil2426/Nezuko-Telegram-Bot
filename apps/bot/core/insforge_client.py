@@ -66,26 +66,26 @@ async def close_client() -> None:
         logger.info("InsForge REST client closed")
 
 
-def _get_client() -> httpx.AsyncClient:
+def get_httpx_client() -> httpx.AsyncClient:
     """Return the active client, raise if not initialised."""
     if _client is None:
         raise RuntimeError("InsForge client not initialised. Call init_client() first.")
     return _client
 
 
-async def _get(table: str, params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+async def get_records(table: str, params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """
     GET /api/database/records/{table} with optional filter params.
 
     Returns list of records.
     """
-    client = _get_client()
+    client = get_httpx_client()
     resp = await client.get(f"/api/database/records/{table}", params=params or {})
     resp.raise_for_status()
     return list(resp.json())
 
 
-async def _post(
+async def post_records(
     table: str, body: list[dict[str, Any]], prefer: str = "return=representation"
 ) -> list[dict[str, Any]]:
     """
@@ -94,7 +94,7 @@ async def _post(
     InsForge requires body to be an array even for a single record.
     Returns the created record(s) when Prefer: return=representation is set.
     """
-    client = _get_client()
+    client = get_httpx_client()
     resp = await client.post(
         f"/api/database/records/{table}",
         json=body,
@@ -106,13 +106,13 @@ async def _post(
     return list(resp.json())
 
 
-async def _patch(
+async def patch_records(
     table: str, params: dict[str, Any], body: dict[str, Any], prefer: str = "return=representation"
 ) -> list[dict[str, Any]]:
     """
     PATCH /api/database/records/{table}?{filters} — update record(s).
     """
-    client = _get_client()
+    client = get_httpx_client()
     resp = await client.patch(
         f"/api/database/records/{table}",
         params=params,
@@ -125,20 +125,20 @@ async def _patch(
     return list(resp.json())
 
 
-async def _delete(table: str, params: dict[str, Any]) -> None:
+async def delete_records(table: str, params: dict[str, Any]) -> None:
     """
     DELETE /api/database/records/{table}?{filters}
     """
-    client = _get_client()
+    client = get_httpx_client()
     resp = await client.delete(f"/api/database/records/{table}", params=params)
     resp.raise_for_status()
 
 
-async def _rpc(function_name: str, body: dict[str, Any] | None = None) -> Any:
+async def rpc(function_name: str, body: dict[str, Any] | None = None) -> Any:
     """
     POST /api/database/rpc/{functionName} — call a PG function.
     """
-    client = _get_client()
+    client = get_httpx_client()
     resp = await client.post(
         f"/api/database/rpc/{function_name}",
         json=body or {},
@@ -199,7 +199,7 @@ class EnforcedChannel:
 
 async def get_owner(user_id: int) -> Owner | None:
     """Get owner by user_id."""
-    rows = await _get("owners", {"user_id": f"eq.{user_id}"})
+    rows = await get_records("owners", {"user_id": f"eq.{user_id}"})
     if not rows:
         return None
     r = rows[0]
@@ -217,7 +217,7 @@ async def create_owner(user_id: int, username: str | None = None) -> Owner:
     if existing:
         # Update username if it was NULL and we now have one
         if username and not existing.username:
-            await _patch(
+            await patch_records(
                 "owners",
                 {"user_id": f"eq.{user_id}"},
                 {"username": username, "updated_at": datetime.now(UTC).isoformat()},
@@ -225,7 +225,7 @@ async def create_owner(user_id: int, username: str | None = None) -> Owner:
             return Owner(user_id=user_id, username=username)
         return existing
     now = datetime.now(UTC).isoformat()
-    rows = await _post(
+    rows = await post_records(
         "owners",
         [{"user_id": user_id, "username": username, "created_at": now, "updated_at": now}],
     )
@@ -237,7 +237,7 @@ async def create_owner(user_id: int, username: str | None = None) -> Owner:
 
 async def get_protected_group(group_id: int) -> ProtectedGroup | None:
     """Get protected group by group_id."""
-    rows = await _get("protected_groups", {"group_id": f"eq.{group_id}"})
+    rows = await get_records("protected_groups", {"group_id": f"eq.{group_id}"})
     if not rows:
         return None
     r = rows[0]
@@ -255,7 +255,7 @@ async def create_protected_group(
 ) -> ProtectedGroup:
     """Create a new protected group."""
     now = datetime.now(UTC).isoformat()
-    rows = await _post(
+    rows = await post_records(
         "protected_groups",
         [
             {
@@ -283,7 +283,7 @@ async def create_protected_group(
 async def toggle_protection(group_id: int, enabled: bool) -> None:
     """Enable or disable protection for a group."""
     now = datetime.now(UTC).isoformat()
-    await _patch(
+    await patch_records(
         "protected_groups", {"group_id": f"eq.{group_id}"}, {"enabled": enabled, "updated_at": now}
     )
 
@@ -291,14 +291,14 @@ async def toggle_protection(group_id: int, enabled: bool) -> None:
 async def update_group_params(group_id: int, params: dict) -> None:
     """Update custom parameters for a group."""
     now = datetime.now(UTC).isoformat()
-    await _patch(
+    await patch_records(
         "protected_groups", {"group_id": f"eq.{group_id}"}, {"params": params, "updated_at": now}
     )
 
 
 async def get_enforced_channel(channel_id: int) -> EnforcedChannel | None:
     """Get enforced channel by channel_id."""
-    rows = await _get("enforced_channels", {"channel_id": f"eq.{channel_id}"})
+    rows = await get_records("enforced_channels", {"channel_id": f"eq.{channel_id}"})
     if not rows:
         return None
     r = rows[0]
@@ -326,7 +326,7 @@ async def create_enforced_channel(
             updates["username"] = username
         if invite_link:
             updates["invite_link"] = invite_link
-        await _patch("enforced_channels", {"channel_id": f"eq.{channel_id}"}, updates)
+        await patch_records("enforced_channels", {"channel_id": f"eq.{channel_id}"}, updates)
         return EnforcedChannel(
             channel_id=channel_id,
             title=title or existing.title,
@@ -334,7 +334,7 @@ async def create_enforced_channel(
             invite_link=invite_link or existing.invite_link,
         )
     now = datetime.now(UTC).isoformat()
-    await _post(
+    await post_records(
         "enforced_channels",
         [
             {
@@ -354,7 +354,7 @@ async def create_enforced_channel(
 
 async def get_group_channels(group_id: int) -> list[EnforcedChannel]:
     """Get all enforced channels linked to a group (batched query with pagination)."""
-    links = await _get(
+    links = await get_records(
         "group_channel_links", {"group_id": f"eq.{group_id}", "select": "channel_id"}
     )
     if not links:
@@ -364,7 +364,7 @@ async def get_group_channels(group_id: int) -> list[EnforcedChannel]:
     # Paginate large queries to prevent URL length limits
     all_channels: list[dict] = []
     for chunk in _chunk_list(channel_ids, _CHUNK_SIZE):
-        chunk_data = await _get(
+        chunk_data = await get_records(
             "enforced_channels",
             {"channel_id": f"in.({','.join(chunk)})"},
         )
@@ -389,8 +389,8 @@ async def _update_link_counts(group_id: int, channel_id: int) -> None:
 async def _update_group_link_count(group_id: int) -> None:
     """Recalculate linked_channels_count for a single group."""
     now = datetime.now(UTC).isoformat()
-    group_links = await _get("group_channel_links", {"group_id": f"eq.{group_id}"})
-    await _patch(
+    group_links = await get_records("group_channel_links", {"group_id": f"eq.{group_id}"})
+    await patch_records(
         "protected_groups",
         {"group_id": f"eq.{group_id}"},
         {"linked_channels_count": len(group_links), "updated_at": now},
@@ -401,8 +401,8 @@ async def _update_group_link_count(group_id: int) -> None:
 async def _update_channel_link_count(channel_id: int) -> None:
     """Recalculate linked_groups_count for a single channel."""
     now = datetime.now(UTC).isoformat()
-    channel_links = await _get("group_channel_links", {"channel_id": f"eq.{channel_id}"})
-    await _patch(
+    channel_links = await get_records("group_channel_links", {"channel_id": f"eq.{channel_id}"})
+    await patch_records(
         "enforced_channels",
         {"channel_id": f"eq.{channel_id}"},
         {"linked_groups_count": len(channel_links), "updated_at": now},
@@ -421,12 +421,12 @@ async def link_group_channel(
     await create_enforced_channel(channel_id, title, username, invite_link)
 
     # Check existing link
-    links = await _get(
+    links = await get_records(
         "group_channel_links", {"group_id": f"eq.{group_id}", "channel_id": f"eq.{channel_id}"}
     )
     if not links:
         now = datetime.now(UTC).isoformat()
-        await _post(
+        await post_records(
             "group_channel_links",
             [{"group_id": group_id, "channel_id": channel_id, "created_at": now}],
             prefer="return=minimal",
@@ -437,8 +437,8 @@ async def link_group_channel(
 
 async def unlink_all_channels(group_id: int) -> None:
     """Remove all channel links for a group and update counters."""
-    links = await _get("group_channel_links", {"group_id": f"eq.{group_id}"})
-    await _delete("group_channel_links", {"group_id": f"eq.{group_id}"})
+    links = await get_records("group_channel_links", {"group_id": f"eq.{group_id}"})
+    await delete_records("group_channel_links", {"group_id": f"eq.{group_id}"})
     await _update_group_link_count(group_id)
     if links:
         await asyncio.gather(*[_update_channel_link_count(link["channel_id"]) for link in links])
@@ -446,7 +446,7 @@ async def unlink_all_channels(group_id: int) -> None:
 
 async def get_groups_for_channel(channel_id: int) -> list[ProtectedGroup]:
     """Get all enabled groups that require this channel (batched query with pagination)."""
-    links = await _get(
+    links = await get_records(
         "group_channel_links", {"channel_id": f"eq.{channel_id}", "select": "group_id"}
     )
     if not links:
@@ -456,7 +456,7 @@ async def get_groups_for_channel(channel_id: int) -> list[ProtectedGroup]:
     # Paginate large queries to prevent URL length limits
     all_groups: list[dict] = []
     for chunk in _chunk_list(group_ids, _CHUNK_SIZE):
-        chunk_data = await _get(
+        chunk_data = await get_records(
             "protected_groups",
             {"group_id": f"in.({','.join(chunk)})", "enabled": "eq.true"},
         )
@@ -476,7 +476,7 @@ async def get_groups_for_channel(channel_id: int) -> list[ProtectedGroup]:
 
 async def get_all_protected_groups() -> list[ProtectedGroup]:
     """Get all enabled protected groups."""
-    rows = await _get("protected_groups", {"enabled": "eq.true"})
+    rows = await get_records("protected_groups", {"enabled": "eq.true"})
     return [
         ProtectedGroup(
             group_id=r["group_id"],
@@ -490,7 +490,7 @@ async def get_all_protected_groups() -> list[ProtectedGroup]:
 
 async def get_all_enforced_channels() -> list[EnforcedChannel]:
     """Get all enforced channels."""
-    rows = await _get("enforced_channels")
+    rows = await get_records("enforced_channels")
     return [
         EnforcedChannel(
             channel_id=r["channel_id"],
@@ -509,7 +509,7 @@ async def upsert_bot_status(
 ) -> None:
     """Upsert bot heartbeat into bot_status table."""
     now = datetime.now(UTC).isoformat()
-    client = _get_client()
+    client = get_httpx_client()
     resp = await client.post(
         "/api/database/records/bot_status",
         json=[
@@ -537,7 +537,7 @@ async def bulk_update_member_counts(updates: list[dict[str, Any]]) -> None:
     """
     if not updates:
         return
-    client = _get_client()
+    client = get_httpx_client()
     resp = await client.post(
         "/api/database/records/protected_groups",
         json=updates,
@@ -555,7 +555,7 @@ async def bulk_update_subscriber_counts(updates: list[dict[str, Any]]) -> None:
     """
     if not updates:
         return
-    client = _get_client()
+    client = get_httpx_client()
     resp = await client.post(
         "/api/database/records/enforced_channels",
         json=updates,
@@ -570,7 +570,7 @@ async def get_secret(key_name: str) -> str | None:
     Used for fetching the master_key for AES-GCM decryption.
     """
     try:
-        rows = await _get("nezuko_secrets", {"key_name": f"eq.{key_name}"})
+        rows = await get_records("nezuko_secrets", {"key_name": f"eq.{key_name}"})
         if not rows:
             return None
         return rows[0]["key_value"]
@@ -580,3 +580,12 @@ async def get_secret(key_name: str) -> str | None:
     except (httpx.HTTPError, OSError, ValueError) as e:
         logger.error("Failed to fetch secret '%s' from vault: %s", key_name, e)
         return None
+async def get_active_bot_instances() -> list[dict[str, Any]]:
+    """
+    Fetch active and non-deleted bot instances from the database.
+    This is a public wrapper around _get to avoid protected access warnings.
+    """
+    return await get_records(
+        "bot_instances",
+        {"is_active": "eq.true", "is_deleted": "eq.false"},
+    )

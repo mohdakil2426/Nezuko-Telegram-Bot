@@ -162,7 +162,7 @@ class TestInsForgeClientCrud:
         """get_owner returns None when the REST API returns an empty list."""
         from apps.bot.core import insforge_client
 
-        with patch.object(insforge_client, "_get", new=AsyncMock(return_value=[])):
+        with patch.object(insforge_client, "get_records", new=AsyncMock(return_value=[])):
             result = await insforge_client.get_owner(user_id=12345)
             assert result is None
 
@@ -176,7 +176,7 @@ class TestInsForgeClientCrud:
             "created_at": None,
             "updated_at": None,
         }
-        with patch.object(insforge_client, "_get", new=AsyncMock(return_value=[fake_row])):
+        with patch.object(insforge_client, "get_records", new=AsyncMock(return_value=[fake_row])):
             owner = await insforge_client.get_owner(user_id=99001)
             assert owner is not None
             assert owner.user_id == 99001
@@ -186,7 +186,7 @@ class TestInsForgeClientCrud:
         """get_protected_group returns None for an unknown group_id."""
         from apps.bot.core import insforge_client
 
-        with patch.object(insforge_client, "_get", new=AsyncMock(return_value=[])):
+        with patch.object(insforge_client, "get_records", new=AsyncMock(return_value=[])):
             result = await insforge_client.get_protected_group(group_id=-1001111111111)
             assert result is None
 
@@ -194,7 +194,7 @@ class TestInsForgeClientCrud:
         """get_group_channels returns [] when group has no channel links."""
         from apps.bot.core import insforge_client
 
-        with patch.object(insforge_client, "_get", new=AsyncMock(return_value=[])):
+        with patch.object(insforge_client, "get_records", new=AsyncMock(return_value=[])):
             channels = await insforge_client.get_group_channels(group_id=-1001111111111)
             assert channels == []
 
@@ -206,7 +206,7 @@ class TestInsForgeClientCrud:
             {"group_id": -1001, "owner_id": 1, "title": "G1", "enabled": True},
             {"group_id": -1002, "owner_id": 2, "title": "G2", "enabled": True},
         ]
-        with patch.object(insforge_client, "_get", new=AsyncMock(return_value=fake_rows)):
+        with patch.object(insforge_client, "get_records", new=AsyncMock(return_value=fake_rows)):
             groups = await insforge_client.get_all_protected_groups()
             assert len(groups) == 2
             assert groups[0].group_id == -1001

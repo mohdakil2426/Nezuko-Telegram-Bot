@@ -74,7 +74,7 @@ class BotHealthMonitor:
 
             except asyncio.CancelledError:
                 break
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Error in health monitor: %s", e)
 
     async def check_health(self, instance: BotInstance) -> dict:

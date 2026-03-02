@@ -102,7 +102,7 @@ class StatusWriter:
             **payload,
         }
         try:
-            client = insforge_client._get_client()  # pylint: disable=protected-access
+            client = insforge_client.get_httpx_client()
 
             # Step 1: Try PATCH (update existing row)
             patch_resp = await client.patch(
@@ -113,8 +113,7 @@ class StatusWriter:
             )
 
             if patch_resp.status_code == 404 or (
-                patch_resp.status_code == 200
-                and patch_resp.text.strip() == "[]"
+                patch_resp.status_code == 200 and patch_resp.text.strip() == "[]"
             ):
                 # Row doesn't exist yet — INSERT
                 post_resp = await client.post(

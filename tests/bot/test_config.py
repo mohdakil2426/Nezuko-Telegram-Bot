@@ -90,8 +90,7 @@ class TestInsForgeClientInit:
         assert insforge_client._BASE_URL == "https://test.insforge.app"  # pylint: disable=protected-access
 
     async def test_get_client_raises_before_init(self):
-        """_get_client raises RuntimeError if not initialised."""
-        import importlib
+        """get_httpx_client raises RuntimeError if not initialised."""
         import apps.bot.core.insforge_client as ic
 
         # Reset module state
@@ -99,6 +98,6 @@ class TestInsForgeClientInit:
         ic._client = None  # pylint: disable=protected-access
         try:
             with pytest.raises(RuntimeError, match="not initialised"):
-                ic._get_client()  # pylint: disable=protected-access
+                ic.get_httpx_client()
         finally:
             ic._client = original_client  # pylint: disable=protected-access

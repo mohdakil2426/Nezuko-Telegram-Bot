@@ -148,7 +148,7 @@ class CommandWorker:
     async def _process_pending_commands(self) -> None:
         """Fetch and execute all pending commands for this bot via InsForge REST."""
         try:
-            rows = await insforge_client._get(  # pylint: disable=protected-access
+            rows = await insforge_client.get_records(
                 "admin_commands",
                 {
                     "bot_id": f"eq.{self._bot_id}",
@@ -162,7 +162,7 @@ class CommandWorker:
         for row in rows:
             # Mark as processing before executing so duplicate runs are prevented
             try:
-                await insforge_client._patch(  # pylint: disable=protected-access
+                await insforge_client.patch_records(
                     "admin_commands",
                     {"id": f"eq.{row['id']}"},
                     {"status": "processing"},
@@ -237,7 +237,7 @@ class CommandWorker:
         """
         try:
             await asyncio.wait_for(
-                insforge_client._patch(  # pylint: disable=protected-access
+                insforge_client.patch_records(
                     "admin_commands",
                     {"id": f"eq.{command_id}"},
                     {"status": status, "result": json.dumps(result)},

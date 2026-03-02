@@ -73,7 +73,7 @@ class InsForgeLogHandler(logging.Handler):
 
         # Never let a logging failure crash the bot.
         with contextlib.suppress(httpx.HTTPError, OSError, RuntimeError):
-            await insforge_client._post(  # pylint: disable=protected-access
+            await insforge_client.post_records(
                 "admin_logs",
                 [payload],
                 prefer="return=minimal",

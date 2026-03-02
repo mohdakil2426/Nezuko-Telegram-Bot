@@ -239,7 +239,6 @@ dev = [
     # Test database (SQLite in-memory — never used in production)
     "aiosqlite>=0.22.1",
     "sqlalchemy[asyncio]>=2.0.46",
-
     # Testing
     "freezegun>=1.5.1",
     "mypy>=1.19.1",

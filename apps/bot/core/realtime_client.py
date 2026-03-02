@@ -150,13 +150,10 @@ class InsForgeRealtimeClient:
             # Subscribe to each requested channel via InsForge protocol
             for channel in channels:
                 try:
-                    await self._sio.emit(
-                        "REALTIME_SUBSCRIBE",
-                        {"channel": channel}
-                    )
+                    await self._sio.emit("REALTIME_SUBSCRIBE", {"channel": channel})
                     self._subscribed_channels.append(channel)
                     logger.info("[Realtime] Subscribed → channel: %s", channel)
-                except Exception as sub_err:
+                except Exception as sub_err:  # pylint: disable=broad-exception-caught
                     logger.warning(
                         "[Realtime] Subscribe to '%s' failed: %r (continuing)",
                         channel,

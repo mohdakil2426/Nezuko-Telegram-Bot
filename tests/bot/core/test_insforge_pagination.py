@@ -7,7 +7,7 @@ Tests:
 - get_groups_for_channel pagination
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -65,7 +65,7 @@ class TestGetGroupChannelsPagination:
         """Returns empty list when no channel links exist."""
         from apps.bot.core.insforge_client import get_group_channels
 
-        with patch("apps.bot.core.insforge_client._get", new_callable=AsyncMock) as mock_get:
+        with patch("apps.bot.core.insforge_client.get_records", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = []
 
             result = await get_group_channels(123)
@@ -78,7 +78,7 @@ class TestGetGroupChannelsPagination:
         """Fetches all channels in single query when under chunk size."""
         from apps.bot.core.insforge_client import get_group_channels
 
-        with patch("apps.bot.core.insforge_client._get", new_callable=AsyncMock) as mock_get:
+        with patch("apps.bot.core.insforge_client.get_records", new_callable=AsyncMock) as mock_get:
             # First call returns links, second returns channel data
             mock_get.side_effect = [
                 [{"channel_id": 1}, {"channel_id": 2}],  # links
@@ -98,7 +98,7 @@ class TestGetGroupChannelsPagination:
         """Paginates when channel count exceeds chunk size."""
         from apps.bot.core.insforge_client import _CHUNK_SIZE, get_group_channels
 
-        with patch("apps.bot.core.insforge_client._get", new_callable=AsyncMock) as mock_get:
+        with patch("apps.bot.core.insforge_client.get_records", new_callable=AsyncMock) as mock_get:
             # Create more links than chunk size
             num_links = _CHUNK_SIZE + 10
             links = [{"channel_id": i} for i in range(num_links)]
@@ -124,7 +124,7 @@ class TestGetGroupsForChannelPagination:
         """Returns empty list when no group links exist."""
         from apps.bot.core.insforge_client import get_groups_for_channel
 
-        with patch("apps.bot.core.insforge_client._get", new_callable=AsyncMock) as mock_get:
+        with patch("apps.bot.core.insforge_client.get_records", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = []
 
             result = await get_groups_for_channel(456)
@@ -137,7 +137,7 @@ class TestGetGroupsForChannelPagination:
         """Fetches all groups in single query when under chunk size."""
         from apps.bot.core.insforge_client import get_groups_for_channel
 
-        with patch("apps.bot.core.insforge_client._get", new_callable=AsyncMock) as mock_get:
+        with patch("apps.bot.core.insforge_client.get_records", new_callable=AsyncMock) as mock_get:
             mock_get.side_effect = [
                 [{"group_id": 1}, {"group_id": 2}],  # links
                 [
@@ -156,7 +156,7 @@ class TestGetGroupsForChannelPagination:
         """Paginates when group count exceeds chunk size."""
         from apps.bot.core.insforge_client import _CHUNK_SIZE, get_groups_for_channel
 
-        with patch("apps.bot.core.insforge_client._get", new_callable=AsyncMock) as mock_get:
+        with patch("apps.bot.core.insforge_client.get_records", new_callable=AsyncMock) as mock_get:
             num_links = _CHUNK_SIZE + 5
             links = [{"group_id": i} for i in range(num_links)]
 

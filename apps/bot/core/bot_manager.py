@@ -45,10 +45,7 @@ class BotManager:
             raise EncryptionError("Security Vault not configured")
 
         # Parallel token decryption
-        rows = await insforge_client._get(
-            "bot_instances",
-            {"is_active": "eq.true", "is_deleted": "eq.false"},
-        )
+        rows = await insforge_client.get_active_bot_instances()
 
         configs = await asyncio.gather(
             *[self._decrypt_bot_config(row) for row in rows], return_exceptions=True

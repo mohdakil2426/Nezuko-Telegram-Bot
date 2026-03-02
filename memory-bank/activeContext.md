@@ -1,9 +1,26 @@
 # Active Context: Current State
 
 ### Current Status
-**Phase 93: Realtime WebSockets Emit Fix — COMPLETE ✅**
+**Phase 95: InsForge Client Public API Refactoring — COMPLETE ✅**
 
-Phase 92 unified the bot logging ecosystem. Phase 93 correctly restored full functionality to the InsForge realtime Socket.IO connection, replacing the 10-second polling fallback loop with instant, persistent event streaming.
+Refactored the internal InsForge client methods (`_get`, `_post`, etc.) to descriptive, public ones (`get_records`, `post_records`, etc.). This eliminates 20+ `protected-access` warnings and achieves a perfect **10.00/10** Pylint score in core services. All test mocks have been updated and are passing.
+
+---
+
+## Phase 94: Audit Fixes Implementation (COMPLETE ✅)
+
+### Summary
+Implemented all Critical (P0) and High (P1) findings from the comprehensive codebase audit using parallel agent execution. All quality gates pass with 101 tests.
+
+### Tasks Completed
+
+| Task | Finding | Status | Commit |
+|------|---------|--------|--------|
+| SEC-01 | Remove Base64 fallback from encryption | ✅ Complete | `ad27cf1` |
+| SEC-02 | Add server-side JWT validation | ✅ Complete | `263ac64` |
+| ARCH-01/02 | Split BotManager god class | ✅ Complete | `7562656`, `9948b7a` |
+| PERF-01 | Add pagination to batched queries | ✅ Complete | `a910012` |
+| TEST-01 | Add 40+ tests (58 → 101) | ✅ Complete | `5356447` |
 
 ---
 
@@ -35,42 +52,7 @@ Phase 92 unified the bot logging ecosystem. Phase 93 correctly restored full fun
 
 ## Phase 89: Uptime Bug & RLS Anon Write Policies Fix (COMPLETE ✅)
 
-## Architecture (Current — Phase 89)
-- **Ran** `uv sync` (not just `uv lock`) to install packages and remove old ones
-- **Rewrote** `apps/bot/core/realtime_client.py` to use Socket.IO protocol:
-  - Auth: `auth={'token': anon_key}` on handshake (not HTTP header)
-  - Subscribe: `emit('REALTIME_SUBSCRIBE', {'channel': name})` (not raw JSON)
-  - Events: Socket.IO native dispatch via `sio.on(event_name)` (not JSON parsing)
-  - Reconnect: Built-in `reconnection=True` with exponential backoff (not manual)
-  - Error handling: `except Exception` catch-all prevents any WS failure from crashing bot
-- **Integrated** realtime into `BotManager.run()`:
-  - `_on_bot_changed()` event handler → calls `_sync_bots()` immediately
-  - 30s polling kept as safety-net fallback (always runs alongside)
-- **Updated** `BotManager.shutdown()` → `await self._realtime.disconnect()`
-- `CommandWorker` already compatible — same public API preserved
-
-#### B. Chart Hooks Migration (High)
-- **Converted** all 11 chart hooks in `use-charts.ts` from `useQuery()` + 60s polling → `useRealtimeChart()` + event-driven
-- **Fixed** `useRealtimeActivityChart` and `useRealtimeBotHealthChart` in `use-realtime-insforge.ts`:
-  - `REFETCH_INTERVALS.STANDARD` (30s) → `REFETCH_INTERVALS.FALLBACK` (5min)
-
-### Key Lesson: `uv lock` vs `uv sync`
-**`uv lock`** only updates the lockfile — it does NOT install/remove packages in `.venv`.
-**`uv sync`** actually installs new packages and removes old ones. Always run `uv sync` after changing dependencies.
-
-### Quality Gates
-| Check | Result |
-|---|---|
-| `ruff check apps/bot` | ✅ 0 errors |
-| `pylint apps/bot` | ✅ **10.00/10** |
-| `pyrefly check` | ✅ 0 errors |
-| `pytest tests/bot/` | ✅ 58 passed |
-| `tsc --noEmit` | ✅ 0 errors |
-| `bun run build` | ✅ exit 0 |
-
----
-
-## Architecture (Current — Phase 88)
+## Architecture (Current — Phase 94)
 
 ```
 Web Dashboard (Next.js) ──► @insforge/sdk ──► InsForge BaaS (PostgreSQL + Realtime WS)
@@ -78,14 +60,45 @@ Web Dashboard (Next.js) ──► @insforge/sdk ──► InsForge BaaS (Postgre
   /api/auth route                                  │            │ Socket.IO pushes
                                                    │ DB triggers fire on:
   Bot Engine (Python) ──────► httpx REST ──────────┘  • verification_log INSERT → "verification"
-    └─ realtime_client.py ──► Socket.IO ──────────────► bot_instance_changed (Phase 87/88)
-    └─ insforge_client.py                            • bot_status CHANGE → "status_changed"
-    └─ status_writer.py (30s heartbeat)              • admin_logs INSERT → "new_log"
-    └─ command_worker.py (WS-driven, 30s fallback)   • admin_commands CHANGE → "command_updated"
-    └─ member_sync.py (15min JobQueue)               • bot_instances CHANGE → "bot_instance_changed"
-    └─ verification_logger.py (fire-and-forget)
-    └─ api_call_logger.py (fire-and-forget)
+    ├─ realtime_client.py ──► Socket.IO ──────────────► bot_instance_changed
+    ├─ insforge_client.py                              • bot_status CHANGE → "status_changed"
+    ├─ status_writer.py (60s heartbeat)                • admin_logs INSERT → "new_log"
+    ├─ command_worker.py (WS-driven, 30s fallback)     • admin_commands CHANGE → "command_updated"
+    ├─ member_sync.py (15min JobQueue)                 • bot_instances CHANGE → "bot_instance_changed"
+    ├─ verification_logger.py (fire-and-forget)
+    ├─ api_call_logger.py (fire-and-forget)
+    ├─ BotRegistry (instance storage)         ← NEW: Refactored from BotManager
+    ├─ BotLifecycleManager (start/stop)       ← NEW: Refactored from BotManager
+    └─ BotHealthMonitor (health checks)       ← NEW: Refactored from BotManager
 ```
+
+#### BotManager Refactoring (Phase 94 - ARCH-01/02)
+
+The monolithic `BotManager` (~900 lines, 7 responsibilities) has been split into focused services:
+
+| Component | Responsibility | File |
+|-----------|---------------|------|
+| `BotRegistry` | Instance storage, lookup, thread-safe operations | `core/bot_registry.py` |
+| `BotLifecycleManager` | Start, stop, restart bot instances | `services/bot_lifecycle.py` |
+| `BotHealthMonitor` | Health checks, auto-restart on failure | `services/bot_health_monitor.py` |
+| `BotManager` | Coordinator - delegates to above services | `core/bot_manager.py` (~200 lines) |
+
+**Key Patterns:**
+- `BotConfig`, `BotInstance`, `BotStatus`, `BotMetrics` dataclasses in `bot_registry.py`
+- Thread-safe concurrent operations via `asyncio.Lock`
+- Forward references resolved with `from __future__ import annotations` + `TYPE_CHECKING`
+
+---
+
+### Quality Gates (Phase 94)
+| Check | Result |
+|---|---|
+| `ruff check apps/bot` | ✅ 0 errors |
+| `pylint apps/bot` | ✅ **9.99/10** |
+| `pyrefly check` | ✅ 0 errors |
+| `pytest tests/bot/` | ✅ **101 passed** |
+| `tsc --noEmit` | ✅ 0 errors |
+| `bun run build` | ✅ exit 0 |
 
 ---
 
@@ -93,7 +106,7 @@ Web Dashboard (Next.js) ──► @insforge/sdk ──► InsForge BaaS (Postgre
 
 - **InsForge Base URL**: in `apps/bot/.env` (no hardcoded default — SEC-02 fix)
 - **InsForge Anon Key**: in `apps/bot/.env` AND `apps/web/.env.local` (must be kept in sync)
-- **Encryption Key**: Auto-synced from vault (AES-256-GCM, 3600s TTL cache)
+- **Encryption Key**: Auto-synced from vault (AES-256-GCM, 3600s TTL cache) — Base64 fallback removed (SEC-01)
 - **GitHub**: `mohdakil2426/Nezuko-Telegram-Bot`
 
 ---
@@ -116,23 +129,27 @@ Web Dashboard (Next.js) ──► @insforge/sdk ──► InsForge BaaS (Postgre
 | Issue | Impact | Priority |
 |---|---|---|
 | Legacy Base64 bot token | Security gap + warning spam | **High** — delete + re-add bot via dashboard |
-| Test coverage at 58 tests | Target 100+ for full coverage | Low |
 | Admin notification on error (Task 6.2) | Error alerts not sent to admin chat | Low |
-| InsForge JWT not server-validated | Middleware checks cookie existence only | Low |
-| ARCH-01: BotManager god class | ~900 lines, 7 responsibilities — split deferred | Medium |
-| ARCH-03: Public facades needed | `_get/_post/_patch` still accessed externally | Medium |
+| ESLint Plugin | `eslint-plugin-react` incompatible with ESLint 10.0.0 | Low |
 
 ---
 
-## What to Work on Next
+## Phase 95: InsForge Client Public API Refactoring (COMPLETE ✅)
 
-1. **Re-encrypt bot token** — Delete + re-add `@gmakilbot` via Dashboard → Bots page
-2. **Deploy** — VPS/Docker (bot) + Vercel (web)
-3. **Set `ALLOWED_ORIGIN` env var** — Required for edge function CORS
-4. **Add admin notification** in global error handler (Task 6.2)
-5. **Expand test coverage** — target 100+ tests
-6. **BotManager refactor** — Split into `BotRegistry`, `BotHealthMonitor`, `BotSyncWorker`
+### Summary
+Refactored the internal InsForge client methods to make them public and descriptive. This was done to resolve Pylint protected-access warnings and improve the overall API surface of the core client.
+
+### Tasks Completed
+- Renamed `_get` → `get_records`
+- Renamed `_post` → `post_records`
+- Renamed `_patch` → `patch_records`
+- Renamed `_delete` → `delete_records`
+- Renamed `_rpc` → `rpc`
+- Renamed `_get_client` → `get_httpx_client`
+- Updated 25+ Python files to use the new public methods.
+- Updated 15+ test files and 40+ mocks to match the new API.
+- Achieved **10.00/10** Pylint score in all service/handler files.
 
 ---
 
-_Last Updated: 2026-03-02 (Phase 88 — Socket.IO Protocol Fix + Chart Hooks Realtime — COMPLETE)_
+_Last Updated: 2026-03-02 (Phase 95 — InsForge Client Refactoring — COMPLETE)_

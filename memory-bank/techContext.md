@@ -156,16 +156,16 @@ bun run format        # Prettier + Tailwind Sort
 
 | Table | Written By | Method | Notes |
 |---|---|---|---|
-| `verification_log` | `verification_logger.py` | `_post()` fire-and-forget | `latency_ms`, `cached`, `status` |
-| `api_call_log` | `api_call_logger.py` | `_post()` fire-and-forget | `method`, `success`, `latency_ms` |
-| `protected_groups` | `member_sync.py` | `_patch()` count update | `member_count`, `last_sync_at` |
-| `protected_groups` | `insforge_client.py` | `_patch()` link counter | `linked_channels_count` (on link/unlink) |
-| `enforced_channels` | `member_sync.py` | `_patch()` count update | `subscriber_count`, `last_sync_at` |
-| `enforced_channels` | `insforge_client.py` | `_patch()` link counter | `linked_groups_count` (on link/unlink) |
-| `bot_status` | `status_writer.py` | **PATCH-then-POST** every 30s | `status='online'` (not `'running'`) |
-| `admin_logs` | `insforge_log_handler.py` | `_post()` fire-and-forget | WARNING+ level only |
-| `admin_commands` | `command_worker.py` | `_get()` + `_patch()` status update | polls every 10s |
-| `bot_instances` | `bot_manager.py` | `_get()` load active bots | reads `is_active=true, is_deleted=false` |
+| `verification_log` | `verification_logger.py` | `post_records()` fire-and-forget | `latency_ms`, `cached`, `status` |
+| `api_call_log` | `api_call_logger.py` | `post_records()` fire-and-forget | `method`, `success`, `latency_ms` |
+| `protected_groups` | `member_sync.py` | `patch_records()` count update | `member_count`, `last_sync_at` |
+| `protected_groups` | `insforge_client.py` | `patch_records()` link counter | `linked_channels_count` (on link/unlink) |
+| `enforced_channels` | `member_sync.py` | `patch_records()` count update | `subscriber_count`, `last_sync_at` |
+| `enforced_channels` | `insforge_client.py` | `patch_records()` link counter | `linked_groups_count` (on link/unlink) |
+| `bot_status` | `status_writer.py` | **PATCH-then-POST** (via httpx client) | `status='online'` (not `'running'`) |
+| `admin_logs` | `insforge_log_handler.py` | `post_records()` fire-and-forget | WARNING+ level only |
+| `admin_commands` | `command_worker.py` | `get_records()` + `patch_records()` | polls every 10s |
+| `bot_instances` | `bot_manager.py` | `get_records()` load active bots | reads `is_active=true, is_deleted=false` |
 
 > **⚠️ Phase 66 lesson**: All INSERT operations require `GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon`.
 > Without this, every INSERT returns **401 Unauthorized** from PostgREST.

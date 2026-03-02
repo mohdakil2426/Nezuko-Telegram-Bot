@@ -58,7 +58,7 @@ async def log_verification(
         if error_type is not None:
             record["error_type"] = error_type
 
-        await insforge_client._post(  # pylint: disable=protected-access
+        await insforge_client.post_records(
             "verification_log",
             [record],
             prefer="return=minimal",

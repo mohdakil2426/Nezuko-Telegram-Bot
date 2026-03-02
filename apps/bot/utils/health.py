@@ -52,7 +52,7 @@ async def check_database() -> dict:
     """
     try:
         start = time.perf_counter()
-        await insforge_client._get("owners", {"limit": "1"})  # pylint: disable=protected-access
+        await insforge_client.get_records("owners", {"limit": "1"})
 
         latency_ms = (time.perf_counter() - start) * 1000
         set_db_connected(True)

@@ -73,15 +73,49 @@ async with get_session() as session:           # ← SQLAlchemy, test-only
     await crud.get_protected_group(session, gid)  # ← deleted
 ```
 
-### InsForge Client Internal API
+### InsForge Client Public API (Phase 95 — CANONICAL)
+
+The client provides descriptive, public methods for all REST operations. **Avoid using `_client` or any internal attributes directly.**
 
 ```python
-# Low-level REST helpers (used inside insforge_client.py)
-await insforge_client._get("table_name", {"col": "eq.value"})
-await insforge_client._post("table_name", [{"col": "value"}], prefer="return=minimal")
-await insforge_client._patch("table_name", {"col": "eq.val"}, {"col": "new_val"})
-await insforge_client._delete("table_name", {"col": "eq.val"})
-await insforge_client._rpc("function_name", {"param": "value"})
+# Public REST helpers (canonical for all bot services)
+await insforge_client.get_records("table_name", {"col": "eq.value"})
+await insforge_client.post_records("table_name", [{"col": "value"}], prefer="return=minimal")
+await insforge_client.patch_records("table_name", {"col": "eq.val"}, {"col": "new_val"})
+await insforge_client.delete_records("table_name", {"col": "eq.val"})
+await insforge_client.rpc("function_name", {"param": "value"})
+
+# Access raw httpx client if needed (e.g. for status_writer.py)
+client = insforge_client.get_httpx_client()
+```
+
+### Pagination Pattern for Batched Queries (Phase 94 — PERF-01)
+
+Large batched queries (e.g., `get_group_channels()` with 100+ channel IDs) can exceed PostgREST URL length limits. Use chunking:
+
+```python
+# ✅ Correct: Paginate large ID lists
+from apps.bot.core.insforge_client import _CHUNK_SIZE, _chunk_list
+
+async def get_group_channels(group_id: int) -> list[EnforcedChannel]:
+    links = await get_records("group_channel_links", {"group_id": f"eq.{group_id}"})
+    if not links:
+        return []
+    channel_ids = [str(link["channel_id"]) for link in links]
+
+    # Paginate large queries to prevent URL length limits
+    all_channels: list[dict] = []
+    for chunk in _chunk_list(channel_ids, _CHUNK_SIZE):
+        chunk_data = await get_records(
+            "enforced_channels",
+            {"channel_id": f"in.({','.join(chunk)})"},
+        )
+        all_channels.extend(chunk_data)
+
+    return [EnforcedChannel(...) for ch in all_channels]
+
+# _CHUNK_SIZE = 50 (conservative limit for PostgREST URL length)
+# _chunk_list(items, chunk_size) → splits list into chunks
 ```
 
 ### Link Counter Maintenance Pattern (Phase 69 — CRITICAL)
@@ -111,16 +145,95 @@ SQLAlchemy + SQLite is used **only** in `tests/` for fast offline test execution
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 ```
 
-### Bot Manager — Unified Sync Loop Pattern (Phase 86)
+### Bot Manager Architecture (Phase 94 — Refactored)
+
+The monolithic `BotManager` has been split into focused services following Single Responsibility Principle:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      BotManager                             │
+│                    (Coordinator)                            │
+└──────────────┬──────────────────────────────┬───────────────┘
+               │                              │
+    ┌──────────▼──────────┐      ┌────────────▼──────────┐
+    │   BotRegistry       │      │  BotLifecycleManager  │
+    │   (instance storage)│      │  (start/stop/restart) │
+    └──────────┬──────────┘      └────────────┬──────────┘
+               │                              │
+    ┌──────────▼──────────┐                   │
+    │  BotHealthMonitor   │◄──────────────────┘
+    │  (health checks +   │   (triggers restart
+    │   auto-restart)     │    on failure)
+    └─────────────────────┘
+```
+
+**Key Components:**
+
+| Component | File | Responsibility |
+|-----------|------|----------------|
+| `BotRegistry` | `core/bot_registry.py` | Thread-safe instance storage, lookup, metrics tracking |
+| `BotLifecycleManager` | `services/bot_lifecycle.py` | Start, stop, restart bot instances with cooldown |
+| `BotHealthMonitor` | `services/bot_health_monitor.py` | Health checks, stale heartbeat detection, auto-restart |
+| `BotManager` | `core/bot_manager.py` | Coordinator - delegates operations to services |
+
+**Data Classes:**
+```python
+# ✅ BotConfig — static configuration from DB
+@dataclass
+class BotConfig:
+    id: int
+    bot_id: int
+    bot_username: str
+    bot_name: str
+    token: str
+    is_active: bool
+
+# ✅ BotInstance — runtime state for a running bot
+@dataclass
+class BotInstance:
+    config: BotConfig
+    application: Application
+    task: asyncio.Task
+    status: BotStatus
+    started_at: datetime
+    last_heartbeat: datetime
+    restart_count: int = 0
+    error_count: int = 0
+    metrics: BotMetrics = field(default_factory=BotMetrics)
+    shutdown_event: asyncio.Event = field(default_factory=asyncio.Event)
+```
+
+**Usage Patterns:**
+```python
+# ✅ Registry operations (thread-safe)
+registry = BotRegistry()
+await registry.add(bot_instance)
+instance = registry.get(bot_id)
+all_instances = registry.get_all()
+running_ids = registry.get_running_ids()
+
+# ✅ Lifecycle operations
+lifecycle = BotLifecycleManager(registry)
+instance = await lifecycle.start_bot(config)
+await lifecycle.stop_bot(bot_id)
+await lifecycle.restart_bot(bot_id)  # Respects cooldown
+
+# ✅ Health monitoring
+monitor = BotHealthMonitor(registry, lifecycle)
+await monitor.start()  # Background health check loop
+await monitor.stop()
+```
+
+### Bot Manager — Unified Sync Loop Pattern (Phase 86/94)
 
 `BotManager.run()` uses a **single unified loop** (30s interval) that handles ALL bot lifecycle state changes from the dashboard. No separate "empty bots" or "bots running" loops.
 
 ```python
 # ✅ How the sync loop works:
 # 1. load_bots_from_database() queries: is_active=true AND is_deleted=false
-# 2. Compare DB results vs self.bot_instances (running bots)
-# 3. Start new/reactivated bots (in DB but not running)
-# 4. Stop deactivated/deleted bots (running but not in DB)
+# 2. Compare DB results vs registry.get_all() (running bots)
+# 3. Start new/reactivated bots (in DB but not running) via lifecycle.start_bot()
+# 4. Stop deactivated/deleted bots (running but not in DB) via lifecycle.stop_bot()
 
 # Dashboard actions → DB changes → sync loop detects in ≤30s:
 # • Add bot       → is_active=true, is_deleted=false → start_bot()
@@ -687,7 +800,7 @@ Triggers use `realtime.publish(channel, event, jsonb_payload)` inside `AFTER INS
 from unittest.mock import AsyncMock, patch
 from apps.bot.core import insforge_client
 
-with patch.object(insforge_client, "_get", new=AsyncMock(return_value=[])):
+with patch.object(insforge_client, "get_records", new=AsyncMock(return_value=[])):
     result = await insforge_client.get_owner(user_id=999)
     assert result is None
 
@@ -860,4 +973,4 @@ return useMutation({
 // If mutation fails silently, next refetch restores the deleted item
 ```
 
-_Last Updated: 2026-03-01 (Phase 84 — Bot & Web Production Bug Fixes)_
+_Last Updated: 2026-03-02 (Phase 94 — Audit Fixes Implementation — BotManager Refactor + Test Coverage)_
