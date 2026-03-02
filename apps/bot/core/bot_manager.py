@@ -127,7 +127,7 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         log_dir.mkdir(parents=True, exist_ok=True)
 
     def _setup_bot_logger(self, bot_id: int, bot_username: str) -> logging.Logger:
-        """Setup per-bot log file and logger.
+        """Setup logger for this bot.
 
         Args:
             bot_id: Bot instance ID.
@@ -136,32 +136,9 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
         Returns:
             Configured logger for this bot.
         """
-        bot_logger = logging.getLogger(f"bot.{bot_username}")
-        bot_logger.setLevel(logging.INFO)
-
-        # Remove existing handlers to avoid duplicates
-        bot_logger.handlers.clear()
-
-        # Add file handler for per-bot log
-        log_file = Path(f"apps/bot/logs/bot_{bot_id}_{bot_username}.log")
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
-        file_handler.setLevel(logging.INFO)
-
-        # Format: timestamp - level - bot_username - message
-        formatter = logging.Formatter(
-            "%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-        file_handler.setFormatter(formatter)
-        bot_logger.addHandler(file_handler)
-
-        # Also add console handler
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        console_handler.setFormatter(formatter)
-        bot_logger.addHandler(console_handler)
-
-        return bot_logger
+        # The root logger (configured in utils/logging.py) handles writing to 
+        # bot.log and the console. We just need to give this bot its own namespace.
+        return logging.getLogger(f"bot.{bot_username}")
 
     async def load_bots_from_database(self) -> list[BotConfig]:
         """Load active bot configurations from InsForge bot_instances table.
@@ -627,12 +604,6 @@ class BotManager:  # pylint: disable=too-many-instance-attributes
                     await bot_instance.command_worker.stop()
                 except (RuntimeError, TimeoutError) as e:
                     logger.warning("Error stopping command worker for bot %d: %s", bot_id, e)
-
-            # Close per-bot log handlers
-            if bot_instance.logger:
-                for handler in bot_instance.logger.handlers[:]:
-                    handler.close()
-                    bot_instance.logger.removeHandler(handler)
 
             # 5. Remove from instances
             del self.bot_instances[bot_id]

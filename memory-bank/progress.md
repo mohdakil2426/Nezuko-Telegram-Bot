@@ -39,6 +39,50 @@
 | 87    | Full Realtime Overhaul — Eliminate all polling, InsForge WebSocket event-driven architecture | **Complete ✅** |
 | 88    | Socket.IO Protocol Fix — Fix raw WS → Socket.IO mismatch, migrate chart hooks to realtime | **Complete ✅** |
 | 89    | Uptime Bug & RLS Anon Write Policies Fix — Fix missing httpx[http2] and anon write policies | **Complete ✅** |
+| 90    | Uptime Polish & Formatting Fix — Fix PostgREST UPSERT logic, add minute-level UI tracking | **Complete ✅** |
+| 91    | CLI Menu Enhancement — Add standalone Docker (Redis) Start/Stop options | **Complete ✅** |
+| 92    | Unified Logging Fix — Removed duplicate log files to use a single unified `bot.log` | **Complete ✅** |
+| 93    | Realtime WebSockets Emit Fix — Fixed 10s Socket.IO disconnection by replacing `call()` with `emit()` | **Complete ✅** |
+
+---
+
+## Phase 93: Realtime WebSockets Emit Fix (Complete)
+
+Resolved a bug where the `python-socketio` client would disconnect exactly 10 seconds after connecting to InsForge due to an unmet ACK timeout expectation.
+
+### Files Changed
+| File | Change |
+| --- | --- |
+| `realtime_client.py` | Switched `_sio.call("REALTIME_SUBSCRIBE")` out for `_sio.emit()`. Removed rigid dictionary check requirements. |
+
+---
+
+## Phase 92: Unified Logging Fix (Complete)
+
+Improved Developer CLI tools to decouple Docker startup from Bot/Web startups.
+
+### Files Changed
+| File | Change |
+| --- | --- |
+| `scripts/core/menu.ps1` | Added Options 4 & 5 to `Show-StartMenu`. Added Switch handlers. |
+| `scripts/dev/start.ps1` | Added `docker` to `[ValidateSet]`. Restructured Success summaries. |
+| `scripts/dev/stop.ps1` | Added `-Service` param conditional blocks for Web and Bot process termination. |
+
+---
+
+## Phase 90: Uptime Polish & Formatting Fix (Complete)
+
+Resolved issues where the dashboard visually froze its uptime tracking by improving API response handling and TS UI formatting.
+
+### Root Cause
+- **PostgREST PATCH Logic:** `Prefer: return=minimal` silently ate the 0-row update without triggering the POST fallback. Changed to `return=representation`.
+- **UI Staleness:** `formatUptime` rounded down to the nearest hour.
+
+### Files Changed
+| File | Change |
+| --- | --- |
+| `status_writer.py` | Switched PATCH to `Prefer: return=representation` and interval to 60s |
+| `stat-cards.tsx` | Expanded `formatUptime` to show combinations like `1h 45m` and `1d 2h` |
 
 ---
 

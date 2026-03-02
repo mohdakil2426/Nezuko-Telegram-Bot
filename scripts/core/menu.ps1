@@ -97,7 +97,10 @@ function Show-StartMenu {
     Write-Host "  │    [2] 🤖 Bot Only                                   │" -ForegroundColor White
     Write-Host "  │    [3] 💻 Web Dashboard Only                         │" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
-    Write-Host "  │    [4] ⏹️  Stop All Services                          │" -ForegroundColor White
+    Write-Host "  │    [4] 🐳 Start Docker (Redis) Only                  │" -ForegroundColor White
+    Write-Host "  │    [5] 🐳 Stop Docker (Redis) Only                   │" -ForegroundColor White
+    Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
+    Write-Host "  │    [6] ⏹️  Stop All Services                          │" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
     Write-Host "  │    [0] ⬅️  Back                                       │" -ForegroundColor White
     Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
@@ -264,6 +267,19 @@ function Invoke-StartMenu {
                 Wait-ForKeyPress
             }
             "4" {
+                Write-Host ""
+                Write-Host "  🐳 Starting Docker (Redis)..." -ForegroundColor Magenta
+                & $startScript -Service "docker"
+                Wait-ForKeyPress
+            }
+            "5" {
+                Write-Host ""
+                Write-Host "  🐳 Stopping Docker (Redis)..." -ForegroundColor Yellow
+                $stopScript = Join-Path $ScriptRoot "..\dev\stop.ps1"
+                & $stopScript -Service "docker"
+                Wait-ForKeyPress
+            }
+            "6" {
                 Write-Host ""
                 Write-Host "  ⏹️  Stopping all services..." -ForegroundColor Red
                 $stopScript = Join-Path $ScriptRoot "..\dev\stop.ps1"

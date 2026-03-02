@@ -21,6 +21,8 @@
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
+    [ValidateSet("all", "web", "bot", "docker")]
+    [string]$Service = "all",
     [switch]$KeepRedis
 )
 
@@ -124,26 +126,34 @@ $totalStopped = 0
 
 # Stop Web Dashboard (Port 3000)
 Write-Host "  [1/3] Web Dashboard (Port $WEB_PORT)..." -ForegroundColor Blue
-$webStopped = Stop-ProcessOnPort -Port $WEB_PORT -ServiceName "Web"
-if ($webStopped -eq 0) {
-    Write-Host "        Not running" -ForegroundColor Gray
+if ($Service -eq "all" -or $Service -eq "web") {
+    $webStopped = Stop-ProcessOnPort -Port $WEB_PORT -ServiceName "Web"
+    if ($webStopped -eq 0) {
+        Write-Host "        Not running" -ForegroundColor Gray
+    }
+    $totalStopped += $webStopped
+} else {
+    Write-Host "        Skipped" -ForegroundColor Gray
 }
-$totalStopped += $webStopped
 
 # Stop Telegram Bot
 Write-Host "  [2/3] Telegram Bot..." -ForegroundColor Yellow
-$botStopped = Stop-BotProcess
-if ($botStopped -eq 0) {
-    Write-Host "        Not running" -ForegroundColor Gray
+if ($Service -eq "all" -or $Service -eq "bot") {
+    $botStopped = Stop-BotProcess
+    if ($botStopped -eq 0) {
+        Write-Host "        Not running" -ForegroundColor Gray
+    }
+    $totalStopped += $botStopped
+} else {
+    Write-Host "        Skipped" -ForegroundColor Gray
 }
-$totalStopped += $botStopped
 
 # Stop Redis Docker container
 Write-Host "  [3/3] Redis (Docker: nezuko-redis-local)..." -ForegroundColor Magenta
 
-if ($KeepRedis) {
-    Write-Host "        Skipped (-KeepRedis flag)" -ForegroundColor Gray
-    Write-Log -Message "Redis container kept running (-KeepRedis)" -Category "DEV"
+if ($KeepRedis -or ($Service -ne "all" -and $Service -ne "docker")) {
+    Write-Host "        Skipped" -ForegroundColor Gray
+    Write-Log -Message "Redis container kept running/skipped" -Category "DEV"
 }
 else {
     # Check if Docker is available

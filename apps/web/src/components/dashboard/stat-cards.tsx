@@ -17,15 +17,20 @@ const nf = new Intl.NumberFormat(undefined, { notation: "compact", maximumFracti
  * Format seconds to readable duration, including minutes when < 1 hour
  */
 function formatUptime(seconds: number): string {
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
   const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
   if (days > 0) {
-    return `${days}d`;
+    return `${days}d ${hours}h`;
   }
-  const hours = Math.floor(seconds / 3600);
-  if (hours >= 1) {
-    return `${hours}h`;
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
   }
-  return `${Math.floor(seconds / 60)}m`;
+  return `${minutes}m`;
 }
 
 export function StatCards() {

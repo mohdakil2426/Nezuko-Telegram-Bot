@@ -150,24 +150,15 @@ class InsForgeRealtimeClient:
             # Subscribe to each requested channel via InsForge protocol
             for channel in channels:
                 try:
-                    response = await self._sio.call(
+                    await self._sio.emit(
                         "REALTIME_SUBSCRIBE",
-                        {"channel": channel},
-                        timeout=10,
+                        {"channel": channel}
                     )
-                    if isinstance(response, dict) and response.get("ok"):
-                        self._subscribed_channels.append(channel)
-                        logger.info("[Realtime] Subscribed → channel: %s", channel)
-                    else:
-                        # Subscription failed but connection is OK — channel may not exist
-                        logger.warning(
-                            "[Realtime] Subscribe to '%s' failed: %s (continuing)",
-                            channel,
-                            response,
-                        )
-                except (TimeoutError, OSError) as sub_err:
+                    self._subscribed_channels.append(channel)
+                    logger.info("[Realtime] Subscribed → channel: %s", channel)
+                except Exception as sub_err:
                     logger.warning(
-                        "[Realtime] Subscribe to '%s' timed out: %s (continuing)",
+                        "[Realtime] Subscribe to '%s' failed: %r (continuing)",
                         channel,
                         sub_err,
                     )
@@ -188,7 +179,7 @@ class InsForgeRealtimeClient:
             # (ConnectionError, BadNamespaceError, etc.) that aren't subclasses
             # of OSError. We must never let a realtime failure crash the bot.
             logger.warning(
-                "[Realtime] Socket.IO connection failed: %s — polling fallback",
+                "[Realtime] Socket.IO connection failed: %r — polling fallback",
                 e,
             )
             return False

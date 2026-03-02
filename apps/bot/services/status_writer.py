@@ -34,7 +34,7 @@ class StatusWriter:
         self._bot_id = bot_id
         self._running = False
         self._start_time = time.monotonic()
-        self._interval = 30  # seconds
+        self._interval = 60  # seconds (update every minute)
         self._boot_iso: str | None = None  # Set once on first heartbeat
 
     async def start(self) -> None:
@@ -109,13 +109,12 @@ class StatusWriter:
                 "/api/database/records/bot_status",
                 params={"bot_id": f"eq.{self._bot_id}"},
                 json=payload,
-                headers={"Prefer": "return=minimal"},
+                headers={"Prefer": "return=representation"},
             )
 
             if patch_resp.status_code == 404 or (
-                patch_resp.status_code == 204
-                # PostgREST returns 204 even when 0 rows matched — check Content-Range
-                and patch_resp.headers.get("content-range", "").startswith("*/0")
+                patch_resp.status_code == 200
+                and patch_resp.text.strip() == "[]"
             ):
                 # Row doesn't exist yet — INSERT
                 post_resp = await client.post(

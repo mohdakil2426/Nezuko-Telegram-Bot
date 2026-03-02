@@ -8,7 +8,14 @@
 --              and the bot's uptime to remain at 0 on the dashboard.
 -- ============================================================
 
--- 1. Bot Status Updates (Heartbeat via PATCH-then-POST pattern)
+-- 1. Fix Foreign Key Constraints so bot_instance_id references bot_id, not id
+ALTER TABLE public.bot_status DROP CONSTRAINT IF EXISTS bot_status_bot_instance_id_fkey;
+ALTER TABLE public.bot_status ADD CONSTRAINT bot_status_bot_instance_id_fkey FOREIGN KEY (bot_instance_id) REFERENCES public.bot_instances (bot_id) ON DELETE CASCADE;
+
+ALTER TABLE public.admin_commands DROP CONSTRAINT IF EXISTS admin_commands_bot_id_fkey;
+ALTER TABLE public.admin_commands ADD CONSTRAINT admin_commands_bot_id_fkey FOREIGN KEY (bot_id) REFERENCES public.bot_instances (bot_id) ON DELETE CASCADE;
+
+-- 2. Bot Status Updates (Heartbeat via PATCH-then-POST pattern)
 CREATE POLICY "bot_status_anon_insert" ON public.bot_status FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "bot_status_anon_update" ON public.bot_status FOR UPDATE TO anon USING (true) WITH CHECK (true);
 

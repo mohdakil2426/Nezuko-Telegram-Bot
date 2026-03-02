@@ -17,7 +17,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet("all", "web", "bot")]
+    [ValidateSet("all", "web", "bot", "docker")]
     [string]$Service = "all"
 )
 
@@ -153,8 +153,12 @@ Write-Host "   ✅ All services started!" -ForegroundColor Green
 Write-Host "  ====================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "   Redis: " -NoNewline; Write-Host "nezuko-redis-local (port 6379)" -ForegroundColor Magenta
-Write-Host "   Web:   " -NoNewline; Write-Host "http://localhost:3000" -ForegroundColor Blue
-Write-Host "   Bot:   " -NoNewline; Write-Host "Running in polling mode" -ForegroundColor Yellow
+if ($Service -eq "all" -or $Service -eq "web") {
+    Write-Host "   Web:   " -NoNewline; Write-Host "http://localhost:3000" -ForegroundColor Blue
+}
+if ($Service -eq "all" -or $Service -eq "bot") {
+    Write-Host "   Bot:   " -NoNewline; Write-Host "Running in polling mode" -ForegroundColor Yellow
+}
 Write-Host ""
 Write-Host "   Press Ctrl+C in each terminal to stop services." -ForegroundColor Gray
 Write-Host "   Run stop.ps1 to shut down Redis + services." -ForegroundColor Gray

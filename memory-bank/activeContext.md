@@ -1,27 +1,39 @@
 # Active Context: Current State
 
 ### Current Status
-**Phase 89: Uptime Bug & RLS Anon Write Policies Fix — COMPLETE ✅**
+**Phase 93: Realtime WebSockets Emit Fix — COMPLETE ✅**
 
-Phase 88 successfully fixed the Socket.IO protocol, but two hidden bugs prevented the bot from updating its uptime in the dashboard and recovering from crashes.
+Phase 92 unified the bot logging ecosystem. Phase 93 correctly restored full functionality to the InsForge realtime Socket.IO connection, replacing the 10-second polling fallback loop with instant, persistent event streaming.
+
+---
+
+## Phase 93: Realtime WebSockets Emit Fix (COMPLETE ✅)
+
+### Root Cause
+- The bot application connected to InsForge's WebSocket backend correctly, but during channel subscription, it used `await self._sio.call("REALTIME_SUBSCRIBE", ... , timeout=10)`. The `call()` method freezes the client specifically waiting for a Socket.IO acknowledgment packet (ACK) from the server. InsForge's realtime protocol does not send ACKs for this standard event.
+- Because no ACK arrived, `python-socketio` threw a `socketio.exceptions.TimeoutError` exactly 10 seconds later, disconnecting the client and trapping the bot permanently in polling mode.
+
+### What Was Fixed
+- **Switched to `emit`**: Changed `apps/bot/core/realtime_client.py` Line ~153 from `_sio.call()` to `_sio.emit()`, allowing the WebSocket to fire-and-forget the subscription command.
+- **Exception Scoping**: Updated the Try/Catch to broadly catch `Exception` around the `emit` instead of targeting standard Python `OSError`s. This ensures one misfired subscription won't crash the entire real-time pipeline.
+- The bots now maintain instantaneous event connectivity with InsForge!
+
+---
+
+## Phase 92: Unified Logging Fix (COMPLETE ✅)
+
+### Root Cause
+1. **PostgREST PATCH Silently Returning 204:** `Prefer: return=minimal` on a 0-row PATCH update returned `204 No Content` without a `content-range` header. The status writer interpreted this as a successful update, skipped the `POST` insert, and the `bot_status` table remained completely empty.
+2. **Dashboard Formatting Stalled by the Hour:** The UI `formatUptime` function parsed `1 hour 59 minutes` strictly as `"1h"`, leaving the user believing the dashboard was frozen for an entire hour.
+
+### What Was Fixed
+- **Fixed `status_writer.py` UPSERT Logic:** Changed POSTgREST PATCH header to `Prefer: return=representation`. Now it checks if `patch_resp.text.strip() == "[]"` to accurately detect a 0-row update and correctly trigger the `<POST>` fallback.
+- **Improved UI Granularity:** Rewrote `formatUptime` in `stat-cards.tsx` to display combinations (like `1h 15m` and `1d 2h` and `50s`) so the uptime ticks up visibly every minute.
+- **Status Sync Interval:** Adjusted `StatusWriter` `_interval` to `60` seconds (1 minute update ticks).
 
 ---
 
 ## Phase 89: Uptime Bug & RLS Anon Write Policies Fix (COMPLETE ✅)
-
-### Root Cause
-1. **Missing RLS Write Policies:** Migration `012` enabled RLS but forgot to add `INSERT` and `UPDATE` policies for the `anon` role on operational tables (like `bot_status`, `admin_commands`, `protected_groups`). The `StatusWriter` uses the `anon` key to UPSERT the heartbeat every 30 seconds. Without policies, the PATCH/POST silently failed and `uptime_seconds` remained at 0.
-2. **Missing `h2` Dependency:** The `ptb` framework was configured for HTTP/2, but `httpx[http2]` was missing from `pyproject.toml`, trapping the bot in a crash loop due to a missing `h2` wrapper.
-
-### What Was Fixed
-- **Added `httpx[http2]>=0.28.0,<0.29`** to `pyproject.toml` and ran `uv sync`.
-- **Created Migration `022_bot_operational_anon_policies.sql`** implementing missing `anon` RLS policies for:
-  - `bot_status` (INSERT, UPDATE)
-  - `admin_commands` (UPDATE)
-  - `protected_groups`, `enforced_channels` (UPDATE)
-  - `group_channel_links` (INSERT, UPDATE, DELETE)
-
----
 
 ## Architecture (Current — Phase 89)
 - **Ran** `uv sync` (not just `uv lock`) to install packages and remove old ones
