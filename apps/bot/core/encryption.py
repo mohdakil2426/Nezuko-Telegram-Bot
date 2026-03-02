@@ -1,12 +1,13 @@
 """Encryption utilities for secure bot token management.
 
-Supports three formats:
+Supports two formats:
 - **v2 (AES-256-GCM)** — Modern standard, shared with Edge Functions.
 - **Fernet** — Legacy Python-only encryption.
-- **Base64** — Fallback encoding (unsecured).
 
 The master key is fetched automatically from the InsForge Security Vault (nezuko_secrets).
 Manual ENCRYPTION_KEY in .env is no longer supported for dashboard mode.
+
+SECURITY NOTE: Base64 fallback has been removed. All tokens must be properly encrypted.
 """
 
 import base64
@@ -98,8 +99,7 @@ async def decrypt_token(ciphertext: str) -> str:
 
     Order of preference:
     1. v2 (AES-GCM) - If prefixed with 'v2:'
-    2. Fernet - If key is available
-    3. Base64 - Fallback for unencrypted tokens
+    2. Fernet - Legacy (if key is available)
     """
     if not ciphertext:
         raise EncryptionError("Empty ciphertext provided")
@@ -120,21 +120,13 @@ async def decrypt_token(ciphertext: str) -> str:
             f = Fernet(master_key.encode())
             return f.decrypt(ciphertext.encode()).decode("utf-8")
         except (InvalidToken, ValueError, binascii.Error):
-            logger.debug("Fernet decryption failed, trying Base64 fallback")
+            pass  # Fall through to error
 
-    # ── Attempt 3: Legacy Base64 Fallback ──
-    try:
-        decoded = base64.b64decode(ciphertext).decode("utf-8")
-        # Basic sanity: Telegram tokens look like "123456:ABC-DEF..."
-        if ":" in decoded and len(decoded) > 20:
-            logger.warning(
-                "Token decrypted using legacy Base64 encoding — consider re-encrypting with AES-GCM"
-            )
-            return decoded
-    except (ValueError, binascii.Error, UnicodeDecodeError):
-        pass
-
-    raise EncryptionError("Failed to decrypt token: Unknown format or missing key from Vault.")
+    # ── No valid format found ──
+    raise EncryptionError(
+        "Failed to decrypt token: Unknown format or missing key from Vault. "
+        "Token may be using deprecated encryption. Please re-add the bot via dashboard."
+    )
 
 
 async def is_encryption_configured() -> bool:
