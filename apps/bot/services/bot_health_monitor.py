@@ -1,13 +1,20 @@
 """Bot health monitoring and auto-restart on failure."""
 
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import logging
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from telegram.error import TelegramError
 
 from apps.bot.core.bot_registry import BotInstance, BotStatus
+
+if TYPE_CHECKING:
+    from apps.bot.core.bot_registry import BotRegistry
+    from apps.bot.services.bot_lifecycle import BotLifecycleManager
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +24,8 @@ class BotHealthMonitor:
 
     def __init__(
         self,
-        registry: "BotRegistry",
-        lifecycle: "BotLifecycleManager",
+        registry: BotRegistry,
+        lifecycle: BotLifecycleManager,
         check_interval: int = 60,
         heartbeat_timeout: int = 300,
     ) -> None:

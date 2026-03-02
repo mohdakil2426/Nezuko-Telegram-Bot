@@ -1,12 +1,19 @@
 """Bot registry - manages bot instance storage and lookup."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from telegram.ext import Application
+
+if TYPE_CHECKING:
+    from apps.bot.services.command_worker import CommandWorker
+    from apps.bot.services.status_writer import StatusWriter
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +43,7 @@ class BotMetrics:
 class BotInstance:
     """Runtime state for a bot instance."""
 
-    config: "BotConfig"
+    config: BotConfig
     application: Application
     task: asyncio.Task
     status: BotStatus
@@ -49,8 +56,8 @@ class BotInstance:
     metrics: BotMetrics = field(default_factory=BotMetrics)
     shutdown_event: asyncio.Event = field(default_factory=asyncio.Event)
     logger: logging.Logger | None = None
-    status_writer: "StatusWriter | None" = None
-    command_worker: "CommandWorker | None" = None
+    status_writer: StatusWriter | None = None
+    command_worker: CommandWorker | None = None
 
 
 @dataclass
@@ -76,7 +83,9 @@ class BotRegistry:
         """Add a bot instance to the registry."""
         async with self._lock:
             self._instances[instance.config.id] = instance
-            logger.info("Registered bot @%s (id=%d)", instance.config.bot_username, instance.config.id)
+            logger.info(
+                "Registered bot @%s (id=%d)", instance.config.bot_username, instance.config.id
+            )
 
     async def remove(self, bot_id: int) -> BotInstance | None:
         """Remove and return a bot instance."""

@@ -12,12 +12,12 @@ from pathlib import Path
 
 import httpx
 
+from apps.bot.core import insforge_client
 from apps.bot.core.bot_registry import BotConfig, BotRegistry
 from apps.bot.core.encryption import EncryptionError, decrypt_token, is_encryption_configured
-from apps.bot.core import insforge_client
 from apps.bot.core.realtime_client import InsForgeRealtimeClient
-from apps.bot.services.bot_lifecycle import BotLifecycleManager
 from apps.bot.services.bot_health_monitor import BotHealthMonitor
+from apps.bot.services.bot_lifecycle import BotLifecycleManager
 from apps.bot.utils.health import start_health_server, stop_health_server
 from apps.bot.utils.tasks import fire_and_forget
 
@@ -51,8 +51,7 @@ class BotManager:
         )
 
         configs = await asyncio.gather(
-            *[self._decrypt_bot_config(row) for row in rows],
-            return_exceptions=True
+            *[self._decrypt_bot_config(row) for row in rows], return_exceptions=True
         )
 
         return [c for c in configs if isinstance(c, BotConfig)]
@@ -177,6 +176,7 @@ class BotManager:
 
     async def _setup_realtime(self) -> None:
         """Setup realtime event handling."""
+
         async def on_bot_changed(payload: dict) -> None:
             await self._sync_bots()
 

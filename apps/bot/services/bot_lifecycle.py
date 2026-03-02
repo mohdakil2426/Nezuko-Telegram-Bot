@@ -1,9 +1,12 @@
 """Bot lifecycle management - start, stop, restart operations."""
 
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import logging
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
 from telegram import Update
 from telegram.error import TelegramError
@@ -13,7 +16,9 @@ from apps.bot.core.bot_registry import BotConfig, BotInstance, BotStatus
 from apps.bot.core.loader import create_application, register_handlers, setup_bot_commands
 from apps.bot.core.uptime import record_bot_start
 from apps.bot.services.member_sync import schedule_member_sync
-from apps.bot.utils.tasks import fire_and_forget
+
+if TYPE_CHECKING:
+    from apps.bot.core.bot_registry import BotRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +28,7 @@ class BotLifecycleManager:
 
     def __init__(
         self,
-        registry: "BotRegistry",
+        registry: BotRegistry,
         auto_restart: bool = True,
         max_restarts: int = 3,
         restart_cooldown: int = 30,
@@ -76,7 +81,7 @@ class BotLifecycleManager:
             logger.error("Failed to start bot @%s: %s", config.bot_username, e)
             return None
 
-    async def stop_bot(self, bot_id: int, timeout: int = 10) -> bool:
+    async def stop_bot(self, bot_id: int, stop_timeout: int = 10) -> bool:
         """Stop a bot instance gracefully."""
         instance = self.registry.get(bot_id)
         if not instance:
@@ -88,7 +93,7 @@ class BotLifecycleManager:
         # Wait for task to complete
         if not instance.task.done():
             try:
-                await asyncio.wait_for(asyncio.shield(instance.task), timeout=timeout)
+                await asyncio.wait_for(asyncio.shield(instance.task), timeout=stop_timeout)
             except TimeoutError:
                 instance.task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
@@ -134,7 +139,6 @@ class BotLifecycleManager:
 
     async def _run_polling(self, application: Application, config: BotConfig) -> None:
         """Run polling loop for a bot."""
-        from apps.bot.config import config as app_config
 
         updater = application.updater
         instance = self.registry.get(config.id)
@@ -212,8 +216,8 @@ class BotLifecycleManager:
     async def _start_dashboard_services(self, instance: BotInstance) -> None:
         """Start StatusWriter and CommandWorker for a bot."""
         from apps.bot.config import config as app_config
-        from apps.bot.services.status_writer import StatusWriter
         from apps.bot.services.command_worker import CommandWorker
+        from apps.bot.services.status_writer import StatusWriter
 
         if app_config.insforge_anon_key:
             try:
