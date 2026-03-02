@@ -167,12 +167,12 @@ function ConnectionStatus({
 }
 
 export default function LogsPage() {
-  const { events, isConnected, isReconnecting, clearEvents } = useRealtimeLogs();
+  const { events, totalEventCount, isConnected, isReconnecting, clearEvents } = useRealtimeLogs();
   const { data: initialLogs, isPending: isLoadingInitial, refetch } = useLogs(100);
 
   const [isPaused, setIsPaused] = useState(false);
   const [levelFilter, setLevelFilter] = useState<LogLevel>("all");
-  const processedEventCountRef = useRef(0);
+  const lastProcessedIndexRef = useRef(0);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Convert SSE events to log entries
@@ -218,12 +218,13 @@ export default function LogsPage() {
 
   // Process incoming SSE events when not paused
   useEffect(() => {
-    if (isPaused || events.length === 0 || events.length <= processedEventCountRef.current) {
+    if (isPaused || totalEventCount === 0 || totalEventCount <= lastProcessedIndexRef.current) {
       return;
     }
 
-    const newEvents = events.slice(0, events.length - processedEventCountRef.current);
-    processedEventCountRef.current = events.length;
+    const newCount = totalEventCount - lastProcessedIndexRef.current;
+    const newEvents = events.slice(0, Math.min(newCount, events.length));
+    lastProcessedIndexRef.current = totalEventCount;
 
     requestAnimationFrame(() => {
       const newLogs: LogEntry[] = [];
@@ -245,7 +246,7 @@ export default function LogsPage() {
         });
       }
     });
-  }, [events, isPaused, convertEventToLog]);
+  }, [events, totalEventCount, isPaused, convertEventToLog]);
 
   // Combined logs: realtime first, then initial (suppressed when cleared)
   const logs = useMemo(() => {
@@ -270,7 +271,7 @@ export default function LogsPage() {
     setRealtimeLogs([]);
     setIsCleared(true);
     clearEvents();
-    processedEventCountRef.current = 0;
+    lastProcessedIndexRef.current = 0;
   };
 
   // Toggle pause/resume

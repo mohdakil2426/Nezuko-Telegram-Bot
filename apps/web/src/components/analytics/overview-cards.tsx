@@ -70,11 +70,11 @@ function OverviewSkeleton() {
 
 export function AnalyticsOverviewCards() {
   const { data, isPending, error } = useAnalyticsOverview();
-  const { events } = useRealtimeAnalytics();
+  const { events, totalEventCount } = useRealtimeAnalytics();
 
   // Track which cards were recently updated
   const [updatedCards, setUpdatedCards] = useState<Set<string>>(new Set());
-  const processedCountRef = useRef(0);
+  const lastProcessedIndexRef = useRef(0);
 
   // Real-time state override
   const [realtimeStats, setRealtimeStats] = useState<{
@@ -85,12 +85,13 @@ export function AnalyticsOverviewCards() {
 
   // Process SSE events for stats updates
   useEffect(() => {
-    if (events.length === 0 || events.length <= processedCountRef.current) {
+    if (totalEventCount === 0 || totalEventCount <= lastProcessedIndexRef.current) {
       return;
     }
 
-    const newEvents = events.slice(processedCountRef.current);
-    processedCountRef.current = events.length;
+    const newCount = totalEventCount - lastProcessedIndexRef.current;
+    const newEvents = events.slice(0, Math.min(newCount, events.length));
+    lastProcessedIndexRef.current = totalEventCount;
 
     for (const event of newEvents) {
       const eventData = event.data as Record<string, unknown>;
@@ -123,7 +124,7 @@ export function AnalyticsOverviewCards() {
         return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
       });
     }
-  }, [events]);
+  }, [events, totalEventCount]);
 
   // Note: Polling fallback is handled by TanStack Query's refetchInterval
   // in the useAnalyticsOverview hook (30s). No manual setInterval needed.

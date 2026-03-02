@@ -79,6 +79,11 @@ interface UseInsForgeRealtimeReturn {
   lastEvent: RealtimeEvent | null;
 
   /**
+   * Total count of events received (always increases)
+   */
+  totalEventCount: number;
+
+  /**
    * Manually connect to realtime
    */
   connect: () => Promise<void>;
@@ -110,6 +115,8 @@ export function useInsForgeRealtime(
   const [connectionState, setConnectionState] = useState<ConnectionState>("disconnected");
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
   const [lastEvent, setLastEvent] = useState<RealtimeEvent | null>(null);
+  const [totalEventCount, setTotalEventCount] = useState(0);
+  const [retryAttempt, setRetryAttempt] = useState(0);
 
   const isManuallyDisconnected = useRef(false);
   const subscribedChannelsRef = useRef<Set<string>>(new Set());
@@ -142,6 +149,7 @@ export function useInsForgeRealtime(
           // Keep only last 50 events
           return updated.slice(0, 50);
         });
+        setTotalEventCount((c) => c + 1);
       }
 
       setLastEvent(event);
@@ -157,7 +165,13 @@ export function useInsForgeRealtime(
     setConnectionState("connecting");
 
     try {
-      // Connect to InsForge realtime
+      // DEBUG: Log connection details
+      console.log(`[InsForge Realtime] Attempting connection...`);
+
+      // 0. Cleanup any existing active efforts
+      insforge.realtime.disconnect();
+
+      // 1. Connect to InsForge realtime
       await insforge.realtime.connect();
 
       // Subscribe to channels
@@ -178,9 +192,17 @@ export function useInsForgeRealtime(
       }
 
       setConnectionState("connected");
-    } catch {
-      console.warn("[InsForge Realtime] Connection unavailable — polling fallback active");
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Handshake timeout";
+      console.warn(`[InsForge Realtime] Connection failed: ${errorMsg}. Retrying in 10s...`);
       setConnectionState("disconnected");
+      
+      // Schedule retry
+      if (!isManuallyDisconnected.current) {
+        setTimeout(() => {
+          setRetryAttempt(prev => prev + 1);
+        }, 10000);
+      }
     }
   }, [channels]);
 
@@ -269,20 +291,23 @@ export function useInsForgeRealtime(
     // Connect
     // Use setTimeout to avoid synchronous state update warning during render
     const timer = setTimeout(() => {
-      connect();
+      if (connectionState !== "connected" && connectionState !== "connecting") {
+        connect();
+      }
     }, 0);
 
     return () => {
       clearTimeout(timer);
       disconnect();
     };
-  }, [autoConnect, isSignedIn, connect, disconnect]);
+  }, [autoConnect, isSignedIn, connect, disconnect, retryAttempt, connectionState]);
 
   return {
     connectionState,
     isConnected: connectionState === "connected",
     isReconnecting: connectionState === "connecting",
     events,
+    totalEventCount,
     lastEvent,
     connect,
     disconnect,

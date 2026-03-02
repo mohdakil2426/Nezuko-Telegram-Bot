@@ -123,10 +123,10 @@ function ConnectionStatus({
 
 export function ActivityFeed() {
   const { data: initialActivities, isPending, error } = useActivity(10);
-  const { events, isConnected, isReconnecting } = useRealtimeActivity();
+  const { events, totalEventCount, isConnected, isReconnecting } = useRealtimeActivity();
   const [realtimeActivities, setRealtimeActivities] = useState<ActivityItem[]>([]);
   const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
-  const processedEventCountRef = useRef(0);
+  const lastProcessedIndexRef = useRef(0);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Force re-render every 30s to refresh relative timestamps
@@ -186,13 +186,14 @@ export function ActivityFeed() {
   // Process incoming SSE events - only process new events based on event count
   useEffect(() => {
     // Only process if there are new events we haven't seen
-    if (events.length === 0 || events.length <= processedEventCountRef.current) {
+    if (totalEventCount === 0 || totalEventCount <= lastProcessedIndexRef.current) {
       return;
     }
 
-    // Process only new events (from the last processed count to now)
-    const newEvents = events.slice(0, events.length - processedEventCountRef.current);
-    processedEventCountRef.current = events.length;
+    // Process only new events (since last count)
+    const newCount = totalEventCount - lastProcessedIndexRef.current;
+    const newEvents = events.slice(0, Math.min(newCount, events.length));
+    lastProcessedIndexRef.current = totalEventCount;
 
     // Schedule updates after render cycle completes
     const newActivities: ActivityItem[] = [];
@@ -234,7 +235,7 @@ export function ActivityFeed() {
         }, 1000);
       });
     }
-  }, [events, convertEventToActivity]);
+  }, [events, totalEventCount, convertEventToActivity]);
 
   // Cleanup highlight timer on unmount
   useEffect(() => {
