@@ -1,6 +1,6 @@
 # 🚀 Nezuko grammY Bot — Production-Ready PRD & Implementation Blueprint
 
-> **Version**: 3.2 | **Date**: 2026-03-03 | **Lines**: 3,260+ | **Decisions**: 34  
+> **Version**: 3.3 | **Date**: 2026-03-03 | **Lines**: 3,300+ | **Decisions**: 37  
 > **Scope**: Build `apps/grammy/` from scratch using grammY best practices — NOT a migration  
 > **Philosophy**: Reference existing features, rebuild with grammY-native architecture  
 > **grammY Version**: v1.40.1 (Bot API 9.4) | **Runtime**: Bun 1.3.10 + Node.js 22 LTS  
@@ -2347,6 +2347,9 @@ The grammY bot must produce **identical database writes** to the PTB bot to keep
 | 32 | **Bot permission detection** | **3-layer defense** | L1: Check `can_restrict_members` + `can_delete_messages` on `/protect` setup. L2: Listen for `my_chat_member` demotion → disable group + notify. L3: Catch 403 on each mute/kick action gracefully |
 | 33 | **Architecture v2** | **4 critical fixes applied** | Added `sequentialize` (first middleware), error boundaries per composer, callback query answerer, removed all Prisma references. Flattened database layer, split channels composer, added migration composer |
 | 34 | **Realtime architecture** | **InsForge Realtime (Socket.IO)** | Two systems: Telegram→Bot via grammY `run()`, Bot↔Dashboard via InsForge Realtime. DB triggers as event bus. 5 channels. `socket.io-client` for bot, `@insforge/sdk` for dashboard. ~200ms latency. See §17 |
+| 35 | **`/verify` command** | **Status check only** | `/verify` replies "You're verified ✅" or "Not verified — join @channel1". Informational only, no unmute. The inline button is the primary verification flow |
+| 36 | **Bot added to group** | **Welcome message** | On `my_chat_member` (added as admin), send one-time "Hi! I'm Nezuko 🌸 — use `/protect @channel` to enable verification". Only when added as admin, not regular member |
+| 37 | **Existing members on `/protect`** | **New joins only** | Existing members are grandfathered in. Only people who join AFTER `/protect` get muted + verified. `member-sync` can passively log status but never retroactively mute |
 
 ---
 
