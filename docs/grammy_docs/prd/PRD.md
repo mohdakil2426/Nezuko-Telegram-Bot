@@ -153,7 +153,7 @@ A **production-ready group management Telegram bot** built from scratch using th
 | Migrating PTB code line-by-line | Building from scratch with grammY idioms |
 | Copying Python patterns | Using grammY middleware architecture |
 | Using PTB's handler groups model | Using grammY's Composer tree + filter queries |
-| Porting `insforge_client.py` | Local SQLite in dev, InsForge SDK when ready |
+| Porting `insforge_client.py` | TypeScript REST port from day one (same InsForge pattern) |
 | Working around PTB's async quirks | Leveraging Node.js native async/await |
 
 ### 1.3 Why Rebuild Instead of Migrate
@@ -171,7 +171,7 @@ By rebuilding, we get:
 - **grammY-native patterns** from day one
 - **Type-safe from core** — TypeScript strict mode with grammY's excellent type system
 - **Plugin ecosystem** instead of hand-rolled solutions
-- **Code sharing** with the Next.js dashboard (same language, same SDK)
+- **Code sharing** with the Next.js dashboard (same language, shared types/utilities where useful)
 - **Cleaner architecture** designed around grammY's middleware tree
 
 ### 1.4 Feature Scope (From Existing Bot Reference)
@@ -186,7 +186,7 @@ These features are what the bot needs — referenced from the working bot, but i
 | **Protection Setup** | `/protect @channel` links a channel to a group | P0 |
 | **Leave Detection** | Revoke permissions when users leave channels | P0 |
 | **Message Filter** | Delete messages from unverified users | P0 |
-| **Admin Commands** | `/help`, `/settings`, `/start`, `/unprotect` | P0 |
+| **Command Surface** | `/start`, `/help`, `/protect`, `/unprotect`, `/channels`, `/settings`, `/verify`, `/stats` | P0 |
 | **Status Heartbeat** | Periodic health status writes to DB | P1 |
 | **Dashboard Commands** | Process commands sent from web dashboard | P1 |
 | **Member Count Sync** | Periodic member/subscriber count updates | P1 |
@@ -200,7 +200,7 @@ These features are what the bot needs — referenced from the working bot, but i
 
 ### 2.1 Framework Overview
 
-**grammY** (v1.40.1) is a modern Telegram Bot framework for TypeScript/JavaScript:
+**grammY** (v1.41.1) is a modern Telegram Bot framework for TypeScript/JavaScript:
 
 - **Created by**: [@KnorpelSenf](https://github.com/KnorpelSenf) and community
 - **License**: MIT
@@ -238,7 +238,7 @@ bot.use(admin);
 bot.use(events);
 ```
 
-> **Source**: [grammY Advanced Middleware](./agents/skills/grammy/references/advanced/middleware.md) — "behind the scenes, it really is a tree... grammY preserves the tree you specified"
+> **Source**: [grammY Advanced Middleware](.agents/skills/grammy/references/advanced/middleware.md) — "behind the scenes, it really is a tree... grammY preserves the tree you specified"
 
 #### Filter Query System
 
@@ -261,7 +261,7 @@ bot.on(":photo", handler);   // Photos anywhere
 bot.on("::url", handler);    // Any entity containing a URL
 ```
 
-> **Source**: [Filter Queries Guide](./agents/skills/grammy/references/guide/filter-queries.md) — "Filter queries are a unified query system for the Telegram Bot API... The special part is that you can filter down update objects"
+> **Source**: [Filter Queries Guide](.agents/skills/grammy/references/guide/filter-queries.md) — "Filter queries are a unified query system for the Telegram Bot API... The special part is that you can filter down update objects"
 
 #### Type Narrowing
 
@@ -305,7 +305,7 @@ The `Context` object is the heart of grammY — it provides:
 // ctx.react("👍") — react to the message
 ```
 
-> **Source**: [Context Guide](./agents/skills/grammy/references/guide/context.md) — "The context object is the most important part of grammY"
+> **Source**: [Context Guide](.agents/skills/grammy/references/guide/context.md) — "The context object is the most important part of grammY"
 
 ---
 
@@ -336,7 +336,7 @@ The `Context` object is the heart of grammY — it provides:
 | **Maturity** | Younger than PTB/Telegraf | Actively maintained, 2,500+ stars, used in production bots. v1.x is stable. |
 | **Testing Framework** | No official test utils | Use `bot.handleUpdate()` + transformer mocking. Community examples exist. |
 | **No Built-in JobQueue** | No equivalent to PTB's `JobQueue` | Use `setInterval()`, `node-cron`, or OS-level scheduling. Actually simpler. |
-| **No Built-in DB** | No database abstraction | By design — use any DB you want. We use Prisma + SQLite (dev) → InsForge (prod). |
+| **No Built-in DB** | No database abstraction | By design — use any DB you want. We use InsForge REST from day one (same pattern as the Python bot). |
 | **Documentation Gaps** | Some advanced patterns underdocumented | 86 reference files in our skill folder. Context7 has 4,247 code snippets. |
 | **Node.js Memory** | Larger runtime than Python for small bots | Negligible for our use case. Bun makes it even faster. |
 | **Webhook Complexity** | Timeout handling requires care | Use `webhookCallback` with proper timeout config. Or just use long polling. |
@@ -403,8 +403,7 @@ Telegraf is the older Node.js alternative. grammY wins because:
 │     │   └── member-sync.ts   → count sync (setInterval)        │
 │     │                                                            │
 │     ├── Database (abstracted)                                   │
-│     │   ├── DEV:  Prisma + SQLite (local, zero config)         │
-│     │   └── PROD: @insforge/sdk (cloud PostgreSQL)             │
+│     │   └── InsForge REST client (native fetch via anon key)   │
 │     │                                                            │
 │     └── Cache                                                   │
 │         └── ioredis → same Redis as existing bot               │
@@ -433,13 +432,13 @@ Update arrives → auto-retry (transformer, wraps API calls)
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| **Deployment type** | Long polling (`bot.start()`) | Simpler, no SSL needed, `grammyjs/runner` for concurrency |
+| **Deployment type** | Long polling (`run(bot)`) | Simpler, no SSL needed, uses `@grammyjs/runner` for concurrency |
 | **Middleware order** | Transformers first, then middleware, then handlers | grammY best practice — transformers wrap outgoing, middleware wraps incoming |
 | **Handler structure** | `Composer` per feature domain | Modular, testable, each Composer can be developed independently |
 | **State management** | DB-first, no sessions | Nezuko doesn't need per-chat state — all data is in the database |
-| **Concurrency** | `bot.start()` for single-bot, `run(bot)` for multi-bot | `@grammyjs/runner` only needed for dashboard mode |
+| **Concurrency** | `run(bot)` in both single and multi-bot modes | Consistent processing model; add `sequentialize` for per-chat ordering |
 | **Package manager** | bun | Same as web dashboard, faster than npm |
-| **Database** | Prisma + SQLite (dev) → InsForge SDK (prod) | Zero-config local development, production-ready cloud backend |
+| **Database** | InsForge REST from day one | No ORM drift, same data model contract as existing bot |
 
 ---
 
@@ -475,7 +474,7 @@ const bot = new Bot<NezukoContext>("BOT_TOKEN", {
 });
 ```
 
-> **Source**: [API Guide](./agents/skills/grammy/references/guide/api.md) — "`bot.api` is simply an instance of `Api` that is pre-constructed for you for convenience"
+> **Source**: [API Guide](.agents/skills/grammy/references/guide/api.md) — "`bot.api` is simply an instance of `Api` that is pre-constructed for you for convenience"
 
 ### 5.2 Middleware System (The Tree, Not a Stack)
 
@@ -765,9 +764,9 @@ bot.use(adminCommands);
 await userCommands.setCommands(bot);
 ```
 
-### 6.2 Plugins NOT Selected (with reasons)
+### 6.2 Additional Plugin Decisions
 
-| Plugin | Why Not | Notes |
+| Plugin | Why Not Selected | Notes |
 |---|---|---|
 | **session** | DB-first architecture — no per-chat state needed | Nezuko stores everything in InsForge |
 | **conversations** | No multi-step conversation flows | Verification is single-action, not a flow |
@@ -777,7 +776,7 @@ await userCommands.setCommands(bot);
 | **entity-parser** | Not displaying messages outside Telegram | Entity parser docs say "Probably NEVER" needed |
 | **autoquote** | Not needed for verification bot | Auto-quoting adds noise in group chats |
 
-#### chat-members — Member Status Cache (P0)
+#### chat-members — Member Status Cache (Selected P0)
 
 > **Added in v3.0 brainstorming** — discovered via grammY official docs research.
 
@@ -800,7 +799,7 @@ const member = await ctx.chatMembers.getChatMember(channelId, userId);
 **Why this plugin?**
 - Automatic cache: listens for `chat_member` events, updates cache on join/leave
 - `getChatMember()` checks cache-first, falls back to API, caches result
-- Requires `allowed_updates: ["chat_member", "message", "callback_query"]`
+- Requires `allowed_updates: ["message", "callback_query", "chat_member", "my_chat_member"]`
 - Combined with our 6h Redis TTL for derived verification status = hybrid cache strategy
 
 **Cache Strategy (3-layer hybrid):**
@@ -1551,7 +1550,7 @@ BotError (wrapper)
 └── HttpError    — Network-level error (DNS, timeout, connection refused)
 ```
 
-> **Source**: [Error Handling Guide](./agents/skills/grammy/references/guide/errors.md)
+> **Source**: [Error Handling Guide](.agents/skills/grammy/references/guide/errors.md)
 
 ### 11.2 Global Error Handler
 
@@ -1629,9 +1628,10 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 ### 12.1 Single-Bot Mode (Development)
 
 ```typescript
-// Simple sequential processing — default bot.start()
-// Source: grammy/references/guide/deployment-types.md
-await bot.start(); // processes updates one at a time
+// Use runner in single-bot mode too for one consistent execution model
+// Source: grammy/references/plugins/runner.md
+import { run } from "@grammyjs/runner";
+run(bot);
 ```
 
 ### 12.2 Multi-Bot Mode (Dashboard/Production)
@@ -1652,7 +1652,7 @@ bot.use(sequentialize((ctx) => {
 // Use runner for concurrent processing
 const runner = run(bot, {
   runner: {
-    fetch: { allowed_updates: ["message", "callback_query", "chat_member"] },
+    fetch: { allowed_updates: ["message", "callback_query", "chat_member", "my_chat_member"] },
   },
   source: {
     // How many updates to fetch in parallel
@@ -1702,34 +1702,36 @@ export function startStatusWriter(
 
 | Aspect | Long Polling (Chosen) | Webhooks |
 |---|---|---|
-| **Setup** | `bot.start()` — zero config | SSL cert + public URL + `setWebhook` |
+| **Setup** | `run(bot)` — zero config | SSL cert + public URL + `setWebhook` |
 | **Development** | Works behind NAT/firewalls | Requires ngrok/tunnel |
 | **Reliability** | grammY handles reconnection | Must handle timeouts carefully |
 | **Concurrency** | `@grammyjs/runner` | Web framework + `webhookCallback` |
 | **Cost** | Constant connection | Serverless-friendly (pay per request) |
 
-> **Source**: [Deployment Types Guide](./agents/skills/grammy/references/guide/deployment-types.md) — "If you don't have a good reason to use webhooks... you will spend much less time fixing things"
+> **Source**: [Deployment Types Guide](.agents/skills/grammy/references/guide/deployment-types.md) — "If you don't have a good reason to use webhooks... you will spend much less time fixing things"
 
 ### 13.2 Docker Configuration
 
 ```dockerfile
 # apps/grammy/Dockerfile
-FROM oven/bun:1.2 AS builder
+FROM oven/bun:1.2 AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
-COPY . .
-# Generate Prisma client (dev mode only)
-RUN bunx prisma generate
-RUN bun run build
 
-FROM oven/bun:1.2-slim AS runner
+FROM node:22-slim AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+FROM node:22-slim AS runner
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 ENV NODE_ENV=production
-CMD ["bun", "run", "dist/main.js"]
+CMD ["node", "dist/main.js"]
 ```
 
 ### 13.3 Environment Variables
@@ -1741,11 +1743,9 @@ CMD ["bun", "run", "dist/main.js"]
 BOT_TOKEN=123456:ABC-DEF                # Telegram bot token
 REDIS_URL=redis://localhost:6379         # Redis connection URL
 
-# ── Database (choose one) ──
-USE_INSFORGE=false                        # false = SQLite, true = InsForge
-DATABASE_URL=file:./dev.db               # SQLite path (dev)
-INSFORGE_BASE_URL=                       # InsForge URL (prod)
-INSFORGE_ANON_KEY=                       # InsForge anon key (prod)
+# ── Database (InsForge REST) ──
+INSFORGE_BASE_URL=                       # InsForge URL
+INSFORGE_ANON_KEY=                       # InsForge anon key
 
 # ── Optional ──
 LOG_LEVEL=info                           # pino log level
@@ -1960,7 +1960,7 @@ cd apps/grammy && bun run build        # tsc -p tsconfig.build.json → 0 errors
 | 1.7 | `src/core/constants.ts` | Shared constants |
 | 1.8 | `src/utils/logger.ts` | pino structured logger |
 
-**Dependencies**: `grammy`, `@grammyjs/auto-retry`, `@grammyjs/hydrate`, `@grammyjs/parse-mode`, `@grammyjs/runner`, `@grammyjs/ratelimiter`, `@grammyjs/commands`, `ioredis`, `pino`, `zod`, `prisma`, `@prisma/client`
+**Dependencies**: `grammy`, `@grammyjs/auto-retry`, `@grammyjs/hydrate`, `@grammyjs/parse-mode`, `@grammyjs/runner`, `@grammyjs/ratelimiter`, `@grammyjs/commands`, `@grammyjs/chat-members`, `ioredis`, `pino`, `zod`, `@sentry/node`, `socket.io-client`
 
 **Dev Deps**: `typescript`, `vitest`, `@types/node`, `prettier`, `eslint`
 
@@ -1968,9 +1968,9 @@ cd apps/grammy && bun run build        # tsc -p tsconfig.build.json → 0 errors
 
 | Task | File | Description |
 |---|---|---|
-| 2.1 | `prisma/schema.prisma` | Database schema |
+| 2.1 | `src/database/types.ts` | Database entity types |
 | 2.2 | `src/database/repositories/types.ts` | Repository interfaces |
-| 2.3 | `src/database/prisma/adapter.ts` | Prisma implementation |
+| 2.3 | `src/database/insforge-repo.ts` | InsForge repository implementation |
 | 2.4 | `src/core/database.ts` | Database factory |
 | 2.5 | `src/core/cache.ts` | Redis client wrapper |
 | 2.6 | `src/core/bot-factory.ts` | Bot creation with plugins |
@@ -2277,18 +2277,20 @@ The grammY bot must produce **identical database writes** to the PTB bot to keep
 | Table | Key Fields | Write Pattern |
 |---|---|---|
 | `bot_status` | `bot_id`, `status`, `uptime_seconds` | UPSERT every 30s |
-| `protected_groups` | `telegram_id`, `title`, `member_count` | UPSERT on /protect |
-| `enforced_channels` | `telegram_id`, `username`, `subscriber_count` | UPSERT on /protect |
+| `protected_groups` | `group_id`, `title`, `member_count` | UPSERT on /protect |
+| `enforced_channels` | `channel_id`, `username`, `subscriber_count` | UPSERT on /protect |
 | `group_channel_links` | `group_id`, `channel_id` | INSERT on /protect, DELETE on /unprotect |
 | `verification_log` | `user_id`, `group_id`, `status` | INSERT on each verify |
 
 ### 17.11 Switchover Plan
 
 1. **Parallel Running**: Both Python and grammY bots run simultaneously (different tokens)
-2. **Database Verification**: Compare DB writes from both bots
-3. **Token Swap**: Switch the production token to grammY bot
-4. **Monitor**: Watch dashboard for 48 hours
-5. **Cleanup**: Deprecate Python bot
+2. **Database Verification**: Compare DB writes, status heartbeat cadence, and realtime events
+3. **Gate Check**: Proceed only if 24h error rate is <= 1% and p99 verification latency is <= 200ms
+4. **Token Swap**: Switch the production token to grammY bot
+5. **Monitor**: Watch dashboard and logs for 48 hours
+6. **Rollback Rule**: Immediately revert to Python token if error rate > 2% for 10 min or heartbeat gap > 120s
+7. **Cleanup**: Deprecate Python bot after stable window
 
 ---
 
@@ -2304,6 +2306,9 @@ The grammY bot must produce **identical database writes** to the PTB bot to keep
 | Multi-bot mode race conditions | Medium | High | `sequentialize` middleware + per-chat isolation |
 | ioredis event listener issues on Bun | Medium | Medium | Dev only on Bun; production uses Node.js 22 |
 | InsForge Realtime Socket.IO disconnect | Low | Medium | Auto-reconnect built into Socket.IO; 30s polling fallback |
+| Misconfigured RLS policies expose data | Low | High | Validate policies before rollout, test anon/auth role access per table |
+| Secret leakage through logs/errors | Low | High | Never log tokens/keys, sanitize client errors, keep full details server-side only |
+| CORS misconfiguration on edge endpoints | Medium | Medium | Explicit allowlist in env, deny wildcard in production |
 
 ---
 
@@ -2789,19 +2794,19 @@ All dependencies pinned to their **exact latest stable versions**. No wildcards,
 
 | Package | Version | Released | Purpose |
 |---|---|---|---|
-| `grammy` | **1.40.1** | Feb 28, 2026 | Telegram Bot framework (Bot API 9.4) |
+| `grammy` | **1.41.1** | Mar 2, 2026 | Telegram Bot framework (Bot API 9.4+) |
 | `@grammyjs/auto-retry` | **2.0.2** | Mar 2025 | Retry 429/500/network errors |
 | `@grammyjs/hydrate` | **1.6.0** | Oct 2025 | `msg.editText()`, `msg.delete()` |
 | `@grammyjs/parse-mode` | **2.2.1** | Feb 9, 2026 | Default HTML, `replyWithHTML`, `fmt` |
 | `@grammyjs/runner` | **2.0.3** | 2023 (stable) | Concurrent update processing |
 | `@grammyjs/ratelimiter` | **1.2.1** | Mar 2025 | User-level flood protection |
-| `@grammyjs/commands` | **1.3.0** | Feb 10, 2026 | Command groups, scoping, localization |
-| `@grammyjs/chat-members` | **1.x** | Latest | Automatic getChatMember cache (Redis adapter) |
-| `ioredis` | **5.9.3** | Feb 12, 2026 | Redis client |
+| `@grammyjs/commands` | **1.3.2** | Mar 1, 2026 | Command groups, scoping, localization |
+| `@grammyjs/chat-members` | **1.2.0** | Mar 5, 2025 | Automatic getChatMember cache (Redis adapter) |
+| `ioredis` | **5.10.0** | Feb 27, 2026 | Redis client |
 | `pino` | **10.3.1** | Feb 9, 2026 | Structured JSON logging |
 | `zod` | **4.3.6** | Jan 22, 2026 | Runtime type validation |
-| `@sentry/node` | **9.x** | Latest | Error reporting + performance monitoring |
-| `socket.io-client` | **4.8.x** | Latest | InsForge Realtime WebSocket client (Phase 5) |
+| `@sentry/node` | **10.41.0** | Mar 2, 2026 | Error reporting + performance monitoring |
+| `socket.io-client` | **4.8.3** | Dec 23, 2025 | InsForge Realtime WebSocket client (Phase 5) |
 
 > **Note**: No Prisma, no `@insforge/sdk` for DB. Database access uses native `fetch()` to InsForge REST API (see §10).
 > **Phase 5 adds**: `socket.io-client` for InsForge Realtime (same Socket.IO protocol). Dashboard uses `@insforge/sdk` `.realtime` module — bot uses raw client for lighter footprint.
@@ -2810,19 +2815,19 @@ All dependencies pinned to their **exact latest stable versions**. No wildcards,
 
 | Package | Version | Released | Purpose |
 |---|---|---|---|
-| `typescript` | **5.9.x** | Latest | TypeScript compiler |
+| `typescript` | **5.9.3** | Sep 30, 2025 | TypeScript compiler |
 | `vitest` | **4.0.18** | Jan 22, 2026 | Test framework (ESM-native) |
-| `@types/node` | **22.x** | Latest | Node.js type definitions |
-| `prettier` | **3.5.x** | Latest | Code formatter |
-| `eslint` | **9.x** | Latest | Linter (flat config) |
-| `pino-pretty` | **13.x** | Latest | Dev log formatting |
+| `@types/node` | **25.3.3** | Feb 28, 2026 | Node.js type definitions |
+| `prettier` | **3.8.1** | Jan 21, 2026 | Code formatter |
+| `eslint` | **10.0.2** | Feb 23, 2026 | Linter (flat config) |
+| `pino-pretty` | **13.1.3** | Dec 1, 2025 | Dev log formatting |
 
 ### 22.3 Runtime
 
 | Tool | Version | Purpose |
 |---|---|---|
 | **Bun** | **1.3.10** | **Dev only**: package manager + `bun run --watch` |
-| **Node.js** | **22.x LTS** | **Production**: Docker runtime (stability + ioredis compat) |
+| **Node.js** | **22.14.0 LTS** | **Production**: Docker runtime (stability + ioredis compat) |
 | **Redis** | **7.4+** | Cache + ratelimiter backend |
 
 ### 22.4 package.json (Exact Versions)
@@ -2843,25 +2848,27 @@ All dependencies pinned to their **exact latest stable versions**. No wildcards,
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "grammy": "1.40.1",
+    "grammy": "1.41.1",
     "@grammyjs/auto-retry": "2.0.2",
     "@grammyjs/hydrate": "1.6.0",
     "@grammyjs/parse-mode": "2.2.1",
     "@grammyjs/runner": "2.0.3",
     "@grammyjs/ratelimiter": "1.2.1",
-    "@grammyjs/commands": "1.3.0",
-    "@grammyjs/chat-members": "1.3.0",
-    "ioredis": "5.9.3",
+    "@grammyjs/commands": "1.3.2",
+    "@grammyjs/chat-members": "1.2.0",
+    "ioredis": "5.10.0",
     "pino": "10.3.1",
-    "zod": "4.3.6"
+    "zod": "4.3.6",
+    "@sentry/node": "10.41.0",
+    "socket.io-client": "4.8.3"
   },
   "devDependencies": {
     "typescript": "5.9.3",
     "vitest": "4.0.18",
-    "@types/node": "22.13.8",
-    "prettier": "3.5.3",
-    "eslint": "9.22.0",
-    "pino-pretty": "13.0.0"
+    "@types/node": "25.3.3",
+    "prettier": "3.8.1",
+    "eslint": "10.0.2",
+    "pino-pretty": "13.1.3"
   }
 }
 ```
@@ -3234,7 +3241,7 @@ bot.on("my_chat_member", async (ctx) => {
 | EC-59 | **Redis connection lost** | All cache reads fail → every message triggers DB lookups | Graceful degradation: skip cache, go direct to DB. Reconnect auto. |
 | EC-60 | **Redis returns stale data** | User left channel but cache says verified for 1 hour | Short TTL (5 min for member checks, 1 hour for verification) |
 | EC-61 | **DB connection lost** | All operations fail | Retry with exponential backoff; if persistent, mark bot unhealthy |
-| EC-62 | **Telegram ID exceeds INT32** | Telegram IDs like `8265490825` overflow INT32 (max 2.1B) | BIGINT in Prisma (`BigInt`), BIGINT in InsForge SQL |
+| EC-62 | **Telegram ID exceeds INT32** | Telegram IDs like `8265490825` overflow INT32 (max 2.1B) | BIGINT in TypeScript model and BIGINT in InsForge SQL |
 | EC-63 | **Concurrent DB writes for same user** | Two `new_chat_members` updates for same user | Use `upsert` (not insert), add unique constraints |
 
 ```typescript
@@ -3253,7 +3260,7 @@ async function getFromCacheOrDb(
 }
 
 // ── EC-62: BigInt handling ──
-// In Prisma schema: telegramId BigInt @unique
+// In DB types: telegramId as bigint
 // In TypeScript: use BigInt or number (safe up to 2^53 - 1 = ~9 quadrillion)
 // Telegram IDs are currently < 10B, safe as JavaScript number
 ```
