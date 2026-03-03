@@ -24,6 +24,31 @@
 > in handlers, services, or any production bot code.
 > **⚠️ Member sync**: Uses PTB's built-in `JobQueue.run_repeating()` — no APScheduler needed.
 
+### Bot (grammY — TypeScript, Phase 96)
+
+| Package | Version | Purpose |
+| --- | --- | --- |
+| grammy | 1.41.1 | Telegram Bot API framework (TypeScript) |
+| @grammyjs/auto-retry | 2.0.2 | Automatic retry on 429/500 errors |
+| @grammyjs/hydrate | 1.6.0 | Hydrate API call results (no `hydrateReply` export) |
+| @grammyjs/parse-mode | 2.2.1 | HTML parse mode transformer (no `ParseModeFlavor` export) |
+| @grammyjs/runner | 2.0.3 | Long polling runner + sequentialize middleware |
+| @grammyjs/ratelimiter | 1.2.1 | Per-user rate limiting |
+| @grammyjs/commands | 1.3.2 | Command registration |
+| @grammyjs/chat-members | 1.2.0 | Chat member caching (L1 cache) |
+| ioredis | 5.10.0 | Redis client for caching |
+| pino | 10.3.1 | Structured JSON logging |
+| zod | 4.3.6 | Config validation (`.default()` before `.transform()`) |
+| @sentry/node | 10.41.0 | Error monitoring |
+| socket.io-client | 4.8.3 | InsForge Realtime WebSocket client |
+| **typescript** | 5.9.3 | Type checking (strict mode, NodeNext resolution) |
+| **vitest** | 4.0.18 | Test runner with v8 coverage |
+| **eslint** | 9.28.0 | Linting (flat config with TypeScript ESLint) |
+| **bun** | Latest | Package manager + dev server |
+
+> **⚠️ Runtime**: Bun for development, Node.js 22 for production (Dockerfile).
+> **⚠️ ESM only**: `"type": "module"` in package.json, `NodeNext` module resolution.
+
 ### Frontend (TypeScript)
 
 | Package | Version | Purpose |
@@ -124,11 +149,21 @@ uv run pytest tests/bot/ -v           # All 58 tests pass
 ### TypeScript CLI Commands
 
 ```bash
+# ── Web (Next.js) ──
 cd apps/web
 bun run type-check    # TypeScript (0 errors) — tsc --noEmit
 bun run lint          # ESLint — ⚠️ eslint-plugin-react v10 incompatible with ESLint 10.0.0 (known issue)
 bun run build         # TypeScript (0 errors) — exit code 0
 bun run format        # Prettier + Tailwind Sort
+
+# ── grammY Bot (TypeScript) ──
+cd apps/grammy
+bun run type-check    # tsc --noEmit → 0 errors
+bun run lint          # eslint src/ --max-warnings 0 → 0 errors
+bun run test          # vitest run → 105 tests passed
+bun run test:coverage # vitest run --coverage (80% thresholds)
+bun run dev           # bun run --watch src/main.ts
+bun run build         # tsc -p tsconfig.build.json → dist/
 ```
 
 > **⚠️ ESLint Known Issue**: `eslint-plugin-react` is incompatible with ESLint 10.0.0
@@ -185,13 +220,14 @@ bun run format        # Prettier + Tailwind Sort
 
 | Type | Location |
 | --- | --- |
-| Tests | `tests/bot/` |
+| Tests (Python bot) | `tests/bot/` |
+| Tests (grammY bot) | `tests/grammy/` |
 | Logs | `apps/bot/logs/` |
 | Python deps | `pyproject.toml` (managed via `uv`) |
-| SQL Migrations | `insforge/migrations/` (001-010) |
+| grammY deps | `apps/grammy/package.json` (managed via `bun`) |
+| SQL Migrations | `insforge/migrations/` (001-020) |
 | Canonical Schema | `insforge/migrations/009_clean_schema.sql` + `011_add_nezuko_secrets_table.sql` |
 | Edge Functions | `insforge/functions/` |
-| Pre-migration backup | `docs/local/backup-2026-02-12-105223/` |
 
 ---
 
@@ -210,4 +246,4 @@ bun run format        # Prettier + Tailwind Sort
 
 ---
 
-_Last Updated: 2026-03-02 (Phase 88 — Socket.IO Protocol Fix + Chart Hooks Realtime)_
+_Last Updated: 2026-03-03 (Phase 96 — grammY Bot Rebuild + TypeScript ESLint)_

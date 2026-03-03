@@ -19,7 +19,8 @@ Convert group participants into channel subscribers through automated verificati
 
 | Layer              | Technologies                                             |
 | ------------------ | -------------------------------------------------------- |
-| **Bot**            | Python 3.13, python-telegram-bot v22.6, AsyncIO          |
+| **Bot (Python)**   | Python 3.13, python-telegram-bot v22.6, AsyncIO          |
+| **Bot (grammY)**   | TypeScript, grammY v1.41.1, Node.js 22, Bun, Vitest     |
 | **Web**            | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui |
 | **Backend (BaaS)** | InsForge (managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions) |
 | **Database**       | InsForge Managed PostgreSQL (cloud)                      |
@@ -35,15 +36,17 @@ Convert group participants into channel subscribers through automated verificati
 ```
 nezuko/
 ├── apps/
-│   ├── bot/          # Telegram Bot (~25 Python files)
+│   ├── bot/          # Telegram Bot — Python (~25 Python files)
+│   ├── grammy/       # Telegram Bot — grammY TypeScript rebuild (41 source files, 105 tests)
 │   └── web/          # Next.js Dashboard (~120 TypeScript files)
 ├── insforge/         # InsForge migration files & Edge Functions
-│   ├── migrations/   # SQL migration files (001-010)
+│   ├── migrations/   # SQL migration files (001-020)
 │   └── functions/    # Edge Functions (manage-bot, test-webhook)
 ├── config/           # Docker, Caddy, deployment configs
 ├── tests/            # Centralized test suite
+│   ├── bot/          # Python bot tests (101 tests)
+│   └── grammy/       # grammY bot tests (105 tests)
 ├── scripts/          # Development & utility scripts
-├── apps/bot/logs/    # Bot instance logs (gitignored)
 ├── memory-bank/      # Project documentation
 └── docs/             # Technical documentation
 ```

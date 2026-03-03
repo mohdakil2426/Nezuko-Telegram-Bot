@@ -1,6 +1,6 @@
 # System Patterns: Architecture & Implementation
 
-> **Last Updated**: 2026-03-02 (Phase 88 — Socket.IO Protocol Fix)
+> **Last Updated**: 2026-03-03 (Phase 96 — grammY Bot Rebuild)
 
 ## Architecture Overview
 
@@ -27,6 +27,97 @@ from the bot. All persistence goes through InsForge REST API or the InsForge SDK
 ```
 
 **SQLAlchemy is test-only** (SQLite in-memory for fast offline pytest runs).
+
+---
+
+## grammY Bot Patterns (TypeScript — Phase 96)
+
+### Architecture
+
+The grammY bot (`apps/grammy/`) is a TypeScript rebuild of the Python bot. It uses the same InsForge BaaS backend, same DB tables, same UPSERT patterns — just a different runtime.
+
+```
+apps/grammy/src/
+├── core/           # bot-factory, insforge-client, cache, encryption, realtime-client, constants, shutdown
+├── middleware/     # context-enricher, admin-guard, group-only, sequentialize, permission-check
+├── composers/     # admin, verify, events, channels, fallback, migration
+├── services/      # verification, protection, channel-linker, member-sync, status-writer
+├── multi-bot/     # bot-manager, bot-lifecycle, bot-registry, command-worker
+├── database/      # group.repo, channel.repo, link.repo, verification.repo, bot-status.repo, types
+├── utils/         # messages, logger, auto-delete, health
+├── main.ts        # Entry point (single-bot + dashboard mode)
+├── config.ts      # Zod v4 config validation
+└── types.ts       # NezukoContext type composition
+```
+
+### Middleware Order (CRITICAL)
+
+```typescript
+// Install in this EXACT order — grammY deployment checklist
+bot.api.config.use(autoRetry({ maxRetryAttempts: 3 }));
+bot.api.config.use(parseMode("HTML"));  // transformer only, no ParseModeFlavor
+bot.use(sequentializeMiddleware);        // MUST be first middleware
+bot.use(hydrate());                      // No hydrateReply in v1.6.0
+bot.use(chatMembers(cache.chatMembersAdapter));
+bot.use(contextEnricher(deps));          // Injects db, cache, botId, log
+// Then composers with errorBoundary...
+bot.use(fallbackComposer);               // ALWAYS last, no boundary
+```
+
+### InsForge REST Client (TypeScript)
+
+```typescript
+// ✅ Uses native fetch() — no httpx equivalent needed
+const client = new InsForgeClient({ baseUrl, anonKey, logger });
+await client.getRecords<T>("table", { column: "eq.value" });
+await client.postRecords<T>("table", [{ col: "val" }]);
+await client.patchRecords<T>("table", { col: "eq.val" }, { col: "new" });
+await client.deleteRecords("table", { col: "eq.val" });
+
+// UPSERT: PATCH-then-POST (same pattern as Python bot)
+const patched = await client.patchRecords("table", filter, data);
+if (patched.length === 0) {
+  await client.postRecords("table", [{ ...data }]);
+}
+```
+
+### Key grammY Gotchas
+
+1. **`hydrateReply` not exported** from `@grammyjs/hydrate` v1.6.0 — use `hydrate()` only
+2. **`ParseModeFlavor` not exported** from `@grammyjs/parse-mode` v2.2.1 — transformer only
+3. **Zod v4**: `.default("false")` MUST come before `.transform(v => v === "true")`
+4. **`BotManager` constructor** takes `BotManagerOptions` object, not positional args
+5. **grammY `.command()`** requires `entities: [{ type: "bot_command" }]` in test messages
+6. **Test bot transformer** must return proper `Message` objects for `sendMessage` (not `true`)
+
+### Testing Patterns (Vitest)
+
+```typescript
+// ✅ Test bot with API call interception
+const { bot, apiCalls } = createTestBot();
+bot.use(contextEnricher(deps));
+bot.use(someComposer);
+await bot.handleUpdate(createMessageUpdate({ text: "/start" }));
+expect(apiCalls.find(c => c.method === "sendMessage")).toBeDefined();
+
+// ✅ Mock deps
+const deps = { db: createMockDb(), cache: createMockCache(), botId: 12345678, logger: createMockLogger() };
+vi.mocked(deps.db.getRecords).mockResolvedValue([...]);
+
+// ✅ Message updates auto-include bot_command entities when text starts with /
+const update = createMessageUpdate({ text: "/protect @channel" });
+```
+
+### Quality Commands
+
+```bash
+cd apps/grammy
+bun run type-check    # tsc --noEmit → 0 errors
+bun run lint          # eslint src/ --max-warnings 0
+bun run test          # vitest run → 105 tests
+bun run dev           # bun run --watch src/main.ts
+bun run build         # tsc -p tsconfig.build.json
+```
 
 ---
 

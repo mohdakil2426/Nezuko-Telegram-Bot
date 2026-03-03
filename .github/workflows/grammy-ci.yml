@@ -1,0 +1,96 @@
+name: grammY Bot CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/grammy/**"
+      - "tests/grammy/**"
+      - ".github/workflows/grammy-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/grammy/**"
+      - "tests/grammy/**"
+      - ".github/workflows/grammy-ci.yml"
+
+defaults:
+  run:
+    working-directory: apps/grammy
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: apps/grammy/package.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run ESLint
+        run: npm run lint -- --max-warnings 0
+
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: apps/grammy/package.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run TypeScript type check
+        run: npm run type-check
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: apps/grammy/package.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run vitest
+        run: npm run test
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/grammy
+          file: apps/grammy/Dockerfile
+          push: false
+          tags: nezuko-grammy:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

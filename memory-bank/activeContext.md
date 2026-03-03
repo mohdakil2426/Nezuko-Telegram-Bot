@@ -1,28 +1,66 @@
 # Active Context: Current State
 
 ### Current Status
-**Phase 95: InsForge Client Public API Refactoring — COMPLETE ✅**
+**Phase 96: grammY Bot Rebuild (TypeScript) — COMPLETE ✅**
 
-Refactored the internal InsForge client methods (`_get`, `_post`, etc.) to descriptive, public ones (`get_records`, `post_records`, etc.). This eliminates 20+ `protected-access` warnings and achieves a perfect **10.00/10** Pylint score in core services. All test mocks have been updated and are passing.
+Complete rebuild of the Nezuko Telegram bot from Python (python-telegram-bot) to TypeScript (grammY v1.41.1). Built using 12 parallel agent teams. All 113 OpenSpec tasks complete, 105 tests passing, 0 type errors, 0 lint errors.
+
+---
+
+## Phase 96: grammY Bot Rebuild (COMPLETE ✅)
+
+### Summary
+Rebuilt the entire Telegram bot engine in TypeScript using the grammY framework. The new bot lives in `apps/grammy/` alongside the existing Python bot in `apps/bot/`. Uses the same InsForge BaaS backend, same DB tables, same UPSERT patterns — just a different runtime.
+
+### Deliverables
+
+| Category | Count | Details |
+|---|---|---|
+| **Source files** | 41 | Core, middleware, composers, services, multi-bot, database, entry point |
+| **Test files** | 19 | 3 helpers + 12 unit + 4 integration |
+| **Test cases** | 105 | All passing |
+| **Deployment** | 3 | Dockerfile (3-stage), .dockerignore, GitHub Actions CI |
+| **ESLint config** | 1 | `eslint.config.mjs` — TypeScript ESLint flat config |
+
+### Key Architecture Decisions
+- **grammY v1.41.1** with plugins: auto-retry, hydrate, parse-mode, runner, ratelimiter, commands, chat-members
+- **No `hydrateReply`** — not exported from `@grammyjs/hydrate` v1.6.0
+- **No `ParseModeFlavor`** — not exported from `@grammyjs/parse-mode` v2.2.1 (transformer only)
+- **Zod v4** for config validation (`.default()` must precede `.transform()`)
+- **Native `fetch()`** for InsForge REST (no httpx equivalent needed)
+- **ESM modules** with `NodeNext` resolution, TypeScript 5.9, Node.js 22
+- **Bun** for package management, **Node.js** for production runtime
+- **Vitest v4.0.18** with v8 coverage provider
+
+### Quality Gates (Phase 96)
+| Check | Result |
+|---|---|
+| `bun run type-check` (tsc --noEmit) | ✅ 0 errors |
+| `bun run lint` (eslint --max-warnings 0) | ✅ 0 errors |
+| `bun run test` (vitest run) | ✅ **105 passed** |
+| OpenSpec tasks | ✅ **113/113 complete** |
+
+### Bugs Fixed During Build
+1. **Zod v4 `.default()` ordering** — must come before `.transform()`
+2. **`hydrateReply` removed** — not exported in `@grammyjs/hydrate` v1.6.0
+3. **`BotManager` constructor** — takes `BotManagerOptions` object, not positional args
+4. **`createBotWithDeps()`** — added for multi-bot middleware wiring
+5. **Test `sendMessage` mock** — must return `Message` object (not `true`) for hydrate plugin
+6. **`bot_command` entities** — grammY's `.command()` requires entities in message for detection
+7. **Import path depth** — 4 test files had 3-level paths instead of 4-level
+8. **ESLint `consistent-type-imports`** — converted value imports to `import type` where only used as types
+
+---
+
+## Phase 95: InsForge Client Public API Refactoring (COMPLETE ✅)
+
+Refactored the internal InsForge client methods (`_get`, `_post`, etc.) to descriptive, public ones (`get_records`, `post_records`, etc.). Achieves **10.00/10** Pylint score.
 
 ---
 
 ## Phase 94: Audit Fixes Implementation (COMPLETE ✅)
 
-### Summary
-Implemented all Critical (P0) and High (P1) findings from the comprehensive codebase audit using parallel agent execution. All quality gates pass with 101 tests.
-
-### Tasks Completed
-
-| Task | Finding | Status | Commit |
-|------|---------|--------|--------|
-| SEC-01 | Remove Base64 fallback from encryption | ✅ Complete | `ad27cf1` |
-| SEC-02 | Add server-side JWT validation | ✅ Complete | `263ac64` |
-| ARCH-01/02 | Split BotManager god class | ✅ Complete | `7562656`, `9948b7a` |
-| PERF-01 | Add pagination to batched queries | ✅ Complete | `a910012` |
-| TEST-01 | Add 40+ tests (58 → 101) | ✅ Complete | `5356447` |
-
----
+Implemented all Critical (P0) and High (P1) findings from the comprehensive codebase audit.
 
 ## Phase 93: Realtime WebSockets Emit Fix (COMPLETE ✅)
 
@@ -52,7 +90,7 @@ Implemented all Critical (P0) and High (P1) findings from the comprehensive code
 
 ## Phase 89: Uptime Bug & RLS Anon Write Policies Fix (COMPLETE ✅)
 
-## Architecture (Current — Phase 94)
+## Architecture (Current — Phase 96)
 
 ```
 Web Dashboard (Next.js) ──► @insforge/sdk ──► InsForge BaaS (PostgreSQL + Realtime WS)
@@ -67,9 +105,19 @@ Web Dashboard (Next.js) ──► @insforge/sdk ──► InsForge BaaS (Postgre
     ├─ member_sync.py (15min JobQueue)                 • bot_instances CHANGE → "bot_instance_changed"
     ├─ verification_logger.py (fire-and-forget)
     ├─ api_call_logger.py (fire-and-forget)
-    ├─ BotRegistry (instance storage)         ← NEW: Refactored from BotManager
-    ├─ BotLifecycleManager (start/stop)       ← NEW: Refactored from BotManager
-    └─ BotHealthMonitor (health checks)       ← NEW: Refactored from BotManager
+    ├─ BotRegistry (instance storage)
+    ├─ BotLifecycleManager (start/stop)
+    └─ BotHealthMonitor (health checks)
+
+  Bot Engine (grammY/TS) ──► native fetch() REST ──┘  ← NEW: Phase 96
+    ├─ insforge-client.ts (PostgREST REST)
+    ├─ realtime-client.ts (Socket.IO)
+    ├─ status-writer.ts (30s heartbeat)
+    ├─ command-worker.ts (WS + 30s poll)
+    ├─ member-sync.ts (15min interval)
+    ├─ bot-manager.ts (multi-bot coordinator)
+    ├─ bot-lifecycle.ts (start/stop/restart)
+    └─ bot-registry.ts (instance storage)
 ```
 
 #### BotManager Refactoring (Phase 94 - ARCH-01/02)
@@ -90,15 +138,18 @@ The monolithic `BotManager` (~900 lines, 7 responsibilities) has been split into
 
 ---
 
-### Quality Gates (Phase 94)
+### Quality Gates (Phase 96)
 | Check | Result |
 |---|---|
 | `ruff check apps/bot` | ✅ 0 errors |
 | `pylint apps/bot` | ✅ **9.99/10** |
 | `pyrefly check` | ✅ 0 errors |
 | `pytest tests/bot/` | ✅ **101 passed** |
-| `tsc --noEmit` | ✅ 0 errors |
-| `bun run build` | ✅ exit 0 |
+| `tsc --noEmit` (web) | ✅ 0 errors |
+| `bun run build` (web) | ✅ exit 0 |
+| `bun run type-check` (grammy) | ✅ 0 errors |
+| `bun run lint` (grammy) | ✅ 0 errors |
+| `bun run test` (grammy) | ✅ **105 passed** |
 
 ---
 
@@ -116,6 +167,7 @@ The monolithic `BotManager` (~900 lines, 7 responsibilities) has been split into
 | Component | Where it runs |
 |---|---|
 | Bot (Python) | `uv run python -m apps.bot.main` (from project root) |
+| Bot (grammY) | `cd apps/grammy && bun run dev` |
 | Web (Next.js) | `cd apps/web && bun dev` — port 3000 |
 | Redis | Docker — `docker compose -f docker-compose.local.yml up -d` |
 | PostgreSQL | **InsForge cloud REST API** — no local DB |
@@ -152,4 +204,4 @@ Refactored the internal InsForge client methods to make them public and descript
 
 ---
 
-_Last Updated: 2026-03-02 (Phase 95 — InsForge Client Refactoring — COMPLETE)_
+_Last Updated: 2026-03-03 (Phase 96 — grammY Bot Rebuild — COMPLETE)_

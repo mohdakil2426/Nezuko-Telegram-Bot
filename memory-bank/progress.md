@@ -45,6 +45,7 @@
 | 45: | 93    | Realtime WebSockets Emit Fix — Fixed 10s Socket.IO disconnection by replacing `call()` with `emit()` | **Complete ✅** |
 | 94    | Audit Fixes Implementation — SEC-01/02, ARCH-01/02, PERF-01, TEST-01 (5 P0/P1 tasks) | Complete ✅ |
 | 95    | InsForge Client Public API Refactoring — Resolve Pylint protected-access warnings | Complete ✅ |
+| 96    | grammY Bot Rebuild (TypeScript) — Full bot rebuild with 41 source files, 105 tests, 113 OpenSpec tasks | Complete ✅ |
 
 ---
 
@@ -151,6 +152,53 @@ Resolved issues where the dashboard visually froze its uptime tracking by improv
 
 ---
 
+## Phase 96: grammY Bot Rebuild — TypeScript (Complete)
+
+Complete rebuild of the Nezuko Telegram bot from Python (python-telegram-bot v22.6) to TypeScript (grammY v1.41.1). Built using 12 parallel agent teams across 3 context sessions.
+
+### Files Created
+
+**Source (41 files in `apps/grammy/src/`):**
+- **Core (6):** config.ts, bot-factory.ts, insforge-client.ts, cache.ts, encryption.ts, realtime-client.ts, constants.ts, shutdown.ts
+- **Middleware (6):** context-enricher.ts, admin-guard.ts, group-only.ts, sequentialize.ts, permission-check.ts
+- **Composers (5):** admin.ts, verify.ts, events.ts, channels.ts, fallback.ts, migration.ts
+- **Services (6):** verification.ts, protection.ts, channel-linker.ts, member-sync.ts, status-writer.ts, batch-verification.ts
+- **Multi-bot (4):** bot-manager.ts, bot-lifecycle.ts, bot-registry.ts, command-worker.ts
+- **Database (5):** group.repo.ts, channel.repo.ts, link.repo.ts, verification.repo.ts, bot-status.repo.ts, types.ts
+- **Utils (3):** messages.ts, logger.ts, auto-delete.ts, health.ts
+- **Entry:** main.ts, types.ts
+
+**Tests (19 files in `tests/grammy/`):**
+- 3 helpers, 12 unit tests, 4 integration tests → **105 tests all passing**
+
+**Deployment (3 files):**
+- Dockerfile (3-stage: bun deps → node build → node runtime)
+- .dockerignore
+- .github/workflows/grammy-ci.yml
+
+**Config:**
+- eslint.config.mjs (TypeScript ESLint flat config)
+- vitest.config.ts, tsconfig.json, tsconfig.build.json, package.json
+
+### Quality Gates
+| Check | Result |
+|---|---|
+| `bun run type-check` | ✅ 0 errors |
+| `bun run lint` | ✅ 0 errors, 0 warnings |
+| `bun run test` | ✅ 105/105 passed |
+| OpenSpec tasks | ✅ 113/113 complete |
+
+### Key Technical Decisions
+- grammY v1.41.1 (not v2.x — stable release)
+- `hydrateReply` not available in @grammyjs/hydrate v1.6.0
+- `ParseModeFlavor` not available in @grammyjs/parse-mode v2.2.1
+- Zod v4: `.default()` must precede `.transform()` on string schemas
+- BotManager takes `BotManagerOptions` object (not positional args)
+- Test bot helper returns proper `Message` objects for hydrate plugin
+- grammY `.command()` requires `bot_command` entities in message
+
+---
+
 ## Phase 95: InsForge Client Public API Refactoring (Complete)
 
 Refactored the internal InsForge client methods to make them public and descriptive, resolving all Pylint `protected-access` warnings.
@@ -171,4 +219,4 @@ Refactored the internal InsForge client methods to make them public and descript
 
 ---
 
-_Last Updated: 2026-03-02 (Phase 95 — InsForge Client Refactoring — COMPLETE)_
+_Last Updated: 2026-03-03 (Phase 96 — grammY Bot Rebuild — COMPLETE)_
