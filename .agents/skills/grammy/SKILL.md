@@ -1,69 +1,212 @@
 ---
 name: grammy
-description: Expert grammY Telegram bot framework assistant. Use this skill whenever the user is building, debugging, or extending a Telegram bot with grammY (TypeScript/JavaScript). Covers the full grammY ecosystem core bot setup, middleware, context, filter queries, sessions, conversations, inline keyboards, menus, file handling, webhooks, long polling, error handling, all official plugins, and hosting/deployment. Trigger on any mention of grammY, Telegram bot development, @grammyjs packages, Bot API types, or questions about bot architecture patterns.
+description: Expert grammY Telegram bot framework assistant. Use this skill whenever the user is building, debugging, or extending a Telegram bot with grammY (TypeScript/JavaScript). Covers the full grammY ecosystem: core bot setup, middleware, context, context flavors, filter queries, sessions, conversations, inline keyboards, menus, inline queries, file handling, webhooks, long polling, error handling, all official plugins, scaling, and hosting/deployment. Trigger on any mention of grammY, Telegram bot development, @grammyjs packages, Bot API types, or questions about bot architecture patterns. Also trigger when users ask about TypeScript Telegram bots, grammy sessions not working, conversations plugin, bot scaling, or webhook setup — even if they don't say "grammY" explicitly.
 ---
 
 # grammY Skill
 
 You are an expert in the **grammY** Telegram bot framework for TypeScript/JavaScript.
 
-## Reference Files
+## Golden Rule
 
-All documentation is available in `references/`. Read the relevant files before answering — do not guess APIs.
-
-### Documentation (from grammy.dev — English only)
-
-| Category | Folder | Key topics |
-|----------|--------|------------|
-| **Guide** | `references/guide/` | Getting started, basics, context, commands, filter queries, middleware, files, errors, reactions, games, deployment types, API |
-| **Advanced** | `references/advanced/` | Middleware deep-dive, structuring large bots, scaling, reliability, flood control, deployment, transformers, proxy, business accounts |
-| **Plugins** | `references/plugins/` | All official plugins: sessions, conversations, menus, inline keyboards, parse-mode, hydrate, runner, auto-retry, throttler, ratelimiter, files, i18n, commands, router, emoji, chat members, media groups, entity parser, autoquote, fluent, stateless questions, console-time |
-| **Hosting** | `references/hosting/` | Deno Deploy, Cloudflare Workers, Vercel, Firebase, Fly.io, Heroku, Supabase, Zeabur, VPS |
-| **Resources** | `references/resources/` | FAQ, ecosystem comparison, about grammY |
-| **Demo** | `references/demo/` | Example projects and code samples |
-
-### API Reference (from grammy.dev/ref/ — dynamically generated, not in repo)
-
-All API references are in `references/api-ref/`. Start with `references/api-ref/INDEX.md` for an overview.
-
-| File | Module |
-|------|--------|
-| `core.md` | Core — `Bot`, `Context`, `Composer`, `Api`, `Keyboard`, `InlineKeyboard`, `session`, `webhookCallback`, etc. |
-| `types.md` | All Telegram Bot API types (`grammy/types`) |
-| `conversations.md` | Conversations plugin |
-| `menu.md` | Menu plugin |
-| `runner.md` | Runner plugin |
-| `hydrate.md` | Hydrate plugin |
-| `auto-retry.md` | Auto-retry plugin |
-| `transformer-throttler.md` | Throttler plugin |
-| `ratelimiter.md` | Ratelimiter plugin |
-| `files.md` | Files plugin |
-| `i18n.md` | i18n plugin |
-| `commands.md` | Commands plugin |
-| `router.md` | Router plugin |
-| `emoji.md` | Emoji plugin |
-| `parse-mode.md` | Parse-mode plugin |
-| `chat-members.md` | Chat-members plugin |
-| `storages.md` | All storage adapters (MongoDB, Redis, PostgreSQL, Supabase, etc.) |
+**Read the relevant reference file before answering — never guess API signatures or method names.**
 
 ---
 
-## Key Guide Files to Read First
+## Reference Files
 
-For most tasks, start by reading the relevant guide file:
+All documentation is in `references/`. Read the right file for the task.
 
-- **New bot setup** → `references/guide/getting-started.md`, `references/guide/basics.md`
-- **Context & middleware** → `references/guide/context.md`, `references/guide/middleware.md`
-- **Commands** → `references/guide/commands.md`, `references/plugins/commands.md`
-- **Filter queries** → `references/guide/filter-queries.md`
-- **Sessions** → `references/plugins/session.md`
-- **Conversations** → `references/plugins/conversations.md`, `references/api-ref/conversations.md`
-- **Inline keyboards / menus** → `references/plugins/keyboard.md`, `references/plugins/menu.md`
-- **Files** → `references/guide/files.md`, `references/plugins/files.md`
-- **Error handling** → `references/guide/errors.md`
-- **Webhooks / long polling** → `references/guide/deployment-types.md`, `references/hosting/`
-- **Scaling / concurrency** → `references/advanced/scaling.md`, `references/advanced/reliability.md`, `references/api-ref/runner.md`
-- **Formatting messages** → `references/plugins/parse-mode.md`
+### Guide (`references/guide/`)
+
+| File | When to read |
+|------|-------------|
+| `getting-started.md` | New bot from scratch |
+| `basics.md` | Sending messages, Other options object |
+| `context.md` | ctx shortcuts, flavors, customizing context |
+| `commands.md` | Deep linking, command scopes |
+| `filter-queries.md` | `bot.on()`, colon syntax, combining filters |
+| `middleware.md` | Middleware chain, `next()`, composition |
+| `files.md` | Uploading / downloading files |
+| `errors.md` | BotError, GrammyError, HttpError, error boundaries |
+| `reactions.md` | Message reactions |
+| `deployment-types.md` | Webhooks vs long polling |
+| `api.md` | Raw Bot API, `ctx.api.*`, transformers |
+| `introduction.md` | How Telegram bots work (overview) |
+
+### Advanced (`references/advanced/`)
+
+| File | When to read |
+|------|-------------|
+| `scaling.md` | Concurrency, runner, sequentialize |
+| `reliability.md` | Retries, error resilience |
+| `flood.md` | Rate limiting, flood control |
+| `middleware.md` | Deep middleware internals |
+| `structuring.md` | Large bot file organization |
+| `transformers.md` | API transformers |
+| `deployment.md` | Production deployment best practices |
+| `business.md` | Telegram Business account features |
+| `proxy.md` | Bot API proxy setup |
+
+### Plugins (`references/plugins/`)
+
+| File | Plugin | Key use |
+|------|--------|---------|
+| `session.md` | Session (built-in) | Per-user/chat storage |
+| `keyboard.md` | Keyboard (built-in) | Inline & reply keyboards |
+| `inline-query.md` | Inline Query (built-in) | `@bot` inline mode |
+| `media-group.md` | Media Group (built-in) | Album sending |
+| `conversations.md` | `@grammyjs/conversations` | Multi-step flows |
+| `menu.md` | `@grammyjs/menu` | Dynamic button menus |
+| `commands.md` | `@grammyjs/commands` | Command management |
+| `router.md` | `@grammyjs/router` | Routing by state |
+| `i18n.md` | `@grammyjs/i18n` | Localization / translations |
+| `parse-mode.md` | `@grammyjs/parse-mode` | Markdown / HTML formatting |
+| `hydrate.md` | `@grammyjs/hydrate` | Methods on returned objects |
+| `runner.md` | `@grammyjs/runner` | Concurrent long polling |
+| `auto-retry.md` | `@grammyjs/auto-retry` | Auto flood-wait retry |
+| `transformer-throttler.md` | `@grammyjs/transformer-throttler` | Outgoing rate limit |
+| `ratelimiter.md` | `@grammyjs/ratelimiter` | Per-user rate limiting |
+| `files.md` | `@grammyjs/files` | File download helpers |
+| `emoji.md` | `@grammyjs/emoji` | Emoji constants |
+| `chat-members.md` | `@grammyjs/chat-members` | Member tracking |
+| `entity-parser.md` | `@grammyjs/entity-parser` | Parse message entities |
+| `autoquote.md` | `@grammyjs/autoquote` | Auto-reply quoting |
+| `fluent.md` | `@grammyjs/fluent` | Fluent i18n alternative |
+| `stateless-question.md` | `@grammyjs/stateless-question` | Questions without session |
+
+### API Reference (`references/api-ref/`)
+
+Start with `references/api-ref/INDEX.md` for orientation.
+
+| File | Module |
+|------|--------|
+| `core.md` | `Bot`, `Context`, `Composer`, `Api`, `Keyboard`, `InlineKeyboard`, `session`, `webhookCallback` |
+| `types.md` | All Telegram Bot API types (`grammy/types`) |
+| `conversations.md` | Conversations plugin exports |
+| `menu.md` | Menu plugin exports |
+| `runner.md` | Runner plugin exports |
+| `storages.md` | MongoDB, Redis, PostgreSQL, Supabase adapters |
+| _(others)_ | Named by plugin — check INDEX.md |
+
+### Demo (`references/demo/`)
+
+| File | Content |
+|------|--------|
+| `examples.md` | 10 complete, runnable grammY bots (echo, sessions, conversations, menus, webhooks, inline mode, rate limiting, production setup) |
+
+### Hosting (`references/hosting/`)
+
+One file per platform: `deno-deploy.md`, `cloudflare-workers.md`, `vercel.md`, `fly.md`, `heroku.md`, `vps.md`, etc.
+
+---
+
+## Quick Task Routing
+
+The most common tasks and where to start:
+
+- **New bot** → `guide/getting-started.md` → `guide/basics.md`
+- **Handling commands / filters** → `guide/filter-queries.md`, `guide/commands.md`
+- **Sessions** → `plugins/session.md`
+- **Multi-step conversations** → `plugins/conversations.md` + `api-ref/conversations.md`
+- **Inline keyboards / buttons** → `plugins/keyboard.md`
+- **Dynamic menus** → `plugins/menu.md`
+- **Inline mode** (`@bot query`) → `plugins/inline-query.md`
+- **Files / media** → `guide/files.md`, `plugins/files.md`
+- **TypeScript context types** → `guide/context.md` (Context Flavors section)
+- **Error handling** → `guide/errors.md`
+- **Webhooks** → `guide/deployment-types.md`, relevant `hosting/` file
+- **Concurrency / scaling** → `advanced/scaling.md`, `api-ref/runner.md`
+- **Internationalization** → `plugins/i18n.md`
+- **Rate limiting** → `advanced/flood.md`, `plugins/ratelimiter.md`, `plugins/auto-retry.md`
+- **Large bot structure** → `advanced/structuring.md`
+- **Copy-paste examples** → `demo/examples.md` (10 runnable bots)
+
+---
+
+## Critical Patterns to Know
+
+These are the most common sources of confusion or bugs in grammY. Know them well.
+
+### Middleware Order Matters
+
+Register middleware in this exact order — order determines execution:
+
+```ts
+bot.use(sequentialize(...));  // if needed
+bot.use(session(...));         // BEFORE any handler that reads ctx.session
+bot.use(conversations());      // BEFORE createConversation
+bot.use(createConversation(myConvo));
+bot.use(menu);                 // BEFORE handlers that use the menu
+bot.on("message", handler);
+```
+
+### Context Flavors (TypeScript)
+
+Plugins add properties to `ctx` via **context flavors**. Always compose them correctly:
+
+```ts
+import { Context, SessionFlavor } from "grammy";
+import { ConversationFlavor } from "@grammyjs/conversations";
+
+// Additive flavors: combine with &
+type MyContext = Context & SessionFlavor<MySession> & ConversationFlavor;
+
+// Transformative flavors: nest them
+type MyContext = HydrateFlavor<Context>;
+
+// Mixing both kinds:
+type MyContext = HydrateFlavor<Context & SessionFlavor<MySession>>;
+
+const bot = new Bot<MyContext>("");
+```
+
+Check each plugin's docs for whether it uses additive (`Type & Flavor`) or transformative (`Flavor<Type>`) composition.
+
+### The Golden Rule of Conversations
+
+Inside a conversation builder function, the function **re-runs from the start on every new update** (replay engine). Any code that has side effects (DB reads/writes, `Math.random()`, `Date.now()`) must be wrapped:
+
+```ts
+// ❌ Wrong — runs on every replay, causes duplicate DB writes
+const user = await db.getUser(ctx.from.id);
+
+// ✅ Correct — wrapped in conversation.external, value is memoized
+const user = await conversation.external(() => db.getUser(ctx.from.id));
+
+// Convenience helpers:
+const rnd = await conversation.random();  // safe random
+const now = await conversation.now();     // safe Date.now()
+```
+
+### Filter Query Syntax
+
+```ts
+bot.on("message:text");           // text messages
+bot.on(":photo");                 // any update with photo
+bot.on(["message", "channel_post"]); // either type
+bot.on("message").filter(ctx => ctx.from?.id === ADMIN_ID);
+```
+
+### Error Handling
+
+Always install `bot.catch()` in production — grammY's default just stops the bot:
+
+```ts
+import { GrammyError, HttpError } from "grammy";
+
+bot.catch((err) => {
+  const ctx = err.ctx;
+  const e = err.error;
+  if (e instanceof GrammyError) {
+    console.error("API error:", e.description);
+  } else if (e instanceof HttpError) {
+    console.error("Network error:", e);
+  } else {
+    console.error("Unknown:", e);
+  }
+});
+```
 
 ---
 
@@ -78,60 +221,35 @@ For most tasks, start by reading the relevant guide file:
 | **Examples** | https://github.com/grammyjs/examples |
 | **Community Chat** | https://t.me/grammyjs |
 
-## Official Plugins (GitHub)
+## Official Plugin Packages
 
-| Plugin | Repository | npm Package |
-|--------|------------|-------------|
-| **Conversations** | https://github.com/grammyjs/conversations | `@grammyjs/conversations` |
-| **Menu** | https://github.com/grammyjs/menu | `@grammyjs/menu` |
-| **Runner** | https://github.com/grammyjs/runner | `@grammyjs/runner` |
-| **Hydrate** | https://github.com/grammyjs/hydrate | `@grammyjs/hydrate` |
-| **Auto-Retry** | https://github.com/grammyjs/auto-retry | `@grammyjs/auto-retry` |
-| **Transformer Throttler** | https://github.com/grammyjs/transformer-throttler | `@grammyjs/transformer-throttler` |
-| **Rate Limiter** | https://github.com/grammyjs/ratelimiter | `@grammyjs/ratelimiter` |
-| **Files** | https://github.com/grammyjs/files | `@grammyjs/files` |
-| **i18n** | https://github.com/grammyjs/i18n | `@grammyjs/i18n` |
-| **Commands** | https://github.com/grammyjs/commands | `@grammyjs/commands` |
-| **Router** | https://github.com/grammyjs/router | `@grammyjs/router` |
-| **Emoji** | https://github.com/grammyjs/emoji | `@grammyjs/emoji` |
-| **Parse Mode** | https://github.com/grammyjs/parse-mode | `@grammyjs/parse-mode` |
-| **Chat Members** | https://github.com/grammyjs/chat-members | `@grammyjs/chat-members` |
-| **Storage Adapters** | https://github.com/grammyjs/storages | Various storage packages |
-| **Fluent** | https://github.com/grammyjs/fluent | `@grammyjs/fluent` |
-
-## Storage Adapters
-
-| Adapter | Repository | Package |
-|---------|------------|---------|
-| **MongoDB** | https://github.com/grammyjs/storages/tree/main/packages/mongodb | `@grammyjs/storage-mongodb` |
-| **Redis** | https://github.com/grammyjs/storages/tree/main/packages/redis | `@grammyjs/storage-redis` |
-| **PostgreSQL** | https://github.com/grammyjs/storages/tree/main/packages/psql | `@grammyjs/storage-psql` |
-| **Supabase** | https://github.com/grammyjs/storages/tree/main/packages/supabase | `@grammyjs/storage-supabase` |
-| **Firebase** | https://github.com/grammyjs/storages/tree/main/packages/firebase | `@grammyjs/storage-firebase` |
-| **DynamoDB** | https://github.com/grammyjs/storages/tree/main/packages/dynamodb | `@grammyjs/storage-dynamodb` |
-| **Cloudflare** | https://github.com/grammyjs/storages/tree/main/packages/cloudflare | `@grammyjs/storage-cloudflare` |
-| **File** | https://github.com/grammyjs/storages/tree/main/packages/file | `@grammyjs/storage-file` |
-| **Free Storage** | https://github.com/grammyjs/storage-free | `@grammyjs/storage-free` |
-
----
-
-## Important grammY Conventions
-
-- `bot.command("start", ctx => ...)` — handle commands
-- `bot.on("message:text", ctx => ...)` — filter queries use colon syntax
-- `ctx.reply(...)` — always replies to current chat
-- `ctx.api.sendMessage(chatId, ...)` — explicit chat targeting
-- `session()` middleware must be registered before handlers that use `ctx.session`
-- `conversations()` middleware must be registered before `createConversation()`
-- For webhooks: use `webhookCallback(bot, "framework-name")`
-- For long polling: `bot.start()`
+| Plugin | npm Package |
+|--------|-------------|
+| Conversations | `@grammyjs/conversations` |
+| Menu | `@grammyjs/menu` |
+| Runner | `@grammyjs/runner` |
+| Hydrate | `@grammyjs/hydrate` |
+| Auto-Retry | `@grammyjs/auto-retry` |
+| Transformer Throttler | `@grammyjs/transformer-throttler` |
+| Rate Limiter | `@grammyjs/ratelimiter` |
+| Files | `@grammyjs/files` |
+| i18n | `@grammyjs/i18n` |
+| Commands | `@grammyjs/commands` |
+| Router | `@grammyjs/router` |
+| Emoji | `@grammyjs/emoji` |
+| Parse Mode | `@grammyjs/parse-mode` |
+| Chat Members | `@grammyjs/chat-members` |
+| Storage Adapters | `@grammyjs/storage-mongodb`, `@grammyjs/storage-redis`, `@grammyjs/storage-psql`, `@grammyjs/storage-supabase`, `@grammyjs/storage-file`, etc. |
 
 ---
 
 ## Do's and Don'ts
 
-- Always check the actual reference file for method signatures before answering API questions
-- When using plugins, check both the guide doc AND the api-ref doc
-- Do not invent method names — grammY has a specific API surface
-- Prefer `ctx.reply()` over `ctx.api.sendMessage()` for simplicity
-- Always use `bot.catch()` for production error handling
+- **Read the reference file** before answering any API question — signatures matter
+- **Check both guide AND api-ref** when using a plugin
+- **Never invent method names** — grammY has a precise API surface
+- **Prefer `ctx.reply()`** over `ctx.api.sendMessage()` for same-chat replies
+- **Always use `bot.catch()`** for production error handling
+- **Always wrap side effects** in `conversation.external()` inside conversations
+- **Respect middleware order** — using `ctx.session` before `bot.use(session(...))` crashes at runtime
+- When TypeScript complains about missing properties on `ctx`, the fix is almost always a missing **context flavor**
