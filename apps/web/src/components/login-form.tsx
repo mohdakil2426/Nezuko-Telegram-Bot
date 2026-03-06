@@ -51,13 +51,11 @@ export function LoginForm() {
     <Card className="bg-card/80 w-full border-0 shadow-xl backdrop-blur-sm">
       <CardHeader className="pb-2 text-center">
         {/* Logo */}
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-pink-500 to-violet-500 shadow-lg shadow-pink-500/25">
-          <ShieldCheck className="h-8 w-8 text-white" />
+        <div className="bg-primary text-primary-foreground mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full shadow-lg">
+          <ShieldCheck className="h-8 w-8" />
         </div>
 
-        <CardTitle className="bg-linear-to-r from-pink-500 to-violet-500 bg-clip-text text-2xl font-bold text-transparent">
-          Nezuko Dashboard
-        </CardTitle>
+        <CardTitle className="text-foreground text-2xl font-bold">Nezuko Dashboard</CardTitle>
 
         <CardDescription className="text-muted-foreground">
           Owner-only access via InsForge Auth
@@ -69,7 +67,7 @@ export function LoginForm() {
         {!isLoaded && (
           <div className="flex flex-col items-center justify-center space-y-2 py-4">
             <Loader2 className="text-primary h-8 w-8 animate-spin" />
-            <p className="text-muted-foreground text-sm">Loading...</p>
+            <p className="text-muted-foreground text-sm">Loading…</p>
           </div>
         )}
 
@@ -94,7 +92,7 @@ export function LoginForm() {
               <Button
                 id="sign-in-btn"
                 size="lg"
-                className="w-full gap-2 bg-linear-to-r from-pink-500 to-violet-500 text-white hover:from-pink-600 hover:to-violet-600"
+                className="w-full gap-2"
               >
                 <LogIn className="h-5 w-5" />
                 Sign In with InsForge

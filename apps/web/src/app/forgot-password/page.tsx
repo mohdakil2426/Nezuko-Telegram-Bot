@@ -75,13 +75,11 @@ function ForgotPasswordForm() {
   return (
     <Card className="bg-card/80 w-full border-0 shadow-xl backdrop-blur-sm">
       <CardHeader className="pb-2 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-pink-500 to-violet-500 shadow-lg shadow-pink-500/25">
-          <KeyRound className="h-8 w-8 text-white" />
+        <div className="bg-primary text-primary-foreground mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full shadow-lg">
+          <KeyRound className="h-8 w-8" />
         </div>
 
-        <CardTitle className="bg-linear-to-r from-pink-500 to-violet-500 bg-clip-text text-2xl font-bold text-transparent">
-          Forgot Password
-        </CardTitle>
+        <CardTitle className="text-foreground text-2xl font-bold">Forgot Password</CardTitle>
 
         <CardDescription className="text-muted-foreground">
           Enter your email and we&apos;ll send a reset code.
@@ -117,7 +115,7 @@ function ForgotPasswordForm() {
           <Button
             id="send-reset-btn"
             type="submit"
-            className="w-full gap-2 bg-linear-to-r from-pink-500 to-violet-500 text-white hover:from-pink-600 hover:to-violet-600"
+            className="w-full gap-2"
             disabled={isPending}
           >
             {isPending ? (

@@ -125,8 +125,8 @@ export function DataTable<T>({
   return (
     <div className="w-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 py-4">
-        <div className="relative max-w-sm flex-1">
+      <div className="flex flex-col gap-3 py-4 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative w-full min-w-0 sm:max-w-sm sm:flex-1">
           <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             placeholder={filterPlaceholder}
@@ -146,7 +146,7 @@ export function DataTable<T>({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline" className="w-full sm:ml-auto sm:w-auto">
               Columns <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -211,16 +211,17 @@ export function DataTable<T>({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between space-x-2 py-4">
+      <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-muted-foreground text-sm">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="text-muted-foreground text-sm">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            Page {table.getPageCount() > 0 ? table.getState().pagination.pageIndex + 1 : 0} of{" "}
+            {table.getPageCount()}
           </div>
-          <div className="space-x-2">
+          <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"

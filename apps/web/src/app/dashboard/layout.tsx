@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@insforge/nextjs/server";
 
@@ -5,6 +7,10 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+
+function SiteHeaderFallback() {
+  return <div className="h-16 shrink-0" aria-hidden="true" />;
+}
 
 /**
  * Dashboard Layout — Server Component
@@ -30,6 +36,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Read env at request time — Server Component layouts re-execute per request,
   // so process.env.NEXT_PUBLIC_DEV_LOGIN is always current after a server restart.
   const devLogin = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
+  const cookieStore = await cookies();
+  const sidebarState = cookieStore.get("sidebar_state")?.value;
+  const defaultSidebarOpen = sidebarState === undefined ? true : sidebarState === "true";
 
   // Server-side auth guard — defense-in-depth (skipped in dev mode).
   // auth() reads insforge-session + insforge-user cookies (no server-side JWT validation).
@@ -42,11 +51,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={defaultSidebarOpen}>
       <AppSidebar />
       <SidebarInset>
-        <SiteHeader />
-        <main id="main-content" className="flex flex-1 flex-col gap-4 overflow-x-hidden p-4 pt-0">
+        <Suspense fallback={<SiteHeaderFallback />}>
+          <SiteHeader />
+        </Suspense>
+        <main id="main-content" className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <ErrorBoundary>{children}</ErrorBoundary>
         </main>
       </SidebarInset>

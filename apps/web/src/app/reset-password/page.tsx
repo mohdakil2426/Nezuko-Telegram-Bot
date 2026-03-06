@@ -118,13 +118,11 @@ function ResetPasswordForm() {
   return (
     <Card className="bg-card/80 w-full border-0 shadow-xl backdrop-blur-sm">
       <CardHeader className="pb-2 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-pink-500 to-violet-500 shadow-lg shadow-pink-500/25">
-          <KeyRound className="h-8 w-8 text-white" />
+        <div className="bg-primary text-primary-foreground mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full shadow-lg">
+          <KeyRound className="h-8 w-8" />
         </div>
 
-        <CardTitle className="bg-linear-to-r from-pink-500 to-violet-500 bg-clip-text text-2xl font-bold text-transparent">
-          Reset Password
-        </CardTitle>
+        <CardTitle className="text-foreground text-2xl font-bold">Reset Password</CardTitle>
 
         {/* Step indicator */}
         <div className="mt-2 flex items-center justify-center gap-2">
@@ -135,7 +133,7 @@ function ResetPasswordForm() {
                   step > idx + 1
                     ? "bg-green-500 text-white"
                     : step === idx + 1
-                      ? "bg-linear-to-r from-pink-500 to-violet-500 text-white"
+                      ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground"
                 }`}
               >
@@ -175,7 +173,7 @@ function ResetPasswordForm() {
 
             <Button
               id="verify-reset-code-btn"
-              className="w-full gap-2 bg-linear-to-r from-pink-500 to-violet-500 text-white hover:from-pink-600 hover:to-violet-600"
+              className="w-full gap-2"
               onClick={handleExchangeCode}
               disabled={otp.length !== 6 || isPending}
             >
@@ -205,9 +203,8 @@ function ResetPasswordForm() {
                 />
                 <button
                   type="button"
-                  className="text-muted-foreground hover:text-foreground absolute top-2.5 right-3 cursor-pointer transition-colors"
+                  className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 absolute top-2.5 right-3 cursor-pointer rounded-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
                   onClick={() => setShowPassword((v) => !v)}
-                  tabIndex={-1}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -238,7 +235,7 @@ function ResetPasswordForm() {
             <Button
               id="reset-password-btn"
               type="submit"
-              className="w-full gap-2 bg-linear-to-r from-pink-500 to-violet-500 text-white hover:from-pink-600 hover:to-violet-600"
+              className="w-full gap-2"
               disabled={isPending}
             >
               {isPending ? (

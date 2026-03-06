@@ -93,13 +93,11 @@ function VerifyEmailForm() {
     <Card className="bg-card/80 w-full border-0 shadow-xl backdrop-blur-sm">
       <CardHeader className="pb-2 text-center">
         {/* Icon */}
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-pink-500 to-violet-500 shadow-lg shadow-pink-500/25">
-          <Mail className="h-8 w-8 text-white" />
+        <div className="bg-primary text-primary-foreground mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full shadow-lg">
+          <Mail className="h-8 w-8" />
         </div>
 
-        <CardTitle className="bg-linear-to-r from-pink-500 to-violet-500 bg-clip-text text-2xl font-bold text-transparent">
-          Check Your Email
-        </CardTitle>
+        <CardTitle className="text-foreground text-2xl font-bold">Check Your Email</CardTitle>
 
         <CardDescription className="text-muted-foreground">
           We sent a 6-digit code to <span className="font-medium">{email || "your email"}</span>
@@ -130,7 +128,7 @@ function VerifyEmailForm() {
         {/* Verify Button */}
         <Button
           id="verify-email-btn"
-          className="w-full gap-2 bg-linear-to-r from-pink-500 to-violet-500 text-white hover:from-pink-600 hover:to-violet-600"
+          className="w-full gap-2"
           onClick={handleVerify}
           disabled={otp.length !== 6 || isPending}
         >
@@ -172,7 +170,7 @@ function VerifyEmailFallback() {
       <CardContent className="flex items-center justify-center py-16">
         <Loader2 className="text-primary h-8 w-8 animate-spin" />
         <span className="sr-only" role="status">
-          Loading...
+          Loading…
         </span>
       </CardContent>
     </Card>

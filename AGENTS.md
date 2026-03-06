@@ -338,4 +338,4 @@ Use the relevant `openspec-*` skill in `.agent/skills/` when the task is about O
 
 ---
 
-_Last Updated: 2026-03-06 (grammY promoted to canonical bot runtime in root AGENTS.md)_
+_Last Updated: 2026-03-06_

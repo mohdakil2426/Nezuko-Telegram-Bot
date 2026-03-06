@@ -67,7 +67,13 @@ export default function BotsPage() {
           <p className="text-muted-foreground">Add and manage your Telegram bots</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isPending}>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Refresh bots"
+            onClick={() => refetch()}
+            disabled={isPending}
+          >
             <RefreshCw className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
           </Button>
           <AddBotDialog />
@@ -205,6 +211,7 @@ function BotRow({ bot }: { bot: BotType }) {
             size="icon"
             onClick={handleToggleActive}
             disabled={updateMutation.isPending}
+            aria-label={bot.is_active ? "Deactivate bot" : "Activate bot"}
             aria-pressed={bot.is_active}
             title={bot.is_active ? "Deactivate" : "Activate"}
             className="min-h-11 min-w-11"
@@ -216,7 +223,13 @@ function BotRow({ bot }: { bot: BotType }) {
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" title="Delete" className="min-h-11 min-w-11">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Delete bot"
+                title="Delete"
+                className="min-h-11 min-w-11"
+              >
                 <Trash2 className="text-destructive h-4 w-4" />
               </Button>
             </AlertDialogTrigger>

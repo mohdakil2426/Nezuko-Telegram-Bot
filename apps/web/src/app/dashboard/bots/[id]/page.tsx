@@ -120,7 +120,12 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
       {/* Header with back button */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard/bots")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Back to bots"
+            onClick={() => router.push("/dashboard/bots")}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-3">
@@ -134,7 +139,13 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isPending}>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Refresh bot details"
+            onClick={() => refetch()}
+            disabled={isPending}
+          >
             <RefreshCw className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
           </Button>
         </div>
@@ -192,11 +203,11 @@ export default function BotDetailPage({ params }: BotDetailPageProps) {
                 <span className="text-sm">Added</span>
               </div>
               <p className="text-sm">
-                {new Date(bot.created_at).toLocaleDateString("en-US", {
+                {new Intl.DateTimeFormat(undefined, {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
-                })}
+                }).format(new Date(bot.created_at))}
               </p>
             </div>
           </div>
