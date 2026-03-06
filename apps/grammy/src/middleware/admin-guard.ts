@@ -29,7 +29,10 @@ export function adminGuard(): MiddlewareFn<NezukoContext> {
 
     // Anonymous-admin or channel-sent messages may not have a usable sender.
     if (!from) {
-      ctx.log.warn({ chatId: chat.id }, "Admin guard blocked command because sender is unavailable");
+      ctx.log.warn(
+        { chatId: chat.id },
+        "Admin guard blocked command because sender is unavailable"
+      );
       await ctx.reply(ADMIN_CHECK_UNAVAILABLE).catch(() => {});
       return;
     }
@@ -45,7 +48,7 @@ export function adminGuard(): MiddlewareFn<NezukoContext> {
     } catch (err) {
       ctx.log.warn(
         { chatId: chat.id, userId: from.id, err: err instanceof Error ? err.message : String(err) },
-        "Admin guard failed to check sender membership",
+        "Admin guard failed to check sender membership"
       );
       await ctx.reply(ADMIN_CHECK_FAILED).catch(() => {});
       return;

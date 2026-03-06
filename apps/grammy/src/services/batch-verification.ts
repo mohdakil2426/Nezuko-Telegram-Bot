@@ -27,14 +27,14 @@ export async function batchVerify(
   cache: CacheClient,
   groupId: number,
   userIds: number[],
-  log?: Logger,
+  log?: Logger
 ): Promise<Map<number, VerificationResult>> {
   const uniqueUserIds = [...new Set(userIds)];
   const results = await Promise.all(
-    uniqueUserIds.map(async (userId) => [
-      userId,
-      await verifyMembership(api, db, cache, groupId, userId, log),
-    ] as const),
+    uniqueUserIds.map(
+      async (userId) =>
+        [userId, await verifyMembership(api, db, cache, groupId, userId, log)] as const
+    )
   );
   return new Map<number, VerificationResult>(results);
 }

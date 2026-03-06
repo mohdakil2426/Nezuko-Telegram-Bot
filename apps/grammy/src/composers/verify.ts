@@ -3,11 +3,7 @@ import type { NezukoContext } from "../types.js";
 import { verifyMembership } from "../services/verification.js";
 import { unmuteUser } from "../services/protection.js";
 import { logVerification } from "../database/verification.repo.js";
-import {
-  CACHE_NAMESPACES,
-  INTERVALS,
-  VERIFIED_CACHE_TTL,
-} from "../core/constants.js";
+import { CACHE_NAMESPACES, INTERVALS, VERIFIED_CACHE_TTL } from "../core/constants.js";
 import { VERIFY_SUCCESS, VERIFY_MISSING_CHANNELS, VERIFY_PROCESSING } from "../utils/messages.js";
 
 export const verifyComposer = new Composer<NezukoContext>();
@@ -31,14 +27,7 @@ verifyComposer.callbackQuery(/^verify:(-?\d+)$/, async (ctx) => {
   }
 
   // Verify membership across all linked channels
-  const result = await verifyMembership(
-    ctx.api,
-    ctx.db,
-    ctx.cache,
-    groupId,
-    userId,
-    ctx.log,
-  );
+  const result = await verifyMembership(ctx.api, ctx.db, ctx.cache, groupId, userId, ctx.log);
 
   if (result.success) {
     // Unmute the user

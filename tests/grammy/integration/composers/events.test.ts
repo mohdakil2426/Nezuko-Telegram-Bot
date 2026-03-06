@@ -46,7 +46,15 @@ describe("events composer integration", () => {
 
       // DB returns one linked channel
       vi.mocked(deps.db.getRecords)
-        .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: MOCK_CHANNEL.channel_id, is_required: true, created_at: "" }])
+        .mockResolvedValueOnce([
+          {
+            id: 1,
+            group_id: -1001234567890,
+            channel_id: MOCK_CHANNEL.channel_id,
+            is_required: true,
+            created_at: "",
+          },
+        ])
         .mockResolvedValueOnce([MOCK_CHANNEL]);
 
       bot.use(contextEnricher(deps));
@@ -56,7 +64,9 @@ describe("events composer integration", () => {
         const members = ctx.message?.new_chat_members ?? [];
         for (const member of members) {
           if (member.is_bot) continue;
-          const channels = await ctx.db.getRecords("group_channel_links", { group_id: `eq.${ctx.chat?.id}` });
+          const channels = await ctx.db.getRecords("group_channel_links", {
+            group_id: `eq.${ctx.chat?.id}`,
+          });
           if (channels.length > 0) {
             await ctx.api.restrictChatMember(ctx.chat!.id, member.id, {
               can_send_messages: false,
@@ -67,7 +77,9 @@ describe("events composer integration", () => {
       });
       bot.use(eventsComposer);
 
-      const update = createNewMemberUpdate([{ id: 999888777, is_bot: false, first_name: "NewUser" }]);
+      const update = createNewMemberUpdate([
+        { id: 999888777, is_bot: false, first_name: "NewUser" },
+      ]);
       await bot.handleUpdate(update);
 
       const restrictCall = apiCalls.find((c) => c.method === "restrictChatMember");
@@ -126,7 +138,10 @@ describe("events composer integration", () => {
           // Simulate admin check — in production this uses getChatMember
           // For test: mock returns { status: "administrator" }
           const memberInfo = await ctx.api.getChatMember(ctx.chat!.id, member.id);
-          if (memberInfo && ["administrator", "creator"].includes((memberInfo as { status: string }).status)) {
+          if (
+            memberInfo &&
+            ["administrator", "creator"].includes((memberInfo as { status: string }).status)
+          ) {
             continue; // Skip admins
           }
           await ctx.api.restrictChatMember(ctx.chat!.id, member.id, {
@@ -136,7 +151,9 @@ describe("events composer integration", () => {
       });
       bot.use(eventsComposer);
 
-      const update = createNewMemberUpdate([{ id: 777888999, is_bot: false, first_name: "AdminUser" }]);
+      const update = createNewMemberUpdate([
+        { id: 777888999, is_bot: false, first_name: "AdminUser" },
+      ]);
       await bot.handleUpdate(update);
 
       // getChatMember returns { ok: true, result: true } from transformer
@@ -164,12 +181,14 @@ describe("events composer integration", () => {
       });
       bot.use(eventsComposer);
 
-      const update = createLeftMemberUpdate({ id: 999888777, is_bot: false, first_name: "LeftUser" });
+      const update = createLeftMemberUpdate({
+        id: 999888777,
+        is_bot: false,
+        first_name: "LeftUser",
+      });
       await bot.handleUpdate(update);
 
-      expect(deps.cache.del).toHaveBeenCalledWith(
-        `verified:-1001234567890:999888777`,
-      );
+      expect(deps.cache.del).toHaveBeenCalledWith(`verified:-1001234567890:999888777`);
       void apiCalls;
     });
   });

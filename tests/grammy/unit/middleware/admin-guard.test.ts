@@ -29,7 +29,9 @@ describe("adminGuard middleware", () => {
     // getChatMember returns administrator
     bot.api.config.use(async (prev, method, payload) => {
       if (method === "getChatMember") {
-        return { ok: true, result: { status: "administrator", user: {} } } as ReturnType<typeof prev>;
+        return { ok: true, result: { status: "administrator", user: {} } } as ReturnType<
+          typeof prev
+        >;
       }
       apiCalls.push({ method, payload } as ApiCall);
       return { ok: true, result: true } as ReturnType<typeof prev>;
@@ -104,7 +106,7 @@ describe("adminGuard middleware", () => {
 
     // Private chat update
     await bot.handleUpdate(
-      createMessageUpdate({ chat: { id: 111222, type: "private", first_name: "Test" } }),
+      createMessageUpdate({ chat: { id: 111222, type: "private", first_name: "Test" } })
     );
 
     // next() is called for private chats
@@ -159,6 +161,8 @@ describe("adminGuard middleware", () => {
     await bot.handleUpdate(createMessageUpdate({ text: "/settings" }));
 
     const sendCall = apiCalls.find((call) => call.method === "sendMessage");
-    expect((sendCall?.payload.text as string) ?? "").toContain("couldn't check your admin permissions");
+    expect((sendCall?.payload.text as string) ?? "").toContain(
+      "couldn't check your admin permissions"
+    );
   });
 });

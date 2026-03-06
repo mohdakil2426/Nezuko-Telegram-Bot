@@ -50,7 +50,7 @@ channelsComposer.command("verify", async (ctx) => {
     ctx.cache,
     ctx.chat.id,
     ctx.from.id,
-    ctx.log,
+    ctx.log
   );
 
   if (result.success) {
@@ -75,7 +75,7 @@ channelsComposer.command("stats", async (ctx) => {
 
   const total = verificationLogs.length;
   const successful = verificationLogs.filter(
-    (v) => (v as Record<string, unknown>).status === "verified",
+    (v) => (v as Record<string, unknown>).status === "verified"
   ).length;
   const successRate = total > 0 ? Math.round((successful / total) * 100) : 0;
 
@@ -85,7 +85,7 @@ channelsComposer.command("stats", async (ctx) => {
       successRate,
       memberCount,
       channelsCount: channels.length,
-    }),
+    })
   );
   if (ctx.chat.type !== "private") scheduleDelete(msg, AUTO_DELETE_DELAY);
 });

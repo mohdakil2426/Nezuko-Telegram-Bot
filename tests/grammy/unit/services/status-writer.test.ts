@@ -36,7 +36,7 @@ describe("startStatusWriter", () => {
         status: "online",
         uptime_seconds: expect.any(Number),
         last_heartbeat: expect.any(String),
-      }),
+      })
     );
   });
 
@@ -57,7 +57,7 @@ describe("startStatusWriter", () => {
           bot_instance_id: BOT_INSTANCE_ID,
           status: "online",
         }),
-      ]),
+      ])
     );
   });
 
@@ -87,9 +87,7 @@ describe("startStatusWriter", () => {
     await vi.advanceTimersByTimeAsync(30_000);
 
     const secondCall = vi.mocked(db.patchRecords).mock.calls[1];
-    const secondUptime = (secondCall?.[2] as Record<string, number>)?.[
-      "uptime_seconds"
-    ];
+    const secondUptime = (secondCall?.[2] as Record<string, number>)?.["uptime_seconds"];
 
     expect(secondUptime).toBeGreaterThanOrEqual(firstUptime);
   });

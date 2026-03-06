@@ -34,7 +34,7 @@ export function startStatusWriter(
   db: InsForgeClient,
   botId: number,
   botInstanceId: number,
-  log: Logger,
+  log: Logger
 ): NodeJS.Timeout {
   const tracker = new UptimeTracker();
 

@@ -1,0 +1,10 @@
+{
+  "extends": "../../apps/grammy/tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "../..",
+    "noEmit": true,
+    "typeRoots": ["../../apps/grammy/node_modules/@types", "../../apps/grammy/node_modules"],
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["**/*.ts", "../../apps/grammy/src/**/*.ts"]
+}

@@ -30,7 +30,7 @@ describe("groupOnly middleware", () => {
     bot.use(nextMiddleware);
 
     await bot.handleUpdate(
-      createMessageUpdate({ chat: { id: -100222, type: "group", title: "Basic Group" } }),
+      createMessageUpdate({ chat: { id: -100222, type: "group", title: "Basic Group" } })
     );
 
     expect(nextMiddleware).toHaveBeenCalledOnce();
@@ -50,7 +50,7 @@ describe("groupOnly middleware", () => {
 
     // Private chat update
     await bot.handleUpdate(
-      createMessageUpdate({ chat: { id: 333444, type: "private", first_name: "User" } }),
+      createMessageUpdate({ chat: { id: 333444, type: "private", first_name: "User" } })
     );
 
     // next() must NOT be called for private chats

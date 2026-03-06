@@ -9,11 +9,7 @@ export interface ApiCall {
 
 export interface TestBotOptions {
   methodResults?: Partial<
-    Record<
-      string,
-      | unknown
-      | ((payload: Record<string, unknown>) => unknown)
-    >
+    Record<string, unknown | ((payload: Record<string, unknown>) => unknown)>
   >;
 }
 
@@ -86,7 +82,9 @@ export function createConfiguredTestBot(options?: TestBotOptions): {
         chat: { id: 0, type: "private" as const, first_name: "Test" },
         text: normalizedPayload.text ?? "",
       };
-      return Promise.resolve({ ok: true as const, result: mockMessage } as ReturnType<typeof _prev>);
+      return Promise.resolve({ ok: true as const, result: mockMessage } as ReturnType<
+        typeof _prev
+      >);
     }
 
     // getChatMember needs a ChatMember result

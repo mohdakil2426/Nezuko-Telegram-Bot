@@ -89,9 +89,7 @@ export function createCallbackUpdate(data: string): Update {
 /**
  * Create a new_chat_members update.
  */
-export function createNewMemberUpdate(
-  members: Partial<User>[],
-): Update {
+export function createNewMemberUpdate(members: Partial<User>[]): Update {
   const newMembers = members.map((m) => ({
     id: 999888777,
     is_bot: false,
@@ -137,10 +135,7 @@ export function createLeftMemberUpdate(member: Partial<User>): Update {
 /**
  * Create a my_chat_member update for bot status changes.
  */
-export function createMyChatMemberUpdate(
-  oldStatus: string,
-  newStatus: string,
-): Update {
+export function createMyChatMemberUpdate(oldStatus: string, newStatus: string): Update {
   return {
     update_id: updateIdCounter++,
     my_chat_member: {

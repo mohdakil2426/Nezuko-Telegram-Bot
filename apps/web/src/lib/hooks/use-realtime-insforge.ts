@@ -196,11 +196,11 @@ export function useInsForgeRealtime(
       const errorMsg = err instanceof Error ? err.message : "Handshake timeout";
       console.warn(`[InsForge Realtime] Connection failed: ${errorMsg}. Retrying in 10s...`);
       setConnectionState("disconnected");
-      
+
       // Schedule retry
       if (!isManuallyDisconnected.current) {
         setTimeout(() => {
-          setRetryAttempt(prev => prev + 1);
+          setRetryAttempt((prev) => prev + 1);
         }, 10000);
       }
     }

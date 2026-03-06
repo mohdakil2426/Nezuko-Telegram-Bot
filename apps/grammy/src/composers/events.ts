@@ -5,11 +5,7 @@ import { isUserVerified } from "../database/verification.repo.js";
 import { muteUser } from "../services/protection.js";
 import { verifyMembership } from "../services/verification.js";
 import { scheduleDelete } from "../utils/auto-delete.js";
-import {
-  AUTO_DELETE_DELAY,
-  ADMIN_STATUSES,
-  CACHE_NAMESPACES,
-} from "../core/constants.js";
+import { AUTO_DELETE_DELAY, ADMIN_STATUSES, CACHE_NAMESPACES } from "../core/constants.js";
 import { VERIFY_GREETING, BOT_ADDED_WELCOME, BOT_DEMOTED_WARNING } from "../utils/messages.js";
 
 export const eventsComposer = new Composer<NezukoContext>();
@@ -25,14 +21,7 @@ eventsComposer.on("chat_join_request", async (ctx) => {
     return;
   }
 
-  const result = await verifyMembership(
-    ctx.api,
-    ctx.db,
-    ctx.cache,
-    groupId,
-    userId,
-    ctx.log,
-  );
+  const result = await verifyMembership(ctx.api, ctx.db, ctx.cache, groupId, userId, ctx.log);
 
   if (result.success) {
     await ctx.api.approveChatJoinRequest(groupId, userId).catch(() => {});
@@ -40,10 +29,12 @@ eventsComposer.on("chat_join_request", async (ctx) => {
   }
 
   await ctx.api.declineChatJoinRequest(groupId, userId).catch(() => {});
-  await ctx.api.sendMessage(
-    userId,
-    `Your join request was declined. Please join the required channels first: ${result.missingChannels.join(", ")}`,
-  ).catch(() => {});
+  await ctx.api
+    .sendMessage(
+      userId,
+      `Your join request was declined. Please join the required channels first: ${result.missingChannels.join(", ")}`
+    )
+    .catch(() => {});
 });
 
 // ── new_chat_members — mute + send inline keyboard ─────────────────
@@ -78,9 +69,7 @@ eventsComposer.on("message:new_chat_members", async (ctx) => {
     // Build inline keyboard with channel links + verify button
     const keyboard = new InlineKeyboard();
     for (const channel of channels) {
-      const link = channel.username
-        ? `https://t.me/${channel.username}`
-        : channel.invite_link;
+      const link = channel.username ? `https://t.me/${channel.username}` : channel.invite_link;
       if (link) {
         keyboard.url(channel.title ?? "Join Channel", link).row();
       }

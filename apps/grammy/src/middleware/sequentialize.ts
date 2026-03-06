@@ -8,6 +8,4 @@ import type { Context } from "grammy";
  * in order, preventing race conditions on Redis and InsForge DB writes.
  * (grammY deployment checklist requirement; Decision #6 from design.md)
  */
-export const sequentializeMiddleware = sequentialize(
-  (ctx: Context) => ctx.chat?.id.toString(),
-);
+export const sequentializeMiddleware = sequentialize((ctx: Context) => ctx.chat?.id.toString());

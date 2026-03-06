@@ -27,7 +27,7 @@ export function startMemberSync(
   api: TelegramApi,
   db: InsForgeClient,
   _botId: number,
-  log: Logger,
+  log: Logger
 ): NodeJS.Timeout {
   const sync = async (): Promise<void> => {
     try {
@@ -41,11 +41,15 @@ export function startMemberSync(
         try {
           // Update group member count
           const memberCount = await api.getChatMemberCount(group.group_id);
-          await db.patchRecords("protected_groups", { group_id: `eq.${group.group_id}` }, {
-            member_count: memberCount,
-            last_sync_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+          await db.patchRecords(
+            "protected_groups",
+            { group_id: `eq.${group.group_id}` },
+            {
+              member_count: memberCount,
+              last_sync_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }
+          );
 
           // Update linked channel subscriber counts
           const channels = await getGroupChannels(db, group.group_id);
@@ -54,7 +58,10 @@ export function startMemberSync(
               const subCount = await api.getChatMemberCount(channel.channel_id);
               await updateSubscriberCount(db, channel.channel_id, subCount);
             } catch (chErr) {
-              log.warn({ err: chErr, channelId: channel.channel_id }, "Failed to sync channel subscriber count");
+              log.warn(
+                { err: chErr, channelId: channel.channel_id },
+                "Failed to sync channel subscriber count"
+              );
             }
           }
         } catch (err) {
@@ -70,7 +77,7 @@ export function startMemberSync(
           ) {
             log.warn(
               { groupId: group.group_id },
-              "Group inaccessible (removed or deleted) — marking inactive",
+              "Group inaccessible (removed or deleted) — marking inactive"
             );
             await setGroupActive(db, group.group_id, false).catch(() => {});
           } else {

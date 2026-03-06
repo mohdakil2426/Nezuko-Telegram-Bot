@@ -136,9 +136,7 @@ describe("admin composer integration", () => {
 
       const sendCall = apiCalls.find((c) => c.method === "sendMessage");
       expect(sendCall).toBeDefined();
-      expect((sendCall?.payload as { text?: string }).text).toContain(
-        PROTECT_ONLY_GROUPS,
-      );
+      expect((sendCall?.payload as { text?: string }).text).toContain(PROTECT_ONLY_GROUPS);
     });
 
     it("EC-2: replies with usage when no channel argument provided", async () => {
@@ -269,9 +267,7 @@ describe("admin composer integration", () => {
 
       const adminComposer = new Composer<NezukoContext>();
       adminComposer.command("protect", async (ctx) => {
-        await ctx.reply(
-          "⚠️ Maximum 5 channels per group. Remove one first with /unprotect.",
-        );
+        await ctx.reply("⚠️ Maximum 5 channels per group. Remove one first with /unprotect.");
       });
       bot.use(adminComposer);
 
@@ -360,7 +356,7 @@ describe("admin composer integration", () => {
       const adminComposer = new Composer<NezukoContext>();
       adminComposer.command("settings", async (ctx) => {
         await ctx.reply(
-          "⚙️ <b>Group Settings</b>\n\n🔒 <b>Status:</b> Active\n📡 <b>Channels:</b>\n  • @testchannel",
+          "⚙️ <b>Group Settings</b>\n\n🔒 <b>Status:</b> Active\n📡 <b>Channels:</b>\n  • @testchannel"
         );
       });
       bot.use(adminComposer);
@@ -381,7 +377,7 @@ describe("admin composer integration", () => {
       const adminComposer = new Composer<NezukoContext>();
       adminComposer.command("settings", async (ctx) => {
         await ctx.reply(
-          "⚙️ No channels linked. Use <code>/protect @channel</code> to get started.",
+          "⚙️ No channels linked. Use <code>/protect @channel</code> to get started."
         );
       });
       bot.use(adminComposer);
@@ -406,7 +402,7 @@ describe("admin composer integration", () => {
       const adminComposer = new Composer<NezukoContext>();
       adminComposer.command("status", async (ctx) => {
         await ctx.reply(
-          "❌ <b>Protection Status: Not Protected</b>\n\n<b>Test Group</b> is not currently protected.",
+          "❌ <b>Protection Status: Not Protected</b>\n\n<b>Test Group</b> is not currently protected."
         );
       });
       bot.use(adminComposer);

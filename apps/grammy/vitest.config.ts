@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     include: ["../../tests/grammy/**/*.test.ts"],
-    timeout: 10_000,
+    testTimeout: 10_000,
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],

@@ -52,7 +52,7 @@ describe("contextEnricher middleware", () => {
 
     // child() must have been called with an object containing updateId
     expect(deps.logger.child).toHaveBeenCalledWith(
-      expect.objectContaining({ updateId: expect.any(Number) }),
+      expect.objectContaining({ updateId: expect.any(Number) })
     );
     expect(capturedLog).not.toBeNull();
   });

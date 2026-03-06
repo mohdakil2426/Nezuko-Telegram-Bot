@@ -25,7 +25,7 @@ const CHAT_MEMBER_PREFIX = `${CACHE_PREFIX}chatmember:`;
 function buildChatMembersAdapter(
   redis: Redis,
   isConnected: () => boolean,
-  logger: Logger,
+  logger: Logger
 ): StorageAdapter<ChatMember> {
   return {
     async read(key: string): Promise<ChatMember | undefined> {
@@ -35,7 +35,10 @@ function buildChatMembersAdapter(
         if (raw === null) return undefined;
         return JSON.parse(raw) as ChatMember;
       } catch (err) {
-        logger.warn({ err: err instanceof Error ? err.message : String(err), key }, "Redis adapter read error");
+        logger.warn(
+          { err: err instanceof Error ? err.message : String(err), key },
+          "Redis adapter read error"
+        );
         return undefined;
       }
     },
@@ -45,7 +48,10 @@ function buildChatMembersAdapter(
       try {
         await redis.set(`${CHAT_MEMBER_PREFIX}${key}`, JSON.stringify(value));
       } catch (err) {
-        logger.warn({ err: err instanceof Error ? err.message : String(err), key }, "Redis adapter write error");
+        logger.warn(
+          { err: err instanceof Error ? err.message : String(err), key },
+          "Redis adapter write error"
+        );
       }
     },
 
@@ -54,7 +60,10 @@ function buildChatMembersAdapter(
       try {
         await redis.del(`${CHAT_MEMBER_PREFIX}${key}`);
       } catch (err) {
-        logger.warn({ err: err instanceof Error ? err.message : String(err), key }, "Redis adapter delete error");
+        logger.warn(
+          { err: err instanceof Error ? err.message : String(err), key },
+          "Redis adapter delete error"
+        );
       }
     },
   };

@@ -78,7 +78,7 @@ export function setupShutdown(handle: RunnerHandle, deps: ShutdownDeps): void {
           status: "offline",
           uptime_seconds: Math.floor(process.uptime()),
           last_heartbeat: new Date().toISOString(),
-        }),
+        })
       );
     } else if (deps.db) {
       // Standalone mode: still mark online→offline in bot_status by bot_id only
@@ -92,7 +92,7 @@ export function setupShutdown(handle: RunnerHandle, deps: ShutdownDeps): void {
           last_heartbeat: new Date().toISOString(),
         }).catch(() => {
           /* standalone: ignore if no row exists */
-        }),
+        })
       );
     }
 

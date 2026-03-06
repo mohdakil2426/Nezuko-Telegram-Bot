@@ -42,7 +42,15 @@ describe("verify composer integration", () => {
     vi.mocked(deps.cache.get).mockResolvedValue(null);
     // DB returns links then channels
     vi.mocked(deps.db.getRecords)
-      .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: MOCK_CHANNEL.channel_id, is_required: true, created_at: "" }])
+      .mockResolvedValueOnce([
+        {
+          id: 1,
+          group_id: -1001234567890,
+          channel_id: MOCK_CHANNEL.channel_id,
+          is_required: true,
+          created_at: "",
+        },
+      ])
       .mockResolvedValueOnce([MOCK_CHANNEL]);
 
     bot.use(contextEnricher(deps));
@@ -89,7 +97,9 @@ describe("verify composer integration", () => {
 
     const restrictCall = apiCalls.find((c) => c.method === "restrictChatMember");
     expect(restrictCall).toBeDefined();
-    expect((restrictCall?.payload as Record<string, unknown>).permissions).toMatchObject({ can_send_messages: true });
+    expect((restrictCall?.payload as Record<string, unknown>).permissions).toMatchObject({
+      can_send_messages: true,
+    });
 
     const deleteCall = apiCalls.find((c) => c.method === "deleteMessage");
     expect(deleteCall).toBeDefined();
@@ -114,10 +124,9 @@ describe("verify composer integration", () => {
 
       // Simulate missing channels
       const missingChannels = ["@channel1", "@channel2"];
-      await ctx.answerCallbackQuery(
-        `❌ Please join: ${missingChannels.join(", ")}`,
-        { show_alert: true },
-      );
+      await ctx.answerCallbackQuery(`❌ Please join: ${missingChannels.join(", ")}`, {
+        show_alert: true,
+      });
     });
     bot.use(verifyComposer);
 

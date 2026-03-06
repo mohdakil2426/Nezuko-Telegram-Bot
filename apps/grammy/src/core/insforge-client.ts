@@ -25,7 +25,7 @@ export class InsForgeClient {
     // Strip trailing slash to prevent double-slash in URL construction
     this.baseUrl = baseUrl.replace(/\/$/, "");
     this.headers = {
-      "Authorization": `Bearer ${anonKey}`,
+      Authorization: `Bearer ${anonKey}`,
       "Content-Type": "application/json",
     };
     this.logger = logger;
@@ -76,12 +76,12 @@ export class InsForgeClient {
   async postRecords<T>(
     table: string,
     body: Record<string, unknown>[],
-    prefer = "return=representation",
+    prefer = "return=representation"
   ): Promise<T[]> {
     const url = this.recordsUrl(table);
     const res = await fetch(url, {
       method: "POST",
-      headers: { ...this.headers, "Prefer": prefer },
+      headers: { ...this.headers, Prefer: prefer },
       body: JSON.stringify(body),
     });
 
@@ -109,12 +109,12 @@ export class InsForgeClient {
   async patchRecords<T>(
     table: string,
     params: QueryParams,
-    body: Record<string, unknown>,
+    body: Record<string, unknown>
   ): Promise<T[]> {
     const url = this.recordsUrl(table, params);
     const res = await fetch(url, {
       method: "PATCH",
-      headers: { ...this.headers, "Prefer": "return=representation" },
+      headers: { ...this.headers, Prefer: "return=representation" },
       body: JSON.stringify(body),
     });
 
@@ -163,13 +163,13 @@ export class InsForgeClient {
     try {
       const rows = await this.getRecords<{ key_name: string; key_value: string }>(
         "nezuko_secrets",
-        { key_name: `eq.${keyName}` },
+        { key_name: `eq.${keyName}` }
       );
       return rows[0]?.key_value ?? null;
     } catch (err: unknown) {
       this.logger.error(
         { keyName, error: err instanceof Error ? err.message : "unknown" },
-        `Failed to fetch secret '${keyName}' from vault`,
+        `Failed to fetch secret '${keyName}' from vault`
       );
       return null;
     }

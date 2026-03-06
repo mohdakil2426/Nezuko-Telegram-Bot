@@ -81,7 +81,6 @@ export async function getMasterKey() {
   }
 }
 
-
 /**
  * Save a new master key to the secure vault
  *

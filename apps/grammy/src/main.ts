@@ -57,7 +57,7 @@ async function main(): Promise<void> {
     if (!config.dbAvailable) {
       logger.error(
         "DASHBOARD_MODE=true but INSFORGE_BASE_URL / INSFORGE_ANON_KEY are not set.\n" +
-          "Set them in apps/grammy/.env or disable dashboard mode with DASHBOARD_MODE=false.",
+          "Set them in apps/grammy/.env or disable dashboard mode with DASHBOARD_MODE=false."
       );
       process.exit(1);
     }
@@ -71,7 +71,7 @@ async function main(): Promise<void> {
     logger.error(
       "BOT_TOKEN is not set.\n" +
         "Add it to apps/grammy/.env: BOT_TOKEN=<your-bot-token>\n" +
-        "Get a token from @BotFather on Telegram.",
+        "Get a token from @BotFather on Telegram."
     );
     process.exit(1);
   }
@@ -83,7 +83,7 @@ async function main(): Promise<void> {
 
 async function runStandaloneMode(
   config: ReturnType<typeof loadConfig> & { botToken: string },
-  logger: ReturnType<typeof createLogger>,
+  logger: ReturnType<typeof createLogger>
 ): Promise<void> {
   banner([
     "  Nezuko grammY Bot — Standalone Mode (Single Bot)",
@@ -107,7 +107,7 @@ async function runStandaloneMode(
     logger.warn(
       "⚠  InsForge credentials not configured — running without DB.\n" +
         "   Status heartbeat, member sync, and verification logs are disabled.\n" +
-        "   Set INSFORGE_BASE_URL and INSFORGE_ANON_KEY in apps/grammy/.env to enable.",
+        "   Set INSFORGE_BASE_URL and INSFORGE_ANON_KEY in apps/grammy/.env to enable."
     );
   }
 
@@ -131,7 +131,7 @@ async function runStandaloneMode(
   const botInfo = await bot.api.getMe();
   logger.info(
     { username: botInfo.username, id: botInfo.id },
-    `Bot @${botInfo.username} started (ID: ${botInfo.id})`,
+    `Bot @${botInfo.username} started (ID: ${botInfo.id})`
   );
   await syncBotCommands(bot.api, logger);
 
@@ -151,7 +151,7 @@ async function runStandaloneMode(
     syncInterval = startMemberSync(bot.api, db, botId, logger);
     logger.info("✅  Member sync started (status writer skipped — bot not in bot_instances)");
     logger.info(
-      "   To enable status heartbeat: register this bot via Dashboard → Bots, then set DASHBOARD_MODE=true.",
+      "   To enable status heartbeat: register this bot via Dashboard → Bots, then set DASHBOARD_MODE=true."
     );
   } else {
     logger.warn("⚠  Background services disabled (no InsForge connection)");
@@ -182,7 +182,7 @@ async function runStandaloneMode(
 
 async function runDashboardMode(
   config: ReturnType<typeof loadConfig>,
-  logger: ReturnType<typeof createLogger>,
+  logger: ReturnType<typeof createLogger>
 ): Promise<void> {
   banner([
     "  Nezuko grammY Bot — Dashboard Mode (Multi-Bot)",
@@ -234,7 +234,7 @@ async function runDashboardMode(
     logger.warn(
       "⚠  No active bot instances found in DB.\n" +
         "   Add a bot via the web dashboard (Dashboard → Bots) and it will be\n" +
-        "   picked up automatically by the sync loop (30s interval).",
+        "   picked up automatically by the sync loop (30s interval)."
     );
   } else {
     logger.info(`✅  ${status.total} bot(s) running`);
@@ -256,7 +256,7 @@ async function runDashboardMode(
   logger.info(
     realtimeConnected
       ? "✅  CommandWorker started (realtime + 30s poll fallback)"
-      : "✅  CommandWorker started (30s poll fallback)",
+      : "✅  CommandWorker started (30s poll fallback)"
   );
 
   // Health server

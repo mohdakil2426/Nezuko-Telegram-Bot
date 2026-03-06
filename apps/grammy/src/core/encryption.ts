@@ -78,7 +78,7 @@ export async function decryptToken(encryptedToken: string, db: InsForgeClient): 
   if (!masterKey) {
     throw new Error(
       "Master key not found in Security Vault. " +
-        "Go to Dashboard → Settings → Security Vault and generate a master key.",
+        "Go to Dashboard → Settings → Security Vault and generate a master key."
     );
   }
 
@@ -86,7 +86,7 @@ export async function decryptToken(encryptedToken: string, db: InsForgeClient): 
   if (!encryptedToken.startsWith("v2:")) {
     throw new Error(
       `Invalid encrypted token format: expected 'v2:' prefix. ` +
-        `Re-add the bot via the dashboard to re-encrypt with the current key.`,
+        `Re-add the bot via the dashboard to re-encrypt with the current key.`
     );
   }
 
@@ -104,14 +104,14 @@ export async function decryptToken(encryptedToken: string, db: InsForgeClient): 
   if (keyBuffer.length !== 32) {
     throw new Error(
       `Invalid master key length: expected 32 bytes, got ${keyBuffer.length}. ` +
-        `Regenerate the master key in Dashboard → Settings → Security Vault.`,
+        `Regenerate the master key in Dashboard → Settings → Security Vault.`
     );
   }
 
   const minLength = IV_LENGTH + AUTH_TAG_LENGTH + 1;
   if (combined.length < minLength) {
     throw new Error(
-      `Encrypted token payload too short: ${combined.length} bytes (minimum ${minLength})`,
+      `Encrypted token payload too short: ${combined.length} bytes (minimum ${minLength})`
     );
   }
 
@@ -123,11 +123,7 @@ export async function decryptToken(encryptedToken: string, db: InsForgeClient): 
 
   // Step 5: Decrypt
   try {
-    const decipher = createDecipheriv(
-      "aes-256-gcm",
-      keyBuffer as CipherKey,
-      iv as BinaryLike,
-    );
+    const decipher = createDecipheriv("aes-256-gcm", keyBuffer as CipherKey, iv as BinaryLike);
     decipher.setAuthTag(authTag);
     const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
     return decrypted.toString("utf8");

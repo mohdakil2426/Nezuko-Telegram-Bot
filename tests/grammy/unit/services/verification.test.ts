@@ -41,8 +41,8 @@ describe("verifyMembership", () => {
   it("cache hit returns success without calling the Telegram API", async () => {
     // Arrange: one channel linked, Redis returns "1" (member)
     vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 100 }])   // links
-      .mockResolvedValueOnce([makeChannel(100, "testchan")]);        // channels
+      .mockResolvedValueOnce([{ group_id: 1, channel_id: 100 }]) // links
+      .mockResolvedValueOnce([makeChannel(100, "testchan")]); // channels
 
     vi.mocked(cache.get).mockResolvedValue("1");
 
@@ -72,7 +72,7 @@ describe("verifyMembership", () => {
       expect.stringContaining("member:100:999"),
       "1",
       "EX",
-      300,
+      300
     );
   });
 
@@ -97,10 +97,7 @@ describe("verifyMembership", () => {
         { group_id: 1, channel_id: 101 },
         { group_id: 1, channel_id: 102 },
       ])
-      .mockResolvedValueOnce([
-        makeChannel(101, "chan1"),
-        makeChannel(102, "chan2"),
-      ]);
+      .mockResolvedValueOnce([makeChannel(101, "chan1"), makeChannel(102, "chan2")]);
 
     vi.mocked(cache.get).mockResolvedValue(null);
     const getChatMember = vi.fn().mockResolvedValue({ status: "left" });
@@ -135,9 +132,7 @@ describe("verifyMembership", () => {
       .mockResolvedValueOnce([makeChannel(400, "somechan")]);
 
     vi.mocked(cache.get).mockResolvedValue(null);
-    const getChatMember = vi
-      .fn()
-      .mockRejectedValue(new Error("400: Bad Request: USER_ID_INVALID"));
+    const getChatMember = vi.fn().mockRejectedValue(new Error("400: Bad Request: USER_ID_INVALID"));
     const api = createMockApi({ getChatMember });
 
     const result = await verifyMembership(api as never, db, cache, 1, 999, createMockLogger());

@@ -11,7 +11,7 @@ import type { GroupChannelLink } from "./types.js";
 export async function createLink(
   db: InsForgeClient,
   groupId: number,
-  channelId: number,
+  channelId: number
 ): Promise<void> {
   await db.postRecords<GroupChannelLink>("group_channel_links", [
     { group_id: groupId, channel_id: channelId },
@@ -28,7 +28,7 @@ export async function createLink(
 export async function removeLink(
   db: InsForgeClient,
   groupId: number,
-  channelId: number,
+  channelId: number
 ): Promise<void> {
   await db.deleteRecords("group_channel_links", {
     group_id: `eq.${groupId}`,
@@ -44,10 +44,7 @@ export async function removeLink(
  * @param db - InsForgeClient instance
  * @param groupId - Telegram group ID
  */
-export async function removeAllGroupLinks(
-  db: InsForgeClient,
-  groupId: number,
-): Promise<void> {
+export async function removeAllGroupLinks(db: InsForgeClient, groupId: number): Promise<void> {
   await db.deleteRecords("group_channel_links", {
     group_id: `eq.${groupId}`,
   });
@@ -62,10 +59,7 @@ export async function removeAllGroupLinks(
  * @param groupId - Telegram group ID
  * @returns Actual count of linked channels
  */
-export async function getGroupChannelCount(
-  db: InsForgeClient,
-  groupId: number,
-): Promise<number> {
+export async function getGroupChannelCount(db: InsForgeClient, groupId: number): Promise<number> {
   const links = await db.getRecords<GroupChannelLink>("group_channel_links", {
     group_id: `eq.${groupId}`,
     select: "id",
@@ -82,10 +76,7 @@ export async function getGroupChannelCount(
  * @param channelId - Telegram channel ID
  * @returns Actual count of groups that enforce this channel
  */
-export async function getChannelGroupCount(
-  db: InsForgeClient,
-  channelId: number,
-): Promise<number> {
+export async function getChannelGroupCount(db: InsForgeClient, channelId: number): Promise<number> {
   const links = await db.getRecords<GroupChannelLink>("group_channel_links", {
     channel_id: `eq.${channelId}`,
     select: "id",

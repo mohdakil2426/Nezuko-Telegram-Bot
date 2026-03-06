@@ -41,10 +41,8 @@ function createMockApi(overrides?: {
       overrides?.getChat ??
       vi.fn().mockResolvedValue(makeChannelInfo(CHANNEL_ID, CHANNEL_USERNAME)),
     getChatMember:
-      overrides?.getChatMember ??
-      vi.fn().mockResolvedValue({ status: "administrator" }),
-    getChatMemberCount:
-      overrides?.getChatMemberCount ?? vi.fn().mockResolvedValue(1000),
+      overrides?.getChatMember ?? vi.fn().mockResolvedValue({ status: "administrator" }),
+    getChatMemberCount: overrides?.getChatMemberCount ?? vi.fn().mockResolvedValue(1000),
   };
 }
 
@@ -78,7 +76,7 @@ describe("linkChannel", () => {
       OWNER_ID,
       "Test Group",
       100,
-      `@${CHANNEL_USERNAME}`,
+      `@${CHANNEL_USERNAME}`
     );
 
     expect(result.success).toBe(true);
@@ -86,7 +84,7 @@ describe("linkChannel", () => {
       "group_channel_links",
       expect.arrayContaining([
         expect.objectContaining({ group_id: GROUP_ID, channel_id: CHANNEL_ID }),
-      ]),
+      ])
     );
   });
 
@@ -104,7 +102,7 @@ describe("linkChannel", () => {
       OWNER_ID,
       "Test Group",
       100,
-      "@nonexistent",
+      "@nonexistent"
     );
 
     expect(result.success).toBe(false);
@@ -125,7 +123,7 @@ describe("linkChannel", () => {
       OWNER_ID,
       "Test Group",
       100,
-      `@${CHANNEL_USERNAME}`,
+      `@${CHANNEL_USERNAME}`
     );
 
     expect(result.success).toBe(false);
@@ -148,7 +146,7 @@ describe("linkChannel", () => {
       OWNER_ID,
       "Test Group",
       100,
-      `@${CHANNEL_USERNAME}`,
+      `@${CHANNEL_USERNAME}`
     );
 
     expect(result.success).toBe(false);
@@ -163,7 +161,7 @@ describe("linkChannel", () => {
       channel_id: 100 + i,
     }));
     const existingChannels = Array.from({ length: 5 }, (_, i) =>
-      makeChannelRow(100 + i, `chan${i}`),
+      makeChannelRow(100 + i, `chan${i}`)
     );
 
     vi.mocked(db.getRecords)
@@ -179,7 +177,7 @@ describe("linkChannel", () => {
       OWNER_ID,
       "Test Group",
       100,
-      "@newchan",
+      "@newchan"
     );
 
     expect(result.success).toBe(false);
@@ -204,31 +202,35 @@ describe("linkChannel", () => {
       OWNER_ID,
       "Test Group",
       100,
-      `@${CHANNEL_USERNAME}`,
+      `@${CHANNEL_USERNAME}`
     );
 
     expect(result.success).toBe(true);
 
     // Verify recalculate logic ran: patchRecords must have been called with the
     // linked_channels_count key (count from DB rows), not an increment/decrement
-    const groupCounterCall = vi.mocked(db.patchRecords).mock.calls.find(
-      ([table, , body]) =>
-        table === "protected_groups" &&
-        Object.prototype.hasOwnProperty.call(body, "linked_channels_count"),
-    );
+    const groupCounterCall = vi
+      .mocked(db.patchRecords)
+      .mock.calls.find(
+        ([table, , body]) =>
+          table === "protected_groups" &&
+          Object.prototype.hasOwnProperty.call(body, "linked_channels_count")
+      );
     expect(groupCounterCall).toBeDefined();
     expect(typeof (groupCounterCall![2] as Record<string, unknown>)["linked_channels_count"]).toBe(
-      "number",
+      "number"
     );
 
-    const channelCounterCall = vi.mocked(db.patchRecords).mock.calls.find(
-      ([table, , body]) =>
-        table === "enforced_channels" &&
-        Object.prototype.hasOwnProperty.call(body, "linked_groups_count"),
-    );
+    const channelCounterCall = vi
+      .mocked(db.patchRecords)
+      .mock.calls.find(
+        ([table, , body]) =>
+          table === "enforced_channels" &&
+          Object.prototype.hasOwnProperty.call(body, "linked_groups_count")
+      );
     expect(channelCounterCall).toBeDefined();
     expect(typeof (channelCounterCall![2] as Record<string, unknown>)["linked_groups_count"]).toBe(
-      "number",
+      "number"
     );
   });
 });
@@ -257,7 +259,7 @@ describe("unlinkChannel", () => {
       db,
       createMockLogger(),
       GROUP_ID,
-      `@${CHANNEL_USERNAME}`,
+      `@${CHANNEL_USERNAME}`
     );
 
     expect(result.success).toBe(true);
@@ -266,7 +268,7 @@ describe("unlinkChannel", () => {
       expect.objectContaining({
         group_id: `eq.${GROUP_ID}`,
         channel_id: `eq.${CHANNEL_ID}`,
-      }),
+      })
     );
   });
 
@@ -284,14 +286,14 @@ describe("unlinkChannel", () => {
     expect(db.patchRecords).toHaveBeenCalledWith(
       "protected_groups",
       { group_id: `eq.${GROUP_ID}` },
-      expect.objectContaining({ linked_channels_count: 0 }),
+      expect.objectContaining({ linked_channels_count: 0 })
     );
 
     // Channel linked_groups_count must be recalculated (not decremented)
     expect(db.patchRecords).toHaveBeenCalledWith(
       "enforced_channels",
       { channel_id: `eq.${CHANNEL_ID}` },
-      expect.objectContaining({ linked_groups_count: 0 }),
+      expect.objectContaining({ linked_groups_count: 0 })
     );
   });
 });

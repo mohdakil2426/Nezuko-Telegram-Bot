@@ -186,7 +186,7 @@ export class CommandWorker {
         {
           status: STATUS.PROCESSING,
           updated_at: new Date().toISOString(),
-        },
+        }
       );
     } catch (err: unknown) {
       this.logger.warn({
@@ -215,7 +215,7 @@ export class CommandWorker {
           status: STATUS.COMPLETED,
           result: { success: true },
           updated_at: new Date().toISOString(),
-        },
+        }
       );
 
       this.logger.info({ commandId: cmd.id, msg: "Command completed" });
@@ -238,7 +238,7 @@ export class CommandWorker {
             status: STATUS.FAILED,
             result: { success: false, error: errorMessage },
             updated_at: new Date().toISOString(),
-          },
+          }
         )
         .catch((patchErr: unknown) => {
           this.logger.error({

@@ -5,12 +5,7 @@ export const AUTO_DELETE_DELAY = 300_000;
 export const MAX_CHANNELS_PER_GROUP = 5;
 
 /** Chat member statuses considered "valid" (user is in the channel). */
-export const VALID_MEMBER_STATUSES = [
-  "member",
-  "administrator",
-  "creator",
-  "restricted",
-] as const;
+export const VALID_MEMBER_STATUSES = ["member", "administrator", "creator", "restricted"] as const;
 
 /** Chat member statuses that indicate administrator privileges. */
 export const ADMIN_STATUSES = ["administrator", "creator"] as const;

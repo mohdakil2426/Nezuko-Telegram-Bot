@@ -45,7 +45,8 @@ function makeQueryClient() {
 
           // Force redirect via window location to ensure full reload & middleware triggers
           setTimeout(() => {
-            window.location.href = "/login?redirectTo=" + encodeURIComponent(window.location.pathname);
+            window.location.href =
+              "/login?redirectTo=" + encodeURIComponent(window.location.pathname);
           }, 1500);
         }
       },

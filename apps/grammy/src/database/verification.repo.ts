@@ -20,7 +20,7 @@ export interface LogVerificationData {
  */
 export async function logVerification(
   db: InsForgeClient,
-  data: LogVerificationData,
+  data: LogVerificationData
 ): Promise<void> {
   await db.postRecords<VerificationLog>("verification_log", [
     {
@@ -49,7 +49,7 @@ export async function logVerification(
 export async function isUserVerified(
   db: InsForgeClient,
   groupId: number,
-  userId: number,
+  userId: number
 ): Promise<boolean> {
   const rows = await db.getRecords<VerificationLog>("verification_log", {
     group_id: `eq.${groupId}`,

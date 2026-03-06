@@ -17,7 +17,7 @@ export async function createChannel(
   channelId: number,
   username: string | null,
   title: string,
-  subscriberCount: number,
+  subscriberCount: number
 ): Promise<void> {
   const body: Record<string, unknown> = {
     title,
@@ -29,7 +29,7 @@ export async function createChannel(
   const updated = await db.patchRecords<EnforcedChannel>(
     "enforced_channels",
     { channel_id: `eq.${channelId}` },
-    body,
+    body
   );
 
   if (updated.length === 0) {
@@ -54,11 +54,11 @@ export async function createChannel(
 export async function updateSubscriberCount(
   db: InsForgeClient,
   channelId: number,
-  count: number,
+  count: number
 ): Promise<void> {
   await db.patchRecords<EnforcedChannel>(
     "enforced_channels",
     { channel_id: `eq.${channelId}` },
-    { subscriber_count: count, updated_at: new Date().toISOString() },
+    { subscriber_count: count, updated_at: new Date().toISOString() }
   );
 }

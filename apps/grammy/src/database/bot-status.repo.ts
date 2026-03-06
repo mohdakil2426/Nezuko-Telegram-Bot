@@ -28,7 +28,7 @@ export interface UpsertBotStatusData {
  */
 export async function upsertBotStatus(
   db: InsForgeClient,
-  data: UpsertBotStatusData,
+  data: UpsertBotStatusData
 ): Promise<void> {
   const now = new Date().toISOString();
   const body: Record<string, unknown> = {
@@ -44,7 +44,7 @@ export async function upsertBotStatus(
   const updated = await db.patchRecords<BotStatus>(
     "bot_status",
     { bot_id: `eq.${data.bot_id}` },
-    body,
+    body
   );
 
   // If no row existed, POST to create one

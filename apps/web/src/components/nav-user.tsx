@@ -158,7 +158,11 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
                 disabled={isSigningOut}
               >
                 {isSigningOut ? <Loader2 className="animate-spin" /> : <LogOut />}
-                {isSigningOut ? "Signing out…" : DEV_LOGIN && !isSignedIn ? "Exit Dev Mode" : "Log out"}
+                {isSigningOut
+                  ? "Signing out…"
+                  : DEV_LOGIN && !isSignedIn
+                    ? "Exit Dev Mode"
+                    : "Log out"}
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem disabled>

@@ -10,6 +10,8 @@
     "start": "node dist/main.js",
     "type-check": "tsc --noEmit",
     "lint": "eslint src/ --max-warnings 0",
+    "format": "prettier src/ ../../tests/grammy --write",
+    "format:check": "prettier src/ ../../tests/grammy --check",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage"
@@ -36,6 +38,7 @@
     "@vitest/coverage-v8": "4.0.18",
     "eslint": "9.28.0",
     "pino-pretty": "13.0.0",
+    "prettier": "^3.8.1",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
   },

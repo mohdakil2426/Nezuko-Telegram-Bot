@@ -24,16 +24,12 @@ describe("muteUser", () => {
     const result = await muteUser(api as never, -100111, 999);
 
     expect(result.success).toBe(true);
-    expect(api.restrictChatMember).toHaveBeenCalledWith(
-      -100111,
-      999,
-      {
-        can_send_messages: false,
-        can_send_media_messages: false,
-        can_send_other_messages: false,
-        can_add_web_page_previews: false,
-      },
-    );
+    expect(api.restrictChatMember).toHaveBeenCalledWith(-100111, 999, {
+      can_send_messages: false,
+      can_send_media_messages: false,
+      can_send_other_messages: false,
+      can_add_web_page_previews: false,
+    });
   });
 
   it("returns missing_permission on 403 error (EC-19)", async () => {
@@ -65,16 +61,12 @@ describe("unmuteUser", () => {
     const result = await unmuteUser(api as never, -100111, 999);
 
     expect(result.success).toBe(true);
-    expect(api.restrictChatMember).toHaveBeenCalledWith(
-      -100111,
-      999,
-      {
-        can_send_messages: true,
-        can_send_media_messages: true,
-        can_send_other_messages: true,
-        can_add_web_page_previews: true,
-      },
-    );
+    expect(api.restrictChatMember).toHaveBeenCalledWith(-100111, 999, {
+      can_send_messages: true,
+      can_send_media_messages: true,
+      can_send_other_messages: true,
+      can_add_web_page_previews: true,
+    });
   });
 
   it("returns missing_permission on 403 error", async () => {

@@ -6,7 +6,11 @@ import {
   migrateGroupId,
 } from "../../../../apps/grammy/src/database/group.repo.js";
 import { createMockDb } from "../../helpers/mock-deps.js";
-import type { EnforcedChannel, GroupChannelLink, ProtectedGroup } from "../../../../apps/grammy/src/database/types.js";
+import type {
+  EnforcedChannel,
+  GroupChannelLink,
+  ProtectedGroup,
+} from "../../../../apps/grammy/src/database/types.js";
 
 describe("group.repo", () => {
   beforeEach(() => {
@@ -97,7 +101,7 @@ describe("group.repo", () => {
       expect(db.patchRecords).toHaveBeenCalledWith(
         "protected_groups",
         { group_id: "eq.123" },
-        expect.objectContaining({ owner_id: 456, title: "New Title", member_count: 20 }),
+        expect.objectContaining({ owner_id: 456, title: "New Title", member_count: 20 })
       );
       expect(db.postRecords).not.toHaveBeenCalled();
     });
@@ -119,7 +123,7 @@ describe("group.repo", () => {
             member_count: 5,
             enabled: true,
           }),
-        ]),
+        ])
       );
     });
   });
@@ -134,7 +138,7 @@ describe("group.repo", () => {
       expect(db.patchRecords).toHaveBeenCalledWith(
         "protected_groups",
         { group_id: "eq.123" },
-        expect.objectContaining({ enabled: false }),
+        expect.objectContaining({ enabled: false })
       );
     });
 
@@ -147,7 +151,7 @@ describe("group.repo", () => {
       expect(db.patchRecords).toHaveBeenCalledWith(
         "protected_groups",
         { group_id: "eq.123" },
-        expect.objectContaining({ enabled: true }),
+        expect.objectContaining({ enabled: true })
       );
     });
   });
@@ -164,14 +168,14 @@ describe("group.repo", () => {
         1,
         "protected_groups",
         { group_id: "eq.111" },
-        expect.objectContaining({ group_id: 222 }),
+        expect.objectContaining({ group_id: 222 })
       );
       // Second PATCH: group_channel_links
       expect(db.patchRecords).toHaveBeenNthCalledWith(
         2,
         "group_channel_links",
         { group_id: "eq.111" },
-        { group_id: 222 },
+        { group_id: 222 }
       );
       expect(db.patchRecords).toHaveBeenCalledTimes(2);
     });

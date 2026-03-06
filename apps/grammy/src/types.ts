@@ -24,9 +24,7 @@ export interface NezukoContextFlavor {
  * installed (we use built-in Composer.command() instead). Including the
  * flavor without the plugin middleware can cause TypeScript confusion.
  */
-export type NezukoContext = HydrateFlavor<
-  Context & NezukoContextFlavor & ChatMembersFlavor
->;
+export type NezukoContext = HydrateFlavor<Context & NezukoContextFlavor & ChatMembersFlavor>;
 
 /** Dependencies required by bot factory and middleware. */
 export interface BotDeps {

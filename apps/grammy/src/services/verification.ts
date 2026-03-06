@@ -8,10 +8,7 @@ import { VALID_MEMBER_STATUSES, CACHE_NAMESPACES, MEMBER_CACHE_TTL } from "../co
 
 /** Minimal Telegram API interface — keeps services framework-agnostic. */
 interface TelegramApi {
-  getChatMember(
-    chatId: number,
-    userId: number,
-  ): Promise<{ status: string }>;
+  getChatMember(chatId: number, userId: number): Promise<{ status: string }>;
 }
 
 /**
@@ -34,7 +31,7 @@ export async function verifyMembership(
   cache: CacheClient,
   groupId: number,
   userId: number,
-  log?: Logger,
+  log?: Logger
 ): Promise<VerificationResult> {
   const start = performance.now();
   const channels = await getGroupChannels(db, groupId);
@@ -46,15 +43,11 @@ export async function verifyMembership(
   const missingChannels: string[] = [];
 
   for (const channel of channels) {
-    const isMember = await checkChannelMembership(
-      api,
-      cache,
-      channel,
-      userId,
-      log,
-    );
+    const isMember = await checkChannelMembership(api, cache, channel, userId, log);
     if (!isMember) {
-      const name = channel.username ? `@${channel.username}` : channel.title ?? `Channel ${channel.channel_id}`;
+      const name = channel.username
+        ? `@${channel.username}`
+        : (channel.title ?? `Channel ${channel.channel_id}`);
       missingChannels.push(name);
     }
   }
@@ -73,7 +66,7 @@ async function checkChannelMembership(
   cache: CacheClient,
   channel: EnforcedChannel,
   userId: number,
-  log?: Logger,
+  log?: Logger
 ): Promise<boolean> {
   // L1: Redis cache check
   const cacheKey = `${CACHE_NAMESPACES.MEMBER}:${channel.channel_id}:${userId}`;
@@ -90,9 +83,7 @@ async function checkChannelMembership(
   // L2: Telegram API
   try {
     const member = await api.getChatMember(channel.channel_id, userId);
-    const isValid = (VALID_MEMBER_STATUSES as readonly string[]).includes(
-      member.status,
-    );
+    const isValid = (VALID_MEMBER_STATUSES as readonly string[]).includes(member.status);
 
     // Cache the result
     try {
@@ -107,7 +98,10 @@ async function checkChannelMembership(
 
     // EC-42: USER_ID_INVALID — treat as not a member
     if (message.includes("400") || message.includes("USER_ID_INVALID")) {
-      log?.warn({ userId, channelId: channel.channel_id }, "USER_ID_INVALID — treating as not a member");
+      log?.warn(
+        { userId, channelId: channel.channel_id },
+        "USER_ID_INVALID — treating as not a member"
+      );
       return false;
     }
 
@@ -118,7 +112,10 @@ async function checkChannelMembership(
     }
 
     // Unexpected error — treat as not a member to be safe
-    log?.error({ err, channelId: channel.channel_id }, "Unexpected error checking channel membership");
+    log?.error(
+      { err, channelId: channel.channel_id },
+      "Unexpected error checking channel membership"
+    );
     return false;
   }
 }

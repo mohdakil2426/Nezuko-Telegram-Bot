@@ -58,11 +58,7 @@ const HTML_PARSE_MODE_METHODS = new Set([
 ]);
 
 const htmlTransformer: Transformer = (prev, method, payload, signal) => {
-  if (
-    HTML_PARSE_MODE_METHODS.has(method) &&
-    payload !== null &&
-    payload !== undefined
-  ) {
+  if (HTML_PARSE_MODE_METHODS.has(method) && payload !== null && payload !== undefined) {
     const p = payload as Record<string, unknown>;
     if (!p["parse_mode"]) p["parse_mode"] = "HTML";
   }
@@ -72,13 +68,13 @@ const htmlTransformer: Transformer = (prev, method, payload, signal) => {
 // ── Error Boundary Handler ─────────────────────────────────────────────────────
 
 function makeErrorHandler(
-  fallbackLogger: Logger,
+  fallbackLogger: Logger
 ): (err: BotError<NezukoContext>, next: NextFunction) => Promise<void> {
   return async (err: BotError<NezukoContext>): Promise<void> => {
     const log = err.ctx.log ?? fallbackLogger;
     log.error(
       { err: err.error, updateId: err.ctx.update.update_id },
-      "Composer error boundary caught error",
+      "Composer error boundary caught error"
     );
   };
 }
@@ -89,8 +85,7 @@ function installDebugMiddleware(bot: Bot<NezukoContext>, logger: Logger): void {
   if (process.env["DEBUG_UPDATES"] !== "true") return;
 
   const debugMiddleware: Middleware<NezukoContext> = async (ctx, next) => {
-    const updateType =
-      Object.keys(ctx.update).find((k) => k !== "update_id") ?? "unknown";
+    const updateType = Object.keys(ctx.update).find((k) => k !== "update_id") ?? "unknown";
     logger.debug(
       {
         updateId: ctx.update.update_id,
@@ -99,7 +94,7 @@ function installDebugMiddleware(bot: Bot<NezukoContext>, logger: Logger): void {
         userId: ctx.from?.id,
         text: ctx.message?.text?.slice(0, 80),
       },
-      `[DEBUG] Incoming update #${ctx.update.update_id} type=${updateType}`,
+      `[DEBUG] Incoming update #${ctx.update.update_id} type=${updateType}`
     );
     await next();
   };
@@ -149,7 +144,7 @@ function wireBotMiddleware(bot: Bot<NezukoContext>, deps: BotDeps): void {
       maxDelaySeconds: 60,
       rethrowInternalServerErrors: false,
       rethrowHttpErrors: false,
-    }),
+    })
   );
 
   bot.api.config.use(htmlTransformer);
@@ -214,25 +209,22 @@ function wireBotMiddleware(bot: Bot<NezukoContext>, deps: BotDeps): void {
       if (e.error_code === 409) {
         log.warn(
           { code: 409 },
-          "⚠️ 409 CONFLICT — another bot instance is polling the same token!",
+          "⚠️ 409 CONFLICT — another bot instance is polling the same token!"
         );
         log.warn(
-          "   Fix: stop ALL other running grammY/PTB processes for this bot and restart ONCE.",
+          "   Fix: stop ALL other running grammY/PTB processes for this bot and restart ONCE."
         );
         return;
       }
 
       log.error(
         { updateId: ctx.update.update_id, code: e.error_code, desc: e.description },
-        "GrammyError in bot.catch",
+        "GrammyError in bot.catch"
       );
     } else if (e instanceof HttpError) {
       log.error({ err: e }, "HttpError in bot.catch (cannot reach Telegram)");
     } else {
-      log.error(
-        { err: e, updateId: ctx.update.update_id },
-        "Unknown error in bot.catch",
-      );
+      log.error({ err: e, updateId: ctx.update.update_id }, "Unknown error in bot.catch");
     }
   });
 }

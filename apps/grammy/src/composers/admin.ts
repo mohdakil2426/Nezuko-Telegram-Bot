@@ -34,7 +34,6 @@ adminComposer.command("start", async (ctx) => {
   }
 });
 
-
 // /help — HTML command list
 adminComposer.command("help", async (ctx) => {
   const msg = await ctx.reply(HELP_TEXT);
@@ -54,8 +53,8 @@ adminComposer.command("status", groupOnly(), async (ctx) => {
     return;
   }
 
-  const channelNames = channels.map(
-    (c) => c.username ? `@${c.username}` : c.title ?? `Channel ${c.channel_id}`,
+  const channelNames = channels.map((c) =>
+    c.username ? `@${c.username}` : (c.title ?? `Channel ${c.channel_id}`)
   );
 
   const msg = await ctx.reply(STATUS_PROTECTED(chatTitle, true, channelNames));
@@ -87,7 +86,7 @@ adminComposer.command("protect", adminGuard(), groupOnly(), permissionCheck(), a
     ctx.from!.id,
     ctx.chat.title ?? "Unknown",
     memberCount,
-    channelUsername,
+    channelUsername
   );
 
   if (result.success) {
@@ -128,8 +127,8 @@ adminComposer.command("settings", adminGuard(), groupOnly(), async (ctx) => {
     return;
   }
 
-  const channelNames = channels.map(
-    (c) => c.username ? `@${c.username}` : c.title ?? `Channel ${c.channel_id}`,
+  const channelNames = channels.map((c) =>
+    c.username ? `@${c.username}` : (c.title ?? `Channel ${c.channel_id}`)
   );
   const memberCount = await ctx.api.getChatMemberCount(ctx.chat.id).catch(() => 0);
   const lastSync = "Just now";

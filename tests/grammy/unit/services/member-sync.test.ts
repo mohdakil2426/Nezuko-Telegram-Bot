@@ -69,12 +69,12 @@ describe("startMemberSync", () => {
     expect(db.patchRecords).toHaveBeenCalledWith(
       "protected_groups",
       { group_id: "eq.-100111" },
-      expect.objectContaining({ member_count: 250 }),
+      expect.objectContaining({ member_count: 250 })
     );
     expect(db.patchRecords).toHaveBeenCalledWith(
       "protected_groups",
       { group_id: "eq.-100222" },
-      expect.objectContaining({ member_count: 250 }),
+      expect.objectContaining({ member_count: 250 })
     );
   });
 
@@ -95,7 +95,7 @@ describe("startMemberSync", () => {
     expect(db.patchRecords).toHaveBeenCalledWith(
       "enforced_channels",
       { channel_id: "eq.500" },
-      expect.objectContaining({ subscriber_count: 5000 }),
+      expect.objectContaining({ subscriber_count: 5000 })
     );
   });
 
@@ -105,9 +105,7 @@ describe("startMemberSync", () => {
     vi.mocked(db.patchRecords).mockResolvedValue([]);
 
     const api = {
-      getChatMemberCount: vi
-        .fn()
-        .mockRejectedValue(new Error("403: Forbidden: bot was kicked")),
+      getChatMemberCount: vi.fn().mockRejectedValue(new Error("403: Forbidden: bot was kicked")),
     };
     const log = createMockLogger();
     interval = startMemberSync(api as never, db, BOT_ID, log);
@@ -118,7 +116,7 @@ describe("startMemberSync", () => {
     expect(db.patchRecords).toHaveBeenCalledWith(
       "protected_groups",
       { group_id: "eq.-100333" },
-      expect.objectContaining({ enabled: false }),
+      expect.objectContaining({ enabled: false })
     );
   });
 
@@ -148,7 +146,7 @@ describe("startMemberSync", () => {
     expect(db.patchRecords).toHaveBeenCalledWith(
       "protected_groups",
       { group_id: "eq.-100555" },
-      expect.objectContaining({ member_count: 300 }),
+      expect.objectContaining({ member_count: 300 })
     );
   });
 });

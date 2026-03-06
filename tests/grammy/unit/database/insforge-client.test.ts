@@ -26,7 +26,7 @@ describe("InsForgeClient", () => {
         vi.fn().mockResolvedValue({
           ok: true,
           json: () => Promise.resolve(rows),
-        }),
+        })
       );
 
       const client = makeClient();
@@ -36,7 +36,7 @@ describe("InsForgeClient", () => {
       const fetchMock = vi.mocked(global.fetch);
       expect(fetchMock).toHaveBeenCalledWith(
         `${BASE_URL}/api/database/records/protected_groups`,
-        expect.objectContaining({ method: "GET" }),
+        expect.objectContaining({ method: "GET" })
       );
     });
 
@@ -46,14 +46,14 @@ describe("InsForgeClient", () => {
         vi.fn().mockResolvedValue({
           ok: true,
           json: () => Promise.resolve([]),
-        }),
+        })
       );
 
       const client = makeClient();
       await client.getRecords("protected_groups", { group_id: "eq.123" });
 
       const fetchMock = vi.mocked(global.fetch);
-      const calledUrl = (fetchMock.mock.calls[0][0] as string);
+      const calledUrl = fetchMock.mock.calls[0][0] as string;
       expect(calledUrl).toContain("group_id=eq.123");
     });
 
@@ -64,12 +64,12 @@ describe("InsForgeClient", () => {
           ok: false,
           status: 404,
           statusText: "Not Found",
-        }),
+        })
       );
 
       const client = makeClient();
       await expect(client.getRecords("missing_table")).rejects.toThrow(
-        "InsForge GET missing_table: 404 Not Found",
+        "InsForge GET missing_table: 404 Not Found"
       );
     });
   });
@@ -83,7 +83,7 @@ describe("InsForgeClient", () => {
           ok: true,
           status: 201,
           json: () => Promise.resolve(inserted),
-        }),
+        })
       );
 
       const client = makeClient();
@@ -100,7 +100,7 @@ describe("InsForgeClient", () => {
         vi.fn().mockResolvedValue({
           ok: true,
           status: 204,
-        }),
+        })
       );
 
       const client = makeClient();
@@ -116,13 +116,13 @@ describe("InsForgeClient", () => {
           ok: false,
           status: 409,
           statusText: "Conflict",
-        }),
+        })
       );
 
       const client = makeClient();
-      await expect(
-        client.postRecords("protected_groups", [{ group_id: 999 }]),
-      ).rejects.toThrow("InsForge POST protected_groups: 409 Conflict");
+      await expect(client.postRecords("protected_groups", [{ group_id: 999 }])).rejects.toThrow(
+        "InsForge POST protected_groups: 409 Conflict"
+      );
     });
   });
 
@@ -135,14 +135,14 @@ describe("InsForgeClient", () => {
           ok: true,
           status: 200,
           json: () => Promise.resolve(updated),
-        }),
+        })
       );
 
       const client = makeClient();
       const result = await client.patchRecords(
         "protected_groups",
         { group_id: "eq.123" },
-        { enabled: false },
+        { enabled: false }
       );
 
       expect(result).toEqual(updated);
@@ -154,14 +154,14 @@ describe("InsForgeClient", () => {
         vi.fn().mockResolvedValue({
           ok: true,
           status: 204,
-        }),
+        })
       );
 
       const client = makeClient();
       const result = await client.patchRecords(
         "protected_groups",
         { group_id: "eq.999" },
-        { enabled: true },
+        { enabled: true }
       );
 
       // Empty result triggers the POST fallback in createGroup
@@ -175,12 +175,12 @@ describe("InsForgeClient", () => {
           ok: false,
           status: 500,
           statusText: "Internal Server Error",
-        }),
+        })
       );
 
       const client = makeClient();
       await expect(
-        client.patchRecords("protected_groups", { group_id: "eq.1" }, { enabled: true }),
+        client.patchRecords("protected_groups", { group_id: "eq.1" }, { enabled: true })
       ).rejects.toThrow("InsForge PATCH protected_groups: 500 Internal Server Error");
     });
   });
@@ -195,10 +195,10 @@ describe("InsForgeClient", () => {
         client.deleteRecords("group_channel_links", {
           group_id: "eq.123",
           channel_id: "eq.456",
-        }),
+        })
       ).resolves.toBeUndefined();
 
-      const calledUrl = (fetchMock.mock.calls[0][0] as string);
+      const calledUrl = fetchMock.mock.calls[0][0] as string;
       expect(calledUrl).toContain("group_id=eq.123");
       expect(calledUrl).toContain("channel_id=eq.456");
     });
@@ -210,12 +210,12 @@ describe("InsForgeClient", () => {
           ok: false,
           status: 403,
           statusText: "Forbidden",
-        }),
+        })
       );
 
       const client = makeClient();
       await expect(
-        client.deleteRecords("group_channel_links", { group_id: "eq.1" }),
+        client.deleteRecords("group_channel_links", { group_id: "eq.1" })
       ).rejects.toThrow("InsForge DELETE group_channel_links: 403 Forbidden");
     });
   });
@@ -239,7 +239,7 @@ describe("InsForgeClient", () => {
       const patched = await client.patchRecords(
         "protected_groups",
         { group_id: "eq.999" },
-        { owner_id: 1, title: "New", member_count: 0, updated_at: new Date().toISOString() },
+        { owner_id: 1, title: "New", member_count: 0, updated_at: new Date().toISOString() }
       );
       expect(patched).toEqual([]);
 

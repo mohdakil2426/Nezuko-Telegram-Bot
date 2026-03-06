@@ -6,13 +6,13 @@ interface TelegramApi {
     chatId: number,
     userId: number,
     permissions: Record<string, boolean>,
-    other?: Record<string, unknown>,
+    other?: Record<string, unknown>
   ): Promise<boolean>;
   banChatMember(chatId: number, userId: number): Promise<boolean>;
   unbanChatMember(
     chatId: number,
     userId: number,
-    other?: Record<string, unknown>,
+    other?: Record<string, unknown>
   ): Promise<boolean>;
 }
 
@@ -27,7 +27,7 @@ interface TelegramApi {
 export async function muteUser(
   api: TelegramApi,
   chatId: number,
-  userId: number,
+  userId: number
 ): Promise<ProtectionResult> {
   try {
     await api.restrictChatMember(chatId, userId, {
@@ -57,7 +57,7 @@ export async function muteUser(
 export async function unmuteUser(
   api: TelegramApi,
   chatId: number,
-  userId: number,
+  userId: number
 ): Promise<ProtectionResult> {
   try {
     await api.restrictChatMember(chatId, userId, {
@@ -90,7 +90,7 @@ export async function unmuteUser(
 export async function kickUser(
   api: TelegramApi,
   chatId: number,
-  userId: number,
+  userId: number
 ): Promise<ProtectionResult> {
   try {
     await api.banChatMember(chatId, userId);

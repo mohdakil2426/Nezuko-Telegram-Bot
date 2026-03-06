@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { decryptToken, getMasterKey, invalidateMasterKeyCache } from "../../../../apps/grammy/src/core/encryption.js";
+import {
+  decryptToken,
+  getMasterKey,
+  invalidateMasterKeyCache,
+} from "../../../../apps/grammy/src/core/encryption.js";
 import { createCipheriv, randomBytes } from "node:crypto";
 import type { InsForgeClient } from "../../../../apps/grammy/src/core/insforge-client.js";
 
@@ -51,18 +55,24 @@ describe("encryption — decryptToken()", () => {
 
   it("throws when the encrypted token has wrong format (missing v2 prefix)", async () => {
     const mockDb = createMockDb(VALID_MASTER_KEY);
-    await expect(decryptToken("invalidformat", mockDb)).rejects.toThrow("Invalid encrypted token format");
+    await expect(decryptToken("invalidformat", mockDb)).rejects.toThrow(
+      "Invalid encrypted token format"
+    );
   });
 
   it("throws when the payload is too short", async () => {
     const mockDb = createMockDb(VALID_MASTER_KEY);
-    await expect(decryptToken("v2:YWJj", mockDb)).rejects.toThrow("Encrypted token payload too short");
+    await expect(decryptToken("v2:YWJj", mockDb)).rejects.toThrow(
+      "Encrypted token payload too short"
+    );
   });
 
   it("throws when master key not found in vault", async () => {
     const encrypted = encryptTokenV2(PLAINTEXT_TOKEN, VALID_MASTER_KEY);
     const mockDb = createMockDb(null);
-    await expect(decryptToken(encrypted, mockDb)).rejects.toThrow("Master key not found in Security Vault");
+    await expect(decryptToken(encrypted, mockDb)).rejects.toThrow(
+      "Master key not found in Security Vault"
+    );
   });
 
   it("error message does NOT include the plaintext token", async () => {

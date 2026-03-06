@@ -48,7 +48,7 @@ describe("batchVerify", () => {
       cache,
       1,
       [10, 10, 20],
-      createMockLogger(),
+      createMockLogger()
     );
 
     expect(results.size).toBe(2);

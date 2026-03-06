@@ -97,6 +97,8 @@ describe("permissionCheck middleware", () => {
     await bot.handleUpdate(createMessageUpdate({ text: "/protect @testchannel" }));
 
     const sendCall = apiCalls.find((call) => call.method === "sendMessage");
-    expect((sendCall?.payload.text as string) ?? "").toContain("couldn't verify my group permissions");
+    expect((sendCall?.payload.text as string) ?? "").toContain(
+      "couldn't verify my group permissions"
+    );
   });
 });

@@ -13,7 +13,7 @@ import type { EnforcedChannel, GroupChannelLink, ProtectedGroup } from "./types.
  */
 export async function getGroupChannels(
   db: InsForgeClient,
-  groupId: number,
+  groupId: number
 ): Promise<EnforcedChannel[]> {
   const links = await db.getRecords<GroupChannelLink>("group_channel_links", {
     group_id: `eq.${groupId}`,
@@ -45,7 +45,7 @@ export async function createGroup(
   groupId: number,
   ownerId: number,
   title: string,
-  memberCount: number,
+  memberCount: number
 ): Promise<void> {
   const body: Record<string, unknown> = {
     owner_id: ownerId,
@@ -57,7 +57,7 @@ export async function createGroup(
   const updated = await db.patchRecords<ProtectedGroup>(
     "protected_groups",
     { group_id: `eq.${groupId}` },
-    body,
+    body
   );
 
   if (updated.length === 0) {
@@ -83,12 +83,12 @@ export async function createGroup(
 export async function setGroupActive(
   db: InsForgeClient,
   groupId: number,
-  active: boolean,
+  active: boolean
 ): Promise<void> {
   await db.patchRecords<ProtectedGroup>(
     "protected_groups",
     { group_id: `eq.${groupId}` },
-    { enabled: active, updated_at: new Date().toISOString() },
+    { enabled: active, updated_at: new Date().toISOString() }
   );
 }
 
@@ -104,17 +104,17 @@ export async function setGroupActive(
 export async function migrateGroupId(
   db: InsForgeClient,
   oldId: number,
-  newId: number,
+  newId: number
 ): Promise<void> {
   await db.patchRecords<ProtectedGroup>(
     "protected_groups",
     { group_id: `eq.${oldId}` },
-    { group_id: newId, updated_at: new Date().toISOString() },
+    { group_id: newId, updated_at: new Date().toISOString() }
   );
 
   await db.patchRecords<GroupChannelLink>(
     "group_channel_links",
     { group_id: `eq.${oldId}` },
-    { group_id: newId },
+    { group_id: newId }
   );
 }

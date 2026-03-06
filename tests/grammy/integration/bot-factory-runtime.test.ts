@@ -32,7 +32,7 @@ describe("bot-factory runtime wiring", () => {
       createMessageUpdate({
         text: "/start",
         chat: { id: 111222333, type: "private", first_name: "Test" },
-      }),
+      })
     );
 
     const sendCall = apiCalls.find((call) => call.method === "sendMessage");
@@ -115,7 +115,10 @@ describe("bot-factory runtime wiring", () => {
   it("declines join requests and notifies the user when required channels are missing", async () => {
     const { bot, apiCalls } = createConfiguredTestBot({
       methodResults: {
-        getChatMember: { status: "left", user: { id: 111222333, is_bot: false, first_name: "Test" } },
+        getChatMember: {
+          status: "left",
+          user: { id: 111222333, is_bot: false, first_name: "Test" },
+        },
       },
     });
     const deps = makeDeps();

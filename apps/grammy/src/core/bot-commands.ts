@@ -4,7 +4,7 @@ import type { Logger } from "../utils/logger.js";
 interface CommandApi {
   setMyCommands(
     commands: readonly BotCommand[],
-    other?: { scope?: BotCommandScope },
+    other?: { scope?: BotCommandScope }
   ): Promise<true>;
   setChatMenuButton(other?: { menu_button?: MenuButtonCommands }): Promise<true>;
 }
@@ -44,7 +44,7 @@ export async function syncBotCommands(api: CommandApi, logger: Logger): Promise<
   } catch (err) {
     logger.error(
       { err: err instanceof Error ? err.message : String(err) },
-      "Failed to sync bot command menus",
+      "Failed to sync bot command menus"
     );
   }
 }

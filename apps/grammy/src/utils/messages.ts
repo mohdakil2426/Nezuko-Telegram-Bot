@@ -7,8 +7,7 @@ export const WELCOME_PRIVATE =
   "➡️ Use <code>/protect @channel</code> to get started\n\n" +
   "Type /help for all commands.";
 
-export const WELCOME_GROUP =
-  "✅ I'm active in this group! Use /help for commands.";
+export const WELCOME_GROUP = "✅ I'm active in this group! Use /help for commands.";
 
 export const HELP_TEXT =
   "📖 <b>Commands</b>\n\n" +
@@ -27,14 +26,11 @@ export const HELP_TEXT =
 export const PROTECT_SUCCESS = (channel: string): string =>
   `✅ Channel linked! New members must join <b>${channel}</b> to chat.`;
 
-export const PROTECT_USAGE =
-  "ℹ️ Usage: <code>/protect @channelname</code>";
+export const PROTECT_USAGE = "ℹ️ Usage: <code>/protect @channelname</code>";
 
-export const PROTECT_ONLY_GROUPS =
-  "⚠️ This command only works in groups. Add me to a group first!";
+export const PROTECT_ONLY_GROUPS = "⚠️ This command only works in groups. Add me to a group first!";
 
-export const PROTECT_ONLY_ADMINS =
-  "⚠️ Only admins can use this command.";
+export const PROTECT_ONLY_ADMINS = "⚠️ Only admins can use this command.";
 
 export const ADMIN_CHECK_UNAVAILABLE =
   "⚠️ I can't verify admin permissions for this message. If you are using anonymous admin mode, send the command as your personal account.";
@@ -60,8 +56,7 @@ export const PROTECT_BOT_NOT_ADMIN =
 export const PROTECT_BOT_PERMISSION_CHECK_FAILED =
   "⚠️ I couldn't verify my group permissions right now. Please confirm I am an admin with Restrict Members and Delete Messages, then try again.";
 
-export const UNPROTECT_SUCCESS = (channel: string): string =>
-  `✅ <b>${channel}</b> unlinked.`;
+export const UNPROTECT_SUCCESS = (channel: string): string => `✅ <b>${channel}</b> unlinked.`;
 
 export const UNPROTECT_NOT_LINKED = (channel: string): string =>
   `ℹ️ <b>${channel}</b> is not linked to this group.`;
@@ -73,8 +68,7 @@ export const VERIFY_MISSING_CHANNELS = (channels: string[]): string =>
 
 export const VERIFY_PROCESSING = "⏳ Processing...";
 
-export const VERIFY_STATUS_VERIFIED =
-  "✅ You're verified! You can send messages in this group.";
+export const VERIFY_STATUS_VERIFIED = "✅ You're verified! You can send messages in this group.";
 
 export const VERIFY_STATUS_NOT_VERIFIED = (channels: string[]): string =>
   `❌ Not verified. Please join: ${channels.join(", ")}`;
@@ -82,7 +76,7 @@ export const VERIFY_STATUS_NOT_VERIFIED = (channels: string[]): string =>
 export const SETTINGS_PROTECTED = (
   channels: string[],
   memberCount: number,
-  lastSync: string,
+  lastSync: string
 ): string =>
   "⚙️ <b>Group Settings</b>\n\n" +
   `🔒 <b>Status:</b> Active\n` +
@@ -93,11 +87,7 @@ export const SETTINGS_PROTECTED = (
 export const SETTINGS_NOT_PROTECTED =
   "⚙️ No channels linked. Use <code>/protect @channel</code> to get started.";
 
-export const STATUS_PROTECTED = (
-  title: string,
-  enabled: boolean,
-  channels: string[],
-): string =>
+export const STATUS_PROTECTED = (title: string, enabled: boolean, channels: string[]): string =>
   `${enabled ? "🛡️" : "🔓"} <b>Protection Status: ${enabled ? "Active" : "Disabled"}</b>\n\n` +
   `<b>Group:</b> ${title}\n\n` +
   (channels.length > 0
@@ -117,18 +107,16 @@ export const STATUS_NOT_PROTECTED = (title: string): string =>
   "3. Run <code>/protect @YourChannel</code>";
 
 export const CHANNELS_LIST = (
-  channels: Array<{ title: string; username: string; subscriberCount: number }>,
+  channels: Array<{ title: string; username: string; subscriberCount: number }>
 ): string =>
   "📡 <b>Linked Channels</b>\n\n" +
   channels
     .map(
-      (c, i) =>
-        `${i + 1}. <b>${c.title}</b> (@${c.username}) — ${c.subscriberCount} subscribers`,
+      (c, i) => `${i + 1}. <b>${c.title}</b> (@${c.username}) — ${c.subscriberCount} subscribers`
     )
     .join("\n");
 
-export const CHANNELS_EMPTY =
-  "📡 No channels linked to this group.";
+export const CHANNELS_EMPTY = "📡 No channels linked to this group.";
 
 export const STATS_FORMAT = (stats: {
   verifications: number;
@@ -142,11 +130,9 @@ export const STATS_FORMAT = (stats: {
   `👥 <b>Members:</b> ${stats.memberCount}\n` +
   `📡 <b>Channels:</b> ${stats.channelsCount}`;
 
-export const ERROR_GENERIC =
-  "⚠️ Something went wrong. Please try again.";
+export const ERROR_GENERIC = "⚠️ Something went wrong. Please try again.";
 
-export const ERROR_PERMISSION =
-  "⚠️ I need <b>Restrict Members</b> permission to work!";
+export const ERROR_PERMISSION = "⚠️ I need <b>Restrict Members</b> permission to work!";
 
 export const BOT_ADDED_WELCOME =
   "👋 Hi! I'm <b>Nezuko</b> 🌸 — use <code>/protect @channel</code> to enable verification.";
@@ -159,16 +145,14 @@ export const SUPERGROUP_REQUIRED =
 
 export const VERIFY_GREETING = (
   userName: string,
-  channels: Array<{ title: string; username: string; inviteLink?: string }>,
+  channels: Array<{ title: string; username: string; inviteLink?: string }>
 ): string =>
   `👋 Welcome, <b>${userName}</b>!\n\n` +
   `📋 To chat here, please join:\n` +
   channels
     .map((c) => {
       const link = c.username ? `https://t.me/${c.username}` : c.inviteLink;
-      return link
-        ? `  • <a href="${link}">${c.title}</a>`
-        : `  • ${c.title}`;
+      return link ? `  • <a href="${link}">${c.title}</a>` : `  • ${c.title}`;
     })
     .join("\n") +
   `\n\nThen tap the button below ⬇️`;

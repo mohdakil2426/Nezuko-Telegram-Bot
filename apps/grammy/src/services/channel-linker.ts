@@ -49,7 +49,7 @@ export async function linkChannel(
   ownerId: number,
   groupTitle: string,
   memberCount: number,
-  channelUsername: string,
+  channelUsername: string
 ): Promise<LinkResult> {
   // Step 1: Parse username (strip @)
   const username = channelUsername.replace(/^@/, "");
@@ -59,7 +59,11 @@ export async function linkChannel(
   try {
     channelInfo = await api.getChat(`@${username}`);
   } catch {
-    return { success: false, error: `Channel @${username} not found.`, errorCode: "CHANNEL_NOT_FOUND" };
+    return {
+      success: false,
+      error: `Channel @${username} not found.`,
+      errorCode: "CHANNEL_NOT_FOUND",
+    };
   }
 
   if (channelInfo.type !== "channel") {
@@ -70,32 +74,56 @@ export async function linkChannel(
   try {
     const botMember = await api.getChatMember(channelInfo.id, botId);
     if (botMember.status !== "administrator" && botMember.status !== "creator") {
-      return { success: false, error: `I need to be an admin in @${username} first.`, errorCode: "BOT_NOT_ADMIN_CHANNEL" };
+      return {
+        success: false,
+        error: `I need to be an admin in @${username} first.`,
+        errorCode: "BOT_NOT_ADMIN_CHANNEL",
+      };
     }
   } catch {
-    return { success: false, error: `I need to be an admin in @${username} first.`, errorCode: "BOT_NOT_ADMIN_CHANNEL" };
+    return {
+      success: false,
+      error: `I need to be an admin in @${username} first.`,
+      errorCode: "BOT_NOT_ADMIN_CHANNEL",
+    };
   }
 
   // Step 4: Check not already linked (EC-28)
   const existingChannels = await getGroupChannels(db, groupId);
   const alreadyLinked = existingChannels.some((c) => c.channel_id === channelInfo.id);
   if (alreadyLinked) {
-    return { success: false, error: `@${username} is already linked to this group.`, errorCode: "ALREADY_LINKED" };
+    return {
+      success: false,
+      error: `@${username} is already linked to this group.`,
+      errorCode: "ALREADY_LINKED",
+    };
   }
 
   // Step 5: Check max channels limit (EC-33)
   if (existingChannels.length >= MAX_CHANNELS_PER_GROUP) {
-    return { success: false, error: `Maximum ${MAX_CHANNELS_PER_GROUP} channels per group.`, errorCode: "MAX_CHANNELS" };
+    return {
+      success: false,
+      error: `Maximum ${MAX_CHANNELS_PER_GROUP} channels per group.`,
+      errorCode: "MAX_CHANNELS",
+    };
   }
 
   // Step 6: Check bot is admin in group (EC-31)
   try {
     const groupBotMember = await api.getChatMember(groupId, botId);
     if (groupBotMember.status !== "administrator" && groupBotMember.status !== "creator") {
-      return { success: false, error: "I need admin permissions in this group.", errorCode: "BOT_NOT_ADMIN_GROUP" };
+      return {
+        success: false,
+        error: "I need admin permissions in this group.",
+        errorCode: "BOT_NOT_ADMIN_GROUP",
+      };
     }
   } catch {
-    return { success: false, error: "I need admin permissions in this group.", errorCode: "BOT_NOT_ADMIN_GROUP" };
+    return {
+      success: false,
+      error: "I need admin permissions in this group.",
+      errorCode: "BOT_NOT_ADMIN_GROUP",
+    };
   }
 
   // Step 7: Create/update group (UPSERT)
@@ -108,7 +136,13 @@ export async function linkChannel(
   } catch {
     log.warn({ channelId: channelInfo.id }, "Failed to get subscriber count");
   }
-  await createChannel(db, channelInfo.id, channelInfo.username ?? null, channelInfo.title ?? username, subscriberCount);
+  await createChannel(
+    db,
+    channelInfo.id,
+    channelInfo.username ?? null,
+    channelInfo.title ?? username,
+    subscriberCount
+  );
 
   // Step 9: Create link
   await createLink(db, groupId, channelInfo.id);
@@ -128,18 +162,20 @@ export async function unlinkChannel(
   db: InsForgeClient,
   log: Logger,
   groupId: number,
-  channelUsername: string,
+  channelUsername: string
 ): Promise<LinkResult> {
   const username = channelUsername.replace(/^@/, "");
 
   // Find the channel in linked channels
   const channels = await getGroupChannels(db, groupId);
-  const channel = channels.find(
-    (c) => c.username?.toLowerCase() === username.toLowerCase(),
-  );
+  const channel = channels.find((c) => c.username?.toLowerCase() === username.toLowerCase());
 
   if (!channel) {
-    return { success: false, error: `@${username} is not linked to this group.`, errorCode: "NOT_LINKED" };
+    return {
+      success: false,
+      error: `@${username} is not linked to this group.`,
+      errorCode: "NOT_LINKED",
+    };
   }
 
   // Remove the link
@@ -158,24 +194,32 @@ export async function unlinkChannel(
 export async function unlinkAllChannels(
   db: InsForgeClient,
   log: Logger,
-  groupId: number,
+  groupId: number
 ): Promise<void> {
   const channels = await getGroupChannels(db, groupId);
   await removeAllGroupLinks(db, groupId);
 
   // Recalculate group counter (will be 0)
-  await db.patchRecords("protected_groups", { group_id: `eq.${groupId}` }, {
-    linked_channels_count: 0,
-    updated_at: new Date().toISOString(),
-  });
+  await db.patchRecords(
+    "protected_groups",
+    { group_id: `eq.${groupId}` },
+    {
+      linked_channels_count: 0,
+      updated_at: new Date().toISOString(),
+    }
+  );
 
   // Recalculate each channel's counter
   for (const channel of channels) {
     const count = await getChannelGroupCount(db, channel.channel_id);
-    await db.patchRecords("enforced_channels", { channel_id: `eq.${channel.channel_id}` }, {
-      linked_groups_count: count,
-      updated_at: new Date().toISOString(),
-    });
+    await db.patchRecords(
+      "enforced_channels",
+      { channel_id: `eq.${channel.channel_id}` },
+      {
+        linked_groups_count: count,
+        updated_at: new Date().toISOString(),
+      }
+    );
   }
 
   log.info({ groupId, channelCount: channels.length }, "All channels unlinked");
@@ -188,7 +232,7 @@ export async function unlinkAllChannels(
 async function recalculateCounters(
   db: InsForgeClient,
   groupId: number,
-  channelId: number,
+  channelId: number
 ): Promise<void> {
   const [groupCount, channelCount] = await Promise.all([
     getGroupChannelCount(db, groupId),
@@ -196,13 +240,21 @@ async function recalculateCounters(
   ]);
 
   await Promise.all([
-    db.patchRecords("protected_groups", { group_id: `eq.${groupId}` }, {
-      linked_channels_count: groupCount,
-      updated_at: new Date().toISOString(),
-    }),
-    db.patchRecords("enforced_channels", { channel_id: `eq.${channelId}` }, {
-      linked_groups_count: channelCount,
-      updated_at: new Date().toISOString(),
-    }),
+    db.patchRecords(
+      "protected_groups",
+      { group_id: `eq.${groupId}` },
+      {
+        linked_channels_count: groupCount,
+        updated_at: new Date().toISOString(),
+      }
+    ),
+    db.patchRecords(
+      "enforced_channels",
+      { channel_id: `eq.${channelId}` },
+      {
+        linked_groups_count: channelCount,
+        updated_at: new Date().toISOString(),
+      }
+    ),
   ]);
 }
