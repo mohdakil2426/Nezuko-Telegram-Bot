@@ -25,6 +25,7 @@ const CHAT_MEMBER_PREFIX = `${CACHE_PREFIX}chatmember:`;
 function buildChatMembersAdapter(
   redis: Redis,
   isConnected: () => boolean,
+  logger: Logger,
 ): StorageAdapter<ChatMember> {
   return {
     async read(key: string): Promise<ChatMember | undefined> {
@@ -33,7 +34,8 @@ function buildChatMembersAdapter(
         const raw = await redis.get(`${CHAT_MEMBER_PREFIX}${key}`);
         if (raw === null) return undefined;
         return JSON.parse(raw) as ChatMember;
-      } catch {
+      } catch (err) {
+        logger.warn({ err: err instanceof Error ? err.message : String(err), key }, "Redis adapter read error");
         return undefined;
       }
     },
@@ -42,8 +44,8 @@ function buildChatMembersAdapter(
       if (!isConnected()) return;
       try {
         await redis.set(`${CHAT_MEMBER_PREFIX}${key}`, JSON.stringify(value));
-      } catch {
-        // Redis write failure is non-fatal — degraded mode
+      } catch (err) {
+        logger.warn({ err: err instanceof Error ? err.message : String(err), key }, "Redis adapter write error");
       }
     },
 
@@ -51,8 +53,8 @@ function buildChatMembersAdapter(
       if (!isConnected()) return;
       try {
         await redis.del(`${CHAT_MEMBER_PREFIX}${key}`);
-      } catch {
-        // Redis delete failure is non-fatal
+      } catch (err) {
+        logger.warn({ err: err instanceof Error ? err.message : String(err), key }, "Redis adapter delete error");
       }
     },
   };
@@ -108,7 +110,7 @@ export function createCache(redisUrl: string, logger: Logger): CacheClient {
 
   const isConnected = (): boolean => connected;
 
-  const chatMembersAdapter = buildChatMembersAdapter(redis, isConnected);
+  const chatMembersAdapter = buildChatMembersAdapter(redis, isConnected, logger);
 
   return {
     get redis(): Redis {

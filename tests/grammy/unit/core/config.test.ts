@@ -5,9 +5,12 @@ import { loadConfig } from "../../../../apps/grammy/src/config.js";
  * Tests for loadConfig().
  *
  * Design: loadConfig() performs Zod-level schema validation only.
- * Mode-specific required-field validation (e.g., BOT_TOKEN in standalone,
- * MASTER_KEY in dashboard) is the responsibility of main.ts at runtime.
+ * Mode-specific required-field validation (e.g., BOT_TOKEN in standalone)
+ * is the responsibility of main.ts at runtime.
  * This matches apps/bot/config.py where most fields are Optional[str].
+ *
+ * Note: MASTER_KEY is NO LONGER in config - it's fetched from the Security Vault
+ * (nezuko_secrets table) at runtime via getMasterKey() in encryption.ts.
  */
 describe("config — loadConfig()", () => {
   const originalEnv = process.env;
@@ -161,25 +164,5 @@ describe("config — loadConfig()", () => {
     const config = loadConfig();
 
     expect(config.botId).toBe(0);
-  });
-
-  // ── Master key ────────────────────────────────────────────────────────────
-
-  it("stores MASTER_KEY when provided", () => {
-    process.env.BOT_TOKEN = "123456789:ABCdefGHI";
-    process.env.MASTER_KEY = "super-secret-master-key";
-
-    const config = loadConfig();
-
-    expect(config.masterKey).toBe("super-secret-master-key");
-  });
-
-  it("treats empty MASTER_KEY='' as undefined", () => {
-    process.env.BOT_TOKEN = "123456789:ABCdefGHI";
-    process.env.MASTER_KEY = "";
-
-    const config = loadConfig();
-
-    expect(config.masterKey).toBeUndefined();
   });
 });
