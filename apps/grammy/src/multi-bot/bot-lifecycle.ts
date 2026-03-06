@@ -7,8 +7,10 @@ import type { Logger } from "../utils/logger.js";
 import type { InsForgeClient } from "../core/insforge-client.js";
 import type { CacheClient } from "../core/cache.js";
 import type { BotInstance, BotRegistry } from "./bot-registry.js";
+import { ALLOWED_UPDATES } from "../core/constants.js";
 import { upsertBotStatus } from "../database/bot-status.repo.js";
-import { INTERVALS, ALLOWED_UPDATES } from "../core/constants.js";
+import { startStatusWriter } from "../services/status-writer.js";
+import { startMemberSync } from "../services/member-sync.js";
 
 /** Configuration required to start a new bot instance. */
 export interface BotStartConfig {
@@ -116,27 +118,8 @@ export class BotLifecycleManager {
 
     const startedAt = new Date();
 
-    // 30s status heartbeat
-    const statusInterval = setInterval(() => {
-      const uptimeSeconds = Math.floor((Date.now() - startedAt.getTime()) / 1000);
-      upsertBotStatus(db, {
-        bot_id: botId,
-        bot_instance_id: botInstanceId,
-        status: "online",
-        uptime_seconds: uptimeSeconds,
-        last_heartbeat: new Date().toISOString(),
-      }).catch((err: unknown) => {
-        botLog.warn({
-          msg: "Status heartbeat failed",
-          error: err instanceof Error ? err.message : "unknown",
-        });
-      });
-    }, INTERVALS.STATUS_HEARTBEAT);
-
-    // 15min member sync placeholder — actual implementation in member-sync service
-    const syncInterval = setInterval(() => {
-      botLog.debug({ msg: "Member sync tick" });
-    }, INTERVALS.MEMBER_SYNC);
+    const statusInterval = startStatusWriter(db, botId, botInstanceId, botLog);
+    const syncInterval = startMemberSync(bot.api, db, botId, botLog);
 
     const instance: BotInstance = {
       botId,

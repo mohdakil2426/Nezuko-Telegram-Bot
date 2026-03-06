@@ -49,11 +49,61 @@
 | 96    | grammY Bot Rebuild (TypeScript) — Full bot rebuild with 41 source files, 105 tests, 113 OpenSpec tasks | Complete ✅ |
 | 97    | grammY Startup Hardening — Soft config validation, mode-aware startup, graceful degradation, BotManager.shutdown() | Complete ✅ |
 | 98    | InsForge Fresh DB Setup (grammY Clean Baseline) — Audit + 9 SQL fixes + live migration + fresh data clear | Complete ✅ |
-| 99    | grammY Dashboard Mode Debug — htmlTransformer, stale DB, Redis fix, middleware chain traced via checkpoints | 🔧 In Progress |
+| 99    | grammY Dashboard Mode Debug — htmlTransformer, stale DB, Redis fix, middleware chain traced via checkpoints | Complete ✅ |
+| 100   | grammY Comprehensive Audit & Command Wiring Fixes | Complete ✅ |
+| 101   | grammY PRD Completion & Runtime Hardening — realtime worker wiring, member sync, batch verify, join requests, runtime tests | Complete ✅ |
 
 ---
 
-## Phase 99: grammY Dashboard Mode Debugging (In Progress 🔧)
+## Phase 101: grammY PRD Completion & Runtime Hardening (Complete)
+
+Implemented the remaining gaps identified in the grammY PRD/code audit and verified them with expanded runtime-facing tests.
+
+### Completed
+
+| Area | Implementation |
+|---|---|
+| Dashboard realtime | `main.ts` now creates and connects `InsForgeRealtimeClient`, injects it into `CommandWorker`, and disconnects it during shutdown |
+| Multi-bot background jobs | `bot-lifecycle.ts` now starts the actual `startStatusWriter(...)` and `startMemberSync(...)` services per bot instance |
+| Batch verification | `batch-verification.ts` now verifies unique user IDs through the existing verification service |
+| Join-request enforcement | `events.ts` now handles `chat_join_request` approve/decline flows using linked-channel membership verification |
+| Allowed updates | `chat_join_request` added to `ALLOWED_UPDATES` |
+| Types | `ProtectedGroup` updated with `linked_channels_count` |
+| Coverage | Added runtime bot wiring tests plus focused tests for command worker and batch verification |
+
+### Quality Gates
+| Check | Result |
+|---|---|
+| `cd apps/grammy && bun run type-check` | ✅ 0 errors |
+| `cd apps/grammy && bun run lint` | ✅ 0 warnings |
+| `cd apps/grammy && bun run test` | ✅ **120/120 passed** |
+
+---
+
+## Phase 100: Comprehensive Audit & Command Wiring Fixes (Complete)
+
+Resolved the non-responsive dashboard-mode command path and cleaned up the temporary debug state.
+
+### Completed
+
+| Area | Implementation |
+|---|---|
+| Context typing | Removed `CommandsFlavor` from `NezukoContext` because the commands plugin middleware was not installed |
+| Middleware cleanup | Removed checkpoint/debug middleware from `bot-factory.ts` |
+| Command logging cleanup | Removed temporary debug logging from `admin.ts` |
+| Redis resilience | Added safer Redis adapter error handling/logging in `cache.ts` |
+| Test alignment | Rewrote outdated encryption/config tests to match the current async/runtime behavior |
+
+### Quality Gates
+| Check | Result |
+|---|---|
+| `cd apps/grammy && bun run type-check` | ✅ 0 errors |
+| `cd apps/grammy && bun run lint` | ✅ 0 warnings |
+| `cd apps/grammy && bun run test` | ✅ **113/113 passed** |
+
+---
+
+## Phase 99: grammY Dashboard Mode Debugging (Complete)
 
 ### Problem
 Bot starts in dashboard mode and is `online` (heartbeat confirmed in `bot_status`) but sends
@@ -119,11 +169,8 @@ Two candidate causes (both need investigation):
 - ✅ `htmlTransformer` + Redis fast-fail don't cause issues
 - ✅ `bun run type-check` → 0 errors after every change
 
-### Next Steps (Priority Order)
-1. **Remove `CommandsFlavor` from `NezukoContext`** in `types.ts` if `@grammyjs/commands` is not actually used anywhere in composers — this is the most likely root cause of `.command()` filter not matching
-2. **Convert composer singletons to factory functions** — replace `export const adminComposer` with `export function createAdminComposer()` in all 6 composer files AND update `bot-factory.ts`
-3. **Remove all temp diagnostic code** — `[CHAIN]` checkpoint middleware, `[START]` debug logging in `admin.ts`, `DEBUG_UPDATES` from `.env`
-4. **Run full test suite** — `bun run test` (6 tests currently failing — likely related to composer/type changes)
+### Resolution
+The command-routing issue was resolved in the subsequent audit/fix phases. The temporary debug state from this phase is no longer the active project state.
 
 ### Quality Gates (Phase 99 — in progress)
 | Check | Result |
@@ -236,7 +283,7 @@ Resolved issues where the dashboard visually froze its uptime tracking by improv
 - [x] **JWT validation**: Server-side validation ✅ Complete (Phase 94)
 - [x] **InsForge schema**: Full clean baseline (023_fresh_grammy_schema.sql) ✅ Complete (Phase 98)
 - [x] **Legacy Base64 bot token in DB**: DB cleared — fresh start removes this issue ✅
-- [ ] **`ProtectedGroup` type**: Add `linked_channels_count: number` to `apps/grammy/src/database/types.ts`
+- [x] **`ProtectedGroup` type**: Added `linked_channels_count: number` to `apps/grammy/src/database/types.ts` ✅
 - [ ] **Admin Notification**: Error handler doesn't yet send alerts to admin chat (Task 6.2)
 - [ ] **ESLint Plugin**: `eslint-plugin-react` incompatible with ESLint 10.0.0 — needs upgrade
 
@@ -331,17 +378,12 @@ Refactored the internal InsForge client methods to make them public and descript
 
 ## What to Work on Next
 
-### Immediate (Phase 99 — fix bot not responding)
-1. **Remove `CommandsFlavor` from `NezukoContext`** (`apps/grammy/src/types.ts`) if `@grammyjs/commands` middleware is not installed anywhere — this is the confirmed suspected cause of `.command()` filter not matching any update
-2. **Convert all composer singletons to factory functions** — `export function createAdminComposer(): Composer<NezukoContext>` in all 6 composers, call them in `wireBotMiddleware()` per bot
-3. **Remove all temp diagnostic code** — `[CHAIN]` checkpoints in `bot-factory.ts`, `[START]` log in `admin.ts`, revert `.env` `DEBUG_UPDATES=false`
-4. **Fix 6 failing tests** after above changes — run `bun run test` and investigate
-
-### After Phase 99 resolved
-5. **Fix `ProtectedGroup` in `database/types.ts`** — add `linked_channels_count: number`
-6. **Deploy** — VPS/Docker (grammy bot) + Vercel (web)
-7. **Admin notification** in global error handler (Task 6.2 — low priority)
+### Immediate
+1. **Live validation** — run the grammY bot in dashboard mode and confirm realtime commands from the web dashboard hit the new `CommandWorker` path.
+2. **Telegram validation** — test `chat_join_request` approval/decline flows in a real protected group with linked channels.
+3. **Operational follow-up** — decide whether to add admin alerting in the global error path (still open, low priority).
+4. **Deploy** — ship the updated grammY runtime to the VPS/Docker environment after live validation.
 
 ---
 
-_Last Updated: 2026-03-06 07:20 IST (Phase 99 — grammY Debug — middleware chain traced, command filter suspected root cause)_
+_Last Updated: 2026-03-06 17:45 IST (Phase 101 — PRD completion + runtime hardening, 120 tests passing)_

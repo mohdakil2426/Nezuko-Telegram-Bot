@@ -173,3 +173,26 @@ export function createMyChatMemberUpdate(
     },
   };
 }
+
+/**
+ * Create a chat_join_request update.
+ */
+export function createJoinRequestUpdate(overrides?: {
+  user?: Partial<User>;
+  chat?: Partial<Chat>;
+}): Update {
+  const from: User = { ...DEFAULT_USER, ...(overrides?.user as User) };
+  const chat: Chat = { ...DEFAULT_SUPERGROUP, ...(overrides?.chat as Chat) };
+
+  return {
+    update_id: updateIdCounter++,
+    chat_join_request: {
+      chat,
+      from,
+      user_chat_id: from.id,
+      date: Math.floor(Date.now() / 1000),
+      bio: undefined,
+      invite_link: undefined,
+    },
+  };
+}

@@ -7,6 +7,16 @@ export interface ApiCall {
   payload: Record<string, unknown>;
 }
 
+export interface TestBotOptions {
+  methodResults?: Partial<
+    Record<
+      string,
+      | unknown
+      | ((payload: Record<string, unknown>) => unknown)
+    >
+  >;
+}
+
 /** Static bot info returned instead of calling getMe() in tests. */
 const TEST_BOT_INFO = {
   id: 12345678,
@@ -32,6 +42,13 @@ export function createTestBot(): {
   bot: Bot<NezukoContext>;
   apiCalls: ApiCall[];
 } {
+  return createConfiguredTestBot();
+}
+
+export function createConfiguredTestBot(options?: TestBotOptions): {
+  bot: Bot<NezukoContext>;
+  apiCalls: ApiCall[];
+} {
   const apiCalls: ApiCall[] = [];
 
   const bot = new Bot<NezukoContext>("TEST_TOKEN", {
@@ -40,10 +57,20 @@ export function createTestBot(): {
 
   // Install a transformer that intercepts ALL outgoing API calls
   bot.api.config.use((_prev, method, payload) => {
+    const normalizedPayload = payload as Record<string, unknown>;
     apiCalls.push({
       method,
-      payload: payload as Record<string, unknown>,
+      payload: normalizedPayload,
     });
+
+    const override = options?.methodResults?.[method];
+    if (override !== undefined) {
+      const result =
+        typeof override === "function"
+          ? (override as (payload: Record<string, unknown>) => unknown)(normalizedPayload)
+          : override;
+      return Promise.resolve({ ok: true as const, result } as ReturnType<typeof _prev>);
+    }
 
     // sendMessage and editMessageText need a proper Message result
     // so grammY hydrate/reply plugins don't crash
@@ -57,7 +84,7 @@ export function createTestBot(): {
         message_id: messageIdCounter++,
         date: Math.floor(Date.now() / 1000),
         chat: { id: 0, type: "private" as const, first_name: "Test" },
-        text: (payload as Record<string, unknown>).text ?? "",
+        text: normalizedPayload.text ?? "",
       };
       return Promise.resolve({ ok: true as const, result: mockMessage } as ReturnType<typeof _prev>);
     }

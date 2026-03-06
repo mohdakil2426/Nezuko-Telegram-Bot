@@ -2,6 +2,7 @@ import type { InsForgeClient } from "../core/insforge-client.js";
 import type { CacheClient } from "../core/cache.js";
 import type { Logger } from "../utils/logger.js";
 import type { VerificationResult } from "../types.js";
+import { verifyMembership } from "./verification.js";
 
 /** Minimal Telegram API interface — framework-agnostic. */
 interface TelegramApi {
@@ -21,12 +22,19 @@ interface TelegramApi {
  * @throws Error with "Not implemented" message
  */
 export async function batchVerify(
-  _api: TelegramApi,
-  _db: InsForgeClient,
-  _cache: CacheClient,
-  _groupId: number,
-  _userIds: number[],
-  _log?: Logger,
+  api: TelegramApi,
+  db: InsForgeClient,
+  cache: CacheClient,
+  groupId: number,
+  userIds: number[],
+  log?: Logger,
 ): Promise<Map<number, VerificationResult>> {
-  throw new Error("Not implemented — batch verification is a P2 feature");
+  const uniqueUserIds = [...new Set(userIds)];
+  const results = await Promise.all(
+    uniqueUserIds.map(async (userId) => [
+      userId,
+      await verifyMembership(api, db, cache, groupId, userId, log),
+    ] as const),
+  );
+  return new Map<number, VerificationResult>(results);
 }

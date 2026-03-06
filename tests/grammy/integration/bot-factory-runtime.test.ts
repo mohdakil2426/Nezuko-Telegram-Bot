@@ -1,0 +1,164 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createBotWithDeps } from "../../../apps/grammy/src/core/bot-factory.js";
+import { contextEnricher } from "../../../apps/grammy/src/middleware/context-enricher.js";
+import { channelsComposer } from "../../../apps/grammy/src/composers/channels.js";
+import { eventsComposer } from "../../../apps/grammy/src/composers/events.js";
+import { createMockDb, createMockCache, createMockLogger } from "../helpers/mock-deps.js";
+import { createMessageUpdate, createJoinRequestUpdate } from "../helpers/mock-update.js";
+import { createConfiguredTestBot } from "../helpers/test-bot.js";
+import type { BotDeps } from "../../../apps/grammy/src/types.js";
+
+function makeDeps(): BotDeps {
+  return {
+    db: createMockDb(),
+    cache: createMockCache(),
+    botId: 12345678,
+    logger: createMockLogger(),
+  };
+}
+
+describe("bot-factory runtime wiring", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("handles /start through the real shipped wiring", async () => {
+    const { bot, apiCalls } = createConfiguredTestBot();
+    const deps = makeDeps();
+
+    createBotWithDeps(bot, deps);
+
+    await bot.handleUpdate(
+      createMessageUpdate({
+        text: "/start",
+        chat: { id: 111222333, type: "private", first_name: "Test" },
+      }),
+    );
+
+    const sendCall = apiCalls.find((call) => call.method === "sendMessage");
+    expect(sendCall).toBeDefined();
+    expect((sendCall?.payload.text as string) ?? "").toContain("Nezuko");
+  });
+
+  it("handles /channels via the real production composer", async () => {
+    const { bot, apiCalls } = createConfiguredTestBot();
+    const deps = makeDeps();
+
+    vi.mocked(deps.db.getRecords)
+      .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: -1005555555555 }])
+      .mockResolvedValueOnce([
+        {
+          channel_id: -1005555555555,
+          title: "Prod Channel",
+          username: "prodchannel",
+          invite_link: null,
+          subscriber_count: 42,
+          linked_groups_count: 1,
+          last_sync_at: null,
+          created_at: "",
+          updated_at: "",
+        },
+      ]);
+
+    bot.use(contextEnricher(deps));
+    bot.use(channelsComposer);
+    await bot.handleUpdate(createMessageUpdate({ text: "/channels" }));
+
+    const sendCall = apiCalls.find((call) => call.method === "sendMessage");
+    expect(sendCall).toBeDefined();
+    expect((sendCall?.payload.text as string) ?? "").toContain("Prod Channel");
+    expect((sendCall?.payload.text as string) ?? "").toContain("@prodchannel");
+  });
+
+  it("approves join requests when the user already satisfies linked-channel membership", async () => {
+    const { bot, apiCalls } = createConfiguredTestBot();
+    const deps = makeDeps();
+
+    vi.mocked(deps.db.getRecords)
+      .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: -1001111111111 }])
+      .mockResolvedValueOnce([
+        {
+          channel_id: -1001111111111,
+          title: "Required Channel",
+          username: "requiredchannel",
+          invite_link: null,
+          subscriber_count: 1,
+          linked_groups_count: 1,
+          last_sync_at: null,
+          created_at: "",
+          updated_at: "",
+        },
+      ])
+      .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: -1001111111111 }])
+      .mockResolvedValueOnce([
+        {
+          channel_id: -1001111111111,
+          title: "Required Channel",
+          username: "requiredchannel",
+          invite_link: null,
+          subscriber_count: 1,
+          linked_groups_count: 1,
+          last_sync_at: null,
+          created_at: "",
+          updated_at: "",
+        },
+      ]);
+
+    bot.use(contextEnricher(deps));
+    bot.use(eventsComposer);
+    await bot.handleUpdate(createJoinRequestUpdate());
+
+    const approveCall = apiCalls.find((call) => call.method === "approveChatJoinRequest");
+    expect(approveCall).toBeDefined();
+  });
+
+  it("declines join requests and notifies the user when required channels are missing", async () => {
+    const { bot, apiCalls } = createConfiguredTestBot({
+      methodResults: {
+        getChatMember: { status: "left", user: { id: 111222333, is_bot: false, first_name: "Test" } },
+      },
+    });
+    const deps = makeDeps();
+
+    vi.mocked(deps.db.getRecords)
+      .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: -1001111111111 }])
+      .mockResolvedValueOnce([
+        {
+          channel_id: -1001111111111,
+          title: "Required Channel",
+          username: "requiredchannel",
+          invite_link: null,
+          subscriber_count: 1,
+          linked_groups_count: 1,
+          last_sync_at: null,
+          created_at: "",
+          updated_at: "",
+        },
+      ])
+      .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: -1001111111111 }])
+      .mockResolvedValueOnce([
+        {
+          channel_id: -1001111111111,
+          title: "Required Channel",
+          username: "requiredchannel",
+          invite_link: null,
+          subscriber_count: 1,
+          linked_groups_count: 1,
+          last_sync_at: null,
+          created_at: "",
+          updated_at: "",
+        },
+      ]);
+
+    bot.use(contextEnricher(deps));
+    bot.use(eventsComposer);
+    await bot.handleUpdate(createJoinRequestUpdate());
+
+    const declineCall = apiCalls.find((call) => call.method === "declineChatJoinRequest");
+    expect(declineCall).toBeDefined();
+
+    const notifyCall = apiCalls.filter((call) => call.method === "sendMessage").at(-1);
+    expect(notifyCall).toBeDefined();
+    expect((notifyCall?.payload.text as string) ?? "").toContain("@requiredchannel");
+  });
+});

@@ -14,6 +14,7 @@ export interface ProtectedGroup {
   enabled: boolean;
   params: Record<string, unknown>;
   member_count: number;
+  linked_channels_count: number;
   last_sync_at: string | null;
   created_at: string;
   updated_at: string;

@@ -40,6 +40,7 @@ export const ALLOWED_UPDATES = [
   "message",
   "callback_query",
   "chat_member",
+  "chat_join_request",
   "my_chat_member",
 ] as const;
 

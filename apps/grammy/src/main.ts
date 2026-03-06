@@ -24,6 +24,7 @@ import { createBot, createBotWithDeps } from "./core/bot-factory.js";
 import { setupShutdown } from "./core/shutdown.js";
 import { startMemberSync } from "./services/member-sync.js";
 import { CommandWorker } from "./services/command-worker.js";
+import { InsForgeRealtimeClient } from "./core/realtime-client.js";
 import { startHealthServer } from "./utils/health.js";
 import { ALLOWED_UPDATES, SHUTDOWN_TIMEOUT_MS } from "./core/constants.js";
 import type { BotDeps } from "./types.js";
@@ -198,6 +199,20 @@ async function runDashboardMode(
   logger.info("✅  InsForge REST client ready");
 
   const cache = createCache(config.redisUrl, logger);
+  let realtime: InsForgeRealtimeClient | null = null;
+
+  realtime = new InsForgeRealtimeClient({
+    baseUrl: config.insforgeBaseUrl!,
+    anonKey: config.insforgeAnonKey!,
+    logger,
+  });
+
+  const realtimeConnected = await realtime.connect();
+  if (realtimeConnected) {
+    logger.info("✅  Realtime client connected");
+  } else {
+    logger.warn("⚠  Realtime unavailable — dashboard commands will use polling fallback");
+  }
 
   // Dynamic import to avoid loading multi-bot code in single-bot mode
   const { BotManager } = await import("./multi-bot/bot-manager.js");
@@ -230,13 +245,17 @@ async function runDashboardMode(
   // Start CommandWorker — processes start/stop/restart commands from the dashboard
   const commandWorker = new CommandWorker({
     db,
-    realtime: null, // Realtime client not wired in this mode yet — polling fallback
+    realtime,
     botManager: manager,
     botId: 0, // Manager-level worker — handles commands for all managed bots
     logger,
   });
   commandWorker.start();
-  logger.info("✅  CommandWorker started (30s poll fallback)");
+  logger.info(
+    realtimeConnected
+      ? "✅  CommandWorker started (realtime + 30s poll fallback)"
+      : "✅  CommandWorker started (30s poll fallback)",
+  );
 
   // Health server
   startHealthServer(config.healthPort);
@@ -256,6 +275,7 @@ async function runDashboardMode(
 
   // Graceful teardown
   commandWorker.stop();
+  realtime?.disconnect();
   await manager.shutdown(); // also stops sync loop
   await cache.quit();
 

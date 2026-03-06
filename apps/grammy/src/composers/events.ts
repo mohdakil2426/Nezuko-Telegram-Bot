@@ -3,6 +3,7 @@ import type { NezukoContext } from "../types.js";
 import { getGroupChannels, setGroupActive } from "../database/group.repo.js";
 import { isUserVerified } from "../database/verification.repo.js";
 import { muteUser } from "../services/protection.js";
+import { verifyMembership } from "../services/verification.js";
 import { scheduleDelete } from "../utils/auto-delete.js";
 import {
   AUTO_DELETE_DELAY,
@@ -12,6 +13,38 @@ import {
 import { VERIFY_GREETING, BOT_ADDED_WELCOME, BOT_DEMOTED_WARNING } from "../utils/messages.js";
 
 export const eventsComposer = new Composer<NezukoContext>();
+
+// ── chat_join_request — auto-approve/deny based on linked channels ───────────
+eventsComposer.on("chat_join_request", async (ctx) => {
+  const groupId = ctx.chat.id;
+  const userId = ctx.from.id;
+  const channels = await getGroupChannels(ctx.db, groupId);
+
+  if (channels.length === 0) {
+    await ctx.api.approveChatJoinRequest(groupId, userId).catch(() => {});
+    return;
+  }
+
+  const result = await verifyMembership(
+    ctx.api,
+    ctx.db,
+    ctx.cache,
+    groupId,
+    userId,
+    ctx.log,
+  );
+
+  if (result.success) {
+    await ctx.api.approveChatJoinRequest(groupId, userId).catch(() => {});
+    return;
+  }
+
+  await ctx.api.declineChatJoinRequest(groupId, userId).catch(() => {});
+  await ctx.api.sendMessage(
+    userId,
+    `Your join request was declined. Please join the required channels first: ${result.missingChannels.join(", ")}`,
+  ).catch(() => {});
+});
 
 // ── new_chat_members — mute + send inline keyboard ─────────────────
 eventsComposer.on("message:new_chat_members", async (ctx) => {

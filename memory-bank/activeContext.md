@@ -1,121 +1,84 @@
 # Active Context: Current State
 
 ### Current Status
-**Phase 100: Comprehensive Audit & Fixes — COMPLETE ✅**
+**Phase 101: grammY PRD Completion & Runtime Hardening — COMPLETE ✅**
 
-All critical issues identified and fixed. Bot should now respond to commands.
+The missing PRD/runtime items from the grammY audit have now been implemented and verified. Dashboard mode has realtime command wiring, multi-bot instances run the real member sync service, `batchVerify(...)` is implemented, join-request enforcement exists, and runtime-facing tests were added to cover the shipped wiring instead of only isolated composers.
 
 ---
 
-## Phase 100: Comprehensive Audit Complete (2026-03-06)
+## Phase 101: PRD Completion & Audit Fixes (2026-03-06)
 
-### Issues Fixed
+### Implemented This Session
 
-| # | Issue | Fix | Status |
-|---|-------|-----|--------|
-| 1 | `CommandsFlavor` in type without plugin | Removed from `NezukoContext` in `types.ts` | ✅ |
-| 2 | Debug checkpoint middleware in `bot-factory.ts` | Removed all `[CHAIN]` middleware blocks | ✅ |
-| 3 | Debug logging in `/start` handler | Cleaned up `admin.ts` | ✅ |
-| 4 | Silent Redis error catching | Added logging in `cache.ts` adapter | ✅ |
-| 5 | Outdated encryption tests | Rewrote for async vault API | ✅ |
-| 6 | Outdated config tests | Removed masterKey tests | ✅ |
+| Area | Change | Status |
+|---|---|---|
+| Dashboard commands | `main.ts` now creates `InsForgeRealtimeClient`, connects it in dashboard mode, passes it to `CommandWorker`, and disconnects on shutdown | ✅ |
+| Multi-bot lifecycle | `bot-lifecycle.ts` now starts the real `startStatusWriter(...)` and `startMemberSync(...)` services instead of placeholder intervals | ✅ |
+| Batch verification | `services/batch-verification.ts` now performs real verification via `verifyMembership(...)` and returns a `Map` keyed by user ID | ✅ |
+| Join requests | `events.ts` now handles `chat_join_request`, approves verified users, declines missing users, and DMs guidance | ✅ |
+| Update subscriptions | `chat_join_request` added to `ALLOWED_UPDATES` | ✅ |
+| Data typing | `ProtectedGroup` now includes `linked_channels_count` | ✅ |
+| Test coverage | Added runtime wiring, command worker, batch verification, and join-request test coverage | ✅ |
 
 ### Quality Gates
 
 | Check | Result |
 |---|---|
-| `bun run type-check` | ✅ 0 errors |
-| `bun run lint` | ✅ 0 warnings |
-| `bun run test` | ✅ **113/113 passed** |
+| `cd apps/grammy && bun run type-check` | ✅ 0 errors |
+| `cd apps/grammy && bun run lint` | ✅ 0 warnings |
+| `cd apps/grammy && bun run test` | ✅ **120/120 passed** |
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `apps/grammy/src/types.ts` | Removed `CommandsFlavor` from context type |
-| `apps/grammy/src/core/bot-factory.ts` | Removed debug checkpoint middleware |
-| `apps/grammy/src/core/cache.ts` | Added logging to Redis adapter |
-| `apps/grammy/src/composers/admin.ts` | Removed debug logging |
-| `tests/grammy/unit/core/encryption.test.ts` | Rewrote for async API |
-| `tests/grammy/unit/core/config.test.ts` | Removed masterKey tests |
-| `AUDIT_REPORT_GRAMMY.md` | Created comprehensive audit report |
+| `apps/grammy/src/main.ts` | Realtime client wiring + clean shutdown |
+| `apps/grammy/src/multi-bot/bot-lifecycle.ts` | Real status writer/member sync startup |
+| `apps/grammy/src/services/batch-verification.ts` | Implemented batch verification |
+| `apps/grammy/src/composers/events.ts` | Added join-request enforcement flow |
+| `apps/grammy/src/core/constants.ts` | Added `chat_join_request` to allowed updates |
+| `apps/grammy/src/database/types.ts` | Added `linked_channels_count` to `ProtectedGroup` |
+| `tests/grammy/integration/bot-factory-runtime.test.ts` | Real runtime wiring coverage |
+| `tests/grammy/unit/services/command-worker.test.ts` | Realtime + polling fallback coverage |
+| `tests/grammy/unit/services/batch-verification.test.ts` | Batch verification coverage |
+| `tests/grammy/helpers/test-bot.ts` | Configurable API method overrides for runtime tests |
+| `tests/grammy/helpers/mock-update.ts` | Join-request update factory |
 
 ---
 
-## InsForge Database State
+## Architecture Notes (Current)
 
-### Verified Healthy
-
-| Check | Status |
-|-------|--------|
-| Bot instance (ID 12) | ✅ Active, v2 AES-GCM encrypted |
-| Master key in vault | ✅ Exists (32-byte Base64) |
-| RLS policies | ✅ All correct |
-| Heartbeat | ⚠️ Was stale - needs bot restart |
-
-### RLS Policies Confirmed
-
-- `verification_log`: INSERT + SELECT for anon ✅
-- `bot_status`: INSERT + SELECT + UPDATE for anon ✅
-- `nezuko_secrets`: Full access for anon ✅
-
----
-
-## Architecture (Current)
+The active grammY runtime path is now:
 
 ```
-Web Dashboard (Next.js 16) ──► @insforge/sdk ──► InsForge BaaS
+Dashboard mode
+  main.ts
+    -> InsForge REST client
+    -> Redis cache
+    -> InsForgeRealtimeClient.connect()
+    -> BotManager.start()
+    -> CommandWorker(realtime + poll fallback)
+    -> shutdown: command worker stop -> realtime disconnect -> manager shutdown -> cache quit
 
-Bot Engine (grammY/TS) ──► native fetch() REST ──► InsForge BaaS
-  ├─ main.ts           (standalone vs dashboard mode switch)
-  ├─ bot-factory.ts    (wireBotMiddleware: plugins → composers → bot.catch)
-  │    Plugins:  autoRetry → htmlTransformer
-  │              debugMiddleware? → sequentialize → hydrate → chatMembers → contextEnricher
-  │    Composers: admin → channels → migration → events → verify → fallback
-  ├─ cache.ts          (Redis/ioredis with logging)
-  ├─ encryption.ts     (AES-256-GCM, vault-sourced key)
-  └─ bot-manager.ts    (multi-bot coordinator)
+Per managed bot
+  BotLifecycleManager.startBot()
+    -> createBot()
+    -> bot.start({ allowed_updates })
+    -> startStatusWriter(...)
+    -> startMemberSync(...)
 ```
 
----
-
-## Key Credentials
-
-- **InsForge Base URL**: `https://u4ckbciy.us-west.insforge.app`
-- **Bot**: `@grammynezukobot` — Telegram ID `8716661547`
-- **Bot Instance ID**: 12
-- **Master Key**: In vault (`nezuko_secrets` table)
-
----
-
-## Local Dev Stack
-
-| Component | Command |
-|---|---|
-| Bot (grammY) | `cd apps/grammy && bun run dev` |
-| Web (Next.js) | `cd apps/web && bun dev` — port 3000 |
-| Redis | Docker — `docker compose -f docker-compose.local.yml up -d` |
-
----
-
-## All-time Quality Gates
-
-| Check | Result |
-|---|---|
-| `bun run type-check` | ✅ 0 errors |
-| `bun run lint` | ✅ 0 warnings |
-| `bun run test` | ✅ **113 passed** |
-| `bun run build` (web) | ✅ exit 0 |
+Join-request enforcement now happens in `eventsComposer` before the user enters the group, using the same verification service that backs normal membership checks.
 
 ---
 
 ## Next Steps
 
-1. **Start the grammY bot**: `cd apps/grammy && bun run dev`
-2. **Test `/start` command** - Send to @grammynezukobot in DM
-3. **Verify responses work** - Check logs for successful handler matching
-4. **If 409 Conflict** - Stop any other bot instances polling same token
+1. Run the bot live in dashboard mode and validate realtime command dispatch from the web dashboard.
+2. Validate join-request approve/decline behavior against a real Telegram supergroup with linked channels.
+3. If more PRD alignment work is needed later, the next likely gap is administrative observability rather than core enforcement behavior.
 
 ---
 
-_Last Updated: 2026-03-06 09:00 IST (Phase 100 — Audit Complete — All fixes applied, 113 tests passing)_
+_Last Updated: 2026-03-06 17:45 IST (Phase 101 — PRD completion + runtime hardening, 120 tests passing)_
