@@ -99,8 +99,18 @@ export async function getUserGrowth(params?: TrendsParams): Promise<UserGrowthRe
       total_users: item.total_users,
     })),
     summary: {
-      total_new_users: totalNew,
-      growth_rate: 0,
+      total_new_users:
+        typeof envelope?.summary === "object" &&
+        envelope?.summary !== null &&
+        typeof (envelope.summary as Record<string, unknown>)["total_new_users"] === "number"
+          ? ((envelope.summary as Record<string, unknown>)["total_new_users"] as number)
+          : totalNew,
+      growth_rate:
+        typeof envelope?.summary === "object" &&
+        envelope?.summary !== null &&
+        typeof (envelope.summary as Record<string, unknown>)["growth_rate"] === "number"
+          ? ((envelope.summary as Record<string, unknown>)["growth_rate"] as number)
+          : 0,
     },
   };
 }

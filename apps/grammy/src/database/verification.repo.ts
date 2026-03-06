@@ -6,7 +6,8 @@ export interface LogVerificationData {
   user_id: number;
   group_id: number;
   channel_id: number;
-  status: "verified" | "failed" | "error" | "restricted";
+  /** DB CHECK constraint allows ONLY these three values. */
+  status: "verified" | "restricted" | "error";
   latency_ms?: number | null;
   cached?: boolean;
   error_type?: string | null;

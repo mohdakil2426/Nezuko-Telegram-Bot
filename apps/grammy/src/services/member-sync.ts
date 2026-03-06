@@ -1,7 +1,7 @@
 import type { InsForgeClient } from "../core/insforge-client.js";
 import type { Logger } from "../utils/logger.js";
 import type { ProtectedGroup } from "../database/types.js";
-import { getGroupChannels, setGroupActive } from "../database/group.repo.js";
+import { getGroupChannels } from "../database/group.repo.js";
 import { updateSubscriberCount } from "../database/channel.repo.js";
 import { INTERVALS } from "../core/constants.js";
 
@@ -13,9 +13,14 @@ interface TelegramApi {
 /**
  * Start the periodic member count sync job.
  *
- * Every 15 minutes: fetches all protected groups for this bot, updates
- * member_count and subscriber_count from the Telegram API. Individual
- * group errors (e.g. 403 bot removed) don't block other groups.
+ * Every 15 minutes: fetches all enabled protected groups, updates member_count
+ * and subscriber_count from the Telegram API. Individual group errors
+ * (e.g. 403 bot removed) don't block other groups.
+ *
+ * NOTE: This job must never disable groups based on access errors. In
+ * dashboard mode multiple bots run the same sync loop, and the schema does not
+ * currently scope groups to a specific bot. A 403 here can therefore mean
+ * "another bot owns this group", not "this group is dead".
  *
  * @param api - Telegram API accessor
  * @param db - InsForge REST client
@@ -67,9 +72,6 @@ export function startMemberSync(
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
 
-          // 403 Forbidden = bot removed from group
-          // 400 Bad Request: chat not found = group deleted / bot never properly added
-          // Both mean the bot can't access this group — mark inactive
           if (
             message.includes("403") ||
             message.includes("Forbidden") ||
@@ -77,9 +79,8 @@ export function startMemberSync(
           ) {
             log.warn(
               { groupId: group.group_id },
-              "Group inaccessible (removed or deleted) — marking inactive"
+              "Group inaccessible during member sync — skipping count update"
             );
-            await setGroupActive(db, group.group_id, false).catch(() => {});
           } else {
             log.warn({ err, groupId: group.group_id }, "Failed to sync group member count");
           }

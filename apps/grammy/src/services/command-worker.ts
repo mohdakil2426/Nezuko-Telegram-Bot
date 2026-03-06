@@ -110,8 +110,9 @@ export class CommandWorker {
     this.realtime.subscribe("commands");
 
     this.realtime.on<DashboardCommand>("command_updated", (cmd) => {
-      // Ignore events for other bots (EC per spec: events for other bots are ignored)
-      if (cmd.bot_id !== this.botId) return;
+      // Manager-level worker (botId=0) handles commands for all managed bots.
+      // Per-bot workers continue to filter strictly to their own bot ID.
+      if (this.botId !== 0 && cmd.bot_id !== this.botId) return;
       if (cmd.status !== STATUS.PENDING) return;
 
       this.logger.info({

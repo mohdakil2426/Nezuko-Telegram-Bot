@@ -20,7 +20,7 @@ interface ShutdownDeps {
    */
   botInstanceId: number;
   log: Logger;
-  healthServer?: { close(): void };
+  healthServer?: { close(): void } | null;
   statusInterval?: NodeJS.Timeout;
   syncInterval?: NodeJS.Timeout;
 }

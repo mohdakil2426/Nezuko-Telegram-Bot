@@ -1,6 +1,6 @@
 /**
  * Database entity types matching the canonical schema in
- * `insforge/migrations/009_clean_schema.sql`.
+ * `insforge/migrations/023_fresh_grammy_schema.sql`.
  *
  * All Telegram IDs are `number` — safe up to 2^53 (~9 quadrillion).
  * Telegram IDs are currently <10B, well within JS number precision.

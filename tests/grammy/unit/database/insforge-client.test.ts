@@ -72,6 +72,31 @@ describe("InsForgeClient", () => {
         "InsForge GET missing_table: 404 Not Found"
       );
     });
+
+    it("fails fast when the request exceeds the configured timeout", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(
+          (_url: string, init?: RequestInit) =>
+            new Promise((_resolve, reject) => {
+              init?.signal?.addEventListener("abort", () => {
+                reject(new DOMException("Aborted", "AbortError"));
+              });
+            })
+        )
+      );
+
+      const client = new InsForgeClient({
+        baseUrl: BASE_URL,
+        anonKey: ANON_KEY,
+        logger: createMockLogger(),
+        requestTimeoutMs: 25,
+      });
+
+      await expect(client.getRecords("protected_groups")).rejects.toThrow(
+        "InsForge request timed out after 25ms"
+      );
+    });
   });
 
   describe("postRecords", () => {

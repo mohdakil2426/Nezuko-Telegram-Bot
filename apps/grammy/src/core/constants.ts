@@ -45,5 +45,8 @@ export const CACHE_PREFIX = "nezuko:v2:";
 /** Verified cache TTL in seconds (6 hours). */
 export const VERIFIED_CACHE_TTL = 21_600;
 
-/** Member cache TTL in seconds (5 minutes). */
+/** Positive member cache TTL in seconds (5 minutes). */
 export const MEMBER_CACHE_TTL = 300;
+
+/** Negative member cache TTL in seconds (30 seconds). */
+export const MEMBER_NEGATIVE_CACHE_TTL = 30;

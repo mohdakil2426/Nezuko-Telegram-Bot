@@ -10,7 +10,12 @@ import { Activity, AlertTriangle, CheckCircle, Clock, TrendingUp } from "lucide-
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAnalyticsOverview, useCacheBreakdown, useRealtimeAnalytics } from "@/lib/hooks";
+import {
+  useAnalyticsOverview,
+  useApiCallsDistribution,
+  useCacheBreakdown,
+  useRealtimeAnalytics,
+} from "@/lib/hooks";
 
 const nf = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 function formatNumber(num: number): string {
@@ -140,6 +145,11 @@ export function AnalyticsOverviewCards() {
 
   // API calls snapshot (cache misses)
   const { data: cacheSnapshot } = useCacheBreakdown();
+  const { data: apiCallsDistribution } = useApiCallsDistribution();
+  const totalApiCalls = useMemo(
+    () => (apiCallsDistribution ?? []).reduce((sum, item) => sum + item.count, 0),
+    [apiCallsDistribution]
+  );
 
   if (error) {
     return (
@@ -188,8 +198,10 @@ export function AnalyticsOverviewCards() {
       />
       <OverviewCard
         title="API Calls"
-        value={formatNumber(cacheSnapshot?.api ?? 0)}
-        description="Uncached Telegram API calls (7d)"
+        value={formatNumber(totalApiCalls)}
+        description={
+          cacheSnapshot ? `Cache misses: ${formatNumber(cacheSnapshot.api ?? 0)} (7d)` : "By method"
+        }
         icon={<Activity className="text-muted-foreground h-4 w-4" aria-hidden="true" />}
         isUpdated={false}
       />

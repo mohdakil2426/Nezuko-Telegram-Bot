@@ -38,7 +38,7 @@ Convert group participants into channel subscribers through automated verificati
 nezuko/
 ├── apps/
 │   ├── grammy/       # ✅ ACTIVE — Telegram Bot (TypeScript / grammY)
-│   │   └── src/      # 41 source files: core, composers, middleware, services, database, utils
+│   │   └── src/      # 42 source files: core, composers, middleware, services, database, utils
 │   ├── bot/          # 🗄️ ARCHIVED — Python PTB bot (unmaintained since Phase 96)
 │   └── web/          # ✅ ACTIVE — Next.js Dashboard (~120 TypeScript files)
 ├── insforge/
@@ -70,6 +70,9 @@ nezuko/
 - Link counter maintenance (linked_channels_count / linked_groups_count)
 - Redis L1 cache (`nezuko:v2:` key prefix — avoids conflict with legacy Python keys)
 - Multi-bot dashboard mode via BotManager + BotLifecycleManager + BotRegistry
+- **DB log transport** (`db-log-transport.ts`): WARN+ pino logs streamed to `admin_logs` table in real-time
+- **API call telemetry** (`apiLogTransformer`): every Telegram API call logged to `api_call_log` with latency
+- Owner auto-upsert before group create (FK-safe `upsertOwner()` in `owner.repo.ts`)
 
 ### Web Dashboard
 
@@ -108,9 +111,9 @@ The original Python bot used `python-telegram-bot v22.6` with asyncio. It was fu
 | ESLint        | 0 warnings   | grammy + web |
 | TypeScript    | 0 errors     | grammy + web |
 | Prettier      | All clean    | grammy + web |
-| Vitest        | 127/127 pass | grammy       |
+| Vitest        | 135/135 pass | grammy       |
 | Next.js Build | 0 errors     | web          |
 
 ---
 
-_Last Updated: 2026-03-06 (Phase 103 — PTB bot archived; grammY is sole active runtime)_
+_Last Updated: 2026-03-07 (Phase 108 — group latency queue narrowed; verification false-negative cache bug fixed)_

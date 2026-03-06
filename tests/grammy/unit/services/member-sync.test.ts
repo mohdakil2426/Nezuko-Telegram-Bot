@@ -99,7 +99,7 @@ describe("startMemberSync", () => {
     );
   });
 
-  it("403 from getChatMemberCount marks group as inactive", async () => {
+  it("403 from getChatMemberCount skips the group without disabling it", async () => {
     vi.mocked(db.getRecords).mockResolvedValueOnce([makeGroup(-100333)]);
 
     vi.mocked(db.patchRecords).mockResolvedValue([]);
@@ -112,11 +112,10 @@ describe("startMemberSync", () => {
 
     await vi.advanceTimersByTimeAsync(30_000);
 
-    // Group should be marked inactive
-    expect(db.patchRecords).toHaveBeenCalledWith(
-      "protected_groups",
-      { group_id: "eq.-100333" },
-      expect.objectContaining({ enabled: false })
+    expect(db.patchRecords).not.toHaveBeenCalled();
+    expect(log.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ groupId: -100333 }),
+      "Group inaccessible during member sync — skipping count update"
     );
   });
 

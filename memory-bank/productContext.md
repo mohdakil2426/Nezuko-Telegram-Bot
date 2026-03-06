@@ -32,6 +32,8 @@ Nezuko acts as an **automated gatekeeper** that:
 4.  Click "Verify" button.
 5.  Instantly unmuted and can chat.
 
+The verify step must be resilient to users joining a required channel after an initial failed attempt. Explicit verify clicks should always prefer fresh membership confirmation over stale negative cache state.
+
 ### For Administrators
 
 1.  Add bot to group with admin rights.
@@ -89,7 +91,7 @@ Bot (grammY) ← socket.io-client          ← InsForge Realtime (Socket.IO)
 | Verification Latency (p99) | <150ms  | ✅ Achieved  |
 | Dashboard Pages            | 10      | ✅ Complete  |
 | Uptime                     | 99.9%   | ✅ On Track  |
-| grammY Tests               | 127/127 | ✅ Phase 103 |
+| grammY Tests               | 135/135 | ✅ Phase 108 |
 
 ---
 
@@ -101,4 +103,4 @@ The platform was originally built with Python + python-telegram-bot v22.6. That 
 
 ---
 
-_Last Updated: 2026-03-06 (Phase 103 — PTB bot archived; grammY architecture updated)_
+_Last Updated: 2026-03-07 (Phase 108 — explicit verify path now bypasses stale negative membership cache)_

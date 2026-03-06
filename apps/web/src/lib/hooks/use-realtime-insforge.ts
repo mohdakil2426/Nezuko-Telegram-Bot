@@ -15,6 +15,78 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { DEV_LOGIN } from "@/lib/api/config";
 import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
 
+const sharedRealtimeState: {
+  channelRefs: Map<string, number>;
+  connectionState: ConnectionState;
+  connectPromise: Promise<void> | null;
+} = {
+  channelRefs: new Map(),
+  connectionState: "disconnected",
+  connectPromise: null,
+};
+
+function setSharedConnectionState(state: ConnectionState): void {
+  sharedRealtimeState.connectionState = state;
+}
+
+async function subscribeSharedChannel(channel: string): Promise<void> {
+  const result = await insforge.realtime.subscribe(channel);
+  if (!result.ok) {
+    console.warn(`[InsForge Realtime] Channel "${channel}" unavailable — polling fallback active`);
+  }
+}
+
+async function retainSharedChannels(channels: string[]): Promise<void> {
+  for (const channel of channels) {
+    const nextCount = (sharedRealtimeState.channelRefs.get(channel) ?? 0) + 1;
+    sharedRealtimeState.channelRefs.set(channel, nextCount);
+
+    if (nextCount === 1 && sharedRealtimeState.connectionState === "connected") {
+      await subscribeSharedChannel(channel);
+    }
+  }
+}
+
+function releaseSharedChannels(channels: string[]): void {
+  for (const channel of channels) {
+    const current = sharedRealtimeState.channelRefs.get(channel);
+    if (!current) continue;
+
+    if (current === 1) {
+      sharedRealtimeState.channelRefs.delete(channel);
+      insforge.realtime.unsubscribe(channel);
+      continue;
+    }
+
+    sharedRealtimeState.channelRefs.set(channel, current - 1);
+  }
+}
+
+async function ensureSharedRealtimeConnected(): Promise<void> {
+  if (sharedRealtimeState.connectionState === "connected") return;
+
+  if (sharedRealtimeState.connectPromise) {
+    await sharedRealtimeState.connectPromise;
+    return;
+  }
+
+  setSharedConnectionState("connecting");
+  sharedRealtimeState.connectPromise = (async () => {
+    await insforge.realtime.connect();
+    setSharedConnectionState("connected");
+
+    for (const channel of sharedRealtimeState.channelRefs.keys()) {
+      await subscribeSharedChannel(channel);
+    }
+  })();
+
+  try {
+    await sharedRealtimeState.connectPromise;
+  } finally {
+    sharedRealtimeState.connectPromise = null;
+  }
+}
+
 /**
  * Connection state (compatible with old SSE interface)
  */
@@ -112,14 +184,27 @@ export function useInsForgeRealtime(
   const { channels = [], filterTypes, autoConnect = true } = options;
   const { isSignedIn } = useAuth();
 
-  const [connectionState, setConnectionState] = useState<ConnectionState>("disconnected");
+  const [connectionState, setConnectionState] = useState<ConnectionState>(
+    sharedRealtimeState.connectionState
+  );
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
   const [lastEvent, setLastEvent] = useState<RealtimeEvent | null>(null);
   const [totalEventCount, setTotalEventCount] = useState(0);
   const [retryAttempt, setRetryAttempt] = useState(0);
 
   const isManuallyDisconnected = useRef(false);
-  const subscribedChannelsRef = useRef<Set<string>>(new Set());
+  const ownsChannelsRef = useRef(false);
+  // BUG-13 fix: mirror connectionState into a ref so the auto-connect useEffect
+  // can read the current value without needing it in the dependency array.
+  // Having connectionState in deps caused disconnect() to run on every state
+  // change (connect→connecting→connected), creating a rapid reconnect loop.
+  const connectionStateRef = useRef<ConnectionState>("disconnected");
+
+  // Keep ref in sync whenever state changes
+  // This is an intentional pattern for reading latest state in effects without deps
+  useEffect(() => {
+    connectionStateRef.current = connectionState;
+  }, [connectionState]);
 
   // Convert SocketMessage to RealtimeEvent
   const convertSocketMessage = useCallback((msg: SocketMessage): RealtimeEvent => {
@@ -168,32 +253,19 @@ export function useInsForgeRealtime(
       // DEBUG: Log connection details
       console.log(`[InsForge Realtime] Attempting connection...`);
 
-      // 0. Cleanup any existing active efforts
-      insforge.realtime.disconnect();
-
-      // 1. Connect to InsForge realtime
-      await insforge.realtime.connect();
-
-      // Subscribe to channels
-      for (const channel of channels) {
-        if (!subscribedChannelsRef.current.has(channel)) {
-          const result = await insforge.realtime.subscribe(channel);
-          if (result.ok) {
-            subscribedChannelsRef.current.add(channel);
-          } else {
-            // Use warn instead of error — subscription failures are expected
-            // graceful degradation (channels may not be configured on InsForge)
-            // console.error triggers Next.js DevTools error overlay which is misleading
-            console.warn(
-              `[InsForge Realtime] Channel "${channel}" unavailable — polling fallback active`
-            );
-          }
-        }
+      if (!ownsChannelsRef.current) {
+        await retainSharedChannels(channels);
+        ownsChannelsRef.current = true;
       }
+
+      // Shared singleton connection — multiple hooks may be mounted at once.
+      // Do not disconnect/reconnect the underlying client per component.
+      await ensureSharedRealtimeConnected();
 
       setConnectionState("connected");
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Handshake timeout";
+      setSharedConnectionState("disconnected");
       console.warn(`[InsForge Realtime] Connection failed: ${errorMsg}. Retrying in 10s...`);
       setConnectionState("disconnected");
 
@@ -209,16 +281,17 @@ export function useInsForgeRealtime(
   const disconnect = useCallback(() => {
     isManuallyDisconnected.current = true;
 
-    // Unsubscribe from all channels
-    for (const channel of subscribedChannelsRef.current) {
-      insforge.realtime.unsubscribe(channel);
+    if (ownsChannelsRef.current) {
+      releaseSharedChannels(channels);
+      ownsChannelsRef.current = false;
     }
-    subscribedChannelsRef.current.clear();
 
-    // Disconnect
-    insforge.realtime.disconnect();
+    if (sharedRealtimeState.channelRefs.size === 0) {
+      insforge.realtime.disconnect();
+      setSharedConnectionState("disconnected");
+    }
     setConnectionState("disconnected");
-  }, []);
+  }, [channels]);
 
   const clearEvents = useCallback(() => {
     setEvents([]);
@@ -229,14 +302,17 @@ export function useInsForgeRealtime(
   useEffect(() => {
     // Connection state listeners
     const handleConnect = () => {
+      setSharedConnectionState("connected");
       setConnectionState("connected");
     };
 
     const handleDisconnect = () => {
+      setSharedConnectionState("disconnected");
       setConnectionState("disconnected");
     };
 
     const handleConnectError = (_err: unknown) => {
+      setSharedConnectionState("disconnected");
       console.warn("[InsForge Realtime] Connection interrupted — will retry automatically");
       setConnectionState("disconnected");
     };
@@ -275,32 +351,49 @@ export function useInsForgeRealtime(
   }, [handleMessage]);
 
   // Auto-connect when authenticated (or in dev mode)
+  // BUG-13 fix: connectionState is NOT in the dependency array — use connectionStateRef
+  // instead to avoid triggering cleanup (disconnect) on every connection state transition.
+  // retryAttempt stays in deps to allow automatic retries after failed connections.
   useEffect(() => {
     if (!autoConnect) return;
 
     // In dev mode (DEV_LOGIN=true), isSignedIn is always false because there's
     // no real InsForge session. Allow realtime connections regardless.
     // In production, require authentication before connecting.
-    if (!isSignedIn && !DEV_LOGIN) {
-      isManuallyDisconnected.current = true;
-      return;
-    }
+    if (!isSignedIn && !DEV_LOGIN) return;
 
     if (isManuallyDisconnected.current) return;
 
     // Connect
     // Use setTimeout to avoid synchronous state update warning during render
     const timer = setTimeout(() => {
-      if (connectionState !== "connected" && connectionState !== "connecting") {
+      // Use ref — no stale closure on connectionState, no loop trigger
+      if (
+        connectionStateRef.current !== "connected" &&
+        connectionStateRef.current !== "connecting"
+      ) {
         connect();
       }
     }, 0);
 
     return () => {
       clearTimeout(timer);
-      disconnect();
+      // Do NOT call disconnect() here: it would run on every connectionState change
+      // because the socket.io events set state, retriggering this effect and
+      // immediately tearing down the connection. Disconnect only on unmount via
+      // a dedicated cleanup effect below.
     };
-  }, [autoConnect, isSignedIn, connect, disconnect, retryAttempt, connectionState]);
+  }, [autoConnect, isSignedIn, connect, retryAttempt]);
+
+  // Disconnect on component unmount only (separate from the auto-connect effect).
+  // Uses a ref-stored function so React Compiler doesn’t require disconnect in deps.
+  const disconnectRef = useRef(disconnect);
+  useEffect(() => {
+    disconnectRef.current = disconnect;
+  }, [disconnect]);
+  useEffect(() => {
+    return () => disconnectRef.current();
+  }, []);
 
   return {
     connectionState,

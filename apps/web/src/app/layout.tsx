@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { getAuthFromCookies } from "@insforge/nextjs/server";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -22,6 +23,9 @@ export const metadata: Metadata = {
   description: "Telegram bot management dashboard",
 };
 
+// Auth hydration reads cookies at the root, so this app is intentionally dynamic.
+export const dynamic = "force-dynamic";
+
 // RESP-M1: viewportFit=cover enables env(safe-area-inset-*) CSS variables for iOS notch support
 export const viewport: Viewport = {
   width: "device-width",
@@ -34,11 +38,13 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialState = await getAuthFromCookies();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -53,7 +59,7 @@ export default function RootLayout({
           Skip to content
         </a>
         {/* InsForgeProvider must be outermost client wrapper for auth context */}
-        <InsforgeProvider>
+        <InsforgeProvider initialState={initialState}>
           <ThemeProvider>
             <QueryProvider>
               <MotionProvider>{children}</MotionProvider>

@@ -22,7 +22,7 @@ DROP FUNCTION IF EXISTS public.get_groups_status() CASCADE;
 DROP FUNCTION IF EXISTS public.get_api_calls_distribution() CASCADE;
 DROP FUNCTION IF EXISTS public.get_hourly_activity() CASCADE;
 DROP FUNCTION IF EXISTS public.get_latency_distribution() CASCADE;
-DROP FUNCTION IF EXISTS public.get_latency_distribution(TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.get_latency_distribution(TEXT) CASCADE
 DROP FUNCTION IF EXISTS public.get_top_groups(INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.get_cache_hit_rate_trend(TEXT) CASCADE;
 DROP FUNCTION IF EXISTS public.get_latency_trend(TEXT) CASCADE;
@@ -460,7 +460,10 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
-    IF OLD.status IS DISTINCT FROM NEW.status THEN
+    -- On INSERT: fire for new pending commands (CommandWorker instant dispatch — BUG-08 fix)
+    -- On UPDATE: fire only when status actually changed (pending→processing→completed etc.)
+    IF (TG_OP = 'INSERT' AND NEW.status = 'pending') OR
+       (TG_OP = 'UPDATE' AND OLD.status IS DISTINCT FROM NEW.status) THEN
         PERFORM realtime.publish(
             'commands',
             'command_updated',
@@ -479,7 +482,7 @@ $$;
 
 DROP TRIGGER IF EXISTS trigger_command_realtime ON public.admin_commands;
 CREATE TRIGGER trigger_command_realtime
-    AFTER UPDATE ON public.admin_commands
+    AFTER INSERT OR UPDATE ON public.admin_commands
     FOR EACH ROW
     EXECUTE FUNCTION public.notify_command_event();
 
@@ -732,19 +735,26 @@ BEGIN
             ),
             -- Period-over-period growth rate: compares second half vs first half of the window (AUDIT ISSUE-07)
             'growth_rate', COALESCE(
-                ROUND(
-                    (
-                        COUNT(DISTINCT user_id) FILTER (
-                            WHERE timestamp >= NOW() - interval_val / 2
-                        )::NUMERIC
-                        / NULLIF(
+                (
+                    SELECT ROUND(
+                        (
                             COUNT(DISTINCT user_id) FILTER (
-                                WHERE timestamp < NOW() - interval_val / 2
-                                  AND timestamp >= NOW() - interval_val
-                            )::NUMERIC, 0
-                        ) - 1
-                    ) * 100, 1
-                ), 0
+                                WHERE timestamp >= NOW() - interval_val / 2
+                            )::NUMERIC
+                            / NULLIF(
+                                COUNT(DISTINCT user_id) FILTER (
+                                    WHERE timestamp < NOW() - interval_val / 2
+                                      AND timestamp >= NOW() - interval_val
+                                )::NUMERIC,
+                                0
+                            ) - 1
+                        ) * 100,
+                        1
+                    )
+                    FROM public.verification_log
+                    WHERE timestamp >= NOW() - interval_val
+                ),
+                0
             )
         )
     ) INTO result;
@@ -1427,6 +1437,7 @@ CREATE POLICY logs_auth_delete ON public.admin_logs FOR DELETE TO authenticated 
 
 -- api_call_log
 CREATE POLICY api_log_anon_insert ON public.api_call_log FOR INSERT TO anon WITH CHECK (TRUE);
+CREATE POLICY api_log_anon_read ON public.api_call_log FOR SELECT TO anon USING (TRUE);
 CREATE POLICY api_log_auth_read ON public.api_call_log FOR SELECT TO authenticated USING (TRUE);
 CREATE POLICY api_log_auth_delete ON public.api_call_log FOR DELETE TO authenticated USING (TRUE);
 

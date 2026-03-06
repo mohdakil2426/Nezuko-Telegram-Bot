@@ -106,6 +106,7 @@ DASHBOARD_MODE=true              # true = multi-bot from DB, false = use BOT_TOK
 BOT_TOKEN=<telegram-bot-token>   # Only used when DASHBOARD_MODE=false
 INSFORGE_BASE_URL=https://u4ckbciy.us-west.insforge.app
 INSFORGE_ANON_KEY=<insforge-anon-key>
+INSFORGE_REQUEST_TIMEOUT_MS=5000 # Phase 107: fail fast on slow/unreachable InsForge requests
 # Master key is fetched from Security Vault (nezuko_secrets) at runtime — not in .env
 LOG_LEVEL=info
 REDIS_URL=redis://localhost:6379
@@ -134,7 +135,7 @@ bun run type-check    # tsc --noEmit → 0 errors
 bun run lint          # eslint src/ --max-warnings 0 → 0 warnings
 bun run format        # prettier src/ ../../tests/grammy --write
 bun run format:check  # prettier src/ ../../tests/grammy --check
-bun run test          # vitest run → 127/127 tests passed (Phase 103 baseline)
+bun run test          # vitest run → 127/127 tests passed (Phase 105 baseline)
 bun run test:coverage # vitest run --coverage (80% thresholds)
 bun run build         # tsc -p tsconfig.build.json → dist/
 
@@ -173,17 +174,27 @@ bun run build         # next build → 0 errors
 
 ### InsForge Tables Written by Bot (all via REST fetch)
 
-| Table               | Written By             | Method                            | Notes                                    |
-| ------------------- | ---------------------- | --------------------------------- | ---------------------------------------- |
-| `verification_log`  | `verification.repo.ts` | `postRecords()`                   | `latency_ms`, `cached`, `status`         |
-| `protected_groups`  | `member-sync.ts`       | `patchRecords()` count update     | `member_count`, `last_sync_at`           |
-| `enforced_channels` | `member-sync.ts`       | `patchRecords()` count update     | `subscriber_count`, `last_sync_at`       |
-| `bot_status`        | `status-writer.ts`     | PATCH-then-POST                   | `status='online'`, heartbeat every 30s   |
-| `admin_commands`    | `command-worker.ts`    | `getRecords()` + `patchRecords()` | polls every 30s                          |
-| `bot_instances`     | `bot-manager.ts`       | `getRecords()` load active bots   | reads `is_active=true, is_deleted=false` |
+| Table               | Written By             | Method                            | Notes                                                    |
+| ------------------- | ---------------------- | --------------------------------- | -------------------------------------------------------- |
+| `verification_log`  | `verification.repo.ts` | `postRecords()`                   | status: 'verified'\|'restricted'\|'error' (NOT 'failed') |
+| `protected_groups`  | `member-sync.ts`       | `patchRecords()` count update     | `member_count`, `last_sync_at`                           |
+| `enforced_channels` | `member-sync.ts`       | `patchRecords()` count update     | `subscriber_count`, `last_sync_at`                       |
+| `bot_status`        | `status-writer.ts`     | PATCH-then-POST                   | `status='online'`, heartbeat every 30s                   |
+| `admin_commands`    | `command-worker.ts`    | `getRecords()` + `patchRecords()` | polls every 30s; realtime INSERT trigger active          |
+| `bot_instances`     | `bot-manager.ts`       | `getRecords()` load active bots   | reads `is_active=true, is_deleted=false`                 |
+| `admin_logs`        | `db-log-transport.ts`  | `postRecords()` fire-and-forget   | WARN+ pino lines; web Logs page realtime stream          |
+| `api_call_log`      | `apiLogTransformer`    | `postRecords()` fire-and-forget   | all Telegram API calls (excl. getUpdates); latency_ms    |
+| `owners`            | `owner.repo.ts`        | GET + `postRecords()` upsert      | Must exist before any `protected_groups` INSERT          |
 
 > **⚠️ Phase 66 lesson**: All INSERT operations require `GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon`.
 > Without this, every INSERT returns **401 Unauthorized** from PostgREST.
+
+### Verification Cache Tuning (Phase 108)
+
+- Positive membership cache: `MEMBER_CACHE_TTL=300` seconds
+- Negative membership cache: `MEMBER_NEGATIVE_CACHE_TTL=30` seconds
+- Explicit verify clicks bypass cached negative membership results and force a fresh Telegram `getChatMember` check
+- Passive group filtering still honors cached negative results for throughput
 
 ---
 
@@ -222,6 +233,7 @@ main()
 | `BOT_TOKEN` only (no INSFORGE) | Degraded: bot works, no status writer / member sync / command worker |
 | `BOT_TOKEN` missing            | Fatal error with clear message, `process.exit(1)`                    |
 | `INSFORGE_BASE_URL=""` (blank) | Treated as not set (Zod coerces to `undefined`)                      |
+| InsForge unreachable           | DB-backed operations fail fast via request timeout instead of hanging |
 
 ### `botInstanceId` Sentinel Values
 
@@ -232,4 +244,4 @@ main()
 
 ---
 
-_Last Updated: 2026-03-06 (Phase 103 — PTB archived; grammY + Prettier gates documented)_
+_Last Updated: 2026-03-07 (Phase 108 — verification cache TTL split documented)_

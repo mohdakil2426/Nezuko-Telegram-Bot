@@ -1,4 +1,9 @@
+import { config as loadDotenv } from "dotenv";
 import { z } from "zod";
+
+// Node production runs (`node dist/main.js`) do not auto-load `.env`.
+// Bun dev does, but calling dotenv here keeps both runtimes aligned.
+loadDotenv({ quiet: true });
 
 /**
  * Zod schema for environment variables.
@@ -37,6 +42,7 @@ const configSchema = z.object({
   REDIS_URL: z.string().default("redis://localhost:6379"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   HEALTH_PORT: z.coerce.number().int().positive().default(8080),
+  INSFORGE_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(5000),
 
   // Mode selector
   DASHBOARD_MODE: z
@@ -65,6 +71,7 @@ export interface Config {
   redisUrl: string;
   logLevel: "debug" | "info" | "warn" | "error";
   healthPort: number;
+  insforgeRequestTimeoutMs: number;
   dashboardMode: boolean;
   /** True when DASHBOARD_MODE=false (single-bot mode). Convenience alias. */
   standaloneMode: boolean;
@@ -97,6 +104,7 @@ export function loadConfig(): Config {
     redisUrl: parsed.REDIS_URL,
     logLevel: parsed.LOG_LEVEL,
     healthPort: parsed.HEALTH_PORT,
+    insforgeRequestTimeoutMs: parsed.INSFORGE_REQUEST_TIMEOUT_MS,
     dashboardMode,
     standaloneMode: !dashboardMode,
   };

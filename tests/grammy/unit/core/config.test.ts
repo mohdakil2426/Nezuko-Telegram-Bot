@@ -122,8 +122,18 @@ describe("config — loadConfig()", () => {
     expect(config.redisUrl).toBe("redis://localhost:6379");
     expect(config.logLevel).toBe("info");
     expect(config.healthPort).toBe(8080);
+    expect(config.insforgeRequestTimeoutMs).toBe(5000);
     expect(config.dashboardMode).toBe(false);
     expect(config.standaloneMode).toBe(true);
+  });
+
+  it("allows overriding INSFORGE_REQUEST_TIMEOUT_MS", () => {
+    process.env.BOT_TOKEN = "123456789:ABCdefGHI";
+    process.env.INSFORGE_REQUEST_TIMEOUT_MS = "2500";
+
+    const config = loadConfig();
+
+    expect(config.insforgeRequestTimeoutMs).toBe(2500);
   });
 
   // ── Mode flags ────────────────────────────────────────────────────────────

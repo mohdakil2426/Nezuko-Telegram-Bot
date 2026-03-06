@@ -143,17 +143,6 @@ eventsComposer.on("message", async (ctx, next) => {
     return;
   }
 
-  // EC-35: Admins always pass
-  try {
-    const member = await ctx.api.getChatMember(ctx.chat.id, ctx.from.id);
-    if ((ADMIN_STATUSES as readonly string[]).includes(member.status)) {
-      await next();
-      return;
-    }
-  } catch {
-    // If we can't check, fall through to verification check
-  }
-
   // Check Redis cache first
   const cacheKey = `${CACHE_NAMESPACES.VERIFIED}:${ctx.chat.id}:${ctx.from.id}`;
   const cached = await ctx.cache.get(cacheKey).catch(() => null);
@@ -169,6 +158,18 @@ eventsComposer.on("message", async (ctx, next) => {
     await ctx.cache.set(cacheKey, "1", "EX", 3600).catch(() => {});
     await next();
     return;
+  }
+
+  // EC-35: Admins always pass. Keep this after cache/DB checks so already
+  // verified users avoid an extra Telegram API roundtrip on every group message.
+  try {
+    const member = await ctx.api.getChatMember(ctx.chat.id, ctx.from.id);
+    if ((ADMIN_STATUSES as readonly string[]).includes(member.status)) {
+      await next();
+      return;
+    }
+  } catch {
+    // If we can't check, fall through to deletion (fail closed for non-verified users)
   }
 
   // Not verified — delete the message

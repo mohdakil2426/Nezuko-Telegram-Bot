@@ -28,7 +28,9 @@ import { CommandWorker } from "./services/command-worker.js";
 import { InsForgeRealtimeClient } from "./core/realtime-client.js";
 import { startHealthServer } from "./utils/health.js";
 import { ALLOWED_UPDATES, SHUTDOWN_TIMEOUT_MS } from "./core/constants.js";
+import { createDbLogDestination } from "./core/db-log-transport.js";
 import type { BotDeps } from "./types.js";
+import { acquireProcessLock } from "./utils/process-lock.js";
 
 // ─── Banner helpers ───────────────────────────────────────────────────────────
 
@@ -48,35 +50,40 @@ async function main(): Promise<void> {
 
   // Step 2: Structured logger
   const logger = createLogger(config.logLevel);
+  const lockName = config.dashboardMode ? "dashboard-mode" : `standalone-${config.botId}`;
+  const processLock = await acquireProcessLock(lockName, logger);
 
-  // ── Mode-specific validation ────────────────────────────────────────────────
+  try {
+    // ── Mode-specific validation ──────────────────────────────────────────────
+    if (config.dashboardMode) {
+      // Dashboard mode requires InsForge credentials
+      // Master key is fetched automatically from the Security Vault (nezuko_secrets) at runtime
+      if (!config.dbAvailable) {
+        logger.error(
+          "DASHBOARD_MODE=true but INSFORGE_BASE_URL / INSFORGE_ANON_KEY are not set.\n" +
+            "Set them in apps/grammy/.env or disable dashboard mode with DASHBOARD_MODE=false."
+        );
+        process.exit(1);
+      }
 
-  if (config.dashboardMode) {
-    // Dashboard mode requires InsForge credentials
-    // Master key is fetched automatically from the Security Vault (nezuko_secrets) at runtime
-    if (!config.dbAvailable) {
+      await runDashboardMode(config, logger);
+      return;
+    }
+
+    // Standalone mode requires BOT_TOKEN
+    if (!config.botToken) {
       logger.error(
-        "DASHBOARD_MODE=true but INSFORGE_BASE_URL / INSFORGE_ANON_KEY are not set.\n" +
-          "Set them in apps/grammy/.env or disable dashboard mode with DASHBOARD_MODE=false."
+        "BOT_TOKEN is not set.\n" +
+          "Add it to apps/grammy/.env: BOT_TOKEN=<your-bot-token>\n" +
+          "Get a token from @BotFather on Telegram."
       );
       process.exit(1);
     }
 
-    await runDashboardMode(config, logger);
-    return;
+    await runStandaloneMode(config as typeof config & { botToken: string }, logger);
+  } finally {
+    await processLock.release();
   }
-
-  // Standalone mode requires BOT_TOKEN
-  if (!config.botToken) {
-    logger.error(
-      "BOT_TOKEN is not set.\n" +
-        "Add it to apps/grammy/.env: BOT_TOKEN=<your-bot-token>\n" +
-        "Get a token from @BotFather on Telegram."
-    );
-    process.exit(1);
-  }
-
-  await runStandaloneMode(config as typeof config & { botToken: string }, logger);
 }
 
 // ─── Standalone mode ──────────────────────────────────────────────────────────
@@ -101,6 +108,7 @@ async function runStandaloneMode(
       baseUrl: config.insforgeBaseUrl!,
       anonKey: config.insforgeAnonKey!,
       logger,
+      requestTimeoutMs: config.insforgeRequestTimeoutMs,
     });
     logger.info("✅  InsForge REST client ready");
   } else {
@@ -111,6 +119,12 @@ async function runStandaloneMode(
     );
   }
 
+  // Upgrade logger with DB transport when InsForge is available (BUG-10 fix)
+  // botId 0 = standalone sentinel; logs are scoped to the process, not a DB bot row
+  const effectiveLogger = db
+    ? createLogger(config.logLevel, [createDbLogDestination(db, null)])
+    : logger;
+
   // Redis cache (always attempt — graceful degradation built into createCache)
   const cache = createCache(config.redisUrl, logger);
 
@@ -118,10 +132,17 @@ async function runStandaloneMode(
   const botId = config.botId;
 
   const deps: BotDeps = {
-    db: db ?? new InsForgeClient({ baseUrl: "http://disabled", anonKey: "disabled", logger }),
+    db:
+      db ??
+      new InsForgeClient({
+        baseUrl: "http://disabled",
+        anonKey: "disabled",
+        logger,
+        requestTimeoutMs: config.insforgeRequestTimeoutMs,
+      }),
     cache,
     botId,
-    logger,
+    logger: effectiveLogger,
   };
 
   // Create bot with all middleware / composers
@@ -160,8 +181,12 @@ async function runStandaloneMode(
   let statusInterval: NodeJS.Timeout | undefined; // unused in standalone mode
 
   // Health server
-  const healthServer = startHealthServer(config.healthPort);
-  logger.info(`✅  Health server listening on port ${config.healthPort}`);
+  const healthServer = await startHealthServer(config.healthPort, effectiveLogger);
+  if (healthServer) {
+    effectiveLogger.info(`✅  Health server listening on port ${config.healthPort}`);
+  } else {
+    effectiveLogger.warn("⚠  Health server disabled");
+  }
 
   // Graceful shutdown
   setupShutdown(handle, {
@@ -197,23 +222,29 @@ async function runDashboardMode(
     baseUrl: config.insforgeBaseUrl!,
     anonKey: config.insforgeAnonKey!,
     logger,
+    requestTimeoutMs: config.insforgeRequestTimeoutMs,
   });
   logger.info("✅  InsForge REST client ready");
 
-  const cache = createCache(config.redisUrl, logger);
+  // Upgrade logger with DB transport now that InsForge is available (BUG-10 fix)
+  // Manager-level logs use bot_id=null; per-bot logs use their own botId via child logger
+  const effectiveLogger = createLogger(config.logLevel, [createDbLogDestination(db, null)]);
+  effectiveLogger.info("✅  DB log transport active (WARN+ forwarded to admin_logs)");
+
+  const cache = createCache(config.redisUrl, effectiveLogger);
   let realtime: InsForgeRealtimeClient | null = null;
 
   realtime = new InsForgeRealtimeClient({
     baseUrl: config.insforgeBaseUrl!,
     anonKey: config.insforgeAnonKey!,
-    logger,
+    logger: effectiveLogger,
   });
 
   const realtimeConnected = await realtime.connect();
   if (realtimeConnected) {
-    logger.info("✅  Realtime client connected");
+    effectiveLogger.info("✅  Realtime client connected");
   } else {
-    logger.warn("⚠  Realtime unavailable — dashboard commands will use polling fallback");
+    effectiveLogger.warn("⚠  Realtime unavailable — dashboard commands will use polling fallback");
   }
 
   // Dynamic import to avoid loading multi-bot code in single-bot mode
@@ -222,7 +253,7 @@ async function runDashboardMode(
   const manager = new BotManager({
     db,
     cache,
-    logger,
+    logger: effectiveLogger,
     botFactory: (bot, deps) => createBotWithDeps(bot, deps),
   });
 
@@ -231,18 +262,18 @@ async function runDashboardMode(
 
   const status = manager.getStatus();
   if (status.total === 0) {
-    logger.warn(
+    effectiveLogger.warn(
       "⚠  No active bot instances found in DB.\n" +
         "   Add a bot via the web dashboard (Dashboard → Bots) and it will be\n" +
         "   picked up automatically by the sync loop (30s interval)."
     );
   } else {
-    logger.info(`✅  ${status.total} bot(s) running`);
+    effectiveLogger.info(`✅  ${status.total} bot(s) running`);
   }
 
   // Start 30s sync loop — picks up bots added/removed via dashboard after startup
   manager.startSyncLoop();
-  logger.info("✅  Bot sync loop running (30s interval)");
+  effectiveLogger.info("✅  Bot sync loop running (30s interval)");
 
   // Start CommandWorker — processes start/stop/restart commands from the dashboard
   const commandWorker = new CommandWorker({
@@ -250,20 +281,24 @@ async function runDashboardMode(
     realtime,
     botManager: manager,
     botId: 0, // Manager-level worker — handles commands for all managed bots
-    logger,
+    logger: effectiveLogger,
   });
   commandWorker.start();
-  logger.info(
+  effectiveLogger.info(
     realtimeConnected
       ? "✅  CommandWorker started (realtime + 30s poll fallback)"
       : "✅  CommandWorker started (30s poll fallback)"
   );
 
   // Health server
-  startHealthServer(config.healthPort);
-  logger.info(`✅  Health server listening on port ${config.healthPort}`);
+  const healthServer = await startHealthServer(config.healthPort, effectiveLogger);
+  if (healthServer) {
+    effectiveLogger.info(`✅  Health server listening on port ${config.healthPort}`);
+  } else {
+    effectiveLogger.warn("⚠  Health server disabled");
+  }
 
-  logger.info("Dashboard mode running. Press Ctrl+C to stop all bots.");
+  effectiveLogger.info("Dashboard mode running. Press Ctrl+C to stop all bots.");
 
   // Keep process alive until SIGINT/SIGTERM (mirrors PTB bot's asyncio.run(bot_manager.run()))
   await new Promise<void>((resolve) => {
@@ -280,6 +315,7 @@ async function runDashboardMode(
   realtime?.disconnect();
   await manager.shutdown(); // also stops sync loop
   await cache.quit();
+  healthServer?.close();
 
   // Final SHUTDOWN_TIMEOUT_MS wait to ensure in-flight updates complete
   await new Promise<void>((resolve) => {
@@ -288,7 +324,6 @@ async function runDashboardMode(
   });
 
   logger.info("Dashboard mode shutdown complete.");
-  process.exit(0);
 }
 
 // ─── Top-level error handler ──────────────────────────────────────────────────

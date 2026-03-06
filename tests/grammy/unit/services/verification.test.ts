@@ -89,6 +89,12 @@ describe("verifyMembership", () => {
 
     expect(result.success).toBe(false);
     expect(result.missingChannels).toContain("@channel2");
+    expect(cache.set).toHaveBeenCalledWith(
+      expect.stringContaining("member:200:999"),
+      "0",
+      "EX",
+      30
+    );
   });
 
   it("multiple missing channels are all listed", async () => {
@@ -154,6 +160,44 @@ describe("verifyMembership", () => {
 
     expect(result.success).toBe(true);
     expect(result.missingChannels).toHaveLength(0);
+  });
+
+  it("explicit verify bypasses stale negative cache and rechecks Telegram", async () => {
+    vi.mocked(db.getRecords)
+      .mockResolvedValueOnce([{ group_id: 1, channel_id: 800 }])
+      .mockResolvedValueOnce([makeChannel(800, "freshjoin")]);
+
+    vi.mocked(cache.get).mockResolvedValue("0");
+    const getChatMember = vi.fn().mockResolvedValue({ status: "member" });
+    const api = createMockApi({ getChatMember });
+
+    const result = await verifyMembership(api as never, db, cache, 1, 999, createMockLogger(), {
+      bypassNegativeCache: true,
+    });
+
+    expect(result.success).toBe(true);
+    expect(getChatMember).toHaveBeenCalledOnce();
+    expect(cache.set).toHaveBeenCalledWith(
+      expect.stringContaining("member:800:999"),
+      "1",
+      "EX",
+      300
+    );
+  });
+
+  it("group message checks still honor negative cache without hitting Telegram", async () => {
+    vi.mocked(db.getRecords)
+      .mockResolvedValueOnce([{ group_id: 1, channel_id: 900 }])
+      .mockResolvedValueOnce([makeChannel(900, "cachedmiss")]);
+
+    vi.mocked(cache.get).mockResolvedValue("0");
+    const api = createMockApi();
+
+    const result = await verifyMembership(api as never, db, cache, 1, 999);
+
+    expect(result.success).toBe(false);
+    expect(result.missingChannels).toContain("@cachedmiss");
+    expect(api.getChatMember).not.toHaveBeenCalled();
   });
 
   it("Redis down — graceful degradation: falls back to API (EC-59)", async () => {

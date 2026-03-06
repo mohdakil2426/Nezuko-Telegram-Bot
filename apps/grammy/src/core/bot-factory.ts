@@ -20,7 +20,7 @@
  *   Global error handler: bot.catch()
  */
 
-import { type Middleware, Bot, GrammyError, HttpError } from "grammy";
+import { type Middleware, Bot, Composer, GrammyError, HttpError } from "grammy";
 import type { NextFunction, Transformer } from "grammy";
 import { autoRetry } from "@grammyjs/auto-retry";
 import { hydrate } from "@grammyjs/hydrate";
@@ -76,6 +76,9 @@ function makeErrorHandler(
       { err: err.error, updateId: err.ctx.update.update_id },
       "Composer error boundary caught error"
     );
+    // Inform the user — never expose internal details or stack traces
+    // .catch() swallows network errors so this never throws again (BUG-04 fix)
+    await err.ctx.reply("⚠️ An internal error occurred. Please try again.").catch(() => {});
   };
 }
 
@@ -149,6 +152,49 @@ function wireBotMiddleware(bot: Bot<NezukoContext>, deps: BotDeps): void {
 
   bot.api.config.use(htmlTransformer);
 
+  // ── API call logging transformer (BUG-11 fix) ────────────────────
+  // Fire-and-forget: errors in the logger NEVER propagate to the bot.
+  // High-volume polling methods are excluded to prevent DB flooding.
+  const API_LOG_SKIP = new Set(["getUpdates"]);
+
+  const apiLogTransformer: Transformer = async (prev, method, payload, signal) => {
+    if (API_LOG_SKIP.has(method)) return prev(method, payload, signal);
+
+    const start = performance.now();
+    // Use null for bot_id to avoid FK violation with botId=0 (standalone sentinel)
+    // Per-instance bot_id attribution is available via bot_status.bot_id
+    const botIdForLog: number | null = deps.botId > 0 ? deps.botId : null;
+    try {
+      const result = await prev(method, payload, signal);
+      deps.db
+        .postRecords("api_call_log", [
+          {
+            bot_id: botIdForLog,
+            method,
+            success: true,
+            latency_ms: Math.round(performance.now() - start),
+          },
+        ])
+        .catch(() => {});
+      return result;
+    } catch (err: unknown) {
+      const errorType = err instanceof Error ? err.constructor.name.slice(0, 50) : "UnknownError";
+      deps.db
+        .postRecords("api_call_log", [
+          {
+            bot_id: botIdForLog,
+            method,
+            success: false,
+            latency_ms: Math.round(performance.now() - start),
+            error_type: errorType,
+          },
+        ])
+        .catch(() => {});
+      throw err;
+    }
+  };
+  bot.api.config.use(apiLogTransformer);
+
   // ── 2. Debug Middleware ─────────────────────────────────────────
   installDebugMiddleware(bot, deps.logger);
 
@@ -169,21 +215,26 @@ function wireBotMiddleware(bot: Bot<NezukoContext>, deps: BotDeps): void {
 
   // ── 8. Additional Composers ───────────────────────────────────────
   const errorHandler = makeErrorHandler(deps.logger);
+  const mountProtectedComposer = (composer: Composer<NezukoContext>): void => {
+    const boundary = new Composer<NezukoContext>().errorBoundary(errorHandler);
+    boundary.use(composer);
+    bot.use(boundary);
+  };
 
   // Admin commands (/protect, /unprotect, /settings)
-  bot.use(adminComposer.errorBoundary(errorHandler));
+  mountProtectedComposer(adminComposer);
 
   // Channel commands (/channels, /verify, /stats)
-  bot.use(channelsComposer.errorBoundary(errorHandler));
+  mountProtectedComposer(channelsComposer);
 
   // Migration handler
-  bot.use(migrationComposer.errorBoundary(errorHandler));
+  mountProtectedComposer(migrationComposer);
 
   // Event handlers (join/leave/message filter)
-  bot.use(eventsComposer.errorBoundary(errorHandler));
+  mountProtectedComposer(eventsComposer);
 
   // Verification callback handler
-  bot.use(verifyComposer.errorBoundary(errorHandler));
+  mountProtectedComposer(verifyComposer);
 
   // Fallback — ALWAYS last, no errorBoundary
   bot.use(fallbackComposer);

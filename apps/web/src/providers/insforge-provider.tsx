@@ -8,13 +8,22 @@
  *
  * afterSignInUrl: redirect to dashboard after successful sign-in.
  */
-import { InsforgeBrowserProvider } from "@insforge/nextjs";
+import { InsforgeBrowserProvider, type InitialAuthState } from "@insforge/nextjs";
 
 import { insforge } from "@/lib/insforge";
 
-export function InsforgeProvider({ children }: { children: React.ReactNode }) {
+interface InsforgeProviderProps {
+  children: React.ReactNode;
+  initialState?: InitialAuthState;
+}
+
+export function InsforgeProvider({ children, initialState }: InsforgeProviderProps) {
   return (
-    <InsforgeBrowserProvider client={insforge} afterSignInUrl="/dashboard">
+    <InsforgeBrowserProvider
+      client={insforge}
+      afterSignInUrl="/dashboard"
+      initialState={initialState}
+    >
       {children}
     </InsforgeBrowserProvider>
   );

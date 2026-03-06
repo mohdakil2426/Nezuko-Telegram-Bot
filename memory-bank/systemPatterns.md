@@ -2,7 +2,7 @@
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — `apps/bot/` preserved for reference only. Not maintained.
-> **Last Updated**: 2026-03-06 (Phase 103)
+> **Last Updated**: 2026-03-07 (Phase 108)
 
 ---
 
@@ -38,13 +38,14 @@ apps/grammy/src/
 ├── config.ts             # Zod v4 soft validation — all fields optional at schema level
 ├── types.ts              # NezukoContext + BotDeps types
 ├── core/
-│   ├── bot-factory.ts    # createBot() + createBotWithDeps() + full middleware wiring
+│   ├── bot-factory.ts    # createBot() + createBotWithDeps() + apiLogTransformer
 │   ├── bot-commands.ts   # syncBotCommands() — private/group/group-admin menu scopes
 │   ├── insforge-client.ts# InsForgeClient (native fetch REST — getRecords/postRecords/patchRecords/deleteRecords)
 │   ├── realtime-client.ts# InsForgeRealtimeClient (socket.io — subscribes to 5 channels)
 │   ├── cache.ts          # CacheClient wrapping ioredis — graceful degradation built in
 │   ├── encryption.ts     # AES-256-GCM token encrypt/decrypt + getMasterKey() from vault
 │   ├── shutdown.ts       # setupShutdown() — SIGINT/SIGTERM handler
+│   ├── db-log-transport.ts # pino DestinationStream → admin_logs (WARN+ forwarding)
 │   └── constants.ts      # All timing, channel, cache prefix, allowed_updates constants
 ├── middleware/
 │   ├── sequentialize.ts  # Per-chat sequentialize (MUST be first middleware)
@@ -61,7 +62,7 @@ apps/grammy/src/
 │   ├── fallback.ts       # Catch-all (always last)
 │   └── migration.ts      # my_chat_member handler — group migration
 ├── services/
-│   ├── verification.ts   # verifyMembership() — multi-channel AND logic
+│   ├── verification.ts   # verifyMembership() — multi-channel AND logic + explicit verify cache bypass
 │   ├── protection.ts     # muteUser(), unmuteUser(), kickUser()
 │   ├── channel-linker.ts # linkChannel(), unlinkChannel()
 │   ├── batch-verification.ts # batchVerify() — Map<userId, result>
@@ -72,18 +73,20 @@ apps/grammy/src/
 │   ├── bot-manager.ts    # BotManager — initialize(), startSyncLoop(), handleCommand(), shutdown()
 │   ├── bot-lifecycle.ts  # BotLifecycleManager — startBot(), stopBot(), restartBot()
 │   └── bot-registry.ts   # BotRegistry — Map<botId, BotInstance>
-├── database/
-│   ├── types.ts          # ProtectedGroup, EnforcedChannel, GroupChannelLink, VerificationLog, BotStatus
-│   ├── group.repo.ts     # getGroupChannels(), setGroupActive(), createProtectedGroup()
-│   ├── channel.repo.ts   # updateSubscriberCount()
-│   ├── link.repo.ts      # linkGroupChannel(), unlinkGroupChannel()
-│   ├── verification.repo.ts # logVerification()
-│   └── bot-status.repo.ts# upsertBotStatus() — PATCH-then-POST pattern
+└── database/
+    ├── types.ts          # ProtectedGroup, EnforcedChannel, GroupChannelLink, VerificationLog, BotStatus
+    ├── owner.repo.ts     # upsertOwner() — FK-safe owner upsert before protected_groups INSERT
+    ├── group.repo.ts     # getGroupChannels(), setGroupActive(), createProtectedGroup()
+    ├── channel.repo.ts   # updateSubscriberCount()
+    ├── link.repo.ts      # linkGroupChannel(), unlinkGroupChannel()
+    ├── verification.repo.ts # logVerification() — status: 'verified'|'restricted'|'error' only
+    └── bot-status.repo.ts# upsertBotStatus() — PATCH-then-POST pattern
 └── utils/
     ├── logger.ts         # createLogger() — pino JSON logger with child() support
     ├── messages.ts       # All user-facing HTML message strings (constants)
     ├── auto-delete.ts    # scheduleDelete() — setTimeout → msg.delete()
-    └── health.ts         # startHealthServer() — /health HTTP endpoint
+    ├── health.ts         # startHealthServer() — /health HTTP endpoint
+    └── process-lock.ts   # acquireProcessLock() — prevents duplicate local bot starts
 ```
 
 ---
@@ -104,6 +107,17 @@ if (config.dashboardMode) {
   if (!config.botToken) process.exit(1);
   await runStandaloneMode(config, logger); // degrades gracefully without InsForge
 }
+
+// Phase 107 — startup singleton protection
+const releaseLock = await acquireProcessLock(
+  config.dashboardMode ? "dashboard-mode" : `standalone-${config.botId}`,
+  logger
+);
+try {
+  // run selected mode...
+} finally {
+  releaseLock();
+}
 ```
 
 ### 2 — Bot Wiring: Middleware Order (CRITICAL)
@@ -112,6 +126,7 @@ if (config.dashboardMode) {
 // ── API Transformers (outgoing) ──────────────────────────────
 bot.api.config.use(autoRetry({ maxRetryAttempts: 3, maxDelaySeconds: 60 }));
 bot.api.config.use(htmlTransformer);    // custom Transformer — NOT parseMode()
+bot.api.config.use(apiLogTransformer);  // Phase 105: logs method/latency/success to api_call_log
 
 // ── Middleware (upstream → downstream) ───────────────────────
 bot.use(sequentializeMiddleware);       // MUST be position 1
@@ -122,12 +137,13 @@ bot.use(contextEnricher(deps));         // injects db, cache, botId, log into ct
 // ── Core commands (inline — not via singleton composer) ───────
 wireCoreCommands(bot, deps);            // /start, /help
 
-// ── Composers with per-composer errorBoundary ─────────────────
-bot.use(adminComposer.errorBoundary(errorHandler));
-bot.use(channelsComposer.errorBoundary(errorHandler));
-bot.use(migrationComposer.errorBoundary(errorHandler));
-bot.use(eventsComposer.errorBoundary(errorHandler));
-bot.use(verifyComposer.errorBoundary(errorHandler));
+// ── Composers with real protected mounting ────────────────────
+// Phase 106 — each composer must be mounted inside a live boundary.
+bot.use(adminBoundary);
+bot.use(channelsBoundary);
+bot.use(migrationBoundary);
+bot.use(eventsBoundary);
+bot.use(verifyBoundary);
 bot.use(fallbackComposer);              // ALWAYS last, no boundary
 
 // ── Global catch ─────────────────────────────────────────────
@@ -171,13 +187,21 @@ bot.api.config.use(htmlTransformer);
 
 ```typescript
 // All DB access goes through InsForgeClient — never raw PostgreSQL
-const client = new InsForgeClient({ baseUrl, anonKey, logger });
+const client = new InsForgeClient({
+  baseUrl,
+  anonKey,
+  logger,
+  requestTimeoutMs: config.insforgeRequestTimeoutMs,
+});
 
 await client.getRecords<T>("table", { column: "eq.value" });
 await client.postRecords<T>("table", [{ col: "val" }]);
 await client.patchRecords<T>("table", { col: "eq.val" }, { col: "new" });
 await client.deleteRecords("table", { col: "eq.val" });
 await client.getSecret("master_key"); // reads from nezuko_secrets vault
+
+// Phase 107 — all REST calls use AbortController timeouts so
+// slow InsForge/network failures do not stall command handling indefinitely.
 
 // ❌ Any import of @insforge/sdk in the grammy bot — use InsForgeClient instead
 ```
@@ -238,13 +262,41 @@ if (channels.length === 0) { await unmuteUser(...); return; }
 await sendVerificationMessage(api, chatId, userId, channels);
 
 // verify.ts — on callback_query "verify:<userId>"
-const { success, missingChannels } = await verifyMembership(api, db, chatId, userId, botId, log);
+const { success, missingChannels } = await verifyMembership(
+  api,
+  db,
+  cache,
+  chatId,
+  userId,
+  log,
+  { bypassNegativeCache: true }
+);
 if (success) {
   await unmuteUser(api, chatId, userId);
   await ctx.answerCallbackQuery({ text: "✅ Verified!" });
 } else {
   await ctx.answerCallbackQuery({ text: `❌ Join: ${missingChannels.join(", ")}`, show_alert: true });
 }
+```
+
+### 8.1 — Membership Cache Rules (Phase 108)
+
+```typescript
+MEMBER_CACHE_TTL = 300;          // positive membership cache
+MEMBER_NEGATIVE_CACHE_TTL = 30;  // negative membership cache
+
+// Explicit verify clicks must not trust stale cached "0" results.
+await verifyMembership(api, db, cache, groupId, userId, log, {
+  bypassNegativeCache: true,
+});
+```
+
+### 8.2 — Sequentialization Rules (Phase 108)
+
+```typescript
+// Busy groups should not serialize unrelated users behind one queue key.
+getSequentializeKey(ctx) => `${chatId}:${userId}`;  // ordinary user traffic
+getSequentializeKey(ctx) => `${chatId}`;            // slash commands + membership updates
 ```
 
 ### 9 — Test Patterns (Vitest v4)
@@ -289,6 +341,112 @@ bun run type-check    # 0 errors REQUIRED
 bun run lint          # 0 warnings REQUIRED
 bun x prettier src --write && bun x prettier src --check  # All clean REQUIRED
 bun run build         # Next.js build 0 errors REQUIRED
+```
+
+### 11 — DB Log Transport (Phase 105)
+
+```typescript
+// core/db-log-transport.ts — pino DestinationStream → admin_logs
+// WARN+ only (levelNum >= 40). Fire-and-forget — failures never propagate.
+export function createDbLogDestination(
+  db: InsForgeClient, botId: number | null
+): DestinationStream { ... }
+
+// Wired in main.ts (both modes) — after InsForge client is ready:
+const effectiveLogger = db
+  ? createLogger(config.logLevel, [createDbLogDestination(db, null)])
+  : logger;
+
+// logger.ts now supports pino.multistream:
+export function createLogger(level: string, extras: DestinationStream[] = []): Logger
+// extras=[] → fast path (no multistream overhead)
+// extras=[dbTransport] → stdout + admin_logs
+```
+
+### 12 — API Call Telemetry (Phase 105)
+
+```typescript
+// bot-factory.ts — added after htmlTransformer
+const API_LOG_SKIP = new Set(["getUpdates"]); // exclude polling calls
+
+const apiLogTransformer: Transformer = async (prev, method, payload, signal) => {
+  if (API_LOG_SKIP.has(method)) return prev(method, payload, signal);
+  const start = performance.now();
+  const botIdForLog: number | null = deps.botId > 0 ? deps.botId : null; // FK safety
+  try {
+    const result = await prev(method, payload, signal);
+    db.postRecords("api_call_log", [
+      { bot_id: botIdForLog, method, success: true, latency_ms },
+    ]).catch(() => {});
+    return result;
+  } catch (err) {
+    db.postRecords("api_call_log", [
+      { bot_id: botIdForLog, method, success: false, latency_ms, error_type },
+    ]).catch(() => {});
+    throw err;
+  }
+};
+```
+
+### 13 — Verification Status Constraint (Phase 105)
+
+```typescript
+// ⚠️ DB CHECK on verification_log.status allows ONLY:
+//   'verified' | 'restricted' | 'error'
+// 'failed' is NOT allowed — it causes a silent 409 POST failure.
+// In verify.ts: use 'restricted' for non-member checks, 'error' for unexpected exceptions.
+export interface LogVerificationData {
+  status: "verified" | "restricted" | "error"; // NOT "failed"
+}
+```
+
+### 14 — Realtime Hook: Avoiding Reconnect Loop (Phase 105)
+
+```typescript
+// ⚠️ BUG-13 pattern — DO NOT put connectionState in the auto-connect useEffect deps.
+// It causes: connect() → state changes → cleanup runs → disconnect() → repeat.
+
+// ✅ CORRECT: Mirror state into a ref; read ref inside effect:
+const connectionStateRef = useRef<ConnectionState>("disconnected");
+useEffect(() => {
+  connectionStateRef.current = connectionState;
+}, [connectionState]);
+
+useEffect(() => {
+  const timer = setTimeout(() => {
+    if (connectionStateRef.current !== "connected" && connectionStateRef.current !== "connecting") {
+      connect();
+    }
+  }, 0);
+  return () => clearTimeout(timer); // DO NOT call disconnect() here
+}, [autoConnect, isSignedIn, connect, retryAttempt]); // connectionState NOT in deps
+
+// ✅ Unmount cleanup — separate effect using disconnectRef:
+const disconnectRef = useRef(disconnect);
+useEffect(() => {
+  disconnectRef.current = disconnect;
+}, [disconnect]);
+useEffect(() => () => disconnectRef.current(), []); // unmount only
+```
+
+### 15 — FK-Safe Owner Upsert (Phase 105)
+
+```typescript
+// ⚠️ protected_groups.owner_id FK → owners.user_id.
+// If owners table is empty, any createGroup() call fails with 409 FK violation.
+// MUST call upsertOwner() first in channel-linker.ts:
+
+// owner.repo.ts
+export async function upsertOwner(db: InsForgeClient, ownerId: number): Promise<void> {
+  const existing = await db.getRecords<Owner>("owners", { user_id: `eq.${ownerId}` });
+  if (existing.length === 0) {
+    await db.postRecords<Owner>("owners", [{ user_id: ownerId }]);
+  }
+}
+
+// channel-linker.ts — Step 7 (BEFORE createGroup):
+await upsertOwner(db, ownerId); // ✅ always before createGroup()
+await createGroup(db, groupId, ownerId, groupTitle, memberCount);
 ```
 
 ---
@@ -478,4 +636,4 @@ const { period, summary } = extractEnvelopeMetadata(data);
 
 ---
 
-_Last Updated: 2026-03-06 (Phase 103 — Complete grammY-first rewrite; PTB archived)_
+_Last Updated: 2026-03-07 (Phase 108 — verification cache bypass and narrower group queues)_

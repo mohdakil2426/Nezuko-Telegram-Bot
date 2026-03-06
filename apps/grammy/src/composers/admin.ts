@@ -8,9 +8,6 @@ import { getGroupChannels } from "../database/group.repo.js";
 import { scheduleDelete } from "../utils/auto-delete.js";
 import { AUTO_DELETE_DELAY } from "../core/constants.js";
 import {
-  WELCOME_PRIVATE,
-  WELCOME_GROUP,
-  HELP_TEXT,
   PROTECT_SUCCESS,
   PROTECT_USAGE,
   UNPROTECT_SUCCESS,
@@ -24,26 +21,13 @@ import {
 
 export const adminComposer = new Composer<NezukoContext>();
 
-// /start — different response for private vs group
-adminComposer.command("start", async (ctx) => {
-  if (ctx.chat.type === "private") {
-    await ctx.reply(WELCOME_PRIVATE);
-  } else {
-    const msg = await ctx.reply(WELCOME_GROUP);
-    scheduleDelete(msg, AUTO_DELETE_DELAY);
-  }
-});
-
-// /help — HTML command list
-adminComposer.command("help", async (ctx) => {
-  const msg = await ctx.reply(HELP_TEXT);
-  if (ctx.chat.type !== "private") {
-    scheduleDelete(msg, AUTO_DELETE_DELAY);
-  }
-});
+// NOTE: /start and /help are intentionally NOT registered here.
+// They are wired directly on the Bot instance via wireCoreCommands() in bot-factory.ts
+// to avoid double-replies if this composer is also loaded (BUG-05 fix).
 
 // /status — show whether protection is enabled and which channels are linked
-adminComposer.command("status", groupOnly(), async (ctx) => {
+// Requires admin — prevents any group member from seeing channel configuration (BUG-06 fix)
+adminComposer.command("status", adminGuard(), groupOnly(), async (ctx) => {
   const channels = await getGroupChannels(ctx.db, ctx.chat.id);
   const chatTitle = ctx.chat.title ?? "this group";
 

@@ -5,6 +5,7 @@ export interface InsForgeClientOptions {
   baseUrl: string;
   anonKey: string;
   logger: Logger;
+  requestTimeoutMs?: number;
 }
 
 /** Query parameters for PostgREST-style filtering. */
@@ -20,8 +21,9 @@ export class InsForgeClient {
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
   private readonly logger: Logger;
+  private readonly requestTimeoutMs: number;
 
-  constructor({ baseUrl, anonKey, logger }: InsForgeClientOptions) {
+  constructor({ baseUrl, anonKey, logger, requestTimeoutMs = 5000 }: InsForgeClientOptions) {
     // Strip trailing slash to prevent double-slash in URL construction
     this.baseUrl = baseUrl.replace(/\/$/, "");
     this.headers = {
@@ -29,6 +31,28 @@ export class InsForgeClient {
       "Content-Type": "application/json",
     };
     this.logger = logger;
+    this.requestTimeoutMs = requestTimeoutMs;
+  }
+
+  private async fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.requestTimeoutMs);
+
+    try {
+      return await fetch(url, {
+        ...init,
+        signal: controller.signal,
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") {
+        const message = `InsForge request timed out after ${this.requestTimeoutMs}ms`;
+        this.logger.warn({ url, timeoutMs: this.requestTimeoutMs }, message);
+        throw new Error(message);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /** Build the full PostgREST records URL for a table. */
@@ -51,7 +75,7 @@ export class InsForgeClient {
    */
   async getRecords<T>(table: string, params?: QueryParams): Promise<T[]> {
     const url = this.recordsUrl(table, params);
-    const res = await fetch(url, {
+    const res = await this.fetchWithTimeout(url, {
       method: "GET",
       headers: this.headers,
     });
@@ -79,7 +103,7 @@ export class InsForgeClient {
     prefer = "return=representation"
   ): Promise<T[]> {
     const url = this.recordsUrl(table);
-    const res = await fetch(url, {
+    const res = await this.fetchWithTimeout(url, {
       method: "POST",
       headers: { ...this.headers, Prefer: prefer },
       body: JSON.stringify(body),
@@ -112,7 +136,7 @@ export class InsForgeClient {
     body: Record<string, unknown>
   ): Promise<T[]> {
     const url = this.recordsUrl(table, params);
-    const res = await fetch(url, {
+    const res = await this.fetchWithTimeout(url, {
       method: "PATCH",
       headers: { ...this.headers, Prefer: "return=representation" },
       body: JSON.stringify(body),
@@ -139,7 +163,7 @@ export class InsForgeClient {
    */
   async deleteRecords(table: string, params: QueryParams): Promise<void> {
     const url = this.recordsUrl(table, params);
-    const res = await fetch(url, {
+    const res = await this.fetchWithTimeout(url, {
       method: "DELETE",
       headers: this.headers,
     });

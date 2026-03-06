@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createBotWithDeps } from "../../../apps/grammy/src/core/bot-factory.js";
-import { contextEnricher } from "../../../apps/grammy/src/middleware/context-enricher.js";
-import { channelsComposer } from "../../../apps/grammy/src/composers/channels.js";
-import { eventsComposer } from "../../../apps/grammy/src/composers/events.js";
 import { createMockDb, createMockCache, createMockLogger } from "../helpers/mock-deps.js";
 import { createMessageUpdate, createJoinRequestUpdate } from "../helpers/mock-update.js";
 import { createConfiguredTestBot } from "../helpers/test-bot.js";
@@ -40,7 +37,7 @@ describe("bot-factory runtime wiring", () => {
     expect((sendCall?.payload.text as string) ?? "").toContain("Nezuko");
   });
 
-  it("handles /channels via the real production composer", async () => {
+  it("handles /channels through the full shipped wiring", async () => {
     const { bot, apiCalls } = createConfiguredTestBot();
     const deps = makeDeps();
 
@@ -60,13 +57,52 @@ describe("bot-factory runtime wiring", () => {
         },
       ]);
 
-    bot.use(contextEnricher(deps));
-    bot.use(channelsComposer);
+    createBotWithDeps(bot, deps);
     await bot.handleUpdate(createMessageUpdate({ text: "/channels" }));
 
     const sendCall = apiCalls.find((call) => call.method === "sendMessage");
     expect(sendCall).toBeDefined();
     expect((sendCall?.payload.text as string) ?? "").toContain("Prod Channel");
+    expect((sendCall?.payload.text as string) ?? "").toContain("@prodchannel");
+  });
+
+  it("handles /status through the full shipped wiring for group admins", async () => {
+    const { bot, apiCalls } = createConfiguredTestBot({
+      methodResults: {
+        getChatMember: (payload) => ({
+          status: Number(payload.user_id) === 111222333 ? "administrator" : "administrator",
+          user: {
+            id: Number(payload.user_id),
+            is_bot: Number(payload.user_id) === 12345678,
+            first_name: Number(payload.user_id) === 12345678 ? "Nezuko" : "Admin",
+          },
+        }),
+      },
+    });
+    const deps = makeDeps();
+
+    vi.mocked(deps.db.getRecords)
+      .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: -1005555555555 }])
+      .mockResolvedValueOnce([
+        {
+          channel_id: -1005555555555,
+          title: "Prod Channel",
+          username: "prodchannel",
+          invite_link: null,
+          subscriber_count: 42,
+          linked_groups_count: 1,
+          last_sync_at: null,
+          created_at: "",
+          updated_at: "",
+        },
+      ]);
+
+    createBotWithDeps(bot, deps);
+    await bot.handleUpdate(createMessageUpdate({ text: "/status" }));
+
+    const sendCall = apiCalls.find((call) => call.method === "sendMessage");
+    expect(sendCall).toBeDefined();
+    expect((sendCall?.payload.text as string) ?? "").toContain("Protection Status");
     expect((sendCall?.payload.text as string) ?? "").toContain("@prodchannel");
   });
 
@@ -104,8 +140,7 @@ describe("bot-factory runtime wiring", () => {
         },
       ]);
 
-    bot.use(contextEnricher(deps));
-    bot.use(eventsComposer);
+    createBotWithDeps(bot, deps);
     await bot.handleUpdate(createJoinRequestUpdate());
 
     const approveCall = apiCalls.find((call) => call.method === "approveChatJoinRequest");
@@ -153,8 +188,7 @@ describe("bot-factory runtime wiring", () => {
         },
       ]);
 
-    bot.use(contextEnricher(deps));
-    bot.use(eventsComposer);
+    createBotWithDeps(bot, deps);
     await bot.handleUpdate(createJoinRequestUpdate());
 
     const declineCall = apiCalls.find((call) => call.method === "declineChatJoinRequest");

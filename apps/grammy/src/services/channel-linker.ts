@@ -2,6 +2,7 @@ import type { InsForgeClient } from "../core/insforge-client.js";
 import type { Logger } from "../utils/logger.js";
 import { createGroup } from "../database/group.repo.js";
 import { createChannel } from "../database/channel.repo.js";
+import { upsertOwner } from "../database/owner.repo.js";
 import {
   createLink,
   removeLink,
@@ -126,7 +127,11 @@ export async function linkChannel(
     };
   }
 
-  // Step 7: Create/update group (UPSERT)
+  // Step 7: Upsert owner (MUST be before createGroup — FK protected_groups.owner_id → owners.user_id)
+  // Without this, every /protect fails with a 409 FK violation (BUG-02 fix).
+  await upsertOwner(db, ownerId);
+
+  // Create/update group (UPSERT)
   await createGroup(db, groupId, ownerId, groupTitle, memberCount);
 
   // Step 8: Create/update channel (UPSERT)

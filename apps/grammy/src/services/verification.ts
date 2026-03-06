@@ -4,11 +4,25 @@ import type { Logger } from "../utils/logger.js";
 import type { VerificationResult } from "../types.js";
 import type { EnforcedChannel } from "../database/types.js";
 import { getGroupChannels } from "../database/group.repo.js";
-import { VALID_MEMBER_STATUSES, CACHE_NAMESPACES, MEMBER_CACHE_TTL } from "../core/constants.js";
+import {
+  VALID_MEMBER_STATUSES,
+  CACHE_NAMESPACES,
+  MEMBER_CACHE_TTL,
+  MEMBER_NEGATIVE_CACHE_TTL,
+} from "../core/constants.js";
 
 /** Minimal Telegram API interface — keeps services framework-agnostic. */
 interface TelegramApi {
   getChatMember(chatId: number, userId: number): Promise<{ status: string }>;
+}
+
+export interface VerifyMembershipOptions {
+  /**
+   * Force a fresh Telegram membership check when Redis says "not a member".
+   * This is used for explicit Verify button clicks so a user who just joined
+   * does not get stuck behind a stale negative cache entry.
+   */
+  bypassNegativeCache?: boolean;
 }
 
 /**
@@ -31,7 +45,8 @@ export async function verifyMembership(
   cache: CacheClient,
   groupId: number,
   userId: number,
-  log?: Logger
+  log?: Logger,
+  options: VerifyMembershipOptions = {}
 ): Promise<VerificationResult> {
   const start = performance.now();
   const channels = await getGroupChannels(db, groupId);
@@ -43,7 +58,7 @@ export async function verifyMembership(
   const missingChannels: string[] = [];
 
   for (const channel of channels) {
-    const isMember = await checkChannelMembership(api, cache, channel, userId, log);
+    const isMember = await checkChannelMembership(api, cache, channel, userId, log, options);
     if (!isMember) {
       const name = channel.username
         ? `@${channel.username}`
@@ -66,14 +81,26 @@ async function checkChannelMembership(
   cache: CacheClient,
   channel: EnforcedChannel,
   userId: number,
-  log?: Logger
+  log?: Logger,
+  options: VerifyMembershipOptions = {}
 ): Promise<boolean> {
   // L1: Redis cache check
   const cacheKey = `${CACHE_NAMESPACES.MEMBER}:${channel.channel_id}:${userId}`;
   try {
     const cached = await cache.get(cacheKey);
     if (cached !== null) {
-      return cached === "1";
+      if (cached === "1") {
+        return true;
+      }
+
+      if (!options.bypassNegativeCache) {
+        return false;
+      }
+
+      log?.debug?.(
+        { userId, channelId: channel.channel_id },
+        "Bypassing stale negative membership cache for explicit verify"
+      );
     }
   } catch {
     // Redis down — skip cache (EC-59 graceful degradation)
@@ -87,7 +114,12 @@ async function checkChannelMembership(
 
     // Cache the result
     try {
-      await cache.set(cacheKey, isValid ? "1" : "0", "EX", MEMBER_CACHE_TTL);
+      await cache.set(
+        cacheKey,
+        isValid ? "1" : "0",
+        "EX",
+        isValid ? MEMBER_CACHE_TTL : MEMBER_NEGATIVE_CACHE_TTL
+      );
     } catch {
       // Cache write failure is non-fatal
     }

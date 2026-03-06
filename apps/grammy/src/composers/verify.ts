@@ -27,7 +27,9 @@ verifyComposer.callbackQuery(/^verify:(-?\d+)$/, async (ctx) => {
   }
 
   // Verify membership across all linked channels
-  const result = await verifyMembership(ctx.api, ctx.db, ctx.cache, groupId, userId, ctx.log);
+  const result = await verifyMembership(ctx.api, ctx.db, ctx.cache, groupId, userId, ctx.log, {
+    bypassNegativeCache: true,
+  });
 
   if (result.success) {
     // Unmute the user
@@ -61,13 +63,15 @@ verifyComposer.callbackQuery(/^verify:(-?\d+)$/, async (ctx) => {
       // EC-14: Message already deleted — silently ignore
     }
   } else {
-    // Log failed attempt
+    // Log failed attempt (one record per missing channel, capped to avoid flooding)
+    // Use 'restricted' — the DB CHECK allows: 'verified' | 'restricted' | 'error'
+    // 'restricted' = user is in the group but not subscribed to required channels
     for (const _channel of result.missingChannels) {
       await logVerification(ctx.db, {
         user_id: userId,
         group_id: groupId,
         channel_id: 0,
-        status: "failed",
+        status: "restricted",
         latency_ms: result.latencyMs,
       }).catch(() => {});
     }

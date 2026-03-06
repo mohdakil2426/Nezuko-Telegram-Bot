@@ -17,7 +17,6 @@
 
 import { InsforgeMiddleware } from "@insforge/nextjs/middleware";
 import { NextResponse, type NextRequest } from "next/server";
-import { validateJWT } from "@/lib/auth/jwt-validator";
 
 const BASE_URL = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
 if (!BASE_URL) {
@@ -62,18 +61,6 @@ export async function proxy(request: NextRequest) {
   // If middleware redirects, respect it
   if (middlewareResponse.status === 307 || middlewareResponse.status === 302) {
     return middlewareResponse;
-  }
-
-  // Secondary: Server-side JWT validation (defense-in-depth)
-  const sessionCookie = request.cookies.get("insforge-session")?.value;
-  if (sessionCookie) {
-    const isValid = await validateJWT(sessionCookie);
-    if (!isValid) {
-      // Clear invalid cookie and redirect to login
-      const response = NextResponse.redirect(new URL("/login", request.url));
-      response.cookies.delete("insforge-session");
-      return response;
-    }
   }
 
   return middlewareResponse;
