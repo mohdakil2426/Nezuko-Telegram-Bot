@@ -6,9 +6,18 @@ import { upsertBotStatus } from "../database/bot-status.repo.js";
 import { SHUTDOWN_TIMEOUT_MS } from "./constants.js";
 
 interface ShutdownDeps {
-  db: InsForgeClient;
+  /**
+   * InsForge REST client. May be null in standalone mode when InsForge
+   * credentials are not configured (graceful-degradation run).
+   */
+  db: InsForgeClient | null;
   cache: CacheClient;
   botId: number;
+  /**
+   * Bot instance row ID from the `bot_instances` table.
+   * Use 0 as the sentinel value for standalone mode (no DB row exists).
+   * When 0, the shutdown handler skips the bot_status upsert.
+   */
   botInstanceId: number;
   log: Logger;
   healthServer?: { close(): void };
@@ -57,16 +66,37 @@ export function setupShutdown(handle: RunnerHandle, deps: ShutdownDeps): void {
     if (deps.syncInterval) clearInterval(deps.syncInterval);
     if (deps.healthServer) deps.healthServer.close();
 
-    await Promise.allSettled([
-      upsertBotStatus(deps.db, {
-        bot_id: deps.botId,
-        bot_instance_id: deps.botInstanceId,
-        status: "offline",
-        uptime_seconds: Math.floor(process.uptime()),
-        last_heartbeat: new Date().toISOString(),
-      }),
-      deps.cache.quit(),
-    ]);
+    const tasks: Promise<unknown>[] = [deps.cache.quit()];
+
+    // Only write bot_status when DB is available and botInstanceId is set.
+    // botInstanceId=0 means standalone mode with no bot_instances row.
+    if (deps.db && deps.botInstanceId !== 0) {
+      tasks.push(
+        upsertBotStatus(deps.db, {
+          bot_id: deps.botId,
+          bot_instance_id: deps.botInstanceId,
+          status: "offline",
+          uptime_seconds: Math.floor(process.uptime()),
+          last_heartbeat: new Date().toISOString(),
+        }),
+      );
+    } else if (deps.db) {
+      // Standalone mode: still mark online→offline in bot_status by bot_id only
+      // (uses bot_id as the PATCH filter; bot_instance_id field left unchanged)
+      tasks.push(
+        upsertBotStatus(deps.db, {
+          bot_id: deps.botId,
+          bot_instance_id: deps.botId, // reuse botId as placeholder
+          status: "offline",
+          uptime_seconds: Math.floor(process.uptime()),
+          last_heartbeat: new Date().toISOString(),
+        }).catch(() => {
+          /* standalone: ignore if no row exists */
+        }),
+      );
+    }
+
+    await Promise.allSettled(tasks);
 
     deps.log.info("Shutdown complete");
 

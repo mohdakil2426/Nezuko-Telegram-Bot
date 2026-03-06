@@ -150,4 +150,28 @@ export class InsForgeClient {
       throw new Error(msg);
     }
   }
+
+  /**
+   * Fetch a single secret value from the `nezuko_secrets` table (Security Vault).
+   *
+   * Mirrors Python `insforge_client.get_secret(key_name)`.
+   * Returns null if the key does not exist or an error occurs.
+   *
+   * @param keyName - Secret key name (e.g. "master_key")
+   */
+  async getSecret(keyName: string): Promise<string | null> {
+    try {
+      const rows = await this.getRecords<{ key_name: string; key_value: string }>(
+        "nezuko_secrets",
+        { key_name: `eq.${keyName}` },
+      );
+      return rows[0]?.key_value ?? null;
+    } catch (err: unknown) {
+      this.logger.error(
+        { keyName, error: err instanceof Error ? err.message : "unknown" },
+        `Failed to fetch secret '${keyName}' from vault`,
+      );
+      return null;
+    }
+  }
 }

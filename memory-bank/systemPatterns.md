@@ -1,6 +1,6 @@
 # System Patterns: Architecture & Implementation
 
-> **Last Updated**: 2026-03-03 (Phase 96 — grammY Bot Rebuild)
+> **Last Updated**: 2026-03-06 (Phase 98 — InsForge Fresh DB Schema — grammY Clean Baseline)
 
 ## Architecture Overview
 
@@ -30,7 +30,7 @@ from the bot. All persistence goes through InsForge REST API or the InsForge SDK
 
 ---
 
-## grammY Bot Patterns (TypeScript — Phase 96)
+## grammY Bot Patterns (TypeScript — Phases 96–97)
 
 ### Architecture
 
@@ -41,13 +41,60 @@ apps/grammy/src/
 ├── core/           # bot-factory, insforge-client, cache, encryption, realtime-client, constants, shutdown
 ├── middleware/     # context-enricher, admin-guard, group-only, sequentialize, permission-check
 ├── composers/     # admin, verify, events, channels, fallback, migration
-├── services/      # verification, protection, channel-linker, member-sync, status-writer
-├── multi-bot/     # bot-manager, bot-lifecycle, bot-registry, command-worker
+├── services/      # verification, protection, channel-linker, member-sync, status-writer, command-worker
+├── multi-bot/     # bot-manager, bot-lifecycle, bot-registry
 ├── database/      # group.repo, channel.repo, link.repo, verification.repo, bot-status.repo, types
 ├── utils/         # messages, logger, auto-delete, health
-├── main.ts        # Entry point (single-bot + dashboard mode)
-├── config.ts      # Zod v4 config validation
+├── main.ts        # Entry point — runStandaloneMode() + runDashboardMode() (Phase 97)
+├── config.ts      # Zod v4 soft validation — credentials optional at schema level (Phase 97)
 └── types.ts       # NezukoContext type composition
+```
+
+### Startup Pattern (Phase 97 — Mode-Aware, Phase 99 updated)
+
+```typescript
+// config.ts — all fields optional at Zod level (mirrors PTB config.py)
+// Empty strings coerced to undefined: INSFORGE_BASE_URL="" → undefined
+const config = loadConfig(); // never throws for missing credentials
+
+// main.ts — MASTER_KEY removed from config — fetched from vault at runtime
+if (config.dashboardMode) {
+  if (!config.dbAvailable) process.exit(1); // InsForge required for dashboard
+  // No config.masterKey check — getMasterKey(db) fetches from nezuko_secrets at runtime
+  await runDashboardMode(config, logger);
+} else {
+  if (!config.botToken) process.exit(1); // BOT_TOKEN required for standalone
+  await runStandaloneMode(config, logger); // degrades gracefully without InsForge
+}
+```
+
+### HTML parse_mode Transformer (Phase 99 — CANONICAL)
+
+`@grammyjs/parse-mode` v2.2.1 does NOT export a `parseMode()` transformer. Use grammY's `Transformer` type:
+
+```typescript
+// ✅ Correct: module-level const in bot-factory.ts
+import type { Transformer } from "grammy";
+
+const HTML_PARSE_MODE_METHODS = new Set([
+  "sendMessage", "sendPhoto", "sendVideo", "sendDocument",
+  "sendAnimation", "sendAudio", "sendVoice", "editMessageText",
+  "editMessageCaption", "sendPoll", "copyMessage",
+]);
+
+const htmlTransformer: Transformer = (prev, method, payload, signal) => {
+  if (HTML_PARSE_MODE_METHODS.has(method) && payload !== null && payload !== undefined) {
+    const p = payload as Record<string, unknown>;
+    if (!p["parse_mode"]) p["parse_mode"] = "HTML";
+  }
+  return prev(method, payload, signal);
+};
+
+// Installed in BOTH createBot() and createBotWithDeps():
+bot.api.config.use(htmlTransformer);
+
+// ❌ Wrong: parseMode() does NOT exist in @grammyjs/parse-mode v2.2.1
+// bot.api.config.use(parseMode("HTML")); // Module has no exported member 'parseMode'
 ```
 
 ### Middleware Order (CRITICAL)
@@ -55,13 +102,13 @@ apps/grammy/src/
 ```typescript
 // Install in this EXACT order — grammY deployment checklist
 bot.api.config.use(autoRetry({ maxRetryAttempts: 3 }));
-bot.api.config.use(parseMode("HTML"));  // transformer only, no ParseModeFlavor
-bot.use(sequentializeMiddleware);        // MUST be first middleware
-bot.use(hydrate());                      // No hydrateReply in v1.6.0
+bot.api.config.use(htmlTransformer);  // ← Phase 99: custom Transformer (NOT parseMode())
+bot.use(sequentializeMiddleware);     // MUST be first middleware
+bot.use(hydrate());                   // No hydrateReply in @grammyjs/hydrate v1.6.0
 bot.use(chatMembers(cache.chatMembersAdapter));
-bot.use(contextEnricher(deps));          // Injects db, cache, botId, log
+bot.use(contextEnricher(deps));       // Injects db, cache, botId, log
 // Then composers with errorBoundary...
-bot.use(fallbackComposer);               // ALWAYS last, no boundary
+bot.use(fallbackComposer);            // ALWAYS last, no boundary
 ```
 
 ### InsForge REST Client (TypeScript)

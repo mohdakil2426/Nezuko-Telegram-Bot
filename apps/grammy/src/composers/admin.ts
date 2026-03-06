@@ -24,13 +24,26 @@ export const adminComposer = new Composer<NezukoContext>();
 
 // /start — different response for private vs group
 adminComposer.command("start", async (ctx) => {
+  ctx.log.info(
+    { chatId: ctx.chat.id, chatType: ctx.chat.type, updateId: ctx.update.update_id },
+    "[START] /start command handler matched!",
+  );
   if (ctx.chat.type === "private") {
-    await ctx.reply(WELCOME_PRIVATE);
+    try {
+      await ctx.reply(WELCOME_PRIVATE);
+      ctx.log.info({ chatId: ctx.chat.id }, "[START] reply sent successfully");
+    } catch (err: unknown) {
+      ctx.log.error(
+        { err: err instanceof Error ? err.message : String(err), chatId: ctx.chat.id },
+        "[START] reply FAILED",
+      );
+    }
   } else {
     const msg = await ctx.reply(WELCOME_GROUP);
     scheduleDelete(msg, AUTO_DELETE_DELAY);
   }
 });
+
 
 // /help — HTML command list
 adminComposer.command("help", async (ctx) => {

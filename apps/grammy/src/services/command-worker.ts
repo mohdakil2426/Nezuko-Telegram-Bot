@@ -148,13 +148,19 @@ export class CommandWorker {
   }
 
   /**
-   * Fetch all pending commands for this bot from the DB and process them.
+   * Fetch all pending commands from the DB and process them.
+   *
+   * When botId === 0 (manager-level mode), fetches ALL pending commands so
+   * the single worker handles commands for every managed bot. When botId > 0,
+   * only fetches commands for that specific bot (per-bot mode).
    */
   private async pollPendingCommands(): Promise<void> {
-    const commands = await this.db.getRecords<DashboardCommand>("admin_commands", {
-      bot_id: `eq.${this.botId}`,
-      status: `eq.${STATUS.PENDING}`,
-    });
+    const filter: Record<string, string> =
+      this.botId === 0
+        ? { status: `eq.${STATUS.PENDING}` } // all bots (manager mode)
+        : { bot_id: `eq.${this.botId}`, status: `eq.${STATUS.PENDING}` }; // single bot
+
+    const commands = await this.db.getRecords<DashboardCommand>("admin_commands", filter);
 
     if (commands.length === 0) return;
 

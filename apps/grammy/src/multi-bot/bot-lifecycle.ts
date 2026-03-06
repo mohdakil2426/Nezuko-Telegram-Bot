@@ -92,10 +92,16 @@ export class BotLifecycleManager {
     botFactory(bot, { db, cache, botId, logger: botLog });
 
     // Start the grammY runner (EC-54: 409 Conflict handled via error boundary)
+    // NOTE: ALLOWED_UPDATES is `as const` (readonly tuple) — must spread to mutable array
     let runner: RunnerHandle;
     try {
       runner = run(bot, {
-        runner: { fetch: { allowed_updates: ALLOWED_UPDATES } },
+        runner: { fetch: { allowed_updates: [...ALLOWED_UPDATES] } },
+      });
+      this.logger.info({
+        botId,
+        allowedUpdates: [...ALLOWED_UPDATES],
+        msg: "grammY runner started — long polling active",
       });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "unknown error";

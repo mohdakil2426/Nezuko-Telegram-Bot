@@ -1,7 +1,38 @@
-import { Bot, GrammyError, HttpError } from "grammy";
+/**
+ * Bot Factory — Creates and wires fully configured grammY Bot instances.
+ *
+ * Plugin installation order (CRITICAL — per grammY deployment checklist and
+ * grammy/references/guide/middleware.md):
+ *
+ *   API Transformers (outgoing):
+ *     autoRetry → htmlTransformer
+ *
+ *   Middleware (upstream → downstream):
+ *     [debugUpdates (DEBUG_UPDATES=true only)]
+ *     → sequentialize  (must be FIRST — before all state-touching middleware)
+ *     → hydrate        (adds .editText(), .delete() shortcuts on API results)
+ *     → chatMembers    (caches getChatMember; listens to chat_member events)
+ *     → contextEnricher(injects db, cache, botId, log into ctx)
+ *
+ *   Composers (with per-composer errorBoundary):
+ *     admin → channels → migration → events → verify → fallback (LAST, no boundary)
+ *
+ *   Global error handler: bot.catch()
+ *
+ * Key decisions (from systemPatterns.md and grammy docs):
+ *   - sequentialize MUST precede any middleware that writes shared state
+ *   - chatMembers does NOT call getChatMember on every update (non-aggressive)
+ *   - errorBoundary per composer prevents one failing handler from blocking others
+ *   - makeErrorHandler(fallbackLogger) ensures errors are never silently dropped
+ *     even if ctx.log is not yet set (errors before contextEnricher)
+ */
+
+import { type Middleware, Bot, GrammyError, HttpError } from "grammy";
+import type { NextFunction, Transformer } from "grammy";
 import { autoRetry } from "@grammyjs/auto-retry";
 import { hydrate } from "@grammyjs/hydrate";
 import { chatMembers } from "@grammyjs/chat-members";
+import type { BotError } from "grammy";
 import type { NezukoContext, BotDeps } from "../types.js";
 import { sequentializeMiddleware } from "../middleware/sequentialize.js";
 import { contextEnricher } from "../middleware/context-enricher.js";
@@ -12,23 +43,135 @@ import { eventsComposer } from "../composers/events.js";
 import { verifyComposer } from "../composers/verify.js";
 import { fallbackComposer } from "../composers/fallback.js";
 import { setGroupActive } from "../database/group.repo.js";
+import type { Logger } from "../utils/logger.js";
+
+// ── HTML Parse Mode Transformer ────────────────────────────────────────────────
 
 /**
- * Create a fully configured Bot<NezukoContext> with all plugins and composers.
+ * Telegram API methods that accept a `parse_mode` parameter.
+ * Used by htmlTransformer to inject parse_mode:"HTML" as the default.
  *
- * Plugin installation order (CRITICAL — per grammY deployment checklist):
- *   Transformers: autoRetry → parseMode
- *   Middleware: sequentialize → hydrateReply → hydrate → chatMembers → contextEnricher
- *   Composers: admin → channels → migration → events → verify → fallback (LAST)
- *
- * @param token - Telegram bot token
- * @param deps - Shared dependencies (db, cache, logger, botId)
- * @returns Configured Bot instance ready to run
+ * Ref: https://core.telegram.org/bots/api#formatting-options
  */
-export function createBot(token: string, deps: BotDeps): Bot<NezukoContext> {
-  const bot = new Bot<NezukoContext>(token);
+const HTML_PARSE_MODE_METHODS = new Set([
+  "sendMessage",
+  "sendPhoto",
+  "sendVideo",
+  "sendDocument",
+  "sendAnimation",
+  "sendAudio",
+  "sendVoice",
+  "editMessageText",
+  "editMessageCaption",
+  "sendPoll",
+  "copyMessage",
+]);
 
-  // ── Transformers (outgoing API call wrappers) ──────────────────
+/**
+ * API transformer that injects `parse_mode: "HTML"` as the default for all
+ * text-sending Telegram Bot API methods, unless the caller already specifies it.
+ *
+ * Installed via: bot.api.config.use(htmlTransformer)
+ *
+ * Ref: grammy/references/guide/api.md — API Transformers
+ * Note: @grammyjs/parse-mode v2.2.1 is formatting-utilities only; it does not
+ * export a transformer. This custom transformer is the documented replacement.
+ */
+const htmlTransformer: Transformer = (prev, method, payload, signal) => {
+  if (
+    HTML_PARSE_MODE_METHODS.has(method) &&
+    payload !== null &&
+    payload !== undefined
+  ) {
+    const p = payload as Record<string, unknown>;
+    if (!p["parse_mode"]) p["parse_mode"] = "HTML";
+  }
+  return prev(method, payload, signal);
+};
+
+// ── Error Boundary Handler ─────────────────────────────────────────────────────
+
+/**
+ * Per-composer error boundary handler factory.
+ *
+ * grammY's .errorBoundary(handler) expects: (err: BotError<C>) => unknown
+ * The optional second `next: NextFunction` arg can be called to resume
+ * processing downstream middleware after the error is handled.
+ *
+ * This factory closes over `fallbackLogger` so errors are NEVER silently
+ * dropped — even if they occur before contextEnricher injects ctx.log.
+ *
+ * Ref: grammy/references/guide/errors.md — Error Boundaries
+ *
+ * @param fallbackLogger - Pino logger to use when ctx.log is not yet available
+ */
+function makeErrorHandler(
+  fallbackLogger: Logger,
+): (err: BotError<NezukoContext>, next: NextFunction) => Promise<void> {
+  return async (err: BotError<NezukoContext>): Promise<void> => {
+    // ctx.log is set by contextEnricher. If an error occurs before that
+    // middleware runs (e.g. in sequentialize or hydrate), use fallbackLogger.
+    const log = err.ctx.log ?? fallbackLogger;
+    log.error(
+      { err: err.error, updateId: err.ctx.update.update_id },
+      "Composer error boundary caught error",
+    );
+    // Do NOT call next() — we want the error to be contained here.
+    // The fallback composer will still run (it has no errorBoundary).
+  };
+}
+
+// ── Debug Middleware ───────────────────────────────────────────────────────────
+
+/**
+ * Optional debug middleware — logs every incoming update as the VERY FIRST
+ * middleware (before sequentialize), so we can confirm Telegram delivers them.
+ *
+ * Enable: set DEBUG_UPDATES=true in apps/grammy/.env
+ * Disable: remove or set DEBUG_UPDATES=false
+ *
+ * Output format: [DEBUG] Incoming update #<id> type=<type>
+ *   chatId, userId, and text[:80] are included for messages.
+ */
+function installDebugMiddleware(bot: Bot<NezukoContext>, logger: Logger): void {
+  if (process.env["DEBUG_UPDATES"] !== "true") return;
+
+  const debugMiddleware: Middleware<NezukoContext> = async (ctx, next) => {
+    const updateType =
+      Object.keys(ctx.update).find((k) => k !== "update_id") ?? "unknown";
+    logger.debug(
+      {
+        updateId: ctx.update.update_id,
+        updateType,
+        chatId: ctx.chat?.id,
+        userId: ctx.from?.id,
+        text: ctx.message?.text?.slice(0, 80),
+      },
+      `[DEBUG] Incoming update #${ctx.update.update_id} type=${updateType}`,
+    );
+    // MUST await next() per grammy docs — omitting breaks the entire chain
+    // Ref: grammy/references/guide/middleware.md — "Always Make Sure to await next!"
+    await next();
+  };
+
+  bot.use(debugMiddleware);
+}
+
+// ── Core Bot Wiring ────────────────────────────────────────────────────────────
+
+/**
+ * Wire all API transformers, middleware, composers, and error handlers onto a Bot.
+ *
+ * Extracted to avoid duplication between createBot() (standalone)
+ * and createBotWithDeps() (dashboard/multi-bot).
+ *
+ * @param bot  - grammy Bot<NezukoContext> instance (token already validated)
+ * @param deps - Shared dependencies: db, cache, botId, logger
+ */
+function wireBotMiddleware(bot: Bot<NezukoContext>, deps: BotDeps): void {
+  // ── 1. API Transformers (outgoing) ──────────────────────────────
+  // autoRetry: handles 429 Too Many Requests with exponential back-off
+  // Ref: grammy/references/plugins/auto-retry.md
   bot.api.config.use(
     autoRetry({
       maxRetryAttempts: 3,
@@ -38,122 +181,150 @@ export function createBot(token: string, deps: BotDeps): Bot<NezukoContext> {
     }),
   );
 
-  // ── Middleware (EXACT order matters) ───────────────────────────
-  // 1. Sequentialize — first middleware (grammY deployment checklist)
+  // htmlTransformer: default parse_mode:"HTML" for all text-sending methods
+  bot.api.config.use(htmlTransformer);
+
+  // ── 2. Debug Middleware (optional, no-op when DEBUG_UPDATES != "true") ──
+  // Installed FIRST — before sequentialize — so we see EVERY update arrive.
+  installDebugMiddleware(bot, deps.logger);
+
+  // ── CHECKPOINT LOGGING (always on — remove after root cause found) ────────
+  // Logs ENTER/EXIT around each middleware to pinpoint the deadlock.
+  bot.use(async (ctx, next) => {
+    deps.logger.debug({ updateId: ctx.update.update_id }, "[CHAIN] → entering sequentialize");
+    await next();
+    deps.logger.debug({ updateId: ctx.update.update_id }, "[CHAIN] ← exited sequentialize");
+  });
+
+  // ── 3. sequentialize — MUST be first "real" middleware ───────────
   bot.use(sequentializeMiddleware);
 
-  // 2. Hydrate (adds .editText(), .delete() shortcuts)
+  bot.use(async (ctx, next) => {
+    deps.logger.debug({ updateId: ctx.update.update_id }, "[CHAIN] → entering hydrate");
+    await next();
+    deps.logger.debug({ updateId: ctx.update.update_id }, "[CHAIN] ← exited hydrate");
+  });
+
+  // ── 4. hydrate ───────────────────────────────────────────────────
   bot.use(hydrate());
 
-  // 3. Chat members plugin (caches getChatMember results)
+  bot.use(async (ctx, next) => {
+    deps.logger.debug({ updateId: ctx.update.update_id }, "[CHAIN] → entering chatMembers");
+    await next();
+    deps.logger.debug({ updateId: ctx.update.update_id }, "[CHAIN] ← exited chatMembers");
+  });
+
+  // ── 5. chatMembers ───────────────────────────────────────────────
   bot.use(chatMembers(deps.cache.chatMembersAdapter));
 
-  // 4. Context enricher (injects db, cache, botId, log)
+  bot.use(async (ctx, next) => {
+    deps.logger.debug({ updateId: ctx.update.update_id }, "[CHAIN] → entering contextEnricher");
+    await next();
+    deps.logger.debug({ updateId: ctx.update.update_id }, "[CHAIN] ← exited contextEnricher");
+  });
+
+  // ── 6. contextEnricher ───────────────────────────────────────────
   bot.use(contextEnricher(deps));
 
-  // ── Composers (with error boundaries) ─────────────────────────
-  bot.use(adminComposer.errorBoundary(handleError));
-  bot.use(channelsComposer.errorBoundary(handleError));
-  bot.use(migrationComposer.errorBoundary(handleError));
-  bot.use(eventsComposer.errorBoundary(handleError));
-  bot.use(verifyComposer.errorBoundary(handleError));
-  bot.use(fallbackComposer); // ALWAYS last — no error boundary
+  bot.use(async (ctx, next) => {
+    deps.logger.debug({ updateId: ctx.update.update_id }, "[CHAIN] → entering composers");
+    await next();
+    deps.logger.debug({ updateId: ctx.update.update_id }, "[CHAIN] ← exited composers");
+  });
 
-  // ── Global error handler ──────────────────────────────────────
+
+  // ── 7. Composers (with per-composer error boundaries) ──────────
+  // Each composer has its own errorBoundary so a failure in one does not
+  // prevent downstream composers from running.
+  // Ref: grammy/references/guide/errors.md — Error Boundaries
+  const errorHandler = makeErrorHandler(deps.logger);
+  bot.use(adminComposer.errorBoundary(errorHandler));
+  bot.use(channelsComposer.errorBoundary(errorHandler));
+  bot.use(migrationComposer.errorBoundary(errorHandler));
+  bot.use(eventsComposer.errorBoundary(errorHandler));
+  bot.use(verifyComposer.errorBoundary(errorHandler));
+
+  // fallbackComposer — ALWAYS last, no errorBoundary (must always answer)
+  // Answers any unhandled callback query to clear Telegram's spinner.
+  bot.use(fallbackComposer);
+
+  // ── 8. Global error handler (bot.catch) ─────────────────────────
+  // Catches errors that escape all errorBoundaries (e.g. from sequentialize).
+  // With bot.catch(), the runner continues processing subsequent updates.
+  // Without it, the runner would stop on the first unhandled error.
+  // Ref: grammy/references/guide/errors.md — Catching Errors (Long Polling)
   bot.catch(async (err) => {
     const ctx = err.ctx;
     const e = err.error;
     const log = deps.logger;
 
     if (e instanceof GrammyError) {
-      // 403 = bot kicked from group → mark inactive
+      // 401 = Unauthorized — invalid bot token
+      if (e.error_code === 401) {
+        log.error({ code: 401 }, "Bot token is invalid or revoked — stopping bot");
+        return;
+      }
+
+      // 403 = Forbidden — bot kicked from group → mark group inactive
       if (e.error_code === 403 && ctx.chat) {
         log.warn({ chatId: ctx.chat.id, code: 403 }, "Bot kicked — marking group inactive");
         await setGroupActive(deps.db, ctx.chat.id, false).catch(() => {});
         return;
       }
 
-      // 409 = conflict (another bot instance polling same token)
+      // 409 = Conflict — another bot instance is polling the same token
       if (e.error_code === 409) {
-        log.warn({ code: 409 }, "Conflict — another instance may be running");
+        log.warn(
+          { code: 409 },
+          "⚠️ 409 CONFLICT — another bot instance is polling the same token!",
+        );
+        log.warn(
+          "   Fix: stop ALL other running grammY/PTB processes for this bot and restart ONCE.",
+        );
         return;
       }
 
-      log.error({ code: e.error_code, desc: e.description }, "GrammyError");
+      log.error(
+        { updateId: ctx.update.update_id, code: e.error_code, desc: e.description },
+        "GrammyError in bot.catch",
+      );
     } else if (e instanceof HttpError) {
-      log.error({ err: e }, "HttpError (network)");
+      log.error({ err: e }, "HttpError in bot.catch (cannot reach Telegram)");
     } else {
-      log.error({ err: e }, "Unknown error in bot.catch()");
+      log.error(
+        { err: e, updateId: ctx.update.update_id },
+        "Unknown error in bot.catch",
+      );
     }
   });
+}
 
+// ── Public API ─────────────────────────────────────────────────────────────────
+
+/**
+ * Create a fully configured Bot<NezukoContext> with all plugins and composers.
+ *
+ * Used in standalone mode (single bot from BOT_TOKEN env var).
+ *
+ * @param token - Telegram bot token (plaintext, NOT encrypted)
+ * @param deps  - Shared dependencies (db, cache, botId, logger)
+ * @returns Configured Bot instance (NOT yet started — call run(bot) or bot.start())
+ */
+export function createBot(token: string, deps: BotDeps): Bot<NezukoContext> {
+  const bot = new Bot<NezukoContext>(token);
+  wireBotMiddleware(bot, deps);
   return bot;
 }
 
 /**
- * Wire all middleware, composers, and error handlers onto an existing Bot.
+ * Wire all middleware, composers, and error handlers onto an existing Bot instance.
  *
  * Used by BotLifecycleManager in dashboard (multi-bot) mode where the Bot
- * instance is created externally with a decrypted token.
+ * instance is created externally (token decrypted via AES-256-GCM vault).
  *
- * @param bot - Pre-created Bot instance
- * @param deps - Shared dependencies (db, cache, logger, botId)
+ * @param bot  - Pre-created Bot<NezukoContext> (token validated by getMe())
+ * @param deps - Shared dependencies (db, cache, botId, logger)
  */
 export function createBotWithDeps(bot: Bot<NezukoContext>, deps: BotDeps): void {
-  // Transformers
-  bot.api.config.use(
-    autoRetry({
-      maxRetryAttempts: 3,
-      maxDelaySeconds: 60,
-      rethrowInternalServerErrors: false,
-      rethrowHttpErrors: false,
-    }),
-  );
-
-  // Middleware (EXACT order)
-  bot.use(sequentializeMiddleware);
-  bot.use(hydrate());
-  bot.use(chatMembers(deps.cache.chatMembersAdapter));
-  bot.use(contextEnricher(deps));
-
-  // Composers (with error boundaries)
-  bot.use(adminComposer.errorBoundary(handleError));
-  bot.use(channelsComposer.errorBoundary(handleError));
-  bot.use(migrationComposer.errorBoundary(handleError));
-  bot.use(eventsComposer.errorBoundary(handleError));
-  bot.use(verifyComposer.errorBoundary(handleError));
-  bot.use(fallbackComposer);
-
-  // Global error handler
-  bot.catch(async (err) => {
-    const e = err.error;
-    const log = deps.logger;
-
-    if (e instanceof GrammyError) {
-      if (e.error_code === 403 && err.ctx.chat) {
-        await setGroupActive(deps.db, err.ctx.chat.id, false).catch(() => {});
-        return;
-      }
-      if (e.error_code === 409) {
-        log.warn({ code: 409 }, "Conflict — another instance may be running");
-        return;
-      }
-      log.error({ code: e.error_code, desc: e.description }, "GrammyError");
-    } else if (e instanceof HttpError) {
-      log.error({ err: e }, "HttpError (network)");
-    } else {
-      log.error({ err: e }, "Unknown error in bot.catch()");
-    }
-  });
-}
-
-/**
- * Error boundary handler for individual composers.
- * Logs the error but does not re-throw, preventing cascade to other composers.
- */
-function handleError(err: { error: unknown; ctx: NezukoContext }): void {
-  const log = err.ctx.log;
-  if (log) {
-    log.error({ err: err.error }, "Composer error boundary caught error");
-  }
+  wireBotMiddleware(bot, deps);
 }

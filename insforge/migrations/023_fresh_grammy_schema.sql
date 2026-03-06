@@ -1486,5 +1486,22 @@ GRANT SELECT ON public.bot_instances_safe TO anon;
 GRANT SELECT ON public.bot_instances_safe TO authenticated;
 
 -- -----------------------------------------------------------------------------
+-- PATCH (2026-03-06): Fix missing anon write policies on bot_instances
+-- ROOT CAUSE: manage-bot Edge Function uses ANON_KEY (anon role) to upsert
+-- bot_instances. The Phase 98 clean schema only added bot_instances_anon_read
+-- (SELECT) but not INSERT/UPDATE. The Edge Function's upsert was blocked with
+-- 401, causing manage-bot to return 500 → "Failed to add bot" in dashboard.
+-- -----------------------------------------------------------------------------
+
+CREATE POLICY bot_instances_anon_insert ON public.bot_instances
+    FOR INSERT TO anon
+    WITH CHECK (true);
+
+CREATE POLICY bot_instances_anon_update ON public.bot_instances
+    FOR UPDATE TO anon
+    USING (true)
+    WITH CHECK (true);
+
+-- -----------------------------------------------------------------------------
 -- End of script
 -- -----------------------------------------------------------------------------

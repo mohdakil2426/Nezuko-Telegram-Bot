@@ -46,6 +46,96 @@
 | 94    | Audit Fixes Implementation — SEC-01/02, ARCH-01/02, PERF-01, TEST-01 (5 P0/P1 tasks) | Complete ✅ |
 | 95    | InsForge Client Public API Refactoring — Resolve Pylint protected-access warnings | Complete ✅ |
 | 96    | grammY Bot Rebuild (TypeScript) — Full bot rebuild with 41 source files, 105 tests, 113 OpenSpec tasks | Complete ✅ |
+| 96    | grammY Bot Rebuild (TypeScript) — Full bot rebuild with 41 source files, 105 tests, 113 OpenSpec tasks | Complete ✅ |
+| 97    | grammY Startup Hardening — Soft config validation, mode-aware startup, graceful degradation, BotManager.shutdown() | Complete ✅ |
+| 98    | InsForge Fresh DB Setup (grammY Clean Baseline) — Audit + 9 SQL fixes + live migration + fresh data clear | Complete ✅ |
+| 99    | grammY Dashboard Mode Debug — htmlTransformer, stale DB, Redis fix, middleware chain traced via checkpoints | 🔧 In Progress |
+
+---
+
+## Phase 99: grammY Dashboard Mode Debugging (In Progress 🔧)
+
+### Problem
+Bot starts in dashboard mode and is `online` (heartbeat confirmed in `bot_status`) but sends
+**zero responses** to any Telegram messages including `/start` DMs.
+
+### Root Causes Found & Fixed
+
+| # | Bug | Root Cause | Fix |
+|---|---|---|---|
+| 1 | Silent parse errors | `WELCOME_PRIVATE`/`HELP_TEXT` HTML tags sent without `parse_mode` → Telegram rejects every reply silently | ✅ `htmlTransformer: Transformer` added + `bot.api.config.use(htmlTransformer)` |
+| 2 | Stale bot_instances rows | Rows (IDs 9, 10) encrypted with old master key — decryption fails every 30s sync | ✅ Deleted via `mcp_insforge_run-raw-sql`, re-added via dashboard (ID 12) |
+| 3 | Redis ioredis deadlock risk | `maxRetriesPerRequest: null` + `enableOfflineQueue` = commands queue forever if Redis is slow | ✅ `maxRetriesPerRequest: 0`, `enableOfflineQueue: false`, `connectTimeout: 3000` in `cache.ts` |
+| 4 | chatMembersAdapter Redis errors propagate | No try/catch in `read()`/`write()`/`delete()` — Redis error bubbles to middleware chain | ✅ All three wrapped in `try/catch` in `cache.ts` |
+| 5 | makeErrorHandler signature wrong | Used `(err) => void` but grammY `errorBoundary` expects `(err: BotError<C>, next: NextFunction) => MaybePromise<unknown>` | ✅ Fixed in `bot-factory.ts` |
+| 6 | Updates arrive, full chain runs, NO reply | Checkpoint logs confirmed: all middleware ENTER/EXIT OK. Composers ENTER/EXIT with no error logged, no `[START] handler matched` log | ⚠️ **OPEN — confirmed as command filter not matching** |
+| 7 | `CommandsFlavor` type in context without plugin installed | `NezukoContext` includes `CommandsFlavor` from `@grammyjs/commands` but the Commands plugin's `createCommandGroup()` middleware is NEVER installed on any bot instance — this may alter how `.command()` filter matching works | ⚠️ **SUSPECTED ROOT CAUSE — needs fix** |
+
+### Checkpoint Trace (key diagnostic — 2026-03-06 07:17 IST)
+
+Added `[CHAIN]` debug middleware between every plugin. For update `#822547088` (`/start` DM):
+```
+→ entering sequentialize  ✅
+→ entering hydrate        ✅
+→ entering chatMembers    ✅
+→ entering contextEnricher✅
+→ entering composers      ✅
+← exited composers        ✅  (immediately — NO handler matched!)
+← exited contextEnricher  ✅
+← exited chatMembers      ✅
+← exited hydrate          ✅
+← exited sequentialize    ✅
+```
+**Zero errors. Zero replies. The command filter in `adminComposer.command("start")` is silently not matching.**
+
+### Diagnosis: Why `.command("start")` Doesn't Match
+
+Two candidate causes (both need investigation):
+
+**Candidate A — `@grammyjs/commands` `CommandsFlavor` overrides `.command()` behaviour**
+- `NezukoContext = HydrateFlavor<Context & NezukoContextFlavor & CommandsFlavor & ...>`
+- `CommandsFlavor` adds a `commands: CommandsGroupManager` property but may also alter `ctx.hasCommand()` or `.command()` filter resolution
+- The `@grammyjs/commands` plugin middleware (`setMyCommands()` etc.) is NEVER installed in `bot-factory.ts`
+- **Fix**: Either install the Commands plugin middleware, OR remove `CommandsFlavor` from `NezukoContext` if the plugin isn't actually used
+
+**Candidate B — `adminComposer` is a module-level `Composer` singleton**
+- All composer files export a single module-level instance (e.g. `export const adminComposer = new Composer<NezukoContext>()`)
+- In multi-bot dashboard mode, `wireBotMiddleware()` is called once per bot — but the SAME singleton `adminComposer` instance is shared across all bots
+- grammY `Composer.errorBoundary()` may cause issues when the same composer is installed on multiple bot instances simultaneously
+- **Fix**: Replace module-level singletons with factory functions — `export function createAdminComposer(): Composer<NezukoContext>`
+
+### Files Changed This Session
+| File | Change |
+|---|---|
+| `apps/grammy/src/core/bot-factory.ts` | Full rewrite: `wireBotMiddleware()` extracted, `makeErrorHandler()` correct signature, `DEBUG_UPDATES` flag, checkpoint debug middleware (temp), removed RAW TEST handler |
+| `apps/grammy/src/core/cache.ts` | `maxRetriesPerRequest: 0`, `enableOfflineQueue: false`, `connectTimeout: 3000`, try/catch in all `chatMembersAdapter` methods |
+| `apps/grammy/src/composers/admin.ts` | Added `[START]` debug logging + try/catch in `/start` handler (temp — for diagnosis) |
+| `apps/grammy/.env` | Added `DEBUG_UPDATES=true` |
+
+### What Confirmed Works
+- ✅ Updates DO arrive — `DEBUG_UPDATES=true` middleware fires for every update
+- ✅ `ctx.api.sendMessage()` works — RAW TEST handler (before sequentialize) sent replies successfully
+- ✅ Full middleware chain completes cleanly — no deadlock, no error
+- ✅ `htmlTransformer` + Redis fast-fail don't cause issues
+- ✅ `bun run type-check` → 0 errors after every change
+
+### Next Steps (Priority Order)
+1. **Remove `CommandsFlavor` from `NezukoContext`** in `types.ts` if `@grammyjs/commands` is not actually used anywhere in composers — this is the most likely root cause of `.command()` filter not matching
+2. **Convert composer singletons to factory functions** — replace `export const adminComposer` with `export function createAdminComposer()` in all 6 composer files AND update `bot-factory.ts`
+3. **Remove all temp diagnostic code** — `[CHAIN]` checkpoint middleware, `[START]` debug logging in `admin.ts`, `DEBUG_UPDATES` from `.env`
+4. **Run full test suite** — `bun run test` (6 tests currently failing — likely related to composer/type changes)
+
+### Quality Gates (Phase 99 — in progress)
+| Check | Result |
+|---|---|
+| `bun run type-check` | ✅ 0 errors |
+| `bun run lint` | ✅ 0 warnings |
+| `bun run dev` | ✅ Bot starts, heartbeat firing |
+| Updates received | ✅ Confirmed via DEBUG middleware |
+| Raw reply works | ✅ Confirmed via RAW TEST handler |
+| Full chain completes | ✅ No deadlock (confirmed via checkpoint logs) |
+| `/start` response | ❌ Not yet — command filter not matching (open) |
+| `bun run test` | ❌ 6 tests failing (investigate after fix) |
 
 ---
 
@@ -140,13 +230,15 @@ Resolved issues where the dashboard visually froze its uptime tracking by improv
 
 ## Technical Debt & Known Issues
 
-- [x] **Test Coverage**: ~~58 tests~~ → **101 tests** ✅ Complete (Phase 94)
-- [x] **BotManager god class**: ~~900 lines, 7 responsibilities~~ → **Split into focused services** ✅ Complete (Phase 94)
-- [x] **Base64 fallback**: ~~Security gap~~ → **Removed** ✅ Complete (Phase 94)
-- [x] **JWT validation**: ~~Cookie existence only~~ → **Server-side validation** ✅ Complete (Phase 94)
-- [ ] **Re-encrypt bot token**: Legacy Base64 token in DB → delete + re-add `@gmakilbot` via dashboard
+- [x] **Test Coverage**: ~~58 tests~~ → **101 tests (Python) + 111 tests (grammY)** ✅ Complete
+- [x] **BotManager god class**: Split into focused services ✅ Complete (Phase 94)
+- [x] **Base64 fallback**: Removed ✅ Complete (Phase 94)
+- [x] **JWT validation**: Server-side validation ✅ Complete (Phase 94)
+- [x] **InsForge schema**: Full clean baseline (023_fresh_grammy_schema.sql) ✅ Complete (Phase 98)
+- [x] **Legacy Base64 bot token in DB**: DB cleared — fresh start removes this issue ✅
+- [ ] **`ProtectedGroup` type**: Add `linked_channels_count: number` to `apps/grammy/src/database/types.ts`
 - [ ] **Admin Notification**: Error handler doesn't yet send alerts to admin chat (Task 6.2)
-- [ ] **ESLint Plugin**: `eslint-plugin-react` incompatible with ESLint 10.0.0 — needs upgrade or replacement
+- [ ] **ESLint Plugin**: `eslint-plugin-react` incompatible with ESLint 10.0.0 — needs upgrade
 
 ---
 
@@ -184,9 +276,36 @@ Complete rebuild of the Nezuko Telegram bot from Python (python-telegram-bot v22
 | Check | Result |
 |---|---|
 | `bun run type-check` | ✅ 0 errors |
-| `bun run lint` | ✅ 0 errors, 0 warnings |
-| `bun run test` | ✅ 105/105 passed |
+| `bun run lint` | ✅ 0 warnings |
+| `bun run test` | ✅ **111/111 passed** (Phase 96: 105 + Phase 97: +6) |
 | OpenSpec tasks | ✅ 113/113 complete |
+
+---
+
+## Phase 97: grammY Startup Hardening (Complete)
+
+Hardened the grammY bot startup to match the robustness of the PTB bot.
+
+### Files Changed
+| File | Change |
+|---|---|
+| `apps/grammy/src/config.ts` | Soft Zod validation — all credentials optional at schema level; empty strings coerced to `undefined`; `dbAvailable` + `standaloneMode` flags |
+| `apps/grammy/src/main.ts` | Split into `runStandaloneMode()` + `runDashboardMode()`; startup banner; graceful DB degradation; dashboard keep-alive loop |
+| `apps/grammy/src/core/shutdown.ts` | `db: InsForgeClient \| null`; `botInstanceId=0` sentinel |
+| `apps/grammy/src/multi-bot/bot-manager.ts` | Added `shutdown()` method |
+| `apps/grammy/.env` | Real InsForge credentials filled in |
+| `apps/grammy/.env.example` | Rewritten with PTB-style documentation |
+| `tests/grammy/unit/core/config.test.ts` | 6 new tests (`dbAvailable`, `standaloneMode`, empty-string coercion, botId=0 sentinel) |
+
+### Quality Gates
+| Check | Result |
+|---|---|
+| `bun run type-check` | ✅ 0 errors |
+| `bun run lint` | ✅ 0 warnings |
+| `bun run test` | ✅ **111/111 passed** |
+| `bun run dev` | ✅ Bot started live |
+
+---
 
 ### Key Technical Decisions
 - grammY v1.41.1 (not v2.x — stable release)
@@ -212,11 +331,17 @@ Refactored the internal InsForge client methods to make them public and descript
 
 ## What to Work on Next
 
-1. **Re-encrypt bot token** — Delete + re-add `@gmakilbot` via Dashboard → Bots page
-2. **Deploy** — VPS/Docker (bot) + Vercel (web)
-3. **Set `ALLOWED_ORIGIN` env var** — Required for edge function CORS
-4. **Add admin notification** in global error handler (Task 6.2)
+### Immediate (Phase 99 — fix bot not responding)
+1. **Remove `CommandsFlavor` from `NezukoContext`** (`apps/grammy/src/types.ts`) if `@grammyjs/commands` middleware is not installed anywhere — this is the confirmed suspected cause of `.command()` filter not matching any update
+2. **Convert all composer singletons to factory functions** — `export function createAdminComposer(): Composer<NezukoContext>` in all 6 composers, call them in `wireBotMiddleware()` per bot
+3. **Remove all temp diagnostic code** — `[CHAIN]` checkpoints in `bot-factory.ts`, `[START]` log in `admin.ts`, revert `.env` `DEBUG_UPDATES=false`
+4. **Fix 6 failing tests** after above changes — run `bun run test` and investigate
+
+### After Phase 99 resolved
+5. **Fix `ProtectedGroup` in `database/types.ts`** — add `linked_channels_count: number`
+6. **Deploy** — VPS/Docker (grammy bot) + Vercel (web)
+7. **Admin notification** in global error handler (Task 6.2 — low priority)
 
 ---
 
-_Last Updated: 2026-03-03 (Phase 96 — grammY Bot Rebuild — COMPLETE)_
+_Last Updated: 2026-03-06 07:20 IST (Phase 99 — grammY Debug — middleware chain traced, command filter suspected root cause)_

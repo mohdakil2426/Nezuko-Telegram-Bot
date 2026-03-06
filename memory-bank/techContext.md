@@ -95,7 +95,8 @@ cd apps/web && bun dev           # Web (port 3000)
 
 | App | File | Template |
 | --- | --- | --- |
-| Bot | `apps/bot/.env` | `apps/bot/.env.example` |
+| Bot (Python) | `apps/bot/.env` | `apps/bot/.env.example` |
+| Bot (grammY) | `apps/grammy/.env` | `apps/grammy/.env.example` |
 | Web | `apps/web/.env.local` | `apps/web/.env.example` |
 
 ### Required Environment Variables
@@ -159,8 +160,8 @@ bun run format        # Prettier + Tailwind Sort
 # ── grammY Bot (TypeScript) ──
 cd apps/grammy
 bun run type-check    # tsc --noEmit → 0 errors
-bun run lint          # eslint src/ --max-warnings 0 → 0 errors
-bun run test          # vitest run → 105 tests passed
+bun run lint          # eslint src/ --max-warnings 0 → 0 warnings
+bun run test          # vitest run → **111 tests passed** (Phase 97)
 bun run test:coverage # vitest run --coverage (80% thresholds)
 bun run dev           # bun run --watch src/main.ts
 bun run build         # tsc -p tsconfig.build.json → dist/
@@ -246,4 +247,48 @@ bun run build         # tsc -p tsconfig.build.json → dist/
 
 ---
 
-_Last Updated: 2026-03-03 (Phase 96 — grammY Bot Rebuild + TypeScript ESLint)_
+## grammY Bot Startup Patterns (Phase 97)
+
+### Mode Detection Flow
+
+```
+loadConfig()        → Zod schema (soft — no required fields)
+  ↓
+main()
+  ├─ dashboardMode=true  → validate INSFORGE_* + MASTER_KEY → runDashboardMode()
+  └─ dashboardMode=false → validate BOT_TOKEN → runStandaloneMode()
+```
+
+### Graceful Degradation (standalone mode)
+
+| Config State | Behaviour |
+|---|---|
+| `BOT_TOKEN` + `INSFORGE_*` set | Full mode: bot + DB + Redis |
+| `BOT_TOKEN` only (no INSFORGE) | Degraded: bot works, no status writer / member sync / command worker |
+| `BOT_TOKEN` missing | Fatal error with clear message, `process.exit(1)` |
+| `INSFORGE_BASE_URL=""` (blank) | Treated as not set (Zod coerces to `undefined`) |
+
+### `botInstanceId` Sentinel Values
+| Value | Meaning |
+|---|---|
+| `N` (positive int) | Real `bot_instances.id` row (dashboard mode per-bot) |
+| `0` | Standalone mode sentinel — no DB row exists; shutdown handler skips upsert |
+
+---
+
+## InsForge Database (Phase 98 — Clean Baseline)
+
+| Metric | Value |
+|---|---|
+| **Canonical migration** | `insforge/migrations/023_fresh_grammy_schema.sql` |
+| **Tables** | 12 (all empty after Phase 98 fresh clear) |
+| **RPC functions** | 15 analytics functions |
+| **Realtime channels** | 5 (`dashboard`, `bot_status`, `logs`, `commands`, `bot_instances`) |
+| **`realtime.publish` signature** | `(text, text, jsonb)` — payload must be cast `::JSONB` |
+| **All Telegram IDs** | `BIGINT` (prevents INT4 overflow) |
+| **UPSERT pattern** | PATCH-then-POST (PostgREST does not support native upsert on multi-UNIQUE tables) |
+| **Sequences** | Reset to 1 after fresh clear |
+
+---
+
+_Last Updated: 2026-03-06 (Phase 98 — InsForge Fresh DB Setup — COMPLETE)_

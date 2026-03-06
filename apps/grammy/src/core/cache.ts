@@ -29,19 +29,31 @@ function buildChatMembersAdapter(
   return {
     async read(key: string): Promise<ChatMember | undefined> {
       if (!isConnected()) return undefined;
-      const raw = await redis.get(`${CHAT_MEMBER_PREFIX}${key}`);
-      if (raw === null) return undefined;
-      return JSON.parse(raw) as ChatMember;
+      try {
+        const raw = await redis.get(`${CHAT_MEMBER_PREFIX}${key}`);
+        if (raw === null) return undefined;
+        return JSON.parse(raw) as ChatMember;
+      } catch {
+        return undefined;
+      }
     },
 
     async write(key: string, value: ChatMember): Promise<void> {
       if (!isConnected()) return;
-      await redis.set(`${CHAT_MEMBER_PREFIX}${key}`, JSON.stringify(value));
+      try {
+        await redis.set(`${CHAT_MEMBER_PREFIX}${key}`, JSON.stringify(value));
+      } catch {
+        // Redis write failure is non-fatal — degraded mode
+      }
     },
 
     async delete(key: string): Promise<void> {
       if (!isConnected()) return;
-      await redis.del(`${CHAT_MEMBER_PREFIX}${key}`);
+      try {
+        await redis.del(`${CHAT_MEMBER_PREFIX}${key}`);
+      } catch {
+        // Redis delete failure is non-fatal
+      }
     },
   };
 }
@@ -57,9 +69,15 @@ function buildChatMembersAdapter(
  */
 export function createCache(redisUrl: string, logger: Logger): CacheClient {
   const redis = new Redis(redisUrl, {
-    // ioredis handles reconnection natively; disable max retries to keep trying
-    maxRetriesPerRequest: null,
+    // Fail commands fast when Redis is unavailable — prevents hanging the
+    // middleware chain indefinitely (e.g. chatMembers plugin queuing commands).
+    // 0 = reject immediately; null = queue forever (deadlock risk).
+    maxRetriesPerRequest: 0,
+    // Connection timeout — give up after 3s instead of retrying forever
+    connectTimeout: 3000,
     lazyConnect: false,
+    // Suppress unhandled error events (handled by the 'error' listener below)
+    enableOfflineQueue: false,
   });
 
   let connected = false;

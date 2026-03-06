@@ -60,9 +60,18 @@ export function startMemberSync(
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
 
-          // 403 = bot removed from group → mark inactive
-          if (message.includes("403") || message.includes("Forbidden")) {
-            log.warn({ groupId: group.group_id }, "Bot removed from group — marking inactive");
+          // 403 Forbidden = bot removed from group
+          // 400 Bad Request: chat not found = group deleted / bot never properly added
+          // Both mean the bot can't access this group — mark inactive
+          if (
+            message.includes("403") ||
+            message.includes("Forbidden") ||
+            message.includes("chat not found")
+          ) {
+            log.warn(
+              { groupId: group.group_id },
+              "Group inaccessible (removed or deleted) — marking inactive",
+            );
             await setGroupActive(db, group.group_id, false).catch(() => {});
           } else {
             log.warn({ err, groupId: group.group_id }, "Failed to sync group member count");

@@ -1,59 +1,127 @@
-import { createDecipheriv, type BinaryLike, type CipherKey } from "crypto";
-
 /**
- * AES-256-GCM token decryption.
+ * AES-256-GCM token encryption/decryption — mirrors apps/bot/core/encryption.py.
  *
- * Matches the Python bot's `core/encryption.py` AES-256-GCM implementation.
- * Expected encrypted format: `{iv_hex}:{ciphertext_hex}:{authTag_hex}`
+ * Master key source: InsForge Security Vault (`nezuko_secrets` table, key_name = "master_key").
+ * - The key is fetched automatically on first use and cached for MASTER_KEY_TTL_MS.
+ * - To rotate the key: update it in the dashboard (Settings → Security Vault).
+ *   The bot will pick up the new key within TTL without any restart.
+ * - NO MASTER_KEY in .env required — the vault is the single source of truth.
  *
- * Master key must be a 32-byte hex string (64 hex chars) corresponding to
- * the 256-bit AES key stored in `nezuko_secrets` table (Security Vault).
+ * Token format (written by manage-bot Edge Function):
+ *   `v2:<base64(IV[12 bytes] + ciphertext + GCM-authTag[16 bytes])>`
  *
  * SECURITY: NEVER log the plaintext token or the encrypted value.
  */
 
-const EXPECTED_PARTS = 3;
-const AUTH_TAG_LENGTH = 16;
+import { createDecipheriv, type BinaryLike, type CipherKey } from "crypto";
+import type { InsForgeClient } from "./insforge-client.js";
+
+// ── Constants ──────────────────────────────────────────────────────────────────
+
+const IV_LENGTH = 12; // AES-GCM nonce size
+const AUTH_TAG_LENGTH = 16; // GCM tag appended after ciphertext by WebCrypto
+
+/** Re-fetch master key from vault every 5 minutes (matches PTB MASTER_KEY_TTL). */
+const MASTER_KEY_TTL_MS = 5 * 60 * 1000;
+
+// ── In-memory cache (module-level, survives across calls within the process) ───
+
+let _cachedKey: string | null = null;
+let _cachedAt = 0;
+
+// ── Vault fetch ────────────────────────────────────────────────────────────────
 
 /**
- * Decrypt a bot token encrypted with AES-256-GCM.
+ * Fetch (or return cached) master key from the Security Vault.
  *
- * @param encryptedToken - Hex-encoded `iv:ciphertext:authTag` string
- * @param masterKey - 32-byte AES master key (hex string, 64 chars)
- * @returns Plaintext bot token (e.g. "123456:ABC-DEF...")
- * @throws Error if format is invalid, key is wrong, or auth tag fails
+ * Mirrors Python `encryption.get_master_key()`:
+ *   1. Return cached key if still within TTL.
+ *   2. Fetch from `nezuko_secrets` where key_name = 'master_key'.
+ *   3. Cache and return. Return null if not found.
  */
-export function decryptToken(encryptedToken: string, masterKey: string): string {
-  const parts = encryptedToken.split(":");
+export async function getMasterKey(db: InsForgeClient): Promise<string | null> {
+  const now = Date.now();
+  if (_cachedKey !== null && now - _cachedAt < MASTER_KEY_TTL_MS) {
+    return _cachedKey;
+  }
 
-  if (parts.length !== EXPECTED_PARTS) {
+  const key = await db.getSecret("master_key");
+  if (key) {
+    _cachedKey = key;
+    _cachedAt = now;
+  }
+  return key ?? null;
+}
+
+/** Invalidate the cached key (e.g. after a known rotation). */
+export function invalidateMasterKeyCache(): void {
+  _cachedKey = null;
+  _cachedAt = 0;
+}
+
+// ── Decryption ─────────────────────────────────────────────────────────────────
+
+/**
+ * Decrypt a bot token encrypted with AES-256-GCM (v2 format).
+ *
+ * Automatically fetches the master key from the Security Vault.
+ * No MASTER_KEY needed in .env — the vault is the single source of truth.
+ *
+ * @param encryptedToken - `v2:<base64(IV + ciphertext + authTag)>` from bot_instances
+ * @param db - InsForgeClient used to fetch the key from nezuko_secrets
+ * @returns Plaintext Telegram bot token
+ * @throws Error if vault key missing, format invalid, or auth tag fails (key mismatch)
+ */
+export async function decryptToken(encryptedToken: string, db: InsForgeClient): Promise<string> {
+  // Step 1: Get key from vault (cached)
+  const masterKey = await getMasterKey(db);
+  if (!masterKey) {
     throw new Error(
-      `Invalid encrypted token format: expected 3 colon-separated parts, got ${parts.length}`,
+      "Master key not found in Security Vault. " +
+        "Go to Dashboard → Settings → Security Vault and generate a master key.",
     );
   }
 
-  const [ivHex, ciphertextHex, authTagHex] = parts as [string, string, string];
+  // Step 2: Parse v2 format
+  if (!encryptedToken.startsWith("v2:")) {
+    throw new Error(
+      `Invalid encrypted token format: expected 'v2:' prefix. ` +
+        `Re-add the bot via the dashboard to re-encrypt with the current key.`,
+    );
+  }
 
-  let iv: Buffer;
-  let ciphertext: Buffer;
-  let authTag: Buffer;
+  // Step 3: Decode combined payload
+  let combined: Buffer;
   let keyBuffer: Buffer;
 
   try {
-    iv = Buffer.from(ivHex, "hex");
-    ciphertext = Buffer.from(ciphertextHex, "hex");
-    authTag = Buffer.from(authTagHex, "hex");
-    keyBuffer = Buffer.from(masterKey, "hex");
+    combined = Buffer.from(encryptedToken.slice(3), "base64");
+    keyBuffer = Buffer.from(masterKey, "base64");
   } catch {
-    throw new Error("Failed to parse encrypted token components: invalid hex encoding");
+    throw new Error("Failed to decode encrypted token: invalid Base64 encoding");
   }
 
-  if (authTag.length !== AUTH_TAG_LENGTH) {
+  if (keyBuffer.length !== 32) {
     throw new Error(
-      `Invalid auth tag length: expected ${AUTH_TAG_LENGTH} bytes, got ${authTag.length}`,
+      `Invalid master key length: expected 32 bytes, got ${keyBuffer.length}. ` +
+        `Regenerate the master key in Dashboard → Settings → Security Vault.`,
     );
   }
 
+  const minLength = IV_LENGTH + AUTH_TAG_LENGTH + 1;
+  if (combined.length < minLength) {
+    throw new Error(
+      `Encrypted token payload too short: ${combined.length} bytes (minimum ${minLength})`,
+    );
+  }
+
+  // Step 4: Slice: IV[12] | ciphertext[n] | authTag[16]
+  const iv = combined.subarray(0, IV_LENGTH);
+  const ciphertextWithTag = combined.subarray(IV_LENGTH);
+  const ciphertext = ciphertextWithTag.subarray(0, ciphertextWithTag.length - AUTH_TAG_LENGTH);
+  const authTag = ciphertextWithTag.subarray(ciphertextWithTag.length - AUTH_TAG_LENGTH);
+
+  // Step 5: Decrypt
   try {
     const decipher = createDecipheriv(
       "aes-256-gcm",
@@ -61,12 +129,15 @@ export function decryptToken(encryptedToken: string, masterKey: string): string 
       iv as BinaryLike,
     );
     decipher.setAuthTag(authTag);
-
     const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
     return decrypted.toString("utf8");
   } catch (err: unknown) {
-    // Do NOT include the token content in error messages (EC-55)
     const message = err instanceof Error ? err.message : "unknown crypto error";
-    throw new Error(`AES-GCM decryption failed: ${message}`);
+    // Auth tag mismatch = key mismatch (most common cause)
+    const hint =
+      message.includes("auth") || message.includes("state")
+        ? " Key mismatch — re-add the bot via dashboard to re-encrypt with the current vault key."
+        : "";
+    throw new Error(`AES-GCM decryption failed: ${message}.${hint}`);
   }
 }
