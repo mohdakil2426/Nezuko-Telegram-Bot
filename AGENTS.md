@@ -422,79 +422,63 @@ Skills are located in `.agent/skills/` or `.agents/skills/` — check the path c
 
 ### Frontend (Web Dashboard)
 
-| Skill                           | When to Use                                        | Path                                          |
-| ------------------------------- | -------------------------------------------------- | --------------------------------------------- |
-| **nextjs**                      | Any Next.js 16 work, App Router, Server Components | `.agents/skills/nextjs/`                      |
-| **shadcn-ui**                   | Adding/customizing shadcn components               | `.agents/skills/shadcn-ui`                    |
-| **tanstack-query**              | Data fetching, mutations, caching                  | `.agents/skills/tanstack-query/`              |
-| **typescript-expert**           | Complex TS patterns, generics                      | `.agents/skills/typescript-expert`            |
-| **typescript-advanced-types**   | Utility types, conditional types                   | `.agents/skills/typescript-advanced-types`    |
-| **vercel-react-best-practices** | React 19 patterns, performance                     | `.agents/skills/vercel-react-best-practices`  |
-| **ui-ux-pro-max**               | Design systems, color palettes, typography         | `.agents/skills/ui-ux-pro-max`                |
-| **web-design-guidelines**       | Layout, spacing, responsive design                 | `.agents/skills/web-design-guidelines`        |
-| **motion**                      | React animations, gestures, scroll effects         | `.agents/skills/motion`                       |
-| **nextjs-react-expert**         | React & Next.js core patterns, Server Components   | `.agents/skills/nextjs-react-expert`          |
-| **responsiveness-check**        | Breakpoint testing, mobile-first verification      | `.agents/skills/responsiveness-check`         |
+| Skill | When to Use | Path |
+|---|---|---|
+| **next-best-practices** | Next.js best practices - file conventions, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling | `.agents/skills/next-best-practices/` |
+| **next-cache-components** | Next.js 16 Cache Components - PPR, use cache directive, cacheLife, cacheTag, updateTag | `.agents/skills/next-cache-components/` |
+| **shadcn-ui** | Expert guidance for integrating and building applications with shadcn/ui components, including component discovery, installation, customization, and best practices. | `.agents/skills/shadcn-ui` |
+| **tanstack-query** | Data fetching, mutations, caching | `.agents/skills/tanstack-query/` |
+| **typescript-expert** | TypeScript and JavaScript expert with deep knowledge of type-level programming, performance optimization, monorepo management, migration strategies, and modern tooling. | `.agents/skills/typescript-expert` |
+| **typescript-advanced-types** | Master TypeScript's advanced type system including generics, conditional types, mapped types, template literals, and utility types for building type-safe applications. | `.agents/skills/typescript-advanced-types` |
+| **vercel-react-best-practices** | React and Next.js performance optimization guidelines from Vercel Engineering. | `.agents/skills/vercel-react-best-practices` |
+| **vercel-composition-patterns** | React composition patterns that scale. Use when refactoring components with boolean prop proliferation, building flexible component libraries, or designing reusable APIs. | `.agents/skills/vercel-composition-patterns` |
+| **ui-ux-pro-max** | UI/UX design intelligence. 50 styles, 21 palettes, 50 font pairings, 20 charts, 9 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui). | `.agents/skills/ui-ux-pro-max` |
+| **web-design-guidelines** | Review UI code for Web Interface Guidelines compliance. | `.agents/skills/web-design-guidelines` |
+| **motion** | Build React animations with Motion (Framer Motion) - gestures (drag, hover, tap), scroll effects, spring physics, layout animations, SVG. | `.agents/skills/motion` |
+| **tailwind-design-system** | Build scalable design systems with Tailwind CSS v4, design tokens, component libraries, and responsive patterns. | `.agents/skills/tailwind-design-system` |
+| **responsiveness-check** | Test website responsiveness across viewport widths using browser automation. | `.agents/skills/responsiveness-check` |
 
 ### Backend (API & Bot)
 
-| Skill                               | When to Use                                 | Path                                                                       |
-| ----------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------- |
-| **fastapi**                         | FastAPI endpoints, dependencies, middleware | `.agents/skills/fastapi`                                                   |
-| **insforge**                        | InsForge BaaS — tables, auth, SDK, storage  | `.agents/skills/insforge`                                                  |
-| **async-python-patterns**           | Async/await, concurrency, event loops       | `.agents/skills/python-development/skills/async-python-patterns/`           |
-| **python-code-style**               | PEP 8, naming conventions, formatting       | `.agents/skills/python-development/skills/python-code-style/`               |
-| **python-type-safety**              | Type hints, generics, Pydantic              | `.agents/skills/python-development/skills/python-type-safety/`              |
-| **python-error-handling**           | Exceptions, error recovery, logging         | `.agents/skills/python-development/skills/python-error-handling/`           |
-| **python-design-patterns**          | Factory, singleton, dependency injection    | `.agents/skills/python-development/skills/python-design-patterns/`          |
-| **python-testing-patterns**         | pytest, fixtures, mocking                   | `.agents/skills/python-development/skills/python-testing-patterns/`         |
-| **python-performance-optimization** | Profiling, caching, memory management       | `.agents/skills/python-development/skills/python-performance-optimization/` |
-| **python-anti-patterns**            | Common mistakes to avoid                    | `.agents/skills/python-development/skills/python-anti-patterns/`            |
-| **python-resilience**               | Retry, circuit breaker, fallbacks           | `.agents/skills/python-development/skills/python-resilience/`               |
-| **python-background-jobs**          | Task queues, scheduled jobs                 | `.agents/skills/python-development/skills/python-background-jobs/`          |
-| **python-observability**            | Logging, metrics, tracing                   | `.agents/skills/python-development/skills/python-observability/`            |
-| **python-configuration**            | Config management, env vars, settings       | `.agents/skills/python-development/skills/python-configuration/`            |
-| **python-packaging**                | Package structure, pyproject, build         | `.agents/skills/python-development/skills/python-packaging/`                |
-| **python-project-structure**        | Layout, modules, imports organisation       | `.agents/skills/python-development/skills/python-project-structure/`        |
-| **python-resource-management**      | Context managers, file handles, cleanup     | `.agents/skills/python-development/skills/python-resource-management/`      |
-| **uv-package-manager**              | uv install, lockfiles, virtualenvs          | `.agents/skills/python-development/skills/uv-package-manager/`              |
-| **websocket-engineer**              | Real-time bi-directional communication      | `.agents/skills/websocket-engineer`           |
+| Skill | When to Use | Path |
+|---|---|---|
+| **grammy** | Expert grammY Telegram bot framework assistant. Use this skill whenever building, debugging, or extending a Telegram bot with grammY (TypeScript/JavaScript). | `.agents/skills/grammy` |
+| **insforge** | Build applications with InsForge Backend-as-a-Service. | `.agents/skills/insforge` |
 
 ### Database
 
-| Skill                                | When to Use                              | Path                                               |
-| ------------------------------------ | ---------------------------------------- | -------------------------------------------------- |
-| **postgresql-table-design**          | Schema design, indexes, constraints      | `.agents/skills/postgresql-table-design/`          |
-| **postgresql-best-practices**        | Query optimization, admin, performance   | `.agents/skills/postgresql-best-practices`         |
-| **postgres-pro**                     | Advanced queries, EXPLAIN, JSONB, VACUUM | `.agents/skills/postgres-pro`                      |
+| Skill | When to Use | Path |
+|---|---|---|
+| **postgres-pro** | Use when optimizing PostgreSQL queries, configuring replication, or implementing advanced database features. | `.agents/skills/postgres-pro` |
 
 ### DevOps & Tooling
 
 | Skill                        | When to Use                           | Path                                       |
 | ---------------------------- | ------------------------------------- | ------------------------------------------ |
-| **docker-expert**            | Containerization, Multi-stage builds, Compose | `.agents/skills/docker-expert`               |
-| **git-commit**               | Conventional commits, staging         | `.agents/skills/git-commit/`                |
-| **github-actions-templates** | CI/CD workflows                       | `.agents/skills/github-actions-templates/`  |
-| **mermaid-diagrams**         | UML, Flowcharts, Sequence diagrams    | `.agents/skills/mermaid-diagrams`            |
-| **playwright-cli**           | Browser automation, testing, scraping | `.agents/skills/playwright-cli`            |
-| **powershell-expert**        | Windows scripts, automation           | `.agents/skills/powershell-expert`         |
-| **skill-creator**            | Create or update agent skills         | `.agents/skills/skill-creator`             |
+| **brainstorming**            | You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation. | `.agents/skills/brainstorming/` |
+| **docker-expert**            | Docker containerization expert with deep knowledge of multi-stage builds, image optimization, container security, Docker Compose orchestration, and production deployment patterns. | `.agents/skills/docker-expert` |
+| **github-actions-templates** | Create production-ready GitHub Actions workflows for automated testing, building, and deploying applications. | `.agents/skills/github-actions-templates/`  |
+| **mermaid-diagrams**         | Comprehensive guide for creating software diagrams using Mermaid syntax. | `.agents/skills/mermaid-diagrams`            |
+| **playwright-cli**           | Automates browser interactions for web testing, form filling, screenshots, and data extraction. | `.agents/skills/playwright-cli`            |
+| **powershell-expert**        | Develop PowerShell scripts, tools, modules, and GUIs following Microsoft best practices. | `.agents/skills/powershell-expert`         |
+| **skill-creator**            | Create new skills, modify and improve existing skills, and measure skill performance. | `.agents/skills/skill-creator`             |
+| **write-coding-standards-from-file** | Write a coding standards document for a project using the coding styles from the file(s) and/or folder(s) passed as arguments in the prompt. | `.agents/skills/write-coding-standards-from-file` |
 
 ### Project Management
 
 | Skill                        | When to Use                                  | Path                                          |
 | ---------------------------- | -------------------------------------------- | --------------------------------------------- |
-| **openspec-new-change**      | Start a new feature/fix                      | `.agent/skills/openspec-new-change/`          |
-| **openspec-ff-change**       | Fast-forward all artifacts in one go         | `.agent/skills/openspec-ff-change/`           |
-| **openspec-apply-change**    | Implement tasks from a change                | `.agent/skills/openspec-apply-change/`        |
-| **openspec-continue-change** | Create the next artifact for a change        | `.agent/skills/openspec-continue-change/`     |
-| **openspec-verify-change**   | Verify implementation before archiving       | `.agent/skills/openspec-verify-change/`       |
-| **openspec-archive-change**  | Archive a completed change                   | `.agent/skills/openspec-archive-change/`      |
-| **openspec-bulk-archive**    | Archive multiple changes at once             | `.agent/skills/openspec-bulk-archive-change/` |
-| **openspec-sync-specs**      | Sync delta specs to main specs               | `.agent/skills/openspec-sync-specs/`          |
-| **openspec-explore**         | Think through ideas before starting a change | `.agent/skills/openspec-explore/`             |
-| **openspec-onboard**         | Guided walkthrough of the full OPSX cycle    | `.agent/skills/openspec-onboard/`             |
+| **openspec-new-change**      | Start a new OpenSpec change using the experimental artifact workflow. | `.agent/skills/openspec-new-change/`          |
+| **openspec-ff-change**       | Fast-forward through OpenSpec artifact creation. | `.agent/skills/openspec-ff-change/`           |
+| **openspec-apply-change**    | Implement tasks from an OpenSpec change. | `.agent/skills/openspec-apply-change/`        |
+| **openspec-continue-change** | Continue working on an OpenSpec change by creating the next artifact. | `.agent/skills/openspec-continue-change/`     |
+| **openspec-verify-change**   | Verify implementation matches change artifacts. | `.agent/skills/openspec-verify-change/`       |
+| **openspec-archive-change**  | Archive a completed change in the experimental workflow. | `.agent/skills/openspec-archive-change/`      |
+| **openspec-bulk-archive-change** | Archive multiple completed changes at once. | `.agent/skills/openspec-bulk-archive-change/` |
+| **openspec-sync-specs**      | Sync delta specs from a change to main specs. | `.agent/skills/openspec-sync-specs/`          |
+| **openspec-explore**         | Enter explore mode - a thinking partner for exploring ideas, investigating problems, and clarifying requirements. | `.agent/skills/openspec-explore/`             |
+| **openspec-onboard**         | Guided onboarding for OpenSpec - walk through a complete workflow cycle with narration and real codebase work. | `.agent/skills/openspec-onboard/`             |
 
 ---
 
-_Last Updated: 2026-03-02 (Phase 88 — Socket.IO Protocol Fix + Chart Hooks Realtime Migration)_
+_Last Updated: 2026-03-06 (Skills Reference Sync — .agents & .agent folders reconciled)_

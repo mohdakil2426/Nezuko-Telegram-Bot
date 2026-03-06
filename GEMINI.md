@@ -442,25 +442,8 @@ Skills are located in `.agent/skills/` or `.agents/skills/` — check the path c
 
 | Skill | When to Use | Path |
 |---|---|---|
-| **fastapi** | Build Python APIs with FastAPI, Pydantic v2, and SQLAlchemy 2.0 async. | `.agents/skills/fastapi` |
 | **grammy** | Expert grammY Telegram bot framework assistant. Use this skill whenever building, debugging, or extending a Telegram bot with grammY (TypeScript/JavaScript). | `.agents/skills/grammy` |
 | **insforge** | Build applications with InsForge Backend-as-a-Service. | `.agents/skills/insforge` |
-| **async-python-patterns** | Async/await, concurrency, event loops | `.agents/skills/python-development/skills/async-python-patterns/` |
-| **python-code-style** | PEP 8, naming conventions, formatting | `.agents/skills/python-development/skills/python-code-style/` |
-| **python-type-safety** | Type hints, generics, Pydantic | `.agents/skills/python-development/skills/python-type-safety/` |
-| **python-error-handling** | Exceptions, error recovery, logging | `.agents/skills/python-development/skills/python-error-handling/` |
-| **python-design-patterns** | Factory, singleton, dependency injection | `.agents/skills/python-development/skills/python-design-patterns/` |
-| **python-testing-patterns** | pytest, fixtures, mocking | `.agents/skills/python-development/skills/python-testing-patterns/` |
-| **python-performance-optimization** | Profiling, caching, memory management | `.agents/skills/python-development/skills/python-performance-optimization/` |
-| **python-anti-patterns** | Common mistakes to avoid | `.agents/skills/python-development/skills/python-anti-patterns/` |
-| **python-resilience** | Retry, circuit breaker, fallbacks | `.agents/skills/python-development/skills/python-resilience/` |
-| **python-background-jobs** | Task queues, scheduled jobs | `.agents/skills/python-development/skills/python-background-jobs/` |
-| **python-observability** | Logging, metrics, tracing | `.agents/skills/python-development/skills/python-observability/` |
-| **python-configuration** | Config management, env vars, settings | `.agents/skills/python-development/skills/python-configuration/` |
-| **python-packaging** | Package structure, pyproject, build | `.agents/skills/python-development/skills/python-packaging/` |
-| **python-project-structure** | Layout, modules, imports organisation | `.agents/skills/python-development/skills/python-project-structure/` |
-| **python-resource-management** | Context managers, file handles, cleanup | `.agents/skills/python-development/skills/python-resource-management/` |
-| **uv-package-manager** | uv install, lockfiles, virtualenvs | `.agents/skills/python-development/skills/uv-package-manager/` |
 
 ### Database
 
