@@ -1,6 +1,9 @@
 import type { MiddlewareFn } from "grammy";
 import type { NezukoContext } from "../types.js";
-import { PROTECT_BOT_NOT_ADMIN } from "../utils/messages.js";
+import {
+  PROTECT_BOT_NOT_ADMIN,
+  PROTECT_BOT_PERMISSION_CHECK_FAILED,
+} from "../utils/messages.js";
 
 /**
  * Permission check middleware factory.
@@ -41,12 +44,16 @@ export function permissionCheck(): MiddlewareFn<NezukoContext> {
         return;
       }
     } catch (err) {
-      // 403 = bot was removed or never had access — fail silently
       const message = err instanceof Error ? err.message : String(err);
+      ctx.log.warn(
+        { chatId: chat.id, botId: ctx.me.id, error: message },
+        "Bot permission check failed",
+      );
       if (message.includes("403") || message.includes("Forbidden")) {
+        await ctx.reply(PROTECT_BOT_NOT_ADMIN).catch(() => {});
         return;
       }
-      // For unexpected errors, also fail safe (don't crash the handler)
+      await ctx.reply(PROTECT_BOT_PERMISSION_CHECK_FAILED).catch(() => {});
       return;
     }
 

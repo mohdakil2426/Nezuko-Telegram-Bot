@@ -21,6 +21,7 @@ import { createLogger } from "./utils/logger.js";
 import { InsForgeClient } from "./core/insforge-client.js";
 import { createCache } from "./core/cache.js";
 import { createBot, createBotWithDeps } from "./core/bot-factory.js";
+import { syncBotCommands } from "./core/bot-commands.js";
 import { setupShutdown } from "./core/shutdown.js";
 import { startMemberSync } from "./services/member-sync.js";
 import { CommandWorker } from "./services/command-worker.js";
@@ -132,6 +133,7 @@ async function runStandaloneMode(
     { username: botInfo.username, id: botInfo.id },
     `Bot @${botInfo.username} started (ID: ${botInfo.id})`,
   );
+  await syncBotCommands(bot.api, logger);
 
   // Start runner (concurrent long-polling)
   const handle = run(bot, {

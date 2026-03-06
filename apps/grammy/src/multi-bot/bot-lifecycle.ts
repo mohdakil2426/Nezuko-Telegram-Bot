@@ -8,6 +8,7 @@ import type { InsForgeClient } from "../core/insforge-client.js";
 import type { CacheClient } from "../core/cache.js";
 import type { BotInstance, BotRegistry } from "./bot-registry.js";
 import { ALLOWED_UPDATES } from "../core/constants.js";
+import { syncBotCommands } from "../core/bot-commands.js";
 import { upsertBotStatus } from "../database/bot-status.repo.js";
 import { startStatusWriter } from "../services/status-writer.js";
 import { startMemberSync } from "../services/member-sync.js";
@@ -77,6 +78,7 @@ export class BotLifecycleManager {
     // EC-53: Validate token by calling getMe() before wiring anything
     try {
       await bot.api.getMe();
+      await syncBotCommands(bot.api, logger.child({ botId, scope: "commands" }));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "unknown error";
       // NEVER log the token — only log the botId and sanitised error

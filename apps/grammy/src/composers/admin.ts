@@ -17,6 +17,8 @@ import {
   UNPROTECT_NOT_LINKED,
   SETTINGS_PROTECTED,
   SETTINGS_NOT_PROTECTED,
+  STATUS_PROTECTED,
+  STATUS_NOT_PROTECTED,
   SUPERGROUP_REQUIRED,
 } from "../utils/messages.js";
 
@@ -39,6 +41,25 @@ adminComposer.command("help", async (ctx) => {
   if (ctx.chat.type !== "private") {
     scheduleDelete(msg, AUTO_DELETE_DELAY);
   }
+});
+
+// /status — show whether protection is enabled and which channels are linked
+adminComposer.command("status", groupOnly(), async (ctx) => {
+  const channels = await getGroupChannels(ctx.db, ctx.chat.id);
+  const chatTitle = ctx.chat.title ?? "this group";
+
+  if (channels.length === 0) {
+    const msg = await ctx.reply(STATUS_NOT_PROTECTED(chatTitle));
+    scheduleDelete(msg, AUTO_DELETE_DELAY);
+    return;
+  }
+
+  const channelNames = channels.map(
+    (c) => c.username ? `@${c.username}` : c.title ?? `Channel ${c.channel_id}`,
+  );
+
+  const msg = await ctx.reply(STATUS_PROTECTED(chatTitle, true, channelNames));
+  scheduleDelete(msg, AUTO_DELETE_DELAY);
 });
 
 // /protect @channel — link a channel (admin + group + permission required)

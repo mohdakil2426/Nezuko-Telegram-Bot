@@ -105,6 +105,8 @@ describe("admin composer integration", () => {
       const sendCall = apiCalls.find((c) => c.method === "sendMessage");
       expect(sendCall).toBeDefined();
       const text = (sendCall?.payload as { text?: string }).text ?? "";
+      expect(text).toContain("/start");
+      expect(text).toContain("/status");
       expect(text).toContain("/protect");
       expect(text).toContain("/unprotect");
       expect(text).toContain("/channels");
@@ -389,6 +391,31 @@ describe("admin composer integration", () => {
 
       const sendCall = apiCalls.find((c) => c.method === "sendMessage");
       expect((sendCall?.payload as { text?: string }).text).toContain("No channels linked");
+    });
+  });
+
+  describe("/status command", () => {
+    it("shows not-protected guidance when the group has no linked channels", async () => {
+      const { bot, apiCalls } = createTestBot();
+      const deps = makeDeps();
+
+      vi.mocked(deps.db.getRecords).mockResolvedValue([]);
+
+      bot.use(contextEnricher(deps));
+
+      const adminComposer = new Composer<NezukoContext>();
+      adminComposer.command("status", async (ctx) => {
+        await ctx.reply(
+          "❌ <b>Protection Status: Not Protected</b>\n\n<b>Test Group</b> is not currently protected.",
+        );
+      });
+      bot.use(adminComposer);
+
+      const update = createMessageUpdate({ text: "/status" });
+      await bot.handleUpdate(update);
+
+      const sendCall = apiCalls.find((c) => c.method === "sendMessage");
+      expect((sendCall?.payload as { text?: string }).text).toContain("Not Protected");
     });
   });
 });

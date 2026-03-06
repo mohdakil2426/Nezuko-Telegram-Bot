@@ -52,6 +52,65 @@
 | 99    | grammY Dashboard Mode Debug — htmlTransformer, stale DB, Redis fix, middleware chain traced via checkpoints | Complete ✅ |
 | 100   | grammY Comprehensive Audit & Command Wiring Fixes | Complete ✅ |
 | 101   | grammY PRD Completion & Runtime Hardening — realtime worker wiring, member sync, batch verify, join requests, runtime tests | Complete ✅ |
+| 102   | grammY Command Menu Sync & PTB Command Parity — setMyCommands scopes, DM menu button, `/status` handler | Complete ✅ |
+| 103   | grammY Group Command Reliability — eliminate silent admin/permission guard failures in groups | Complete ✅ |
+
+---
+
+## Phase 103: grammY Group Command Reliability (Complete)
+
+Resolved the remaining issue where some group commands appeared non-functional even though the command menu and handlers existed.
+
+### Root Cause
+- `adminGuard()` returned silently when `ctx.from` was unavailable in group messages.
+- `adminGuard()` also returned silently when `getChatMember(...)` failed.
+- `permissionCheck()` silently returned on several bot-permission lookup failures.
+- This made admin-only group commands look dead instead of reporting why they were blocked.
+
+### Completed
+
+| Area | Implementation |
+|---|---|
+| Admin guard feedback | Added explicit replies for unavailable sender identity and failed admin membership checks |
+| Permission guard feedback | Added explicit replies for missing bot admin permissions and unexpected permission-check failures |
+| Logging | Added warning logs on guard failure branches so future live issues are easier to trace |
+| Coverage | Added `tests/grammy/unit/middleware/permission-check.test.ts` and expanded `admin-guard.test.ts` |
+
+### Quality Gates
+| Check | Result |
+|---|---|
+| `cd apps/grammy && bun run type-check` | ✅ 0 errors |
+| `cd apps/grammy && bun run lint` | ✅ 0 warnings |
+| `cd apps/grammy && bun run test` | ✅ **127/127 passed** |
+
+---
+
+## Phase 102: grammY Command Menu Sync & PTB Command Parity (Complete)
+
+Resolved the missing Telegram slash-command menu in DMs and groups.
+
+### Root Cause
+- The PTB bot explicitly called `set_my_commands(...)` with scoped command menus during startup.
+- The grammY bot only registered handlers with `.command(...)`; it never published command metadata to Telegram.
+- The PTB reference also exposed `/status` in groups, but grammY had no `/status` handler, so direct parity was incomplete.
+
+### Completed
+
+| Area | Implementation |
+|---|---|
+| Shared command definitions | Added `apps/grammy/src/core/bot-commands.ts` with private, group, and group-admin command lists |
+| DM/group menus | Added `syncBotCommands(...)` using `bot.api.setMyCommands(...)` for `all_private_chats`, `all_group_chats`, and `all_chat_administrators` scopes |
+| DM menu button | Added `setChatMenuButton({ menu_button: { type: "commands" } })` |
+| Runtime startup | Command sync now runs in standalone startup and per-bot dashboard lifecycle startup |
+| PTB parity | Added `/status` handler and expanded `HELP_TEXT` to reflect the active command surface |
+| Coverage | Added `tests/grammy/unit/core/bot-commands.test.ts` and expanded admin integration coverage |
+
+### Quality Gates
+| Check | Result |
+|---|---|
+| `cd apps/grammy && bun run type-check` | ✅ 0 errors |
+| `cd apps/grammy && bun run lint` | ✅ 0 warnings |
+| `cd apps/grammy && bun run test` | ✅ **122/122 passed** |
 
 ---
 
@@ -386,4 +445,4 @@ Refactored the internal InsForge client methods to make them public and descript
 
 ---
 
-_Last Updated: 2026-03-06 17:45 IST (Phase 101 — PRD completion + runtime hardening, 120 tests passing)_
+_Last Updated: 2026-03-06 18:35 IST (Phase 103 — group command reliability, 127 tests passing)_

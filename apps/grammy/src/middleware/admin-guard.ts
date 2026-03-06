@@ -1,7 +1,11 @@
 import type { MiddlewareFn } from "grammy";
 import type { NezukoContext } from "../types.js";
 import { ADMIN_STATUSES } from "../core/constants.js";
-import { PROTECT_ONLY_ADMINS } from "../utils/messages.js";
+import {
+  ADMIN_CHECK_FAILED,
+  ADMIN_CHECK_UNAVAILABLE,
+  PROTECT_ONLY_ADMINS,
+} from "../utils/messages.js";
 
 /**
  * Admin guard middleware factory.
@@ -23,8 +27,12 @@ export function adminGuard(): MiddlewareFn<NezukoContext> {
       return;
     }
 
-    // In groups we must know who sent the message
-    if (!from) return;
+    // Anonymous-admin or channel-sent messages may not have a usable sender.
+    if (!from) {
+      ctx.log.warn({ chatId: chat.id }, "Admin guard blocked command because sender is unavailable");
+      await ctx.reply(ADMIN_CHECK_UNAVAILABLE).catch(() => {});
+      return;
+    }
 
     try {
       const member = await ctx.api.getChatMember(chat.id, from.id);
@@ -34,8 +42,12 @@ export function adminGuard(): MiddlewareFn<NezukoContext> {
         await ctx.reply(PROTECT_ONLY_ADMINS);
         return;
       }
-    } catch {
-      // If we can't determine membership, fail safe and block
+    } catch (err) {
+      ctx.log.warn(
+        { chatId: chat.id, userId: from.id, err: err instanceof Error ? err.message : String(err) },
+        "Admin guard failed to check sender membership",
+      );
+      await ctx.reply(ADMIN_CHECK_FAILED).catch(() => {});
       return;
     }
 

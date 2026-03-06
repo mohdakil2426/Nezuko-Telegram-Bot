@@ -1,9 +1,53 @@
 # Active Context: Current State
 
 ### Current Status
-**Phase 101: grammY PRD Completion & Runtime Hardening — COMPLETE ✅**
+**Phase 103: grammY Group Command Reliability Fix — COMPLETE ✅**
 
-The missing PRD/runtime items from the grammY audit have now been implemented and verified. Dashboard mode has realtime command wiring, multi-bot instances run the real member sync service, `batchVerify(...)` is implemented, join-request enforcement exists, and runtime-facing tests were added to cover the shipped wiring instead of only isolated composers.
+The remaining group-command issue was in the middleware guards, not command matching. Admin-only group commands could stop silently when sender identity was unavailable or when `getChatMember` / bot-permission checks failed. The grammY bot now returns explicit feedback instead of appearing dead in groups.
+
+---
+
+## Phase 103: Group Command Reliability Fix (2026-03-06)
+
+### Root Cause
+
+| Issue | Root Cause | Status |
+|---|---|---|
+| Some group commands looked dead while `/start` and `/help` still worked | `adminGuard` and `permissionCheck` had silent fail-closed branches (`return` with no reply) | ✅ |
+| Group admin commands inconsistent in live usage | Anonymous-admin / missing-sender cases and membership lookup failures produced no user-visible response | ✅ |
+| Logs insufficient to explain the failure | `admin_logs` table currently had no useful recent records; failure happened before meaningful app-side logging | ✅ |
+
+### Implemented This Session
+
+| Area | Change | Status |
+|---|---|---|
+| Admin guard | `admin-guard.ts` now replies when sender info is unavailable and when admin membership lookup fails | ✅ |
+| Bot permission guard | `permission-check.ts` now replies on 403 and unexpected permission lookup failures instead of silently returning | ✅ |
+| User messaging | Added explicit messages for unavailable admin checks and bot-permission check failures | ✅ |
+| Coverage | Added/expanded guard tests for missing sender and failed permission lookups | ✅ |
+
+---
+
+## Phase 102: Command Menu Sync & `/status` Parity (2026-03-06)
+
+### Root Cause
+
+| Issue | Root Cause | Status |
+|---|---|---|
+| No slash-command menu in DM | grammY bot handled `/start` and `/help` but never called Telegram `setMyCommands` | ✅ |
+| No slash-command menu in groups | No group/admin command scopes were published to Telegram | ✅ |
+| PTB parity gap | PTB exposed `/status` in group command menu, grammY did not implement it | ✅ |
+
+### Implemented This Session
+
+| Area | Change | Status |
+|---|---|---|
+| Command sync | Added shared `core/bot-commands.ts` with private/group/group-admin command scopes and menu-button sync | ✅ |
+| Standalone startup | `main.ts` now syncs command menus after `getMe()` | ✅ |
+| Multi-bot startup | `bot-lifecycle.ts` now syncs command menus for every started dashboard bot | ✅ |
+| PTB parity | Added `/status` handler in `admin.ts` | ✅ |
+| UX alignment | Expanded `HELP_TEXT` to include `/start`, `/status`, and current command surface | ✅ |
+| Coverage | Added tests for command sync and updated admin integration coverage | ✅ |
 
 ---
 
@@ -27,7 +71,7 @@ The missing PRD/runtime items from the grammY audit have now been implemented an
 |---|---|
 | `cd apps/grammy && bun run type-check` | ✅ 0 errors |
 | `cd apps/grammy && bun run lint` | ✅ 0 warnings |
-| `cd apps/grammy && bun run test` | ✅ **120/120 passed** |
+| `cd apps/grammy && bun run test` | ✅ **122/122 passed** |
 
 ### Files Changed
 
@@ -75,10 +119,10 @@ Join-request enforcement now happens in `eventsComposer` before the user enters 
 
 ## Next Steps
 
-1. Run the bot live in dashboard mode and validate realtime command dispatch from the web dashboard.
-2. Validate join-request approve/decline behavior against a real Telegram supergroup with linked channels.
-3. If more PRD alignment work is needed later, the next likely gap is administrative observability rather than core enforcement behavior.
+1. Run the bot live and verify the command list is visible in DM, normal groups, and group admin scope.
+2. Validate realtime dashboard commands and join-request flows against a real Telegram setup.
+3. If Telegram clients cache old command menus briefly, force-refresh by reopening the chat after the bot restart and confirm the synced scopes appear.
 
 ---
 
-_Last Updated: 2026-03-06 17:45 IST (Phase 101 — PRD completion + runtime hardening, 120 tests passing)_
+_Last Updated: 2026-03-06 18:05 IST (Phase 102 — command menu sync + PTB parity, 122 tests passing)_
