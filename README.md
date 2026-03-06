@@ -1,347 +1,311 @@
-<div align="center">
+# Nezuko
 
-<!-- BANNER -->
-<img src="docs/assets/nezuko-banner.jpg" alt="Nezuko Banner" width="100%"/>
+Production-ready Telegram membership enforcement platform built with `grammY`, `Next.js`, and `InsForge`.
 
-<br/>
-<br/>
+Nezuko turns Telegram groups into controlled entry points for channel growth. It verifies required channel membership, restricts unverified users, supports join-request-first onboarding, and gives operators a real-time dashboard for bots, groups, channels, logs, and analytics.
 
-<!-- HERO SECTION -->
+## Highlights
 
-# 🌸 Nezuko
+- `grammY` bot runtime in TypeScript with standalone and multi-bot dashboard modes
+- Join-request-first verification with mute-on-join fallback
+- Required-channel enforcement across groups
+- Re-verification and access revocation when users leave required channels
+- Redis-backed caching, idempotency locks, and message-path recovery checks
+- Next.js dashboard for operations, analytics, logs, bot management, and settings
+- InsForge backend with PostgreSQL, realtime channels, storage, and edge functions
 
-### The Ultimate All-In-One Telegram Bot Platform
+## Architecture
 
-**Production-ready • Multi-tenant • Async-first • Cloud-Native**
-
-<br/>
-
-<!-- BADGES - Row 1: Core Info -->
-
-[![Version](https://img.shields.io/badge/version-1.0.0-9333ea?style=for-the-badge&labelColor=1a1a2e)](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/releases)
-[![Python](https://img.shields.io/badge/python-3.13+-3776AB?style=for-the-badge&logo=python&logoColor=white&labelColor=1a1a2e)](https://www.python.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=next.js&logoColor=white&labelColor=1a1a2e)](https://nextjs.org/)
-[![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge&labelColor=1a1a2e)](LICENSE)
-
-<!-- BADGES - Row 2: Quality Metrics -->
-
-[![Pylint](https://img.shields.io/badge/pylint-10.00/10-brightgreen?style=for-the-badge&labelColor=1a1a2e)](https://pylint.org/)
-[![Type Check](https://img.shields.io/badge/pyrefly-0_errors-brightgreen?style=for-the-badge&labelColor=1a1a2e)](https://pyrefly.org/)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen?style=for-the-badge&labelColor=1a1a2e)](tests/)
-[![Build](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge&labelColor=1a1a2e)](https://github.com/mohdakil2426/Nezuko-Telegram-Bot)
-
-<!-- BADGES - Row 3: Tech Stack -->
-
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white&labelColor=1a1a2e)](https://react.dev/)
-[![InsForge](https://img.shields.io/badge/InsForge-BaaS-FF6B6B?style=for-the-badge&labelColor=1a1a2e)](https://insforge.app)
-[![Telegram Bot API](https://img.shields.io/badge/PTB-v22.6+-26A5E4?style=for-the-badge&logo=telegram&logoColor=white&labelColor=1a1a2e)](https://python-telegram-bot.org/)
-[![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white&labelColor=1a1a2e)](https://vercel.com)
-
-<br/>
-
-<!-- QUICK LINKS -->
-
-[**📖 Documentation**](docs/README.md) • [**🏗️ Architecture**](docs/architecture/README.md) • [**☁️ Cloud Deployment**](#-cloud-deployment) • [**🤝 Contributing**](docs/contributing/README.md)
-
-<br/>
-
-</div>
-
----
-
-<!-- TABLE OF CONTENTS -->
-<details open>
-<summary><h2>📑 Table of Contents</h2></summary>
-
-- [🌸 Nezuko](#-nezuko)
-    - [The Ultimate All-In-One Telegram Bot Platform](#the-ultimate-all-in-one-telegram-bot-platform)
-  - [✨ What is Nezuko?](#-what-is-nezuko)
-  - [🎯 Key Features](#-key-features)
-    - [🔐 Channel Membership Enforcement](#-channel-membership-enforcement)
-    - [📊 Admin Dashboard](#-admin-dashboard)
-    - [⚡ Enterprise Performance](#-enterprise-performance)
-    - [🛠️ Self-Service Admin Commands](#️-self-service-admin-commands)
-  - [☁️ Cloud Deployment](#️-cloud-deployment)
-    - [1. Dashboard (Vercel)](#1-dashboard-vercel)
-    - [2. Bot Engine (Docker / Terminal)](#2-bot-engine-docker--terminal)
-    - [3. Backend (InsForge)](#3-backend-insforge)
-  - [🚀 Local Development](#-local-development)
-    - [Prerequisites](#prerequisites)
-    - [Quick Start](#quick-start)
-  - [⌨️ CLI Commands](#️-cli-commands)
-  - [🏗️ Project Structure](#️-project-structure)
-  - [💻 Tech Stack](#-tech-stack)
-    - [Frontend](#frontend)
-    - [Bot](#bot)
-    - [Infrastructure](#infrastructure)
-  - [🎨 Dashboard Preview](#-dashboard-preview)
-  - [🔧 Bot Commands](#-bot-commands)
-  - [🤝 Contributing](#-contributing)
-  - [📄 License](#-license)
-    - [Built with 💜 using async Python \& modern React](#built-with--using-async-python--modern-react)
-
-</details>
-
----
-
-## ✨ What is Nezuko?
-
-**Nezuko** is a complete **Telegram bot ecosystem** for automated channel membership enforcement. It features a modern 2-tier architecture (Web + Bot) powered by InsForge Backend-as-a-Service.
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          NEZUKO CLOUD STACK                             │
-├─────────────────────┬─────────────────────┬─────────────────────────────┤
-│      apps/web       │      InsForge       │        apps/bot             │
-│   ┌─────────────┐   │   ┌─────────────┐   │    ┌─────────────┐          │
-│   │  Next.js 16 │   │   │ PostgreSQL  │   │    │     PTB     │          │
-│   │  React 19   │◄──┼──►│  Realtime   │◄──┼──► │   v22.6+    │          │
-│   │  Dashboard  │   │   │  Storage    │   │    │   AsyncIO   │          │
-│   └─────────────┘   │   └─────────────┘   │    └─────────────┘          │
-│     (Vercel)        │      (BaaS)         │     (Docker/Terminal)         │
-└─────────────────────┴─────────────────────┴─────────────────────────────┘
+```text
+                      +----------------------+
+                      |   Next.js Dashboard  |
+                      |      apps/web        |
+                      +----------+-----------+
+                                 |
+                                 | @insforge/sdk
+                                 v
+ +----------------------+   +----+-------------------------------+
+ |  grammY Bot Runtime  |   |             InsForge               |
+ |    apps/grammy       |-->|  PostgreSQL + Realtime + Storage   |
+ |  long polling        |   |  REST API + Socket.IO channels     |
+ +----------+-----------+   +----+-------------------------------+
+            |                    ^
+            | Redis cache        |
+            v                    |
+   +-------------------+         |
+   |       Redis       |---------+
+   | membership/cache  |
+   | idempotency/locks |
+   +-------------------+
 ```
 
-<br/>
+## Verification Flow
 
-## 🎯 Key Features
+```text
+User joins protected group
+        |
+        v
+Bot resolves group verification contract
+        |
+        +--> join-request preferred?
+        |       |
+        |       +--> yes: verify before approval
+        |       +--> no: mute on join and prompt verification
+        |
+        v
+User joins required channel(s)
+        |
+        v
+User taps Verify
+        |
+        v
+Fresh membership checks run
+        |
+        +--> all required channels joined
+        |       |
+        |       +--> unmute / approve join request
+        |
+        +--> any channel missing
+                |
+                +--> keep restricted and show prompt
+```
 
-<table>
-<tr>
-<td width="50%">
+The bot also re-checks stale verified users on group messages. If Telegram misses a channel leave event, the next message still triggers revalidation and re-restriction.
 
-### 🔐 Channel Membership Enforcement
+## What You Get
 
-Automatically ensure users join required channels before participating in groups.
+### Bot Runtime
 
-- **Instant Join Protection** — Mutes users the moment they join
-- **Real-time Leave Detection** — Revokes access immediately
-- **Multi-Channel Support** — Require multiple channels
-- **One-Click Verification** — Self-service inline buttons
+- Multi-channel membership verification
+- Join-request approval and decline flow
+- Inline verification buttons
+- Channel leave detection and access revocation
+- Redis membership cache with short negative TTLs
+- Redis NX idempotency locks for verify, join, and enforcement paths
+- Process lock protection against duplicate pollers
+- Health endpoint and structured logging
+- API telemetry and verification analytics persisted to InsForge
 
-</td>
-<td width="50%">
+### Dashboard
 
-### 📊 Admin Dashboard
+- Overview and analytics
+- Groups and enforced channels management
+- Bot instance management
+- Realtime logs
+- Security and operational settings
 
-A beautiful, responsive web interface for complete control.
+### Backend
 
-- **26 shadcn/ui Components** — Clean, professional design
-- **Real-time Analytics** — Live stats via WebSockets
-- **Bot Management** — Add/Remove/Restart bots remotely
-- **Light/Dark/System Themes** — Automatic theme detection
+- InsForge PostgreSQL as the source of truth
+- Realtime channels for verification, status, logs, commands, and bot instances
+- Edge functions for operational workflows
+- RLS-backed tables and bot-safe anon policies
 
-</td>
-</tr>
-<tr>
-<td width="50%">
+## Tech Stack
 
-### ⚡ Enterprise Performance
+### Bot
 
-Built for scale with production-ready architecture.
+- TypeScript 5.9
+- grammY 1.41
+- Bun
+- Node 22
+- ioredis
+- pino
+- zod
+- Socket.IO client
 
-- **Sub-100ms Latency** — Optimized async verification
-- **Stateless Bot Engine** — Horizontal scaling ready
-- **Edge Functions** — Serverless logic for heavy lifting
-- **Rate Limiting** — Built-in Telegram API protection
+### Web
 
-</td>
-<td width="50%">
+- Next.js 16
+- React 19
+- Tailwind CSS v4
+- shadcn/ui
+- TanStack Query v5
+- Recharts
+- Motion
 
-### 🛠️ Self-Service Admin Commands
+### Backend / Infra
 
-Empower group admins with simple commands.
+- InsForge
+- PostgreSQL
+- Redis
+- Docker
+- Vercel
 
-- `/protect @Channel` — Enable protection instantly
-- `/status` — View real-time protection status
-- `/unprotect` — Disable protection cleanly
-- `/settings` — Configure verification behavior
+## Project Structure
 
-</td>
-</tr>
-</table>
+```text
+nezuko/
+├── apps/
+│   ├── grammy/       # Telegram bot runtime
+│   └── web/          # Next.js dashboard
+├── insforge/
+│   ├── migrations/   # SQL migrations
+│   └── functions/    # Edge functions
+├── tests/
+│   └── grammy/       # Bot tests
+├── docs/
+├── memory-bank/
+└── scripts/
+```
 
-<br/>
+## Deployment Model
 
-## ☁️ Cloud Deployment
+Nezuko is a 2-tier system with no custom API server:
 
-Nezuko is designed to run in the cloud with **zero cost** using free tiers.
+- `apps/web` deploys as the admin dashboard
+- `apps/grammy` runs as the Telegram bot process
+- InsForge provides database, realtime, storage, and functions
+- Redis handles cache and idempotency
 
-### 1. Dashboard (Vercel)
-The web dashboard manages your bots, analytics, and configuration.
-- **Platform:** Vercel (Free)
-- **Setup:** Import repository -> Select `apps/web` as root -> Deploy.
+Typical production setup:
 
-### 2. Bot Engine (Docker / Terminal)
-The Python bot engine runs 24/7 to handle Telegram updates.
-- **Platform:** Any VPS, Docker, or local terminal
-- **Setup:** `python -m apps.bot.main` or use Docker Compose.
+1. Deploy `apps/web`
+2. Provision Redis
+3. Apply InsForge migrations
+4. Run `apps/grammy` in dashboard mode for multi-bot management, or standalone mode for a single bot
 
-### 3. Backend (InsForge)
-Managed database, authentication, and realtime features.
-- **Platform:** InsForge (Free)
-- **Setup:** Create project -> Apply migrations -> Connect.
-
-See [**DEPLOYMENT-REPORT.md**](DEPLOYMENT-REPORT.md) for the detailed setup guide.
-
-<br/>
-
-## 🚀 Local Development
+## Quick Start
 
 ### Prerequisites
 
-| Requirement | Version | Notes |
-| :--- | :--- | :--- |
-| **Python** | 3.13+ | Required for bot |
-| **Node.js** | 20+ | Required for dashboard |
-| **Bun** | 1.0+ | Faster package manager |
-| **Docker Desktop** | Latest | Required for local Redis |
-| **InsForge** | Cloud | Managed database (Free) |
+- Node.js `22+` for the bot runtime
+- Bun `1+`
+- Docker for local Redis
+- An InsForge project
+- A Telegram bot token from `@BotFather`
 
-### Quick Start
+### 1. Install dependencies
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/mohdakil2426/Nezuko-Telegram-Bot.git
-cd Nezuko-Telegram-Bot
+cd apps/grammy && bun install
+cd ../web && bun install
+```
 
-# 2. One-command setup (installs everything, creates .env files)
-nezuko setup          # Windows
-./nezuko.sh setup     # Mac/Linux
+### 2. Start Redis
 
-# 3. Fill in your credentials
-# Edit apps/bot/.env  — add BOT_TOKEN, DATABASE_URL, ENCRYPTION_KEY
-# Edit apps/web/.env.local — add NEXT_PUBLIC_INSFORGE_ANON_KEY
-
-# 4. Generate an encryption key (if setting up fresh)
-nezuko keygen         # Windows
-./nezuko.sh keygen    # Mac/Linux
-
-# 5. Start local Redis
+```bash
 docker compose -f docker-compose.local.yml up -d
-
-# 6. Start all development servers
-nezuko dev            # Windows  → opens Bot + Web in separate terminals
-./nezuko.sh dev       # Mac/Linux
 ```
 
-Then open **http://localhost:3000** in your browser.
+### 3. Configure environment
 
-> 📖 See [`.env.example`](.env.example) for a full reference of all required environment variables.
+Bot env: `apps/grammy/.env`
 
----
-
-## ⌨️ CLI Commands
-
-All commands are available via `nezuko` (Windows) or `./nezuko.sh` (Mac/Linux):
-
-| Command | Description |
-| :--- | :--- |
-| `nezuko` | Open interactive developer menu |
-| `nezuko setup` | First-time setup — installs all dependencies |
-| `nezuko dev` | Start Bot + Web dashboard in separate terminals |
-| `nezuko stop` | Stop all running services |
-| `nezuko keygen` | **Generate a Fernet encryption key** for `ENCRYPTION_KEY` |
-| `nezuko test` | Run the full test suite |
-| `nezuko clean` | Delete `node_modules` and `.venv` |
-| `nezuko tree` | Print the project folder structure |
-| `nezuko help` | Show all available commands |
-
-<br/>
-
-## 🏗️ Project Structure
-
-```
-nezuko/
-├── 📁 apps/
-│   ├── 🌐 web/                 # Next.js 16 Admin Dashboard
-│   │   ├── src/app/            # App Router pages
-│   │   ├── src/components/     # shadcn/ui + custom components
-│   │   └── src/lib/            # Hooks, InsForge SDK client
-│   │
-│   └── 🤖 bot/                 # Telegram Bot Engine
-│       ├── handlers/           # Command & event handlers
-│       ├── services/           # Business logic (verification, protection)
-│       ├── database/           # CRUD operations
-│       ├── core/               # Cache, encryption, DB engine
-│       └── logs/               # Runtime log files (gitignored)
-│
-├── ☁️  insforge/               # Backend Configuration
-│   ├── migrations/             # SQL schema files
-│   └── functions/              # Edge Functions (manage-bot, test-webhook)
-│
-├── 📝 openspec/                # Change management artifacts
-├── 🧪 tests/                   # All tests (tests/bot/)
-├── 🛠️  scripts/                 # Developer CLI scripts
-├── 🐳 docker-compose.local.yml # Local Redis
-└── 📚 docs/                    # Documentation
+```bash
+DASHBOARD_MODE=true
+BOT_TOKEN=<telegram-bot-token>
+INSFORGE_BASE_URL=<your-insforge-base-url>
+INSFORGE_ANON_KEY=<your-insforge-anon-key>
+INSFORGE_REQUEST_TIMEOUT_MS=5000
+REDIS_URL=redis://localhost:6379
+HEALTH_PORT=8081
+LOG_LEVEL=info
 ```
 
-<br/>
+Web env: `apps/web/.env.local`
 
-## 💻 Tech Stack
+```bash
+NEXT_PUBLIC_INSFORGE_BASE_URL=<your-insforge-base-url>
+NEXT_PUBLIC_INSFORGE_ANON_KEY=<your-insforge-anon-key>
+NEXT_PUBLIC_USE_MOCK=false
+NEXT_PUBLIC_DEV_LOGIN=false
+```
 
-<div align="center">
+### 4. Apply backend schema
 
-### Frontend
-![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=flat-square&logo=next.js)
-![React](https://img.shields.io/badge/React-19.2-blue?style=flat-square&logo=react)
-![Tailwind](https://img.shields.io/badge/Tailwind-v4-cyan?style=flat-square&logo=tailwindcss)
-![shadcn/ui](https://img.shields.io/badge/shadcn/ui-latest-black?style=flat-square)
-![TanStack Query](https://img.shields.io/badge/TanStack_Query-v5-red?style=flat-square)
+Use the migrations in `insforge/migrations/`.
+
+If your live backend has not yet applied `024_verification_contract_hardening.sql`, the bot still works because it now falls back to direct table reads, but the migration should still be applied to align the backend with the preferred contract path.
+
+### 5. Run locally
+
+Bot:
+
+```bash
+cd apps/grammy
+bun run dev
+```
+
+Web:
+
+```bash
+cd apps/web
+bun dev
+```
+
+## Operating Modes
+
+### Standalone Mode
+
+Use one bot token directly from env.
+
+```bash
+DASHBOARD_MODE=false
+BOT_TOKEN=<telegram-bot-token>
+```
+
+### Dashboard Mode
+
+Use InsForge-managed bot instances and run multi-bot orchestration.
+
+```bash
+DASHBOARD_MODE=true
+```
+
+This mode reads active bot instances from the backend, starts them dynamically, and keeps them synced.
+
+## Core Commands
+
+| Command | Context | Purpose |
+| --- | --- | --- |
+| `/start` | Private / Group | Basic entry and setup guidance |
+| `/help` | Any | Command reference |
+| `/protect @channel` | Group admin | Link a required channel |
+| `/unprotect` | Group admin | Disable protection |
+| `/status` | Group admin | Show protection status |
+| `/settings` | Group admin | View configuration |
+| `/channels` | Group | List linked channels |
+| `/verify` | Group | Manual verification helper |
+| `/stats` | Group | Group/channel stats |
+
+## Quality Gates
 
 ### Bot
-![Python](https://img.shields.io/badge/Python-3.13-blue?style=flat-square&logo=python)
-![PTB](https://img.shields.io/badge/PTB-v22.6-blue?style=flat-square&logo=telegram)
-![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-orange?style=flat-square)
-![Redis](https://img.shields.io/badge/Redis-7-red?style=flat-square&logo=redis)
 
-### Infrastructure
-![InsForge](https://img.shields.io/badge/InsForge-BaaS-FF6B6B?style=flat-square)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue?style=flat-square&logo=postgresql)
-![Vercel](https://img.shields.io/badge/Vercel-Web-black?style=flat-square&logo=vercel)
-![Docker](https://img.shields.io/badge/Docker-Bot-blue?style=flat-square&logo=docker)
+```bash
+cd apps/grammy
+bun run type-check
+bun run lint
+bun run test
+bun run build
+```
 
-</div>
+### Web
 
-<br/>
+```bash
+cd apps/web
+bun run type-check
+bun run lint
+bun run build
+```
 
-## 🎨 Dashboard Preview
+Current bot test baseline: `139/139` passing.
 
-The admin dashboard is built with **pure shadcn/ui** components for maintainability and a professional look. Toggle between mock data and real API with `NEXT_PUBLIC_USE_MOCK=true` in `.env.local`.
+## Operational Notes
 
-<br/>
+- Redis is required for best performance and duplicate-work suppression
+- The bot uses process locking to prevent duplicate long-polling instances on the same machine
+- The health endpoint is exposed by the bot runtime
+- Verification state is enforced through both channel membership updates and message-path recovery checks
+- Live backend analytics RPC `get_user_growth` still needs a backend-side fix if you rely on that chart/query
 
-## 🔧 Bot Commands
+## Documentation
 
-| Command | Context | Permission | Description |
-| :--- | :--- | :--- | :--- |
-| `/start` | Private | Anyone | Welcome message with setup guide |
-| `/help` | Any | Anyone | Command reference |
-| `/protect @Channel` | Group | Admin | Enable channel enforcement |
-| `/status` | Group | Anyone | View protection status |
-| `/settings` | Group | Admin | View/modify configuration |
+- [docs](docs)
+- [memory-bank](memory-bank)
+- [InsForge migrations](insforge/migrations)
 
-<br/>
+## License
 
-## 🤝 Contributing
-
-Contributions are welcome! Please read our [Contributing Guide](docs/contributing/README.md) for details.
-
-<br/>
-
-## 📄 License
-
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for more information.
-
-<br/>
-
----
-
-<div align="center">
-
-### Built with 💜 using async Python & modern React
-
-[![GitHub Stars](https://img.shields.io/github/stars/mohdakil2426/Nezuko-Telegram-Bot?style=social)](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/stargazers)
-
-</div>
+[MIT](LICENSE)
