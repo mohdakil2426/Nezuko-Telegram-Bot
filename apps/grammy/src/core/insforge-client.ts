@@ -10,6 +10,7 @@ export interface InsForgeClientOptions {
 
 /** Query parameters for PostgREST-style filtering. */
 export type QueryParams = Record<string, string>;
+export type RpcArgs = Record<string, unknown>;
 
 /**
  * Low-level HTTP client for the InsForge REST API (PostgREST).
@@ -173,6 +174,30 @@ export class InsForgeClient {
       this.logger.error({ table, status: res.status }, msg);
       throw new Error(msg);
     }
+  }
+
+  /**
+   * Execute a PostgreSQL RPC function exposed by InsForge.
+   *
+   * @param functionName - SQL function name
+   * @param args - Optional JSON arguments object
+   * @returns Parsed JSON response as T
+   */
+  async rpc<T>(functionName: string, args?: RpcArgs): Promise<T> {
+    const url = `${this.baseUrl}/api/database/rpc/${functionName}`;
+    const res = await this.fetchWithTimeout(url, {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(args ?? {}),
+    });
+
+    if (!res.ok) {
+      const msg = `InsForge RPC ${functionName}: ${res.status} ${res.statusText}`;
+      this.logger.error({ functionName, status: res.status }, msg);
+      throw new Error(msg);
+    }
+
+    return res.json() as Promise<T>;
   }
 
   /**

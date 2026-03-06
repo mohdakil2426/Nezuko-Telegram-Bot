@@ -29,11 +29,12 @@ describe("batchVerify", () => {
   });
 
   it("returns verification results for every unique user id", async () => {
-    vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 100 }])
-      .mockResolvedValueOnce([makeChannel(100, "required")])
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 100 }])
-      .mockResolvedValueOnce([makeChannel(100, "required")]);
+    vi.mocked(db.rpc).mockResolvedValue({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(100, "required")],
+    });
 
     vi.mocked(cache.get).mockResolvedValue(null);
 

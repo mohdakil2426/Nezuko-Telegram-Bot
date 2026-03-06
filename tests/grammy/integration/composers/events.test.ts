@@ -6,6 +6,7 @@ import {
   createMessageUpdate,
   createNewMemberUpdate,
   createLeftMemberUpdate,
+  createChannelChatMemberUpdate,
 } from "../../helpers/mock-update.js";
 import { contextEnricher } from "../../../../apps/grammy/src/middleware/context-enricher.js";
 import type { NezukoContext } from "../../../../apps/grammy/src/types.js";
@@ -258,6 +259,57 @@ describe("events composer integration", () => {
 
       const deleteCall = apiCalls.find((c) => c.method === "deleteMessage");
       expect(deleteCall).toBeDefined();
+    });
+  });
+
+  describe("required channel leave handling", () => {
+    it("re-mutes the user and sends a fresh verification prompt when they leave a required channel", async () => {
+      const { bot, apiCalls } = createTestBot();
+      const deps = makeDeps();
+
+      vi.mocked(deps.db.getRecords).mockResolvedValueOnce([
+        {
+          group_id: -1001234567890,
+          channel_id: -1001111111111,
+        },
+      ]);
+      vi.mocked(deps.db.rpc).mockResolvedValueOnce({
+        group_id: -1001234567890,
+        enabled: true,
+        join_request_preferred: true,
+        channels: [MOCK_CHANNEL],
+      });
+
+      bot.use(contextEnricher(deps));
+
+      const eventsComposer = new Composer<NezukoContext>();
+      eventsComposer.on("chat_member", async (ctx) => {
+        if (ctx.chat.type !== "channel") return;
+
+        const user = ctx.chatMember.new_chat_member.user;
+        const links = await ctx.db.getRecords("group_channel_links", {
+          channel_id: `eq.${ctx.chat.id}`,
+          select: "group_id,channel_id",
+        });
+        for (const link of links as Array<{ group_id: number }>) {
+          await ctx.cache.del(`verified:${link.group_id}:${user.id}`);
+          await ctx.api.restrictChatMember(link.group_id, user.id, {
+            can_send_messages: false,
+          });
+          await ctx.api.sendMessage(link.group_id, "Please verify your membership again.");
+        }
+      });
+      bot.use(eventsComposer);
+
+      await bot.handleUpdate(
+        createChannelChatMemberUpdate({
+          user: { id: 999888777, first_name: "Leaver" },
+        })
+      );
+
+      expect(deps.cache.del).toHaveBeenCalledWith(`verified:-1001234567890:999888777`);
+      expect(apiCalls.find((call) => call.method === "restrictChatMember")).toBeDefined();
+      expect(apiCalls.find((call) => call.method === "sendMessage")).toBeDefined();
     });
   });
 });

@@ -17,7 +17,7 @@ Nezuko acts as an **automated gatekeeper** that:
 
 1.  **Instant Restriction**: Mutes new members immediately on join.
 2.  **Verification Flow**: Shows inline buttons to join required channels.
-3.  **Automatic Unmute**: Restores permissions when user verifies (<100ms).
+3.  **Automatic Unmute**: Restores permissions when user verifies.
 4.  **Analytics Dashboard**: Real-time visibility into all verification activity.
 
 ---
@@ -32,7 +32,15 @@ Nezuko acts as an **automated gatekeeper** that:
 4.  Click "Verify" button.
 5.  Instantly unmuted and can chat.
 
+Preferred flow when admins use join-request invite links:
+
+1.  User requests access to the protected group.
+2.  Bot checks required channel membership before approval.
+3.  Verified users are approved directly into the group.
+4.  Missing users are declined and DM'd with channel guidance.
+
 The verify step must be resilient to users joining a required channel after an initial failed attempt. Explicit verify clicks should always prefer fresh membership confirmation over stale negative cache state.
+If a previously verified user later leaves a required channel, the system must revoke access again even when Telegram channel-leave delivery is delayed or missed.
 
 ### For Administrators
 
@@ -91,7 +99,7 @@ Bot (grammY) ← socket.io-client          ← InsForge Realtime (Socket.IO)
 | Verification Latency (p99) | <150ms  | ✅ Achieved  |
 | Dashboard Pages            | 10      | ✅ Complete  |
 | Uptime                     | 99.9%   | ✅ On Track  |
-| grammY Tests               | 135/135 | ✅ Phase 108 |
+| grammY Tests               | 139/139 | ✅ Phase 110 |
 
 ---
 
@@ -103,4 +111,4 @@ The platform was originally built with Python + python-telegram-bot v22.6. That 
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 108 — explicit verify path now bypasses stale negative membership cache)_
+_Last Updated: 2026-03-07 (Phase 110 — current verified-user enforcement documented)_

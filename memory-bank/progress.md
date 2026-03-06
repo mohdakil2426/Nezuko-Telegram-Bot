@@ -1,13 +1,13 @@
 # Progress: What Works, What's Left
 
-## Current Phase: 108 — Verification False-Negative Fixed, Group Queues Narrowed
+## Current Phase: 110 — Verification Enforcement Recovery, RPC Fallback, Redis Hardening
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — preserved in `apps/bot/` for historical reference only. Not maintained.
 
 ---
 
-## ✅ What Works (Confirmed as of Phase 107)
+## ✅ What Works (Confirmed as of Phase 110)
 
 ### grammY Bot Runtime
 
@@ -18,6 +18,12 @@
 | **Multi-bot support**          | `BotManager` + `BotRegistry` + `BotLifecycleManager`                    | ✅ Ships     |
 | **Token decryption**           | AES-256-GCM via `encryption.ts` + Security Vault                        | ✅ Ships     |
 | **Membership verification**    | `verifyMembership()` — multi-channel AND logic, inline keyboard         | ✅ Ships     |
+| **Verification contract read** | RPC when available, direct-table fallback when live schema lags              | ✅ Phase 110 |
+| **Idempotent verify/join-request** | Redis NX locks suppress duplicate callback/join-request work       | ✅ Phase 109 |
+| **Channel-side cache invalidation** | Required-channel `chat_member` updates refresh membership/verified cache | ✅ Phase 109 |
+| **Post-leave re-restriction** | Leaving a required channel now re-mutes the user and re-sends the join/verify prompt | ✅ Phase 109 |
+| **Message-path revalidation** | Stale verified users are rechecked on group messages; failures now mute + prompt | ✅ Phase 110 |
+| **Join-request-first preference** | `protected_groups.params.join_request_preferred=true` by default     | ✅ Phase 109 |
 | **Join restriction**           | `eventsComposer` — mutes on `chat_member` new member                    | ✅ Ships     |
 | **Join request handling**      | `eventsComposer` — `chat_join_request` approve/decline + DM             | ✅ Phase 101 |
 | **Inline verification button** | `verifyComposer` — `callback_query` handler                             | ✅ Ships     |
@@ -35,14 +41,14 @@
 | **Health endpoint**            | `health.ts` — `/health` HTTP server                                     | ✅ Ships     |
 | **Duplicate-start protection** | `process-lock.ts` — blocks multiple local pollers for same mode/bot     | ✅ Phase 107 |
 | **HTML parse mode**            | Custom API transformer (not `parseMode()`)                              | ✅ Ships     |
-| **Redis L1 cache**             | `ioredis` with `nezuko:v2:` prefix                                      | ✅ Ships     |
+| **Redis L1 cache**             | `ioredis` with `nezuko:v2:` prefix, pipelined bulk delete, health helpers | ✅ Phase 110 |
 | **Cache degradation**          | Bot continues when Redis unavailable                                    | ✅ Ships     |
 | **DB degradation**             | Standalone boots without INSFORGE\_\*                                   | ✅ Ships     |
 | **InsForge request timeout**   | REST calls abort after configured timeout instead of hanging            | ✅ Phase 107 |
 | **Pino logger**                | Structured JSON, child loggers per module                               | ✅ Ships     |
 | **DB log transport**           | `db-log-transport.ts` — WARN+ logs → `admin_logs` (admin_logs realtime) | ✅ Phase 105 |
 | **API call logging**           | `apiLogTransformer` in bot-factory — all calls → `api_call_log`         | ✅ Phase 105 |
-| **Vitest tests**               | 135/135 tests passing (22 suites)                                       | ✅ Phase 108 |
+| **Vitest tests**               | 139/139 tests passing (23 suites)                                       | ✅ Phase 110 |
 
 ### Database Schema (InsForge — Migration 023)
 
@@ -113,21 +119,19 @@
 | Admin alert channel (bot→admin DM on error)       | Low         | Not wired; `bot.catch()` only logs              |
 | Webhook mode                                      | Not planned | grammY uses long-polling via `@grammyjs/runner` |
 | Existing duplicate bot processes must be stopped once | Medium  | Code now prevents new duplicates, but old local pollers can still conflict until restarted |
-| `api_call_log` inserts hit RLS on 2026-03-06          | Medium  | Postgres logs show anon INSERT denied; telemetry is incomplete until policy is fixed |
-| Live validation of verification after cache fix       | Pending | Should be verified in the protected group right after restart |
+| Live migration 024 not yet applied                | Medium  | Bot now falls back without the RPC, but live schema should still be aligned |
+| `get_user_growth` analytics RPC is broken live    | Medium  | Postgres logs show a `verification_log.user_id` query bug |
+| Join-request-first flow still needs full live validation | Pending | Core verify path is now confirmed working live |
 
 ---
 
 ## 🏗️ Next Steps
 
-1. **Single-instance runtime validation** — stop old duplicate pollers and confirm one clean bot process per token.
-2. **Live verify validation** — reproduce the old edge case: fail verify once, join the required channel, then tap Verify again immediately and confirm success.
-3. **Verification analytics validation** — confirm `verification_log` begins receiving rows after the live retry test.
-4. **Live latency validation** — measure real group-command response time after restart with healthy InsForge connectivity.
-5. **Fix `api_call_log` RLS** — align anon INSERT policy with the bot’s telemetry writes.
-6. **Docker build** — update `Dockerfile` to point at `apps/grammy` (`bun install` + `bun run build` + `node dist/main.js`).
-7. **CI/CD** — update GitHub Actions workflow to run the full quality gate (type-check, lint, format:check, test, build) on every push.
-8. **Admin alert channel** — wire `bot.catch()` to forward fatal errors to a configured admin chat ID (P2 priority).
+1. **Apply migration 024 live** — add `get_group_verification_contract` and backfill `join_request_preferred` so fallback is no longer needed.
+2. **Validate join-request-first flow live** — verify request-only invite flow approves subscribed users without mute fallback.
+3. **Fix `get_user_growth` RPC** — backend analytics query currently references `verification_log` incorrectly.
+4. **Docker build** — update `Dockerfile` to point at `apps/grammy` (`bun install` + `bun run build` + `node dist/main.js`).
+5. **CI/CD** — update GitHub Actions workflow to run the full quality gate (type-check, lint, format:check, test, build) on every push.
 
 ---
 
@@ -138,11 +142,11 @@
 | `grammy type-check`   | ✅ 0 errors          |
 | `grammy lint`         | ✅ 0 warnings        |
 | `grammy format:check` | ✅ All files conform |
-| `grammy test`         | ✅ 130/130 passed    |
+| `grammy test`         | ✅ 139/139 passed    |
 | `web type-check`      | ✅ 0 errors          |
 | `web lint`            | ✅ 0 warnings        |
 | `web prettier check`  | ✅ All files conform |
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 108 — verification false-negative fix and live follow-up tasks documented)_
+_Last Updated: 2026-03-07 (Phase 110 — message-path revalidation, RPC fallback, Redis hardening documented)_

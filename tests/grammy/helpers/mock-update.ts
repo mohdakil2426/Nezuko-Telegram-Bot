@@ -191,3 +191,39 @@ export function createJoinRequestUpdate(overrides?: {
     },
   };
 }
+
+/**
+ * Create a chat_member update for channel membership changes.
+ */
+export function createChannelChatMemberUpdate(overrides?: {
+  user?: Partial<User>;
+  chat?: Partial<Chat>;
+  oldStatus?: string;
+  newStatus?: string;
+}): Update {
+  const user: User = { ...DEFAULT_USER, ...(overrides?.user as User) };
+  const chat: Chat = {
+    id: -1001111111111,
+    type: "channel",
+    title: "Required Channel",
+    username: "requiredchannel",
+    ...(overrides?.chat as Chat),
+  };
+
+  return {
+    update_id: updateIdCounter++,
+    chat_member: {
+      chat,
+      from: DEFAULT_USER,
+      date: Math.floor(Date.now() / 1000),
+      old_chat_member: {
+        user,
+        status: (overrides?.oldStatus ?? "member") as "member",
+      },
+      new_chat_member: {
+        user,
+        status: (overrides?.newStatus ?? "left") as "left",
+      },
+    },
+  };
+}

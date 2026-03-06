@@ -2,7 +2,7 @@
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — `apps/bot/` preserved for reference only. Not maintained.
-> **Last Updated**: 2026-03-07 (Phase 108)
+> **Last Updated**: 2026-03-07 (Phase 110)
 
 ---
 
@@ -40,9 +40,9 @@ apps/grammy/src/
 ├── core/
 │   ├── bot-factory.ts    # createBot() + createBotWithDeps() + apiLogTransformer
 │   ├── bot-commands.ts   # syncBotCommands() — private/group/group-admin menu scopes
-│   ├── insforge-client.ts# InsForgeClient (native fetch REST — getRecords/postRecords/patchRecords/deleteRecords)
+│   ├── insforge-client.ts# InsForgeClient (native fetch REST — getRecords/postRecords/patchRecords/deleteRecords/rpc)
 │   ├── realtime-client.ts# InsForgeRealtimeClient (socket.io — subscribes to 5 channels)
-│   ├── cache.ts          # CacheClient wrapping ioredis — graceful degradation built in
+│   ├── cache.ts          # CacheClient wrapping ioredis — graceful degradation + bulk invalidation helpers
 │   ├── encryption.ts     # AES-256-GCM token encrypt/decrypt + getMasterKey() from vault
 │   ├── shutdown.ts       # setupShutdown() — SIGINT/SIGTERM handler
 │   ├── db-log-transport.ts # pino DestinationStream → admin_logs (WARN+ forwarding)
@@ -62,7 +62,8 @@ apps/grammy/src/
 │   ├── fallback.ts       # Catch-all (always last)
 │   └── migration.ts      # my_chat_member handler — group migration
 ├── services/
-│   ├── verification.ts   # verifyMembership() — multi-channel AND logic + explicit verify cache bypass
+│   ├── verification.ts   # verifyMembership() — multi-channel AND logic + explicit verify/message recheck bypass
+│   ├── idempotency.ts    # acquireIdempotencyLock() — short-lived Redis NX guards
 │   ├── protection.ts     # muteUser(), unmuteUser(), kickUser()
 │   ├── channel-linker.ts # linkChannel(), unlinkChannel()
 │   ├── batch-verification.ts # batchVerify() — Map<userId, result>
@@ -75,6 +76,7 @@ apps/grammy/src/
 │   └── bot-registry.ts   # BotRegistry — Map<botId, BotInstance>
 └── database/
     ├── types.ts          # ProtectedGroup, EnforcedChannel, GroupChannelLink, VerificationLog, BotStatus
+    ├── group-contract.repo.ts # getGroupVerificationContract() — RPC first, direct-table fallback
     ├── owner.repo.ts     # upsertOwner() — FK-safe owner upsert before protected_groups INSERT
     ├── group.repo.ts     # getGroupChannels(), setGroupActive(), createProtectedGroup()
     ├── channel.repo.ts   # updateSubscriberCount()
@@ -255,28 +257,51 @@ Shared between grammY bot (socket.io-client) and web (InsForge SDK).
 ### 8 — Verification Flow
 
 ```typescript
-// events.ts — on new chat_member
-await muteUser(api, chatId, userId);
-const channels = await getGroupChannels(db, chatId);
-if (channels.length === 0) { await unmuteUser(...); return; }
-await sendVerificationMessage(api, chatId, userId, channels);
+// 1. Resolve the group verification contract
+const contract = await getGroupVerificationContract(db, groupId);
+// RPC first: get_group_verification_contract(p_group_id)
+// Fallback: protected_groups + group_channel_links + enforced_channels
 
-// verify.ts — on callback_query "verify:<userId>"
-const { success, missingChannels } = await verifyMembership(
-  api,
-  db,
-  cache,
-  chatId,
-  userId,
-  log,
-  { bypassNegativeCache: true }
-);
-if (success) {
-  await unmuteUser(api, chatId, userId);
-  await ctx.answerCallbackQuery({ text: "✅ Verified!" });
+// 2. Join-request path
+// chat_join_request -> verifyMembership()
+// success   -> approve request + seed verified/join_request_approved cache + log verified
+// failure   -> decline request + DM missing channels + log restricted
+
+// 3. Join path
+// new_chat_members -> mute user
+// if join_request_preferred and approval marker exists:
+//   seed verified cache and skip second mute/prompt cycle
+// else:
+//   send verification prompt with Join buttons + verify:{groupId} callback
+
+// 4. Verify button path
+const result = await verifyMembership(api, db, cache, groupId, userId, log, {
+  bypassNegativeCache: true,
+});
+if (result.success) {
+  await unmuteUser(api, groupId, userId);
+  await cache.set(`verified:${groupId}:${userId}`, "1", "EX", VERIFIED_CACHE_TTL);
+  await logVerification(db, { status: "verified", ... });
 } else {
-  await ctx.answerCallbackQuery({ text: `❌ Join: ${missingChannels.join(", ")}`, show_alert: true });
+  await logVerification(db, { status: "restricted", ... });
+  await ctx.answerCallbackQuery({ show_alert: true, text: VERIFY_MISSING_CHANNELS(...) });
 }
+
+// 5. Channel leave path
+// required-channel chat_member event -> write member cache
+// if left/kicked:
+//   invalidate verified cache for every linked group
+//   mute user in linked groups
+//   log restricted
+//   resend verification prompt
+
+// 6. Group message path
+// if verified cache hit -> allow
+// else if latest DB verification is still fresh -> reseed cache and allow
+// else:
+//   re-run verifyMembership(..., { bypassNegativeCache: true })
+//   success -> reseed cache and allow
+//   failure -> mute + log restricted + resend prompt + delete message
 ```
 
 ### 8.1 — Membership Cache Rules (Phase 108)
@@ -297,6 +322,49 @@ await verifyMembership(api, db, cache, groupId, userId, log, {
 // Busy groups should not serialize unrelated users behind one queue key.
 getSequentializeKey(ctx) => `${chatId}:${userId}`;  // ordinary user traffic
 getSequentializeKey(ctx) => `${chatId}`;            // slash commands + membership updates
+```
+
+### 8.3 — Verification Contract + Idempotency
+
+```typescript
+// Contract read prefers RPC but no longer hard-depends on it in production.
+const contract = await getGroupVerificationContract(db, groupId);
+// returns: { groupId, enabled, joinRequestPreferred, channels }
+
+// Duplicate callback/join-request work is suppressed with Redis NX locks
+await acquireIdempotencyLock(cache, "verify", [groupId, userId]);
+await acquireIdempotencyLock(cache, "join-request", [groupId, userId]);
+await acquireIdempotencyLock(cache, "group-join", [groupId, userId]);
+await acquireIdempotencyLock(cache, "message-enforce", [groupId, userId]);
+```
+
+### 8.4 — Channel-Side Invalidation + Message Recheck (Phase 110)
+
+```typescript
+// Required-channel chat_member updates refresh membership cache
+if (ctx.chat.type === "channel") {
+  await cache.set(`member:${channelId}:${userId}`, isMember ? "1" : "0", "EX", ttl);
+  if (!isMember) {
+    await cache.delMany?.([`verified:${groupId}:${userId}`, ...otherLinkedGroupKeys]);
+  }
+}
+
+// Missed channel-leave updates are recovered on the group message path.
+const latest = await getLatestVerificationState(db, groupId, userId);
+const recentlyVerified =
+  latest?.status === "verified" &&
+  Date.now() - Date.parse(latest.timestamp) <= VERIFIED_RECHECK_INTERVAL_MS;
+
+if (!recentlyVerified) {
+  const result = await verifyMembership(api, db, cache, groupId, userId, log, {
+    bypassNegativeCache: true,
+  });
+  if (!result.success) {
+    await muteUser(api, groupId, userId);
+    await logVerification(db, { status: "restricted", ... });
+    await sendVerificationPrompt(ctx, groupId, userName, channels);
+  }
+}
 ```
 
 ### 9 — Test Patterns (Vitest v4)
@@ -333,7 +401,7 @@ bun run type-check    # 0 errors REQUIRED
 bun run lint          # 0 warnings REQUIRED (--max-warnings 0)
 bun run format        # prettier src/ ../../tests/grammy --write
 bun run format:check  # All matched files use Prettier code style! REQUIRED
-bun run test          # 127/127 REQUIRED — never decrease without justification
+bun run test          # 139/139 REQUIRED — never decrease without justification
 bun run build         # dist/ produced with 0 errors REQUIRED
 
 cd apps/web
@@ -636,4 +704,4 @@ const { period, summary } = extractEnvelopeMetadata(data);
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 108 — verification cache bypass and narrower group queues)_
+_Last Updated: 2026-03-07 (Phase 110 — corrected verification flow, RPC fallback, Redis hardening)_

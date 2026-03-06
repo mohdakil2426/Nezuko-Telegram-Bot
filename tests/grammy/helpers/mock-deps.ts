@@ -10,6 +10,7 @@ import type { Logger } from "../../../apps/grammy/src/utils/logger.js";
 export function createMockDb(): InsForgeClient {
   return {
     getRecords: vi.fn().mockResolvedValue([]),
+    rpc: vi.fn().mockResolvedValue({}),
     postRecords: vi.fn().mockResolvedValue([]),
     patchRecords: vi.fn().mockResolvedValue([]),
     deleteRecords: vi.fn().mockResolvedValue(undefined),
@@ -23,8 +24,13 @@ export function createMockDb(): InsForgeClient {
 export function createMockCache(): CacheClient {
   return {
     get: vi.fn().mockResolvedValue(null),
+    mget: vi.fn().mockResolvedValue([]),
     set: vi.fn().mockResolvedValue(undefined),
+    setIfAbsent: vi.fn().mockResolvedValue(true),
     del: vi.fn().mockResolvedValue(undefined),
+    delMany: vi.fn().mockResolvedValue(0),
+    ping: vi.fn().mockResolvedValue(true),
+    isHealthy: vi.fn().mockReturnValue(true),
     quit: vi.fn().mockResolvedValue(undefined),
     redis: {} as CacheClient["redis"],
     chatMembersAdapter: {

@@ -15,6 +15,9 @@ export const CACHE_NAMESPACES = {
   VERIFIED: "verified",
   MEMBER: "member",
   DEBOUNCE: "verify_debounce",
+  CONTRACT: "verify_contract",
+  IDEMPOTENCY: "idempotency",
+  JOIN_REQUEST_APPROVED: "join_request_approved",
 } as const;
 
 /** Interval durations in milliseconds. */
@@ -25,6 +28,10 @@ export const INTERVALS = {
   MEMBER_SYNC: 900_000,
   /** Verify button debounce TTL in seconds. */
   VERIFY_DEBOUNCE: 3,
+  /** Lock TTL for verification/join-request idempotency in seconds. */
+  IDEMPOTENCY_LOCK: 15,
+  /** Cache TTL for auto-approved join requests in seconds. */
+  JOIN_REQUEST_APPROVED: 300,
 } as const;
 
 /** Maximum time to wait for in-flight updates during shutdown. */
@@ -44,6 +51,9 @@ export const CACHE_PREFIX = "nezuko:v2:";
 
 /** Verified cache TTL in seconds (6 hours). */
 export const VERIFIED_CACHE_TTL = 21_600;
+
+/** Maximum age of a DB-backed "verified" state before forcing fresh revalidation. */
+export const VERIFIED_RECHECK_INTERVAL_MS = 600_000;
 
 /** Positive member cache TTL in seconds (5 minutes). */
 export const MEMBER_CACHE_TTL = 300;

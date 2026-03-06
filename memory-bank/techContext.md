@@ -135,7 +135,7 @@ bun run type-check    # tsc --noEmit → 0 errors
 bun run lint          # eslint src/ --max-warnings 0 → 0 warnings
 bun run format        # prettier src/ ../../tests/grammy --write
 bun run format:check  # prettier src/ ../../tests/grammy --check
-bun run test          # vitest run → 127/127 tests passed (Phase 105 baseline)
+bun run test          # vitest run → 139/139 tests passed
 bun run test:coverage # vitest run --coverage (80% thresholds)
 bun run build         # tsc -p tsconfig.build.json → dist/
 
@@ -164,8 +164,9 @@ bun run build         # next build → 0 errors
 - **Access (Web)**: InsForge SDK (TypeScript) — `@insforge/sdk`
 - **Auth header**: `Authorization: Bearer <INSFORGE_ANON_KEY>`
 - **Canonical Migration**: `insforge/migrations/023_fresh_grammy_schema.sql`
+- **Latest Incremental Migration**: `insforge/migrations/024_verification_contract_hardening.sql`
 - **Tables**: 12 (all with RLS)
-- **RPC Functions**: 15 analytics functions
+- **RPC Functions**: analytics functions plus verification contract RPC after migration 024 is applied live
 - **Realtime Channels**: 5 (`dashboard`, `bot_status`, `logs`, `commands`, `bot_instances`)
 - **Edge Functions**: 2 (`manage-bot`, `test-webhook/index.js`)
 - **Storage Buckets**: 2 (`bot-assets` public, `bot-exports` private)
@@ -193,8 +194,10 @@ bun run build         # next build → 0 errors
 
 - Positive membership cache: `MEMBER_CACHE_TTL=300` seconds
 - Negative membership cache: `MEMBER_NEGATIVE_CACHE_TTL=30` seconds
+- Verification/join-request idempotency lock: `INTERVALS.IDEMPOTENCY_LOCK=15` seconds
+- Verified-state freshness recheck: `VERIFIED_RECHECK_INTERVAL_MS=600000` milliseconds
 - Explicit verify clicks bypass cached negative membership results and force a fresh Telegram `getChatMember` check
-- Passive group filtering still honors cached negative results for throughput
+- Group message enforcement revalidates stale previously verified users and re-restricts when needed
 
 ---
 
@@ -244,4 +247,4 @@ main()
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 108 — verification cache TTL split documented)_
+_Last Updated: 2026-03-07 (Phase 110 — current cache and runtime behavior documented)_

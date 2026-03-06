@@ -68,6 +68,9 @@ export async function createGroup(
         title,
         member_count: memberCount,
         enabled: true,
+        params: {
+          join_request_preferred: true,
+        },
       },
     ]);
   }

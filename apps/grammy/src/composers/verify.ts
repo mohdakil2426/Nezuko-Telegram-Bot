@@ -3,6 +3,7 @@ import type { NezukoContext } from "../types.js";
 import { verifyMembership } from "../services/verification.js";
 import { unmuteUser } from "../services/protection.js";
 import { logVerification } from "../database/verification.repo.js";
+import { acquireIdempotencyLock } from "../services/idempotency.js";
 import { CACHE_NAMESPACES, INTERVALS, VERIFIED_CACHE_TTL } from "../core/constants.js";
 import { VERIFY_SUCCESS, VERIFY_MISSING_CHANNELS, VERIFY_PROCESSING } from "../utils/messages.js";
 
@@ -26,6 +27,14 @@ verifyComposer.callbackQuery(/^verify:(-?\d+)$/, async (ctx) => {
     // Redis down — proceed without debounce
   }
 
+  const lockAcquired = await acquireIdempotencyLock(ctx.cache, "verify", [groupId, userId]).catch(
+    () => true
+  );
+  if (!lockAcquired) {
+    await ctx.answerCallbackQuery({ text: VERIFY_PROCESSING }).catch(() => {});
+    return;
+  }
+
   // Verify membership across all linked channels
   const result = await verifyMembership(ctx.api, ctx.db, ctx.cache, groupId, userId, ctx.log, {
     bypassNegativeCache: true,
@@ -43,10 +52,10 @@ verifyComposer.callbackQuery(/^verify:(-?\d+)$/, async (ctx) => {
     await logVerification(ctx.db, {
       user_id: userId,
       group_id: groupId,
-      channel_id: 0,
+      channel_id: result.checkedChannelIds[0] ?? 0,
       status: "verified",
       latency_ms: result.latencyMs,
-      cached: false,
+      cached: result.cached,
     }).catch((err) => ctx.log.warn({ err }, "Failed to log verification"));
 
     // Answer callback with success
@@ -66,15 +75,14 @@ verifyComposer.callbackQuery(/^verify:(-?\d+)$/, async (ctx) => {
     // Log failed attempt (one record per missing channel, capped to avoid flooding)
     // Use 'restricted' — the DB CHECK allows: 'verified' | 'restricted' | 'error'
     // 'restricted' = user is in the group but not subscribed to required channels
-    for (const _channel of result.missingChannels) {
-      await logVerification(ctx.db, {
-        user_id: userId,
-        group_id: groupId,
-        channel_id: 0,
-        status: "restricted",
-        latency_ms: result.latencyMs,
-      }).catch(() => {});
-    }
+    await logVerification(ctx.db, {
+      user_id: userId,
+      group_id: groupId,
+      channel_id: result.checkedChannelIds[0] ?? 0,
+      status: "restricted",
+      latency_ms: result.latencyMs,
+      cached: result.cached,
+    }).catch(() => {});
 
     // Answer with missing channels
     try {

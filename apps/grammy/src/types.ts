@@ -39,6 +39,8 @@ export interface VerificationResult {
   success: boolean;
   missingChannels: string[];
   latencyMs: number;
+  cached: boolean;
+  checkedChannelIds: number[];
 }
 
 /** Result of a protection action (mute/unmute/kick). */

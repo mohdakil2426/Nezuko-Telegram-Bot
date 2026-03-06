@@ -36,13 +36,22 @@ describe("verifyMembership", () => {
     db = createMockDb();
     cache = createMockCache();
     vi.clearAllMocks();
+    vi.mocked(db.rpc).mockResolvedValue({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [],
+    });
   });
 
   it("cache hit returns success without calling the Telegram API", async () => {
     // Arrange: one channel linked, Redis returns "1" (member)
-    vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 100 }]) // links
-      .mockResolvedValueOnce([makeChannel(100, "testchan")]); // channels
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(100, "testchan")],
+    });
 
     vi.mocked(cache.get).mockResolvedValue("1");
 
@@ -55,9 +64,12 @@ describe("verifyMembership", () => {
   });
 
   it("API fallback on cache miss confirms membership and caches result", async () => {
-    vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 100 }])
-      .mockResolvedValueOnce([makeChannel(100, "testchan")]);
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(100, "testchan")],
+    });
 
     vi.mocked(cache.get).mockResolvedValue(null); // cache miss
 
@@ -77,9 +89,12 @@ describe("verifyMembership", () => {
   });
 
   it("missing one channel returns failure with channel name", async () => {
-    vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 200 }])
-      .mockResolvedValueOnce([makeChannel(200, "channel2")]);
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(200, "channel2")],
+    });
 
     vi.mocked(cache.get).mockResolvedValue(null);
     const getChatMember = vi.fn().mockResolvedValue({ status: "left" });
@@ -98,12 +113,12 @@ describe("verifyMembership", () => {
   });
 
   it("multiple missing channels are all listed", async () => {
-    vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([
-        { group_id: 1, channel_id: 101 },
-        { group_id: 1, channel_id: 102 },
-      ])
-      .mockResolvedValueOnce([makeChannel(101, "chan1"), makeChannel(102, "chan2")]);
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(101, "chan1"), makeChannel(102, "chan2")],
+    });
 
     vi.mocked(cache.get).mockResolvedValue(null);
     const getChatMember = vi.fn().mockResolvedValue({ status: "left" });
@@ -118,9 +133,12 @@ describe("verifyMembership", () => {
   });
 
   it("403 channel unreachable — channel treated as not a member (EC-15/EC-16)", async () => {
-    vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 300 }])
-      .mockResolvedValueOnce([makeChannel(300, "private")]);
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(300, "private")],
+    });
 
     vi.mocked(cache.get).mockResolvedValue(null);
     const getChatMember = vi.fn().mockRejectedValue(new Error("403: Forbidden"));
@@ -133,9 +151,12 @@ describe("verifyMembership", () => {
   });
 
   it("400 USER_ID_INVALID — user treated as not a member (EC-42)", async () => {
-    vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 400 }])
-      .mockResolvedValueOnce([makeChannel(400, "somechan")]);
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(400, "somechan")],
+    });
 
     vi.mocked(cache.get).mockResolvedValue(null);
     const getChatMember = vi.fn().mockRejectedValue(new Error("400: Bad Request: USER_ID_INVALID"));
@@ -148,9 +169,12 @@ describe("verifyMembership", () => {
   });
 
   it("restricted status is considered a valid member (EC-43)", async () => {
-    vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 500 }])
-      .mockResolvedValueOnce([makeChannel(500, "restricted_chan")]);
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(500, "restricted_chan")],
+    });
 
     vi.mocked(cache.get).mockResolvedValue(null);
     const getChatMember = vi.fn().mockResolvedValue({ status: "restricted" });
@@ -163,9 +187,12 @@ describe("verifyMembership", () => {
   });
 
   it("explicit verify bypasses stale negative cache and rechecks Telegram", async () => {
-    vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 800 }])
-      .mockResolvedValueOnce([makeChannel(800, "freshjoin")]);
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(800, "freshjoin")],
+    });
 
     vi.mocked(cache.get).mockResolvedValue("0");
     const getChatMember = vi.fn().mockResolvedValue({ status: "member" });
@@ -186,9 +213,12 @@ describe("verifyMembership", () => {
   });
 
   it("group message checks still honor negative cache without hitting Telegram", async () => {
-    vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 900 }])
-      .mockResolvedValueOnce([makeChannel(900, "cachedmiss")]);
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(900, "cachedmiss")],
+    });
 
     vi.mocked(cache.get).mockResolvedValue("0");
     const api = createMockApi();
@@ -201,9 +231,12 @@ describe("verifyMembership", () => {
   });
 
   it("Redis down — graceful degradation: falls back to API (EC-59)", async () => {
-    vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 600 }])
-      .mockResolvedValueOnce([makeChannel(600, "chan")]);
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(600, "chan")],
+    });
 
     // Simulate Redis failure on get
     vi.mocked(cache.get).mockRejectedValue(new Error("Redis connection error"));
@@ -219,9 +252,12 @@ describe("verifyMembership", () => {
   });
 
   it("latency is measured and returned", async () => {
-    vi.mocked(db.getRecords)
-      .mockResolvedValueOnce([{ group_id: 1, channel_id: 700 }])
-      .mockResolvedValueOnce([makeChannel(700, "latency")]);
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(700, "latency")],
+    });
 
     vi.mocked(cache.get).mockResolvedValue("1"); // cache hit for speed
     const api = createMockApi();

@@ -7,8 +7,13 @@ import { CACHE_PREFIX } from "./constants.js";
 /** Public interface for the cache client. */
 export interface CacheClient {
   get(key: string): Promise<string | null>;
+  mget?(keys: string[]): Promise<Array<string | null>>;
   set(key: string, value: string, mode: "EX", ttl: number): Promise<void>;
+  setIfAbsent(key: string, value: string, ttl: number): Promise<boolean>;
   del(key: string): Promise<void>;
+  delMany?(keys: string[]): Promise<number>;
+  ping?(): Promise<boolean>;
+  isHealthy?(): boolean;
   quit(): Promise<void>;
   /** Raw ioredis instance — exposed for the ratelimiter plugin. */
   readonly redis: Redis;
@@ -135,14 +140,54 @@ export function createCache(redisUrl: string, logger: Logger): CacheClient {
       return redis.get(`${CACHE_PREFIX}${key}`);
     },
 
+    async mget(keys: string[]): Promise<Array<string | null>> {
+      if (!connected || keys.length === 0) return keys.map(() => null);
+      return redis.mget(keys.map((key) => `${CACHE_PREFIX}${key}`));
+    },
+
     async set(key: string, value: string, mode: "EX", ttl: number): Promise<void> {
       if (!connected) return;
       await redis.set(`${CACHE_PREFIX}${key}`, value, mode, ttl);
     },
 
+    async setIfAbsent(key: string, value: string, ttl: number): Promise<boolean> {
+      if (!connected) return true;
+      const result = await redis.set(`${CACHE_PREFIX}${key}`, value, "EX", ttl, "NX");
+      return result === "OK";
+    },
+
     async del(key: string): Promise<void> {
       if (!connected) return;
       await redis.del(`${CACHE_PREFIX}${key}`);
+    },
+
+    async delMany(keys: string[]): Promise<number> {
+      if (!connected || keys.length === 0) return 0;
+      const pipeline = redis.pipeline();
+      for (const key of keys) {
+        pipeline.del(`${CACHE_PREFIX}${key}`);
+      }
+
+      const results = await pipeline.exec();
+      return (results ?? []).reduce((count, [err, deleted]) => {
+        if (err || typeof deleted !== "number") {
+          return count;
+        }
+        return count + deleted;
+      }, 0);
+    },
+
+    async ping(): Promise<boolean> {
+      if (!connected) return false;
+      try {
+        return (await redis.ping()) === "PONG";
+      } catch {
+        return false;
+      }
+    },
+
+    isHealthy(): boolean {
+      return connected;
     },
 
     async quit(): Promise<void> {

@@ -2,7 +2,7 @@
 
 ### Current Status
 
-**Phase 108: Verification False-Negative Fix + Group Queue Narrowing — COMPLETE ✅**
+**Phase 110: Verification Enforcement Recovery + Redis Hardening — COMPLETE ✅**
 
 The post-audit stabilization work is now documented:
 
@@ -10,7 +10,14 @@ The post-audit stabilization work is now documented:
 - Phase 107 fixed the main latency causes: duplicate long-polling processes for the same bot token and slow-hanging InsForge REST calls.
 - Phase 108 fixed a verification false-negative where users who joined a channel after an initial failed attempt could still be reported as missing because a stale negative membership cache entry was reused.
 - Phase 108 also narrowed the per-group sequentialization queue so busy groups no longer serialize unrelated users behind a single `chat.id` key.
-- Latest grammY quality gates after the verification fix: type-check ✅ lint ✅ tests 135/135 ✅ build ✅
+- Phase 109 replaced the hot verification read with a single `get_group_verification_contract` RPC, added Redis NX idempotency locks for verify/join-request paths, and invalidates membership state from channel-side `chat_member` events.
+- Protected groups now default `params.join_request_preferred=true`, and approved join requests seed verified cache so users avoid a second mute/unmute cycle on entry.
+- Follow-up in Phase 109 fixed a critical regression where `isUserVerified()` treated any historical `verified` row as permanent truth. It now checks only the latest verification status, and channel leave events actively re-mute affected users and resend verification prompts in linked groups.
+- Phase 110 fixed the remaining enforcement gap: if Telegram does not emit a required-channel leave event, stale DB verification no longer lets the user chat indefinitely. Group messages now trigger a fresh membership revalidation once the latest verified state is stale, and failures now mute + log + re-prompt instead of only deleting the message.
+- Phase 110 also made verification contract reads resilient when live InsForge is missing RPC `get_group_verification_contract`; the bot now falls back to direct table reads instead of throwing through the enforcement path.
+- Redis was hardened in Phase 110 with `mget()`, pipelined `delMany()`, and cache health helpers so invalidation is cheaper and degradation is easier to observe.
+- Live checks on 2026-03-07 confirmed Redis is healthy (`nezuko-redis-local` healthy, `redis-cli ping` => `PONG`), live InsForge still lacks RPC `get_group_verification_contract`, and the corrected enforcement flow is now confirmed working properly in real usage.
+- Latest grammY quality gates after the hardening pass: type-check ✅ lint ✅ tests 139/139 ✅ build ✅
 - Web remains green from Phase 105: type-check ✅ lint ✅ format ✅ build ✅
 
 > **Python PTB bot (`apps/bot/`) is ARCHIVED as of Phase 96 — not maintained, not developed.**
@@ -86,12 +93,84 @@ The post-audit stabilization work is now documented:
 - `protected_groups`: 1 live protected group (`-1003283505627`)
 - `group_channel_links`: 1 live required channel link
 - `enforced_channels`: 1 live required channel (`@devicemasker`)
-- `verification_log`: still 0 rows at inspection time, so post-fix live validation is still needed
-- `api_call_log`: postgres logs showed an RLS violation for inserts on 2026-03-06
+- `verification_log`: now contains live verification records from real usage
+- `api_call_log`: historical RLS failure was observed on 2026-03-06, but later live writes succeeded
 
 ### Operational Note
 
 - Phase 108 improves correctness and throughput in code, but a clean single-process restart is still required because old duplicate pollers can keep causing `409 getUpdates` conflicts even after the code fix.
+
+---
+
+## Phase 109: Verification Contract Hardening + Join-Request Preference (2026-03-07)
+
+### Root Causes Confirmed
+
+| Issue | Root Cause | Status |
+| --- | --- | --- |
+| Verification hot path still did duplicate DB reads | `verifyMembership()` still loaded group enforcement state with multiple queries | ✅ Fixed |
+| Duplicate verify/join-request work could still happen under retried updates | No idempotency lock existed for callback or join-request processing | ✅ Fixed |
+| Channel joins/leaves only refreshed membership state on explicit verify | Required-channel `chat_member` updates were not invalidating membership/verified cache | ✅ Fixed |
+| Join-request path existed but was not the preferred persisted mode | Group configuration did not persist a join-request-first preference | ✅ Fixed |
+
+### Files Changed in Phase 109
+
+| File | Change |
+| --- | --- |
+| `apps/grammy/src/core/insforge-client.ts` | Added `rpc()` support for InsForge SQL functions |
+| `apps/grammy/src/core/cache.ts` | Added `setIfAbsent()` for Redis NX idempotency locks |
+| `apps/grammy/src/database/group-contract.repo.ts` | **NEW** single-read verification contract repo |
+| `apps/grammy/src/services/idempotency.ts` | **NEW** short-lived idempotency lock helper |
+| `apps/grammy/src/services/verification.ts` | Switched to verification-contract RPC and now returns cache metadata + checked channel IDs |
+| `apps/grammy/src/composers/events.ts` | Added idempotent join-request handling, verified-cache seeding, join-request approval cache, and channel-side membership invalidation |
+| `apps/grammy/src/database/verification.repo.ts` | `isUserVerified()` now checks the latest verification row instead of any historical success |
+| `apps/grammy/src/composers/events.ts` | Channel leave events now re-mute users in linked groups and resend verification prompts |
+| `apps/grammy/src/composers/verify.ts` | Added verify idempotency lock and single-row verification logging |
+| `insforge/migrations/024_verification_contract_hardening.sql` | **NEW** incremental migration for RPC + params backfill |
+
+### Operational Note
+
+- Live InsForge still needs migration `024_verification_contract_hardening.sql` applied before the new bot build is deployed.
+- This phase improves duplicate suppression, but single-process runtime discipline from Phase 107 still matters.
+
+---
+
+## Phase 110: Verification Enforcement Recovery + Redis Hardening (2026-03-07)
+
+### Root Causes Confirmed
+
+| Issue | Root Cause | Status |
+| --- | --- | --- |
+| Users could still chat after leaving a required channel | Group message filter trusted historical verification state unless a channel-side leave event arrived | ✅ Fixed |
+| Some live enforcement paths could throw before muting/prompting | Production InsForge does not currently expose RPC `get_group_verification_contract` | ✅ Fixed in bot via fallback |
+| Verified-state invalidation did extra one-by-one Redis deletes | Cache client lacked a bulk invalidation primitive | ✅ Fixed |
+
+### Live Evidence Captured
+
+| Source | Finding |
+| --- | --- |
+| InsForge `information_schema.routines` | `get_group_verification_contract` missing live; only `get_user_growth` present |
+| InsForge `verification_log` | 6 live rows exist for one real verification sequence |
+| InsForge `admin_logs` | runtime boot confirms Redis connected/ready and one active bot process |
+| Docker + `redis-cli ping` | local Redis container healthy and responds `PONG` |
+
+### Files Changed in Phase 110
+
+| File | Change |
+| --- | --- |
+| `apps/grammy/src/composers/events.ts` | Message filter now performs fresh revalidation on stale verified users and enforces mute + prompt on message-path failures |
+| `apps/grammy/src/database/group-contract.repo.ts` | Falls back to direct `protected_groups` + linked-channel reads when RPC is absent |
+| `apps/grammy/src/database/verification.repo.ts` | Added latest verification state lookup with timestamp |
+| `apps/grammy/src/core/constants.ts` | Added stale-verification recheck interval constant |
+| `apps/grammy/src/core/cache.ts` | Added `mget()`, pipelined `delMany()`, and Redis health helpers |
+| `tests/grammy/helpers/mock-deps.ts` | Extended cache mocks for new Redis methods |
+| `tests/grammy/integration/bot-factory-runtime.test.ts` | Updated runtime coverage for bulk verified-cache invalidation |
+| `tests/grammy/unit/database/verification-repo.test.ts` | Updated latest-state query expectations |
+
+### Operational Note
+
+- Migration `024_verification_contract_hardening.sql` is still recommended live, but the bot no longer hard-depends on the RPC to enforce verification.
+- Message-path revalidation closed the missed-`chat_member` gap; live verification enforcement is now working properly after the fix.
 
 ---
 
@@ -303,7 +382,7 @@ bot.catch(...)
 | `cd apps/grammy && bun run type-check`      | ✅ 0 errors           |
 | `cd apps/grammy && bun run lint`            | ✅ 0 warnings         |
 | `cd apps/grammy && bun run format:check`    | ✅ All files clean    |
-| `cd apps/grammy && bun run test`            | ✅ **130/130 passed** |
+| `cd apps/grammy && bun run test`            | ✅ **139/139 passed** |
 | `cd apps/web && bun run type-check`         | ✅ 0 errors           |
 | `cd apps/web && bun run lint`               | ✅ 0 warnings         |
 | `cd apps/web && bun x prettier src --check` | ✅ All files clean    |
@@ -312,12 +391,11 @@ bot.catch(...)
 
 ## Next Steps
 
-1. **Single-process restart** — ensure only one active polling process is running per bot token after deploy/restart.
-2. **Live verify validation** — reproduce the previous edge case: fail verify once, join the channel, then tap Verify again immediately and confirm success plus `verification_log` inserts.
-3. **Live latency validation** — verify group-command response time in a real Telegram group after restart with healthy InsForge connectivity.
-4. **Dashboard-mode validation** — confirm realtime commands from the web dashboard hit the `CommandWorker` path.
-5. **Admin alerting** — error handler doesn't yet send alerts to admin chat (Task 6.2 — low priority).
+1. **Apply migration 024 live** — keep backend schema aligned with the bot’s preferred contract path.
+2. **Live join-request validation** — create/use a join-request invite link and confirm verified users are approved without a mute cycle.
+3. **Fix `get_user_growth` RPC** — current analytics function is still broken live.
+4. **Keep single-process runtime discipline** — avoid reintroducing long-polling conflicts.
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 108 — verification cache correctness fix and group queue narrowing documented)_
+_Last Updated: 2026-03-07 (Phase 110 — message-path revalidation, RPC fallback, Redis hardening documented)_

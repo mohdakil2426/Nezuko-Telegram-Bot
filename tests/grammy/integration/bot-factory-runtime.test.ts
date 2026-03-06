@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createBotWithDeps } from "../../../apps/grammy/src/core/bot-factory.js";
 import { createMockDb, createMockCache, createMockLogger } from "../helpers/mock-deps.js";
-import { createMessageUpdate, createJoinRequestUpdate } from "../helpers/mock-update.js";
+import {
+  createMessageUpdate,
+  createJoinRequestUpdate,
+  createChannelChatMemberUpdate,
+} from "../helpers/mock-update.js";
 import { createConfiguredTestBot } from "../helpers/test-bot.js";
 import type { BotDeps } from "../../../apps/grammy/src/types.js";
 
@@ -110,9 +114,11 @@ describe("bot-factory runtime wiring", () => {
     const { bot, apiCalls } = createConfiguredTestBot();
     const deps = makeDeps();
 
-    vi.mocked(deps.db.getRecords)
-      .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: -1001111111111 }])
-      .mockResolvedValueOnce([
+    vi.mocked(deps.db.rpc).mockResolvedValueOnce({
+      group_id: -1001234567890,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [
         {
           channel_id: -1001111111111,
           title: "Required Channel",
@@ -124,21 +130,8 @@ describe("bot-factory runtime wiring", () => {
           created_at: "",
           updated_at: "",
         },
-      ])
-      .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: -1001111111111 }])
-      .mockResolvedValueOnce([
-        {
-          channel_id: -1001111111111,
-          title: "Required Channel",
-          username: "requiredchannel",
-          invite_link: null,
-          subscriber_count: 1,
-          linked_groups_count: 1,
-          last_sync_at: null,
-          created_at: "",
-          updated_at: "",
-        },
-      ]);
+      ],
+    });
 
     createBotWithDeps(bot, deps);
     await bot.handleUpdate(createJoinRequestUpdate());
@@ -158,9 +151,11 @@ describe("bot-factory runtime wiring", () => {
     });
     const deps = makeDeps();
 
-    vi.mocked(deps.db.getRecords)
-      .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: -1001111111111 }])
-      .mockResolvedValueOnce([
+    vi.mocked(deps.db.rpc).mockResolvedValueOnce({
+      group_id: -1001234567890,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [
         {
           channel_id: -1001111111111,
           title: "Required Channel",
@@ -172,21 +167,8 @@ describe("bot-factory runtime wiring", () => {
           created_at: "",
           updated_at: "",
         },
-      ])
-      .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: -1001111111111 }])
-      .mockResolvedValueOnce([
-        {
-          channel_id: -1001111111111,
-          title: "Required Channel",
-          username: "requiredchannel",
-          invite_link: null,
-          subscriber_count: 1,
-          linked_groups_count: 1,
-          last_sync_at: null,
-          created_at: "",
-          updated_at: "",
-        },
-      ]);
+      ],
+    });
 
     createBotWithDeps(bot, deps);
     await bot.handleUpdate(createJoinRequestUpdate());
@@ -197,5 +179,49 @@ describe("bot-factory runtime wiring", () => {
     const notifyCall = apiCalls.filter((call) => call.method === "sendMessage").at(-1);
     expect(notifyCall).toBeDefined();
     expect((notifyCall?.payload.text as string) ?? "").toContain("@requiredchannel");
+  });
+
+  it("re-restricts previously verified users when they leave a required channel", async () => {
+    const { bot, apiCalls } = createConfiguredTestBot();
+    const deps = makeDeps();
+
+    vi.mocked(deps.db.getRecords).mockResolvedValueOnce([
+      {
+        group_id: -1001234567890,
+        channel_id: -1001111111111,
+      },
+    ]);
+    vi.mocked(deps.db.rpc).mockResolvedValueOnce({
+      group_id: -1001234567890,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [
+        {
+          channel_id: -1001111111111,
+          title: "Required Channel",
+          username: "requiredchannel",
+          invite_link: null,
+          subscriber_count: 1,
+          linked_groups_count: 1,
+          last_sync_at: null,
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+    });
+
+    createBotWithDeps(bot, deps);
+    await bot.handleUpdate(
+      createChannelChatMemberUpdate({
+        user: { id: 111222333, first_name: "Leaver" },
+      })
+    );
+
+    expect(deps.cache.delMany).toHaveBeenCalledWith([`verified:-1001234567890:111222333`]);
+    expect(apiCalls.find((call) => call.method === "restrictChatMember")).toBeDefined();
+    const sendCall = apiCalls
+      .filter((call) => call.method === "sendMessage")
+      .find((call) => String(call.payload.text ?? "").includes("Welcome"));
+    expect(sendCall).toBeDefined();
   });
 });

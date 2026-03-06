@@ -13,6 +13,11 @@ export interface LogVerificationData {
   error_type?: string | null;
 }
 
+export interface LatestVerificationState {
+  status: VerificationLog["status"];
+  timestamp: string;
+}
+
 /**
  * Insert a verification attempt record into `verification_log`.
  *
@@ -52,11 +57,30 @@ export async function isUserVerified(
   groupId: number,
   userId: number
 ): Promise<boolean> {
-  const rows = await db.getRecords<VerificationLog>("verification_log", {
+  const latest = await getLatestVerificationState(db, groupId, userId);
+  return latest?.status === "verified";
+}
+
+export async function getLatestVerificationState(
+  db: InsForgeClient,
+  groupId: number,
+  userId: number
+): Promise<LatestVerificationState | null> {
+  const rows = await db.getRecords<Pick<VerificationLog, "status" | "timestamp">>("verification_log", {
     group_id: `eq.${groupId}`,
     user_id: `eq.${userId}`,
-    status: "eq.verified",
-    select: "id",
+    select: "status,timestamp",
+    order: "timestamp.desc,id.desc",
+    limit: "1",
   });
-  return rows.length > 0;
+
+  const latest = rows[0];
+  if (!latest) {
+    return null;
+  }
+
+  return {
+    status: latest.status,
+    timestamp: latest.timestamp,
+  };
 }

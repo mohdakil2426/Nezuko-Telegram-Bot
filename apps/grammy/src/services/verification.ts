@@ -3,7 +3,7 @@ import type { CacheClient } from "../core/cache.js";
 import type { Logger } from "../utils/logger.js";
 import type { VerificationResult } from "../types.js";
 import type { EnforcedChannel } from "../database/types.js";
-import { getGroupChannels } from "../database/group.repo.js";
+import { getGroupVerificationContract } from "../database/group-contract.repo.js";
 import {
   VALID_MEMBER_STATUSES,
   CACHE_NAMESPACES,
@@ -49,16 +49,34 @@ export async function verifyMembership(
   options: VerifyMembershipOptions = {}
 ): Promise<VerificationResult> {
   const start = performance.now();
-  const channels = await getGroupChannels(db, groupId);
+  const contract = await getGroupVerificationContract(db, groupId);
+  const channels = contract.enabled ? contract.channels : [];
 
   if (channels.length === 0) {
-    return { success: true, missingChannels: [], latencyMs: 0 };
+    return {
+      success: true,
+      missingChannels: [],
+      latencyMs: 0,
+      cached: true,
+      checkedChannelIds: [],
+    };
   }
 
   const missingChannels: string[] = [];
+  let usedCache = true;
 
   for (const channel of channels) {
-    const isMember = await checkChannelMembership(api, cache, channel, userId, log, options);
+    const { isMember, cached } = await checkChannelMembership(
+      api,
+      cache,
+      channel,
+      userId,
+      log,
+      options
+    );
+    if (!cached) {
+      usedCache = false;
+    }
     if (!isMember) {
       const name = channel.username
         ? `@${channel.username}`
@@ -73,6 +91,8 @@ export async function verifyMembership(
     success: missingChannels.length === 0,
     missingChannels,
     latencyMs,
+    cached: usedCache,
+    checkedChannelIds: channels.map((channel) => channel.channel_id),
   };
 }
 
@@ -83,18 +103,18 @@ async function checkChannelMembership(
   userId: number,
   log?: Logger,
   options: VerifyMembershipOptions = {}
-): Promise<boolean> {
+): Promise<{ isMember: boolean; cached: boolean }> {
   // L1: Redis cache check
   const cacheKey = `${CACHE_NAMESPACES.MEMBER}:${channel.channel_id}:${userId}`;
   try {
     const cached = await cache.get(cacheKey);
     if (cached !== null) {
       if (cached === "1") {
-        return true;
+        return { isMember: true, cached: true };
       }
 
       if (!options.bypassNegativeCache) {
-        return false;
+        return { isMember: false, cached: true };
       }
 
       log?.debug?.(
@@ -124,7 +144,7 @@ async function checkChannelMembership(
       // Cache write failure is non-fatal
     }
 
-    return isValid;
+    return { isMember: isValid, cached: false };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
 
@@ -134,13 +154,13 @@ async function checkChannelMembership(
         { userId, channelId: channel.channel_id },
         "USER_ID_INVALID — treating as not a member"
       );
-      return false;
+      return { isMember: false, cached: false };
     }
 
     // EC-15/16: 403 channel inaccessible (bot removed or channel private)
     if (message.includes("403") || message.includes("Forbidden")) {
       log?.warn({ channelId: channel.channel_id }, "Channel unreachable (403) — skipping");
-      return false;
+      return { isMember: false, cached: false };
     }
 
     // Unexpected error — treat as not a member to be safe
@@ -148,6 +168,6 @@ async function checkChannelMembership(
       { err, channelId: channel.channel_id },
       "Unexpected error checking channel membership"
     );
-    return false;
+    return { isMember: false, cached: false };
   }
 }

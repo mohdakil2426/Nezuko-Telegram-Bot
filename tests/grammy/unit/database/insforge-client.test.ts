@@ -245,6 +245,40 @@ describe("InsForgeClient", () => {
     });
   });
 
+  describe("rpc", () => {
+    it("calls an RPC endpoint and returns parsed JSON", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              group_id: 123,
+              enabled: true,
+            }),
+        })
+      );
+
+      const client = makeClient();
+      const result = await client.rpc("get_group_verification_contract", { p_group_id: 123 });
+
+      expect(result).toEqual({
+        group_id: 123,
+        enabled: true,
+      });
+
+      const fetchMock = vi.mocked(global.fetch);
+      expect(fetchMock).toHaveBeenCalledWith(
+        `${BASE_URL}/api/database/rpc/get_group_verification_contract`,
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ p_group_id: 123 }),
+        })
+      );
+    });
+  });
+
   describe("UPSERT pattern (PATCH-then-POST)", () => {
     it("falls back to POST when PATCH returns empty (no matching row)", async () => {
       const fetchMock = vi

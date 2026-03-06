@@ -8,6 +8,7 @@ Nezuko is a **production-ready Telegram bot platform** for automated channel mem
 
 Convert group participants into channel subscribers through automated verification, providing:
 
+- Join-request-first verification preference with mute-on-join fallback
 - Instant membership enforcement on group join
 - Multi-channel subscription requirements
 - Real-time verification with inline buttons
@@ -38,7 +39,7 @@ Convert group participants into channel subscribers through automated verificati
 nezuko/
 ├── apps/
 │   ├── grammy/       # ✅ ACTIVE — Telegram Bot (TypeScript / grammY)
-│   │   └── src/      # 42 source files: core, composers, middleware, services, database, utils
+│   │   └── src/      # Active source tree: core, composers, middleware, services, database, utils
 │   ├── bot/          # 🗄️ ARCHIVED — Python PTB bot (unmaintained since Phase 96)
 │   └── web/          # ✅ ACTIVE — Next.js Dashboard (~120 TypeScript files)
 ├── insforge/
@@ -62,6 +63,10 @@ nezuko/
 - Multi-channel enforcement (AND logic)
 - Leave detection with immediate revocation
 - Interactive inline verification buttons
+- Verification contract read with RPC-first, direct-table fallback
+- Idempotent verification/join-request handling via Redis locks
+- Channel membership cache invalidation from channel-side updates
+- Message-path revalidation for stale verified users
 - Verification logging directly to InsForge PostgreSQL
 - Status writer (heartbeat via DB UPSERT every 30s)
 - Command worker (polls admin_commands table; realtime via Socket.IO)
@@ -111,9 +116,9 @@ The original Python bot used `python-telegram-bot v22.6` with asyncio. It was fu
 | ESLint        | 0 warnings   | grammy + web |
 | TypeScript    | 0 errors     | grammy + web |
 | Prettier      | All clean    | grammy + web |
-| Vitest        | 135/135 pass | grammy       |
+| Vitest        | 139/139 pass | grammy       |
 | Next.js Build | 0 errors     | web          |
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 108 — group latency queue narrowed; verification false-negative cache bug fixed)_
+_Last Updated: 2026-03-07 (Phase 110 — live verification recovery documented)_
