@@ -52,6 +52,9 @@ export const CACHE_PREFIX = "nezuko:v2:";
 /** Verified cache TTL in seconds (6 hours). */
 export const VERIFIED_CACHE_TTL = 21_600;
 
+/** Chat-member adapter cache TTL in seconds (1 hour). */
+export const CHAT_MEMBER_CACHE_TTL = 3_600;
+
 /** Maximum age of a DB-backed "verified" state before forcing fresh revalidation. */
 export const VERIFIED_RECHECK_INTERVAL_MS = 600_000;
 

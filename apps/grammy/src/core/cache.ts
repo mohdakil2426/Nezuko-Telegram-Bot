@@ -2,7 +2,7 @@ import { Redis } from "ioredis";
 import type { StorageAdapter } from "grammy";
 import type { ChatMember } from "grammy/types";
 import type { Logger } from "../utils/logger.js";
-import { CACHE_PREFIX } from "./constants.js";
+import { CACHE_PREFIX, CHAT_MEMBER_CACHE_TTL } from "./constants.js";
 
 /** Public interface for the cache client. */
 export interface CacheClient {
@@ -27,7 +27,7 @@ const CHAT_MEMBER_PREFIX = `${CACHE_PREFIX}chatmember:`;
  * Build a StorageAdapter<ChatMember> backed by ioredis.
  * Keys are stored as JSON under the "nezuko:v2:chatmember:" namespace.
  */
-function buildChatMembersAdapter(
+export function buildChatMembersAdapter(
   redis: Redis,
   isConnected: () => boolean,
   logger: Logger
@@ -51,7 +51,12 @@ function buildChatMembersAdapter(
     async write(key: string, value: ChatMember): Promise<void> {
       if (!isConnected()) return;
       try {
-        await redis.set(`${CHAT_MEMBER_PREFIX}${key}`, JSON.stringify(value));
+        await redis.set(
+          `${CHAT_MEMBER_PREFIX}${key}`,
+          JSON.stringify(value),
+          "EX",
+          CHAT_MEMBER_CACHE_TTL
+        );
       } catch (err) {
         logger.warn(
           { err: err instanceof Error ? err.message : String(err), key },
