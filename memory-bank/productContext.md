@@ -25,6 +25,7 @@ Nezuko acts as an **automated gatekeeper** that:
 ## User Experience
 
 ### For Group Members
+
 1.  Join group → Immediately muted.
 2.  See message with "Join Channel" buttons.
 3.  Join required channel(s).
@@ -32,6 +33,7 @@ Nezuko acts as an **automated gatekeeper** that:
 5.  Instantly unmuted and can chat.
 
 ### For Administrators
+
 1.  Add bot to group with admin rights.
 2.  Run `/protect @channelname` command.
 3.  Bot automatically enforces membership.
@@ -41,53 +43,62 @@ Nezuko acts as an **automated gatekeeper** that:
 
 ## Dashboard Features (Staggered Motion UI)
 
-| Page | Purpose |
-| --- | --- |
-| **Dashboard** | Overview stats, animated verification charts, activity feeds. |
+| Page          | Purpose                                                                                                                                                    |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard** | Overview stats, animated verification charts, activity feeds.                                                                                              |
 | **Analytics** | 3 domain-based tabs: Bot Operations, Cache & API, Groups & Members. 13 charts with responsive period selectors, empty states, and full ARIA accessibility. |
-| **Groups** | Manage protected groups, member counts, linked channels. |
-| **Channels** | Manage enforced channels, subscriber counts, linked groups. |
-| **Bots** | Add/manage multiple bot instances. |
-| **Logs** | Real-time log streaming with filters. |
-| **Settings** | Theme, security vault (AES-GCM key generation), account info. |
+| **Groups**    | Manage protected groups, member counts, linked channels.                                                                                                   |
+| **Channels**  | Manage enforced channels, subscriber counts, linked groups.                                                                                                |
+| **Bots**      | Add/manage multiple bot instances.                                                                                                                         |
+| **Logs**      | Real-time log streaming with filters.                                                                                                                      |
+| **Settings**  | Theme, security vault (AES-GCM key generation), account info.                                                                                              |
 
 ---
 
 ## Authentication
 
--   **Production**: InsForge Auth (email/password + OAuth via Google, GitHub) with `InsforgeMiddleware` route guards, `insforge_session` HTTP-only cookie, and RLS on all 12 tables.
--   **Development**: `NEXT_PUBLIC_DEV_LOGIN=true` bypasses auth (guarded by `NODE_ENV !== "production"`).
+- **Production**: InsForge Auth (email/password + OAuth via Google, GitHub) with `InsforgeMiddleware` route guards, `insforge_session` HTTP-only cookie, and RLS on all 12 tables.
+- **Development**: `NEXT_PUBLIC_DEV_LOGIN=true` bypasses auth (guarded by `NODE_ENV !== "production"`).
 
 ---
 
-## Data Architecture (2-Tier InsForge)
+## Active Data Architecture (2-Tier InsForge)
 
-The platform uses a clean 2-tier architecture powered by InsForge BaaS. The legacy API middle layer has been removed.
+The platform uses a clean 2-tier architecture powered by InsForge BaaS.
 
 ```
 Dashboard → InsForge SDK (direct queries) → InsForge Managed PostgreSQL
-Bot → httpx REST (insforge_client.py) → InsForge REST API → PostgreSQL
+Bot (grammY) → native fetch() REST       → InsForge REST API → PostgreSQL
 Dashboard ← InsForge Realtime (Socket.IO) ← PostgreSQL Triggers
-Bot ← python-socketio (realtime_client.py) ← InsForge Realtime (Socket.IO)
+Bot (grammY) ← socket.io-client          ← InsForge Realtime (Socket.IO)
 ```
 
 **Key Benefits:**
--   **Simplicity**: No backend API to maintain or deploy.
--   **Performance**: Direct database access reduces latency.
--   **Realtime**: Native WebSocket support for instant updates.
--   **Scalability**: Managed infrastructure handles load.
+
+- **Simplicity**: No backend API to maintain or deploy.
+- **Performance**: Direct database access reduces latency.
+- **Realtime**: Native WebSocket support for instant updates.
+- **Scalability**: Managed infrastructure handles load.
 
 ---
 
 ## Key Metrics
 
-| Metric | Target | Status |
-| --- | --- | --- |
-| Verification Latency (p99) | <150ms | ✅ Achieved |
-| Dashboard Pages | 10 | ✅ Complete |
-| Uptime | 99.9% | ✅ On Track |
-| UI/UX Audit Score | 95/100 | ✅ Phase 82 (was 62→90→95) |
+| Metric                     | Target  | Status       |
+| -------------------------- | ------- | ------------ |
+| Verification Latency (p99) | <150ms  | ✅ Achieved  |
+| Dashboard Pages            | 10      | ✅ Complete  |
+| Uptime                     | 99.9%   | ✅ On Track  |
+| grammY Tests               | 127/127 | ✅ Phase 103 |
 
 ---
 
-_Last Updated: 2026-03-02 (Phase 88 — Socket.IO Protocol Fix + Chart Hooks Realtime)_
+## Legacy: Python PTB Bot
+
+> **Status: ARCHIVED — unmaintained since Phase 96.**
+
+The platform was originally built with Python + python-telegram-bot v22.6. That runtime (`apps/bot/`) is preserved but not developed. All active bot work happens in `apps/grammy/`.
+
+---
+
+_Last Updated: 2026-03-06 (Phase 103 — PTB bot archived; grammY architecture updated)_
