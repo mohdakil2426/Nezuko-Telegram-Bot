@@ -135,7 +135,7 @@ bun run type-check    # tsc --noEmit → 0 errors
 bun run lint          # eslint src/ --max-warnings 0 → 0 warnings
 bun run format        # prettier src/ ../../tests/grammy --write
 bun run format:check  # prettier src/ ../../tests/grammy --check
-bun run test          # vitest run → 139/139 tests passed
+bun run test          # vitest run → 145/145 tests passed
 bun run test:coverage # vitest run --coverage (80% thresholds)
 bun run build         # tsc -p tsconfig.build.json → dist/
 
@@ -195,9 +195,11 @@ bun run build         # next build → 0 errors
 - Positive membership cache: `MEMBER_CACHE_TTL=300` seconds
 - Negative membership cache: `MEMBER_NEGATIVE_CACHE_TTL=30` seconds
 - Verification/join-request idempotency lock: `INTERVALS.IDEMPOTENCY_LOCK=15` seconds
+- Active verification prompt TTL: `INTERVALS.VERIFICATION_PROMPT=300` seconds
 - Verified-state freshness recheck: `VERIFIED_RECHECK_INTERVAL_MS=600000` milliseconds
 - Explicit verify clicks bypass cached negative membership results and force a fresh Telegram `getChatMember` check
 - Group message enforcement revalidates stale previously verified users and re-restricts when needed
+- When multiple blocked messages arrive while one message-enforcement pass already holds the lock, lock-losing updates now still delete their own message immediately before returning
 
 ---
 
@@ -247,4 +249,4 @@ main()
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 110 — current cache and runtime behavior documented)_
+_Last Updated: 2026-03-07 (Phase 112 — prompt TTL and burst-message cleanup documented)_

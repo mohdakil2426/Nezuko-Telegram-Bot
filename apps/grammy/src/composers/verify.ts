@@ -4,6 +4,7 @@ import { verifyMembership } from "../services/verification.js";
 import { unmuteUser } from "../services/protection.js";
 import { logVerification } from "../database/verification.repo.js";
 import { acquireIdempotencyLock } from "../services/idempotency.js";
+import { deleteActiveVerificationPrompt } from "../services/verification-prompt.js";
 import { CACHE_NAMESPACES, INTERVALS, VERIFIED_CACHE_TTL } from "../core/constants.js";
 import { VERIFY_SUCCESS, VERIFY_MISSING_CHANNELS, VERIFY_PROCESSING } from "../utils/messages.js";
 
@@ -64,6 +65,8 @@ verifyComposer.callbackQuery(/^verify:(-?\d+)$/, async (ctx) => {
     } catch {
       // EC-12: Expired callback query — silently ignore
     }
+
+    await deleteActiveVerificationPrompt(ctx.api, ctx.cache, groupId, userId).catch(() => {});
 
     // Delete the verification message
     try {

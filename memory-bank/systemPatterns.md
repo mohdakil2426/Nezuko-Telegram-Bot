@@ -2,7 +2,7 @@
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — `apps/bot/` preserved for reference only. Not maintained.
-> **Last Updated**: 2026-03-07 (Phase 110)
+> **Last Updated**: 2026-03-07 (Phase 112)
 
 ---
 
@@ -63,6 +63,7 @@ apps/grammy/src/
 │   └── migration.ts      # my_chat_member handler — group migration
 ├── services/
 │   ├── verification.ts   # verifyMembership() — multi-channel AND logic + explicit verify/message recheck bypass
+│   ├── verification-prompt.ts # Active prompt tracking + safe prompt deletion helpers
 │   ├── idempotency.ts    # acquireIdempotencyLock() — short-lived Redis NX guards
 │   ├── protection.ts     # muteUser(), unmuteUser(), kickUser()
 │   ├── channel-linker.ts # linkChannel(), unlinkChannel()
@@ -291,9 +292,8 @@ if (result.success) {
 // required-channel chat_member event -> write member cache
 // if left/kicked:
 //   invalidate verified cache for every linked group
-//   mute user in linked groups
-//   log restricted
-//   resend verification prompt
+//   do not prompt linked groups immediately
+//   rely on message-path enforcement for visible prompting
 
 // 6. Group message path
 // if verified cache hit -> allow
@@ -301,7 +301,48 @@ if (result.success) {
 // else:
 //   re-run verifyMembership(..., { bypassNegativeCache: true })
 //   success -> reseed cache and allow
-//   failure -> mute + log restricted + resend prompt + delete message
+//   failure -> delete message + mute + log restricted + send one deduped prompt
+```
+
+### 8.5 — Delayed Prompt Dedupe (Phase 111)
+
+```typescript
+// Visible verification prompting is now message-driven for users who lose
+// required-channel membership after entering the group.
+
+const promptKey = `verification_prompt:${groupId}:${userId}`;
+
+// Channel leave path:
+//   invalidate verified cache only
+//   do not send a prompt
+
+// Group message path:
+//   delete blocked message first
+//   restrict user again
+//   if no active prompt key exists:
+//     send verification prompt
+//     store prompt message id in Redis
+
+// Verification success / group leave:
+//   delete active prompt if present
+//   clear prompt key
+```
+
+### 8.6 — Burst Message Cleanup While Enforcement Is In Flight (Phase 112)
+
+```typescript
+// The first blocked message may hold the short-lived enforcement lock while
+// verifyMembership() and prompt work run. Later blocked messages from the same
+// user must still be deleted even if they lose the lock.
+
+const lockAcquired = await acquireIdempotencyLock(cache, "message-enforce", [groupId, userId]);
+
+if (!lockAcquired) {
+  await ctx.deleteMessage().catch(() => {});
+  return;
+}
+
+// Only the lock winner performs verification + prompt work.
 ```
 
 ### 8.1 — Membership Cache Rules (Phase 108)
@@ -401,7 +442,7 @@ bun run type-check    # 0 errors REQUIRED
 bun run lint          # 0 warnings REQUIRED (--max-warnings 0)
 bun run format        # prettier src/ ../../tests/grammy --write
 bun run format:check  # All matched files use Prettier code style! REQUIRED
-bun run test          # 139/139 REQUIRED — never decrease without justification
+bun run test          # 145/145 REQUIRED — never decrease without justification
 bun run build         # dist/ produced with 0 errors REQUIRED
 
 cd apps/web
@@ -704,4 +745,4 @@ const { period, summary } = extractEnvelopeMetadata(data);
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 110 — corrected verification flow, RPC fallback, Redis hardening)_
+_Last Updated: 2026-03-07 (Phase 112 — delayed prompt flow and burst-message cleanup)_

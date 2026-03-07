@@ -181,7 +181,7 @@ describe("bot-factory runtime wiring", () => {
     expect((notifyCall?.payload.text as string) ?? "").toContain("@requiredchannel");
   });
 
-  it("re-restricts previously verified users when they leave a required channel", async () => {
+  it("silently invalidates verified users when they leave a required channel", async () => {
     const { bot, apiCalls } = createConfiguredTestBot();
     const deps = makeDeps();
 
@@ -191,24 +191,6 @@ describe("bot-factory runtime wiring", () => {
         channel_id: -1001111111111,
       },
     ]);
-    vi.mocked(deps.db.rpc).mockResolvedValueOnce({
-      group_id: -1001234567890,
-      enabled: true,
-      join_request_preferred: true,
-      channels: [
-        {
-          channel_id: -1001111111111,
-          title: "Required Channel",
-          username: "requiredchannel",
-          invite_link: null,
-          subscriber_count: 1,
-          linked_groups_count: 1,
-          last_sync_at: null,
-          created_at: "",
-          updated_at: "",
-        },
-      ],
-    });
 
     createBotWithDeps(bot, deps);
     await bot.handleUpdate(
@@ -218,10 +200,7 @@ describe("bot-factory runtime wiring", () => {
     );
 
     expect(deps.cache.delMany).toHaveBeenCalledWith([`verified:-1001234567890:111222333`]);
-    expect(apiCalls.find((call) => call.method === "restrictChatMember")).toBeDefined();
-    const sendCall = apiCalls
-      .filter((call) => call.method === "sendMessage")
-      .find((call) => String(call.payload.text ?? "").includes("Welcome"));
-    expect(sendCall).toBeDefined();
+    expect(apiCalls.find((call) => call.method === "restrictChatMember")).toBeUndefined();
+    expect(apiCalls.find((call) => call.method === "sendMessage")).toBeUndefined();
   });
 });

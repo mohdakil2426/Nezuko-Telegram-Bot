@@ -46,7 +46,7 @@ nezuko/
 │   ├── migrations/   # SQL migration files (001-023; 023_fresh_grammy_schema.sql is canonical)
 │   └── functions/    # Edge Functions (manage-bot, test-webhook)
 ├── tests/
-│   ├── grammy/       # ✅ ACTIVE — grammY bot tests (127 tests passing)
+│   ├── grammy/       # ✅ ACTIVE — grammY bot tests (145 tests passing)
 │   └── bot/          # 🗄️ ARCHIVED — Python PTB tests (retained for historical reference only)
 ├── scripts/          # Development & utility scripts
 ├── memory-bank/      # Project documentation
@@ -67,6 +67,9 @@ nezuko/
 - Idempotent verification/join-request handling via Redis locks
 - Channel membership cache invalidation from channel-side updates
 - Message-path revalidation for stale verified users
+- Delayed verification prompts: required-channel leave is silent, first blocked message prompts
+- Prompt dedupe per `(groupId, userId)` to avoid repeated group spam
+- Lock-loser blocked-message deletion so burst spam updates are still removed while one enforcement pass is running
 - Verification logging directly to InsForge PostgreSQL
 - Status writer (heartbeat via DB UPSERT every 30s)
 - Command worker (polls admin_commands table; realtime via Socket.IO)
@@ -116,9 +119,9 @@ The original Python bot used `python-telegram-bot v22.6` with asyncio. It was fu
 | ESLint        | 0 warnings   | grammy + web |
 | TypeScript    | 0 errors     | grammy + web |
 | Prettier      | All clean    | grammy + web |
-| Vitest        | 139/139 pass | grammy       |
+| Vitest        | 145/145 pass | grammy       |
 | Next.js Build | 0 errors     | web          |
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 110 — live verification recovery documented)_
+_Last Updated: 2026-03-07 (Phase 112 — delayed prompt flow and burst-message cleanup documented)_

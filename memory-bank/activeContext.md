@@ -4,6 +4,22 @@
 
 **Phase 110: Verification Enforcement Recovery + Redis Hardening — COMPLETE ✅**
 
+**Phase 111: Delayed Verification Prompt Flow — COMPLETE ✅**
+
+**Phase 112: Burst Message Enforcement Cleanup — COMPLETE ✅**
+
+The verification UX was refined to reduce group spam from required-channel membership flapping:
+
+- Required-channel `chat_member` leave events no longer push verification prompts into linked groups immediately.
+- Channel leave now silently invalidates verified state and updates membership cache without fan-out prompting.
+- The first blocked group message from an unverified user is now the visible enforcement point: delete message first, re-apply mute/restriction, then send exactly one verification prompt.
+- Active verification prompts are now tracked per `(groupId, userId)` in Redis so repeated blocked messages do not create duplicate prompts.
+- Successful verification now deletes the tracked prompt immediately and clears prompt state; stale/missing prompt deletion is treated as harmless.
+- Group leave also clears active prompt state so re-joins can get a fresh prompt later.
+- New grammY coverage was added for silent channel leave, first-blocked-message prompting, prompt dedupe, and prompt cleanup on verify success.
+- Follow-up in Phase 112 fixed a race in the new delayed-prompt flow: when multiple blocked messages arrived quickly, only the lock-winning update deleted its message. Lock-losing updates now delete their own message immediately and return, so burst spam no longer leaves older messages visible while one enforcement pass is running.
+- Latest grammY quality gates after the burst-cleanup fix: type-check ✅ lint ✅ tests 145/145 ✅ build ✅
+
 The post-audit stabilization work is now documented:
 
 - Phase 106 fixed the broken composer mounting in `bot-factory.ts` that caused many group commands to receive no reply at all.
@@ -398,4 +414,4 @@ bot.catch(...)
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 110 — message-path revalidation, RPC fallback, Redis hardening documented)_
+_Last Updated: 2026-03-07 (Phase 112 — delayed prompts and burst-message cleanup documented)_

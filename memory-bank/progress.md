@@ -1,13 +1,13 @@
 # Progress: What Works, What's Left
 
-## Current Phase: 110 — Verification Enforcement Recovery, RPC Fallback, Redis Hardening
+## Current Phase: 112 — Burst Message Enforcement Cleanup
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — preserved in `apps/bot/` for historical reference only. Not maintained.
 
 ---
 
-## ✅ What Works (Confirmed as of Phase 110)
+## ✅ What Works (Confirmed as of Phase 112)
 
 ### grammY Bot Runtime
 
@@ -21,8 +21,10 @@
 | **Verification contract read** | RPC when available, direct-table fallback when live schema lags              | ✅ Phase 110 |
 | **Idempotent verify/join-request** | Redis NX locks suppress duplicate callback/join-request work       | ✅ Phase 109 |
 | **Channel-side cache invalidation** | Required-channel `chat_member` updates refresh membership/verified cache | ✅ Phase 109 |
-| **Post-leave re-restriction** | Leaving a required channel now re-mutes the user and re-sends the join/verify prompt | ✅ Phase 109 |
+| **Post-leave re-restriction** | Leaving a required channel revokes verified state; visible prompting is deferred to message-path enforcement | ✅ Phase 111 |
 | **Message-path revalidation** | Stale verified users are rechecked on group messages; failures now mute + prompt | ✅ Phase 110 |
+| **Delayed verification prompt** | Channel leave is silent; first blocked group message deletes, restricts, and sends one deduped prompt | ✅ Phase 111 |
+| **Burst blocked-message cleanup** | Messages that lose the in-flight enforcement lock are still deleted immediately, preventing older spam from remaining visible | ✅ Phase 112 |
 | **Join-request-first preference** | `protected_groups.params.join_request_preferred=true` by default     | ✅ Phase 109 |
 | **Join restriction**           | `eventsComposer` — mutes on `chat_member` new member                    | ✅ Ships     |
 | **Join request handling**      | `eventsComposer` — `chat_join_request` approve/decline + DM             | ✅ Phase 101 |
@@ -48,7 +50,7 @@
 | **Pino logger**                | Structured JSON, child loggers per module                               | ✅ Ships     |
 | **DB log transport**           | `db-log-transport.ts` — WARN+ logs → `admin_logs` (admin_logs realtime) | ✅ Phase 105 |
 | **API call logging**           | `apiLogTransformer` in bot-factory — all calls → `api_call_log`         | ✅ Phase 105 |
-| **Vitest tests**               | 139/139 tests passing (23 suites)                                       | ✅ Phase 110 |
+| **Vitest tests**               | 145/145 tests passing (25 suites)                                       | ✅ Phase 112 |
 
 ### Database Schema (InsForge — Migration 023)
 
@@ -122,6 +124,7 @@
 | Live migration 024 not yet applied                | Medium  | Bot now falls back without the RPC, but live schema should still be aligned |
 | `get_user_growth` analytics RPC is broken live    | Medium  | Postgres logs show a `verification_log.user_id` query bug |
 | Join-request-first flow still needs full live validation | Pending | Core verify path is now confirmed working live |
+| grammY format check still fails on unrelated files | Low | `apps/grammy/src/database/verification.repo.ts`, `apps/grammy/src/services/idempotency.ts`, and `apps/grammy/src/utils/health.ts` have pre-existing Prettier drift |
 
 ---
 
@@ -149,4 +152,4 @@
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 110 — message-path revalidation, RPC fallback, Redis hardening documented)_
+_Last Updated: 2026-03-07 (Phase 112 — burst-message cleanup documented)_

@@ -18,6 +18,7 @@ export const CACHE_NAMESPACES = {
   CONTRACT: "verify_contract",
   IDEMPOTENCY: "idempotency",
   JOIN_REQUEST_APPROVED: "join_request_approved",
+  VERIFICATION_PROMPT: "verification_prompt",
 } as const;
 
 /** Interval durations in milliseconds. */
@@ -32,6 +33,8 @@ export const INTERVALS = {
   IDEMPOTENCY_LOCK: 15,
   /** Cache TTL for auto-approved join requests in seconds. */
   JOIN_REQUEST_APPROVED: 300,
+  /** Cache TTL for an active verification prompt in seconds. */
+  VERIFICATION_PROMPT: 300,
 } as const;
 
 /** Maximum time to wait for in-flight updates during shutdown. */

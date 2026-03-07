@@ -6,6 +6,12 @@ import { getLatestVerificationState, logVerification } from "../database/verific
 import { muteUser } from "../services/protection.js";
 import { verifyMembership } from "../services/verification.js";
 import { acquireIdempotencyLock } from "../services/idempotency.js";
+import {
+  clearActiveVerificationPrompt,
+  getActiveVerificationPrompt,
+  setActiveVerificationPrompt,
+  deleteActiveVerificationPrompt,
+} from "../services/verification-prompt.js";
 import { scheduleDelete } from "../utils/auto-delete.js";
 import {
   AUTO_DELETE_DELAY,
@@ -23,6 +29,7 @@ export const eventsComposer = new Composer<NezukoContext>();
 
 async function sendVerificationPrompt(
   ctx: NezukoContext,
+  userId: number,
   groupId: number,
   userName: string,
   channels: Array<{
@@ -31,7 +38,7 @@ async function sendVerificationPrompt(
     username: string | null;
     invite_link: string | null;
   }>
-): Promise<void> {
+): Promise<number> {
   const keyboard = new InlineKeyboard();
   for (const channel of channels) {
     const link = channel.username ? `https://t.me/${channel.username}` : channel.invite_link;
@@ -52,6 +59,30 @@ async function sendVerificationPrompt(
   });
 
   scheduleDelete(msg, AUTO_DELETE_DELAY);
+  await setActiveVerificationPrompt(ctx.cache, groupId, userId, msg.message_id).catch(() => {});
+  return msg.message_id;
+}
+
+async function ensureVerificationPrompt(
+  ctx: NezukoContext,
+  groupId: number,
+  userId: number,
+  userName: string,
+  channels: Array<{
+    channel_id: number;
+    title: string | null;
+    username: string | null;
+    invite_link: string | null;
+  }>
+): Promise<void> {
+  const activePrompt = await getActiveVerificationPrompt(ctx.cache, groupId, userId).catch(
+    () => null
+  );
+  if (activePrompt !== null) {
+    return;
+  }
+
+  await sendVerificationPrompt(ctx, userId, groupId, userName, channels);
 }
 
 async function invalidateVerifiedState(
@@ -87,6 +118,9 @@ async function enforceVerificationFailure(
     latencyMs?: number;
     cached?: boolean;
     checkedChannelIds?: number[];
+  },
+  options: {
+    sendPrompt: boolean;
   }
 ): Promise<void> {
   await muteUser(ctx.api, groupId, userId).catch((err) => {
@@ -102,18 +136,21 @@ async function enforceVerificationFailure(
   }).catch((err) => {
     ctx.log.warn({ err, groupId, userId }, "Failed to log restricted verification");
   });
-  await sendVerificationPrompt(ctx, groupId, userName, channels).catch((err) => {
-    ctx.log.warn({ err, groupId, userId }, "Failed to send verification prompt");
-  });
+  if (options.sendPrompt) {
+    await ensureVerificationPrompt(ctx, groupId, userId, userName, channels).catch((err) => {
+      ctx.log.warn({ err, groupId, userId }, "Failed to send verification prompt");
+    });
+  }
 }
 
 // ── chat_join_request — auto-approve/deny based on linked channels ───────────
 eventsComposer.on("chat_join_request", async (ctx) => {
   const groupId = ctx.chat.id;
   const userId = ctx.from.id;
-  const lockAcquired = await acquireIdempotencyLock(ctx.cache, "join-request", [groupId, userId]).catch(
-    () => true
-  );
+  const lockAcquired = await acquireIdempotencyLock(ctx.cache, "join-request", [
+    groupId,
+    userId,
+  ]).catch(() => true);
   if (!lockAcquired) {
     return;
   }
@@ -130,9 +167,7 @@ eventsComposer.on("chat_join_request", async (ctx) => {
     const approvedKey = `${CACHE_NAMESPACES.JOIN_REQUEST_APPROVED}:${groupId}:${userId}`;
 
     await ctx.cache.set(verifiedCacheKey, "1", "EX", VERIFIED_CACHE_TTL).catch(() => {});
-    await ctx.cache
-      .set(approvedKey, "1", "EX", INTERVALS.JOIN_REQUEST_APPROVED)
-      .catch(() => {});
+    await ctx.cache.set(approvedKey, "1", "EX", INTERVALS.JOIN_REQUEST_APPROVED).catch(() => {});
     await ctx.api.approveChatJoinRequest(groupId, userId).catch(() => {});
     await logVerification(ctx.db, {
       user_id: userId,
@@ -178,9 +213,10 @@ eventsComposer.on("message:new_chat_members", async (ctx) => {
     // EC-9: Skip members without valid ID
     if (!member.id) continue;
 
-    const lockAcquired = await acquireIdempotencyLock(ctx.cache, "group-join", [chatId, member.id]).catch(
-      () => true
-    );
+    const lockAcquired = await acquireIdempotencyLock(ctx.cache, "group-join", [
+      chatId,
+      member.id,
+    ]).catch(() => true);
     if (!lockAcquired) {
       continue;
     }
@@ -210,7 +246,7 @@ eventsComposer.on("message:new_chat_members", async (ctx) => {
     await muteUser(ctx.api, chatId, member.id);
 
     const userName = member.first_name || "there";
-    await sendVerificationPrompt(ctx, chatId, userName, channels);
+    await ensureVerificationPrompt(ctx, chatId, member.id, userName, channels);
   }
 });
 
@@ -228,6 +264,7 @@ eventsComposer.on("message:left_chat_member", async (ctx) => {
   if (!leftMember.is_bot && leftMember.id) {
     const cacheKey = `${CACHE_NAMESPACES.VERIFIED}:${ctx.chat.id}:${leftMember.id}`;
     await ctx.cache.del(cacheKey).catch(() => {});
+    await clearActiveVerificationPrompt(ctx.cache, ctx.chat.id, leftMember.id).catch(() => {});
   }
 });
 
@@ -244,10 +281,13 @@ eventsComposer.on("chat_member", async (ctx, next) => {
     return;
   }
 
-  const links = await ctx.db.getRecords<{ group_id: number; channel_id: number }>("group_channel_links", {
-    channel_id: `eq.${ctx.chat.id}`,
-    select: "group_id,channel_id",
-  });
+  const links = await ctx.db.getRecords<{ group_id: number; channel_id: number }>(
+    "group_channel_links",
+    {
+      channel_id: `eq.${ctx.chat.id}`,
+      select: "group_id,channel_id",
+    }
+  );
 
   if (links.length === 0) {
     await next();
@@ -271,19 +311,6 @@ eventsComposer.on("chat_member", async (ctx, next) => {
       links.map((link) => link.group_id),
       user.id
     );
-
-    for (const link of links) {
-
-      const contract = await getGroupVerificationContract(ctx.db, link.group_id).catch(() => null);
-      if (!contract || !contract.enabled || contract.channels.length === 0) {
-        continue;
-      }
-
-      await enforceVerificationFailure(ctx, link.group_id, user.id, user.first_name || "there", contract.channels, {
-        cached: false,
-        checkedChannelIds: [ctx.chat.id],
-      });
-    }
   }
 
   await next();
@@ -331,7 +358,9 @@ eventsComposer.on("message", async (ctx, next) => {
   }
 
   const latestVerification = await getLatestVerificationState(ctx.db, ctx.chat.id, ctx.from.id);
-  const latestVerifiedAt = latestVerification ? Date.parse(latestVerification.timestamp) : Number.NaN;
+  const latestVerifiedAt = latestVerification
+    ? Date.parse(latestVerification.timestamp)
+    : Number.NaN;
   const recentlyVerified =
     latestVerification?.status === "verified" &&
     Number.isFinite(latestVerifiedAt) &&
@@ -360,37 +389,41 @@ eventsComposer.on("message", async (ctx, next) => {
     ctx.from.id,
   ]).catch(() => true);
 
-  if (lockAcquired) {
-    const result = await verifyMembership(ctx.api, ctx.db, ctx.cache, ctx.chat.id, ctx.from.id, ctx.log, {
-      bypassNegativeCache: true,
-    });
-
-    if (result.success) {
-      await ctx.cache.set(cacheKey, "1", "EX", VERIFIED_CACHE_TTL).catch(() => {});
-      if (latestVerification?.status !== "verified") {
-        await logVerification(ctx.db, {
-          user_id: ctx.from.id,
-          group_id: ctx.chat.id,
-          channel_id: result.checkedChannelIds[0] ?? 0,
-          status: "verified",
-          latency_ms: result.latencyMs,
-          cached: result.cached,
-        }).catch((err) => {
-          ctx.log.warn({ err, chatId: ctx.chat.id, userId: ctx.from?.id }, "Failed to log message re-verification");
-        });
-      }
-      await next();
-      return;
+  if (!lockAcquired) {
+    try {
+      await ctx.deleteMessage();
+    } catch {
+      // Can't delete — bot may lack permission
     }
+    return;
+  }
 
-    await enforceVerificationFailure(
-      ctx,
-      ctx.chat.id,
-      ctx.from.id,
-      ctx.from.first_name || "there",
-      channels,
-      result
+  const result = await verifyMembership(ctx.api, ctx.db, ctx.cache, ctx.chat.id, ctx.from.id, ctx.log, {
+    bypassNegativeCache: true,
+  });
+
+  if (result.success) {
+    await ctx.cache.set(cacheKey, "1", "EX", VERIFIED_CACHE_TTL).catch(() => {});
+    await deleteActiveVerificationPrompt(ctx.api, ctx.cache, ctx.chat.id, ctx.from.id).catch(
+      () => {}
     );
+    if (latestVerification?.status !== "verified") {
+      await logVerification(ctx.db, {
+        user_id: ctx.from.id,
+        group_id: ctx.chat.id,
+        channel_id: result.checkedChannelIds[0] ?? 0,
+        status: "verified",
+        latency_ms: result.latencyMs,
+        cached: result.cached,
+      }).catch((err) => {
+        ctx.log.warn(
+          { err, chatId: ctx.chat.id, userId: ctx.from?.id },
+          "Failed to log message re-verification"
+        );
+      });
+    }
+    await next();
+    return;
   }
 
   try {
@@ -398,6 +431,16 @@ eventsComposer.on("message", async (ctx, next) => {
   } catch {
     // Can't delete — bot may lack permission
   }
+
+  await enforceVerificationFailure(
+    ctx,
+    ctx.chat.id,
+    ctx.from.id,
+    ctx.from.first_name || "there",
+    channels,
+    result,
+    { sendPrompt: true }
+  );
 });
 
 // ── my_chat_member — bot added/demoted/removed ────────────────────
