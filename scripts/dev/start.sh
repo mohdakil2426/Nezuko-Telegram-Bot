@@ -89,9 +89,9 @@ open_terminal "Nezuko - Web" "cd apps/web && bun dev"
 
 sleep 2
 
-# Start Telegram Bot
+# Start Telegram Bot (grammY)
 echo -e "  ${YELLOW}[2/2] Starting Telegram Bot...${NC}"
-open_terminal "Nezuko - Bot" "uv run python -m apps.bot.main"
+open_terminal "Nezuko - Bot" "cd apps/grammy && bun run dev"
 
 echo ""
 echo -e "${CYAN}  ====================================${NC}"
@@ -100,7 +100,7 @@ echo -e "${CYAN}  ====================================${NC}"
 echo ""
 echo -e "   Redis: ${MAGENTA}nezuko-redis-local (port 6379)${NC}"
 echo -e "   Web:   ${BLUE}http://localhost:3000${NC}"
-echo -e "   Bot:   ${YELLOW}Running in polling mode${NC}"
+echo -e "   Bot:   ${YELLOW}Running (grammY)${NC}"
 echo ""
 echo -e "   ${GRAY}Press Ctrl+C in each terminal to stop services.${NC}"
 echo -e "   ${GRAY}Run stop.sh to shut down Redis + services.${NC}"

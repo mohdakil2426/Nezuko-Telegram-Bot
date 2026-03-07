@@ -14,14 +14,14 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$SCRIPT_DIR/../core/utils.sh"
 
 # Parse arguments
-SKIP_PYTHON=false
-SKIP_NODE=false
+SKIP_WEB=false
+SKIP_BOT=false
 FORCE=false
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --skip-python) SKIP_PYTHON=true ;;
-        --skip-node) SKIP_NODE=true ;;
+        --skip-web) SKIP_WEB=true ;;
+        --skip-bot) SKIP_BOT=true ;;
         --force|-f) FORCE=true ;;
         *) echo "Unknown parameter: $1"; exit 1 ;;
     esac
@@ -40,7 +40,7 @@ cd "$PROJECT_ROOT"
 # Step 1: Check Prerequisites
 # ============================================================
 
-write_step "1/6" "Checking prerequisites..."
+write_step "1/5" "Checking prerequisites..."
 
 if ! check_prerequisites; then
     echo ""
@@ -50,40 +50,11 @@ if ! check_prerequisites; then
 fi
 
 # ============================================================
-# Step 2: Sync Python Environment (uv)
+# Step 2: Install Web Dashboard Dependencies
 # ============================================================
 
-if [[ "$SKIP_PYTHON" != "true" ]]; then
-    write_step "2/6" "Syncing Python virtual environment (uv)..."
-    
-    VENV_PATH="$(get_venv_path)"
-    
-    if [[ "$FORCE" == "true" ]] && [[ -d "$VENV_PATH" ]]; then
-        rm -rf "$VENV_PATH"
-    fi
-    
-    cd "$PROJECT_ROOT"
-    
-    # Run uv sync
-    if uv sync; then
-        write_success "Python environment synced successfully (regular + dev dependencies)"
-    else
-        write_failure "Failed to sync Python environment"
-        exit 1
-    fi
-    
-    write_step "3/6" "Skipping legacy pip install (using uv sync instead)"
-else
-    write_step "2/6" "Skipping Python setup (--skip-python)"
-    write_step "3/6" "Skipping Python dependencies (--skip-python)"
-fi
-
-# ============================================================
-# Step 4: Install Node.js Dependencies
-# ============================================================
-
-if [[ "$SKIP_NODE" != "true" ]]; then
-    write_step "4/6" "Installing Node.js dependencies (Bun — apps/web)..."
+if [[ "$SKIP_WEB" != "true" ]]; then
+    write_step "2/5" "Installing Web dependencies (Bun — apps/web)..."
 
     WEB_DIR="$PROJECT_ROOT/apps/web"
 
@@ -95,45 +66,70 @@ if [[ "$SKIP_NODE" != "true" ]]; then
             [ -n "$line" ] && echo -e "        ${GRAY}$line${NC}"
         done
         if [ ${PIPESTATUS[0]} -eq 0 ]; then
-            write_success "Node.js packages installed (apps/web)"
+            write_success "Web Dashboard packages installed."
         else
-            write_failure "Failed to install Node.js packages"
+            write_failure "Failed to install web packages."
         fi
         cd "$PROJECT_ROOT"
     fi
 else
-    write_step "4/6" "Skipping Node.js setup (--skip-node)"
+    write_step "2/5" "Skipping Web setup (--skip-web)"
 fi
 
 # ============================================================
-# Step 5: Create Environment Files
+# Step 3: Install Bot Dependencies (grammY)
 # ============================================================
 
-write_step "5/6" "Creating environment files..."
+if [[ "$SKIP_BOT" != "true" ]]; then
+    write_step "3/5" "Installing Bot dependencies (Bun — apps/grammy)..."
+
+    BOT_DIR="$PROJECT_ROOT/apps/grammy"
+
+    if [[ ! -d "$BOT_DIR" ]]; then
+        write_failure "apps/grammy directory not found"
+    else
+        cd "$BOT_DIR"
+        bun install 2>&1 | while IFS= read -r line; do
+            [ -n "$line" ] && echo -e "        ${GRAY}$line${NC}"
+        done
+        if [ ${PIPESTATUS[0]} -eq 0 ]; then
+            write_success "Telegram Bot packages installed."
+        else
+            write_failure "Failed to install bot packages."
+        fi
+        cd "$PROJECT_ROOT"
+    fi
+else
+    write_step "3/5" "Skipping Bot setup (--skip-bot)"
+fi
+
+# ============================================================
+# Step 4: Create Environment Files
+# ============================================================
+
+write_step "4/5" "Creating environment files..."
 
 # Web .env.local
 if copy_env_if_missing "apps/web" ".env.local" ".env.example"; then
-    write_success "Created apps/web/.env.local"
+    write_success "Created apps/web/.env.local (from .env.example)"
 else
     write_info "apps/web/.env.local already exists"
 fi
 
-
-
 # Bot .env
-if copy_env_if_missing "apps/bot" ".env" ".env.example"; then
-    write_success "Created apps/bot/.env"
+if copy_env_if_missing "apps/grammy" ".env" ".env.example"; then
+    write_success "Created apps/grammy/.env (from .env.example)"
 else
-    write_info "apps/bot/.env already exists"
+    write_info "apps/grammy/.env already exists"
 fi
 
 # ============================================================
-# Step 6: Create Logging Directories
+# Step 5: Create Logging Directories
 # ============================================================
 
-write_step "6/6" "Creating logging directories..."
+write_step "5/5" "Creating logging directories..."
 
-STORAGE_DIRS=("apps/bot/logs")
+STORAGE_DIRS=("apps/grammy/logs")
 
 for dir in "${STORAGE_DIRS[@]}"; do
     if [[ ! -d "$dir" ]]; then
@@ -155,11 +151,11 @@ echo -e "${CYAN}  ====================================${NC}"
 echo ""
 echo -e "  ${YELLOW}IMPORTANT:${NC} Edit these files with your credentials:"
 echo ""
-echo -e "  ${WHITE}📝 ${CYAN}apps/bot/.env${NC}"
+echo -e "  ${WHITE}📝 ${CYAN}apps/grammy/.env${NC}"
 echo -e "     ${GRAY}- BOT_TOKEN              (from @BotFather, when DASHBOARD_MODE=false)${NC}"
 echo -e "     ${GRAY}- INSFORGE_BASE_URL      (your InsForge project URL)${NC}"
-echo -e "     ${GRAY}- INSFORGE_ANON_KEY      (from InsForge dashboard — must match web)${NC}"
-echo -e "     ${GRAY}- ENCRYPTION_KEY         (generate with: nezuko keygen)${NC}"
+echo -e "     ${GRAY}- INSFORGE_ANON_KEY      (from metadata — must match web)${NC}"
+echo -e "     ${GRAY}- ENCRYPTION_KEY         (32-byte hex for AES-256-GCM tokens)${NC}"
 echo -e "     ${GRAY}- REDIS_URL              (redis://127.0.0.1:6379/0)${NC}"
 echo ""
 echo -e "  ${WHITE}📝 ${CYAN}apps/web/.env.local${NC}"

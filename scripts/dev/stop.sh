@@ -36,9 +36,9 @@ stop_on_port 3000 "Web"
 
 
 
-echo -e "  ${YELLOW}[2/3] Stopping Telegram Bot (Python)...${NC}"
-# Kill any python process running bot
-if pkill -f "apps.bot.main" 2>/dev/null; then
+echo -e "  ${YELLOW}[2/3] Stopping Telegram Bot (grammY)...${NC}"
+# Kill any bun/node process running grammy bot
+if pkill -f "apps/grammy" 2>/dev/null; then
     echo -e "        ${GREEN}Stopped!${NC}"
 else
     echo -e "        ${GRAY}Not running${NC}"

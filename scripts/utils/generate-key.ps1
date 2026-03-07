@@ -4,8 +4,8 @@
 .SYNOPSIS
     Generate Encryption Key
 .DESCRIPTION
-    Generates a secure Fernet encryption key using Python.
-    This key is used for encrypting bot tokens in the database.
+    Generates a secure 32-byte (256-bit) hex encryption key.
+    This key is used for AES-256-GCM encryption of bot tokens in the nezuko_secrets table.
 .EXAMPLE
     .\generate-key.ps1
 #>
@@ -23,45 +23,33 @@ Write-Host "   🔑 Generate Encryption Key" -ForegroundColor Yellow
 Write-Host "  ====================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Check for Python
-if (-not (Test-Prerequisites)) {
-    Write-Failure "Python or Virtual Environment not found."
-    exit 1
-}
-
-$venvPython = Get-VenvPython
-
-Write-Host "  Generating secure Fernet key..." -ForegroundColor Gray
+Write-Host "  Generating secure 32-byte hex key (AES-256-GCM)..." -ForegroundColor Gray
 Write-Host ""
 
 try {
-    # Generate key using Python cryptography module
-    $key = & $venvPython -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())" 2>&1
+    # Generate 32 random bytes using .NET Cryptography
+    $bytes = New-Object Byte[] 32
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    $rng.GetBytes($bytes)
     
-    if ($LASTEXITCODE -eq 0) {
-        $key = $key.Trim()
-        
-        Write-Host "  ✅ Generated Key:" -ForegroundColor Green
-        Write-Host ""
-        Write-Host "  $key" -ForegroundColor White -BackgroundColor DarkBlue
-        Write-Host ""
-        
-        Write-Host "  📋 Instructions:" -ForegroundColor Yellow
-        Write-Host "  1. Copy the key above."
-        Write-Host "  2. Paste it into 'ENCRYPTION_KEY=' in apps/bot/.env" -ForegroundColor Cyan
-        Write-Host ""
-        Write-Host "  ⚠️  IMPORTANT:" -ForegroundColor Red
-        Write-Host "  - Use the SAME key in every environment (local, staging, production)."
-        Write-Host "  - Store it in a password manager. If lost, all encrypted bot tokens"
-        Write-Host "    in the database become permanently unreadable."
-        Write-Host "  - Never commit it to git (apps/bot/.env is in .gitignore)."
-        Write-Host ""
-    }
-    else {
-        Write-Failure "Failed to generate key. Is 'cryptography' installed?"
-        Write-Host "Error: $key" -ForegroundColor Red
-    }
+    # Convert to hex string
+    $key = ($bytes | ForEach-Object { "{0:x2}" -f $_ }) -join ""
+    
+    Write-Host "  ✅ Generated Key (AES-256-GCM Compatible):" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "  $key" -ForegroundColor White -BackgroundColor DarkBlue
+    Write-Host ""
+    
+    Write-Host "  📋 Instructions:" -ForegroundColor Yellow
+    Write-Host "  1. Copy the key above."
+    Write-Host "  2. Paste it into 'ENCRYPTION_KEY=' in apps/grammy/.env" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "  ⚠️  IMPORTANT:" -ForegroundColor Red
+    Write-Host "  - This key is used for the 'nezuko_secrets' table."
+    Write-Host "  - If lost, all encrypted bot tokens in the database become permanently unreadable."
+    Write-Host "  - Never commit it to git (apps/grammy/.env is in .gitignore)."
+    Write-Host ""
 }
 catch {
-    Write-Failure "An error occurred: $_"
+    Write-Failure "An error occurred while generating the key: $_"
 }

@@ -73,7 +73,7 @@ function Show-SecurityMenu {
     Write-Host "🔐 SECURITY & KEYS" -ForegroundColor Red -NoNewline
     Write-Host "                              │" -ForegroundColor White
     Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  │    [1] 🔑 Generate Encryption Key (Fernet)           │" -ForegroundColor White
+    Write-Host "  │    [1] 🔑 Generate Encryption Key (AES-256-GCM)      │" -ForegroundColor White
     Write-Host "  │    [2] 📋 Check .env Files Status                    │" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
     Write-Host "  │    [0] ⬅️  Back                                       │" -ForegroundColor White
@@ -94,7 +94,7 @@ function Show-StartMenu {
     Write-Host "  │                                                      │" -ForegroundColor White
     Write-Host "  │    [1] 🚀 Start ALL (Bot + Web)                      │" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
-    Write-Host "  │    [2] 🤖 Bot Only                                   │" -ForegroundColor White
+    Write-Host "  │    [2] 🤖 Bot Only (grammY)                          │" -ForegroundColor White
     Write-Host "  │    [3] 💻 Web Dashboard Only                         │" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
     Write-Host "  │    [4] 🐳 Start Docker (Redis) Only                  │" -ForegroundColor White
@@ -118,9 +118,8 @@ function Show-CleanMenu {
     Write-Host "🧼 CLEAN ARTIFACTS" -ForegroundColor Yellow -NoNewline
     Write-Host "                               │" -ForegroundColor White
     Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  │    [1] 📦 Clean node_modules only                    │" -ForegroundColor White
-    Write-Host "  │    [2] 🐍 Clean Python .venv only                    │" -ForegroundColor White
-    Write-Host "  │    [3] 🧹 Clean ALL (node_modules + .venv)           │" -ForegroundColor White
+    Write-Host "  │    [1] 🧹 Semi-Clean (Caches only)                   │" -ForegroundColor White
+    Write-Host "  │    [2] 🧹 Full-Clean (node_modules + Caches)         │" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
     Write-Host "  │    [0] ⬅️  Back                                       │" -ForegroundColor White
     Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
@@ -141,11 +140,6 @@ function Wait-ForKeyPress {
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
-function Get-ProjectRoot {
-    # Navigate up from scripts/core to project root
-    return Split-Path -Parent (Split-Path -Parent $ScriptRoot)
-}
-
 # ============================================================
 # Action Functions - Setup & Configuration
 # ============================================================
@@ -158,10 +152,6 @@ function Invoke-FirstTimeSetup {
 }
 
 function Invoke-SecurityMenu {
-    <#
-    .SYNOPSIS
-        Security tools submenu handler.
-    #>
     while ($true) {
         Show-Banner
         Show-SecurityMenu
@@ -184,9 +174,9 @@ function Invoke-SecurityMenu {
                 $projectRoot = Get-ProjectRoot
 
                 # Check Bot .env
-                $botEnv = Join-Path $projectRoot "apps\bot\.env"
-                $botEnvExample = Join-Path $projectRoot "apps\bot\.env.example"
-                Write-Host "  apps/bot/.env: " -NoNewline
+                $botEnv = Join-Path $projectRoot "apps\grammy\.env"
+                $botEnvExample = Join-Path $projectRoot "apps\grammy\.env.example"
+                Write-Host "  apps/grammy/.env:  " -NoNewline
                 if (Test-Path $botEnv) {
                     Write-Host "✅ EXISTS" -ForegroundColor Green
                 }
@@ -234,10 +224,6 @@ function Invoke-SecurityMenu {
 # ============================================================
 
 function Invoke-StartMenu {
-    <#
-    .SYNOPSIS
-        Start services submenu handler.
-    #>
     while ($true) {
         Show-Banner
         Show-StartMenu
@@ -256,7 +242,7 @@ function Invoke-StartMenu {
             }
             "2" {
                 Write-Host ""
-                Write-Host "  🤖 Starting Bot..." -ForegroundColor Yellow
+                Write-Host "  🤖 Starting Bot (grammY)..." -ForegroundColor Yellow
                 & $startScript -Service "bot"
                 Wait-ForKeyPress
             }
@@ -295,10 +281,6 @@ function Invoke-StartMenu {
     }
 }
 
-
-
-
-
 function Invoke-StopServices {
     Write-Host ""   
     Write-Host "  ⏹️  Stopping all services..." -ForegroundColor Red
@@ -311,10 +293,6 @@ function Invoke-StopServices {
 # ============================================================
 
 function Invoke-CleanMenu {
-    <#
-    .SYNOPSIS
-        Clean submenu with options and confirmations.
-    #>
     $cleanScript = Join-Path $ScriptRoot "..\utils\clean.ps1"
     $projectRoot = Get-ProjectRoot
     
@@ -326,14 +304,14 @@ function Invoke-CleanMenu {
         
         switch ($choice) {
             "1" {
-                # Clean node_modules only
+                # Clean caches only
                 Write-Host ""
-                Write-Host "  📦 This will delete all node_modules folders." -ForegroundColor Yellow
+                Write-Host "  🧹 This will delete build and development caches." -ForegroundColor Yellow
                 $confirm = Read-Host "  Are you sure? (y/N)"
                 if ($confirm -eq "y" -or $confirm -eq "Y") {
                     Write-Host ""
                     & $cleanScript
-                    Write-Host "  ✅ node_modules cleaned!" -ForegroundColor Green
+                    Write-Host "  ✅ Caches cleaned!" -ForegroundColor Green
                 }
                 else {
                     Write-Host "  ❌ Cancelled." -ForegroundColor Gray
@@ -341,41 +319,15 @@ function Invoke-CleanMenu {
                 Wait-ForKeyPress
             }
             "2" {
-                # Clean .venv only
+                # Full Clean
                 Write-Host ""
-                Write-Host "  🐍 This will delete the Python virtual environment (.venv)." -ForegroundColor Yellow
-                Write-Host "  ⚠️  You will need to run Setup to recreate it!" -ForegroundColor Red
-                $confirm = Read-Host "  Are you sure? (y/N)"
-                if ($confirm -eq "y" -or $confirm -eq "Y") {
-                    Write-Host ""
-                    $venvPath = Join-Path $projectRoot ".venv"
-                    if (Test-Path $venvPath) {
-                        Write-Host "  Removing .venv..." -ForegroundColor Gray
-                        Remove-Item -Path $venvPath -Recurse -Force -ErrorAction SilentlyContinue
-                        Write-Host "  ✅ .venv deleted!" -ForegroundColor Green
-                    }
-                    else {
-                        Write-Host "  ℹ️  .venv not found." -ForegroundColor Gray
-                    }
-                }
-                else {
-                    Write-Host "  ❌ Cancelled." -ForegroundColor Gray
-                }
-                Wait-ForKeyPress
-            }
-            "3" {
-                # Clean ALL
-                Write-Host ""
-                Write-Host "  🧹 This will delete ALL:" -ForegroundColor Yellow
-                Write-Host "     - node_modules folders" -ForegroundColor Gray
-                Write-Host "     - Python .venv" -ForegroundColor Gray
-                Write-Host ""
+                Write-Host "  🧹 This will delete ALL node_modules folders and caches." -ForegroundColor Yellow
                 Write-Host "  ⚠️  You will need to run Setup to reinstall!" -ForegroundColor Red
                 $confirm = Read-Host "  Are you sure? (y/N)"
                 if ($confirm -eq "y" -or $confirm -eq "Y") {
                     Write-Host ""
-                    & $cleanScript -IncludeVenv
-                    Write-Host "  ✅ All artifacts cleaned!" -ForegroundColor Green
+                    & $cleanScript
+                    Write-Host "  ✅ Entire project cleaned!" -ForegroundColor Green
                 }
                 else {
                     Write-Host "  ❌ Cancelled." -ForegroundColor Gray
@@ -397,8 +349,7 @@ function Invoke-FullReset {
     Write-Host ""
     Write-Host "  This will:" -ForegroundColor Yellow
     Write-Host "     1. Delete all node_modules" -ForegroundColor Gray
-    Write-Host "     2. Delete Python .venv" -ForegroundColor Gray
-    Write-Host "     3. Reinstall all dependencies" -ForegroundColor Gray
+    Write-Host "     2. Reinstall all dependencies" -ForegroundColor Gray
     Write-Host ""
     $confirm = Read-Host "  Are you sure? (y/N)"
     
@@ -408,7 +359,7 @@ function Invoke-FullReset {
         
         # Clean
         $cleanScript = Join-Path $ScriptRoot "..\utils\clean.ps1"
-        & $cleanScript -IncludeVenv
+        & $cleanScript
         
         Start-Sleep -Seconds 1
         
@@ -425,10 +376,6 @@ function Invoke-FullReset {
 # ============================================================
 
 function Start-MainMenu {
-    <#
-    .SYNOPSIS
-        Main menu loop.
-    #>
     while ($true) {
         Show-Banner
         Show-MainMenu
@@ -436,15 +383,10 @@ function Start-MainMenu {
         $choice = Read-Host "  Enter choice"
         
         switch ($choice) {
-            # Setup & Configuration
             "1" { Invoke-FirstTimeSetup; Wait-ForKeyPress }
             "2" { Invoke-SecurityMenu }
-
-            # Development
             "3" { Invoke-StartMenu }
             "4" { Invoke-StopServices; Wait-ForKeyPress }
-
-            # Utilities
             "5" { Invoke-CleanMenu }
             "6" { Invoke-FullReset; Wait-ForKeyPress }
             "7" { 
@@ -456,8 +398,6 @@ function Start-MainMenu {
                 Invoke-FirstTimeSetup
                 Wait-ForKeyPress
             }
-
-            # Exit
             "0" {
                 Write-Host ""
                 Write-Host "  👋 Goodbye!" -ForegroundColor Cyan

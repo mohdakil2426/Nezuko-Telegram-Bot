@@ -134,9 +134,9 @@ Start-Sleep -Seconds 2
 # Start Telegram Bot
 if ($Service -eq "all" -or $Service -eq "bot") {
     Write-Host "  [Bot] Starting Telegram Bot..." -ForegroundColor Yellow
-    Write-Log -Message "Starting Telegram Bot (uv run python -m apps.bot.main)" -Category "DEV"
+    Write-Log -Message "Starting Telegram Bot (bun run dev)" -Category "DEV"
     
-    $botCmd = "Set-Location '$ProjectRoot'; Write-Host '  🤖 Telegram Bot' -ForegroundColor Yellow; Write-Host ''; uv run python -m apps.bot.main"
+    $botCmd = "Set-Location '$ProjectRoot\apps\grammy'; Write-Host '  🤖 Telegram Bot' -ForegroundColor Yellow; Write-Host ''; bun run dev"
     Start-Process $PwshPath -ArgumentList "-NoExit", "-Command", $botCmd
 }
 

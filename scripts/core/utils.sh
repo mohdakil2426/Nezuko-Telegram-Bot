@@ -29,16 +29,6 @@ get_project_root() {
     echo "$(cd "$script_dir/../.." && pwd)"
 }
 
-get_venv_path() {
-    # Gets the virtual environment path
-    echo "$(get_project_root)/.venv"
-}
-
-get_venv_python() {
-    # Gets the path to the Python executable in the virtual environment
-    echo "$(get_venv_path)/bin/python"
-}
-
 # ============================================================
 # Prerequisite Checks
 # ============================================================
@@ -48,34 +38,6 @@ check_prerequisites() {
     # Returns 0 if all prerequisites are met, 1 otherwise
     local quiet="${1:-false}"
     local all_good=0
-    
-    # Check Python
-    if command -v python3 &> /dev/null; then
-        local py_version
-        py_version=$(python3 --version 2>&1)
-        if [[ "$quiet" != "true" ]]; then
-            echo -e "  ${GREEN}✅ $py_version${NC}"
-        fi
-    else
-        if [[ "$quiet" != "true" ]]; then
-            echo -e "  ${RED}❌ Python 3.x not found${NC}"
-        fi
-        all_good=1
-    fi
-    
-    # Check uv
-    if command -v uv &> /dev/null; then
-        local uv_version
-        uv_version=$(uv --version 2>&1)
-        if [[ "$quiet" != "true" ]]; then
-            echo -e "  ${GREEN}✅ $uv_version${NC}"
-        fi
-    else
-        if [[ "$quiet" != "true" ]]; then
-            echo -e "  ${RED}❌ uv not found (https://docs.astral.sh/uv/)${NC}"
-        fi
-        all_good=1
-    fi
     
     # Check Bun
     if command -v bun &> /dev/null; then
@@ -91,10 +53,37 @@ check_prerequisites() {
         all_good=1
     fi
     
+    # Check Node.js
+    if command -v node &> /dev/null; then
+        local node_version
+        node_version=$(node --version 2>&1)
+        if [[ "$quiet" != "true" ]]; then
+            echo -e "  ${GREEN}✅ Node.js: $node_version${NC}"
+        fi
+    else
+        if [[ "$quiet" != "true" ]]; then
+            echo -e "  ${RED}❌ Node.js not found (https://nodejs.org)${NC}"
+        fi
+        all_good=1
+    fi
+    
+    # Check Docker (optional but recommended)
+    if command -v docker &> /dev/null; then
+        local docker_version
+        docker_version=$(docker --version 2>&1)
+        if [[ "$quiet" != "true" ]]; then
+            echo -e "  ${GREEN}✅ $docker_version${NC}"
+        fi
+    else
+        if [[ "$quiet" != "true" ]]; then
+            echo -e "  ${YELLOW}⚠️  Docker not found (Required for local Redis cache)${NC}"
+        fi
+    fi
+    
     # Check Git (optional)
     if command -v git &> /dev/null; then
         local git_version
-        git_version=$(git --version 2>&1)
+        git_version=$(git --version 2>&1 | head -n 1)
         if [[ "$quiet" != "true" ]]; then
             echo -e "  ${GREEN}✅ $git_version${NC}"
         fi
@@ -105,23 +94,6 @@ check_prerequisites() {
     fi
     
     return $all_good
-}
-
-venv_exists() {
-    # Checks if the virtual environment exists
-    [[ -d "$(get_venv_path)" ]]
-}
-
-activate_venv() {
-    # Activates the virtual environment if it exists
-    local venv_activate
-    venv_activate="$(get_venv_path)/bin/activate"
-    
-    if [[ -f "$venv_activate" ]]; then
-        source "$venv_activate"
-        return 0
-    fi
-    return 1
 }
 
 # ============================================================

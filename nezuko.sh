@@ -5,12 +5,13 @@
 # ============================================================
 # Usage: ./nezuko [command]
 #   ./nezuko          - Opens interactive menu
-#   ./nezuko dev      - Start development servers
+#   ./nezuko dev      - Start development servers (Web + Bot)
 #   ./nezuko stop     - Stop all services
-#   ./nezuko setup    - First-time setup
+#   ./nezuko setup    - First-time setup (Bun install)
 #   ./nezuko test     - Run tests
-#   ./nezuko sync     - Update dependencies (uv sync + bun install)
-#   ./nezuko clean    - Clean node_modules and .venv
+#   ./nezuko keygen    - Generate 32-byte hex encryption key
+#   ./nezuko sync     - Update dependencies (Bun install)
+#   ./nezuko clean    - Clean node_modules and caches
 #   ./nezuko tree     - Generate project structure
 #   ./nezuko help     - Show commands
 # ============================================================
@@ -27,6 +28,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
+GRAY='\033[0;90m'
 NC='\033[0m' # No Color
 
 show_help() {
@@ -39,13 +41,13 @@ show_help() {
     echo ""
     echo "  Commands:"
     echo "    (none)    Open interactive menu"
-    echo "    dev       Start development servers"
+    echo "    dev       Start development servers (Web + Bot)"
     echo "    stop      Stop all services"
-    echo "    setup     First-time project setup"
+    echo "    setup     First-time project setup (Bun install)"
     echo "    test      Run test suite"
-    echo "    keygen    Generate a new Fernet encryption key"
-    echo "    sync      Update dependencies (uv sync + bun install)"
-    echo "    clean     Clean node_modules and .venv"
+    echo "    keygen    Generate 32-byte hex encryption key"
+    echo "    sync      Update dependencies (Bun install)"
+    echo "    clean     Clean node_modules and caches"
     echo "    tree      Generate project folder structure"
     echo "    help      Show this help message"
     echo ""
@@ -107,49 +109,19 @@ case "${1:-menu}" in
         exec "$SCRIPT_DIR/scripts/setup/install.sh"
         ;;
     "test")
-        exec "$SCRIPT_DIR/scripts/test/run.sh"
+        # Ensure scripts/test/run.sh exist, or redirect to apps/grammy tests
+        if [ -f "$SCRIPT_DIR/scripts/test/run.sh" ]; then
+            exec "$SCRIPT_DIR/scripts/test/run.sh"
+        else
+            echo -e "${YELLOW}Running grammY bot tests...${NC}"
+            cd "$SCRIPT_DIR/apps/grammy" && bun run test
+        fi
         ;;
     "sync"|"update")
         exec "$SCRIPT_DIR/scripts/setup/install.sh"
         ;;
     "keygen")
-        echo ""
-        echo -e "${CYAN}  ====================================${NC}"
-        echo -e "${YELLOW}   🔑 Generate Encryption Key${NC}"
-        echo -e "${CYAN}  ====================================${NC}"
-        echo ""
-        # Try venv Python first, fall back to system Python
-        PYTHON=""
-        if [ -f "$SCRIPT_DIR/.venv/bin/python" ]; then
-            PYTHON="$SCRIPT_DIR/.venv/bin/python"
-        elif command -v python3 &>/dev/null; then
-            PYTHON="python3"
-        elif command -v python &>/dev/null; then
-            PYTHON="python"
-        fi
-        if [ -z "$PYTHON" ]; then
-            echo -e "${RED}  [ERROR] Python not found. Run: ./nezuko setup${NC}"
-            exit 1
-        fi
-        KEY=$("$PYTHON" -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())" 2>/dev/null)
-        if [ $? -eq 0 ]; then
-            echo -e "  ${GREEN}✅ Generated Key:${NC}"
-            echo ""
-            echo -e "  ${YELLOW}$KEY${NC}"
-            echo ""
-            echo "  📋 Instructions:"
-            echo "  1. Copy the key above."
-            echo "  2. Paste it into ENCRYPTION_KEY= in apps/bot/.env"
-            echo ""
-            echo -e "  ${RED}⚠️  IMPORTANT:${NC}"
-            echo "  - Use the SAME key in every environment (local & production)."
-            echo "  - Store it in a password manager. If lost, encrypted tokens are unreadable."
-            echo "  - Never commit it to git."
-            echo ""
-        else
-            echo -e "${RED}  [ERROR] Failed. Is 'cryptography' installed? Run: ./nezuko setup${NC}"
-            exit 1
-        fi
+        exec "$SCRIPT_DIR/scripts/utils/generate-key.sh"
         ;;
     "clean")
         exec "$SCRIPT_DIR/scripts/utils/clean.sh"

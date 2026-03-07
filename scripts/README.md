@@ -2,7 +2,7 @@
 
 Cross-platform utility scripts for development, deployment, and maintenance.
 
-> **Note**: The `nezuko.bat` CLI menu is for **human developers**. AI agents should use direct PowerShell/Bash commands.
+> **Note**: The `nezuko.bat` CLI menu is for **human developers**. AI agents should use direct PowerShell commands.
 
 ## 🚀 Quick Start
 
@@ -10,11 +10,11 @@ Cross-platform utility scripts for development, deployment, and maintenance.
 
 From the project root:
 
-```bash
+```powershell
 # Windows
 nezuko.bat
 
-# Mac/Linux
+# Mac/Linux (Upcoming)
 ./nezuko
 ```
 
@@ -42,28 +42,24 @@ scripts/
 │
 ├── core/                       # 🎯 Core utilities (shared functions)
 │   ├── menu.ps1                # Interactive menu (Windows)
-│   ├── menu.sh                 # Interactive menu (Mac/Linux)
 │   ├── utils.ps1               # Shared PowerShell functions
-│   └── utils.sh                # Shared Bash functions
+│   └── ...
 │
 ├── dev/                        # 🚀 Development server scripts
 │   ├── start.ps1               # Start Redis (Docker) + services (Windows)
-│   ├── start.sh                # Start Redis (Docker) + services (Mac/Linux)
 │   ├── stop.ps1                # Stop services + Redis container (Windows)
-│   └── stop.sh                 # Stop services + Redis container (Mac/Linux)
+│   └── ...
 │
 ├── setup/                      # 📦 Initial setup scripts
 │   ├── install.ps1             # First-time setup (Windows)
-│   └── install.sh              # First-time setup (Mac/Linux)
+│   └── ...
 │
-
 ├── logs/                       # 📋 Script execution logs (git-ignored)
 │   └── nezuko-YYYY-MM-DD.log
 │
 └── utils/                      # 🔧 Utility scripts
     ├── clean.ps1               # Clean build artifacts (Windows)
-    ├── clean.sh                # Clean build artifacts (Mac/Linux)
-    ├── generate-key.ps1        # Generate Fernet encryption key
+    ├── generate-key.ps1        # Generate 32-byte hex encryption key
     └── generate-structure.ps1  # Folder structure generator
 ```
 
@@ -84,21 +80,25 @@ scripts/
 When you run `nezuko` without arguments, you get an interactive menu:
 
 ```
-╔══════════════════════════════════════════════════════════╗
-║                 🦊 NEZUKO DEVELOPER CLI                   ║
-╠══════════════════════════════════════════════════════════╣
-║   Telegram Bot Platform • Admin Dashboard • API           ║
-╚══════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════╗
+║                                                      ║
+║         🦊 NEZUKO DEVELOPER CLI                   ║
+║                                                      ║
+╠══════════════════════════════════════════════════════╣
+║   Telegram Bot Platform • Admin Dashboard            ║
+╚══════════════════════════════════════════════════════╝
 
 ┌── 📦 SETUP & CONFIGURATION ──────────────────────────┐
 │    [1] 🏗️  First-Time Setup                          │
 │    [2] 🔐 Security & Keys...                         │
 ├── 🚀 DEVELOPMENT ────────────────────────────────────┤
-│    [4] ▶️  Start Services...                          │
-│    [5] ⏹️  Stop All Services                          │
+│    [3] ▶️  Start Services...                          │
+│    [4] ⏹️  Stop All Services                          │
 ├── 🧹 UTILITIES ──────────────────────────────────────┤
-│    [6] 🧼 Clean Artifacts...                         │
-│    [7] ♻️  Full Reset (Clean + Reinstall)             │
+│    [5] 🧼 Clean Artifacts...                         │
+│    [6] ♻️  Full Reset (Clean + Reinstall)             │
+│    [7] 🔄 Update & Sync Dependencies                 │
+│    ──────────────────────────────────────────────    │
 │    [0] ❌ Exit                                       │
 └──────────────────────────────────────────────────────┘
 ```
@@ -109,7 +109,7 @@ When you run `nezuko` without arguments, you get an interactive menu:
 
 Run once after cloning the repository:
 
-```bash
+```powershell
 # Via menu: [1] First-Time Setup
 # Or directly:
 .\scripts\setup\install.ps1
@@ -117,12 +117,11 @@ Run once after cloning the repository:
 
 This will:
 
-1. ✅ Check prerequisites (Python 3.13+, Bun)
-2. ✅ Create Python virtual environment (`.venv`)
-3. ✅ Install Python dependencies
-4. ✅ Install Node.js dependencies (via Bun)
-5. ✅ Create `.env` files from templates
-6. ✅ Create storage directories
+1. ✅ Check prerequisites (Bun, Node.js, Docker)
+2. ✅ Install Web Dashboard dependencies (`apps/web`)
+3. ✅ Install Telegram Bot dependencies (`apps/grammy`)
+4. ✅ Create `.env` files from templates
+5. ✅ Create logging directories
 
 ---
 
@@ -131,10 +130,10 @@ This will:
 The `docker-compose.local.yml` at the project root manages a local **Redis** cache container
 (`nezuko-redis-local` on port 6379).
 
-`start.ps1` / `start.sh` runs `docker compose ... up -d` automatically when you launch services.
-`stop.ps1` / `stop.sh` stops the container (data is preserved in a named volume).
+`start.ps1` runs `docker compose ... up -d` automatically when you launch services.
+`stop.ps1` stops the container (data is preserved in a named volume).
 
-```bash
+```powershell
 # Manage Redis manually
 docker compose -f docker-compose.local.yml up -d    # Start
 docker compose -f docker-compose.local.yml stop      # Stop (keeps data)
@@ -145,9 +144,9 @@ docker compose -f docker-compose.local.yml down -v   # Remove + wipe data
 
 ## 🔑 Security & Encryption
 
-Generate a Fernet encryption key:
+Generate a 32-byte hex encryption key for AES-256-GCM:
 
-```bash
+```powershell
 # Via menu: [2] Security & Keys → [1] Generate Key
 # Or directly:
 .\scripts\utils\generate-key.ps1
@@ -155,17 +154,16 @@ Generate a Fernet encryption key:
 
 Add the key to:
 
-- `apps/bot/.env` → `ENCRYPTION_KEY=...`
+- `apps/grammy/.env` → `ENCRYPTION_KEY=...`
 
 ---
 
 ## 🧹 Cleaning Artifacts
 
-```bash
-# Via menu: [6] Clean Artifacts
+```powershell
+# Via menu: [5] Clean Artifacts
 # Or directly:
 .\scripts\utils\clean.ps1                   # Clean caches
-.\scripts\utils\clean.ps1 -IncludeVenv      # Also remove .venv
 .\scripts\utils\clean.ps1 -DryRun           # Preview only
 ```
 
@@ -178,10 +176,10 @@ Script operations are logged to `scripts/logs/nezuko-YYYY-MM-DD.log`.
 ### Log Format
 
 ```
-[2026-02-05 16:30:47] [INFO] [DEV] Starting Web Dashboard
-[2026-02-05 16:30:51] [SUCCESS] [DEV] All services started
+[2026-03-06 16:30:47] [INFO] [DEV] Starting Web Dashboard
+[2026-03-06 16:30:51] [SUCCESS] [DEV] All services started
 ```
 
 ---
 
-_Last Updated: 2026-02-25_
+_Last Updated: 2026-03-06_

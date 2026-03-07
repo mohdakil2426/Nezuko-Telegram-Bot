@@ -6,9 +6,9 @@
 .DESCRIPTION
     Terminates Nezuko-specific processes and stops the Redis Docker container:
     - Port 3000: Web Dashboard (Next.js)
-    - Bot: Python process running apps.bot.main
+    - Bot: grammY bot process running via Bun
     - Redis: Docker container nezuko-redis-local (docker-compose.local.yml)
-    Does NOT kill all node/python processes - only our services.
+    Does NOT kill all node/bun processes - only our services.
 .PARAMETER KeepRedis
     If specified, keeps the Redis Docker container running.
 .EXAMPLE
@@ -93,9 +93,10 @@ function Stop-BotProcess {
     $stopped = 0
 
     try {
-        # Find Python processes running the bot module
-        $botProcesses = Get-CimInstance Win32_Process -Filter "Name = 'python.exe'" -ErrorAction SilentlyContinue |
-        Where-Object { $_.CommandLine -like "*apps.bot.main*" -or $_.CommandLine -like "*apps/bot/main*" }
+        # Find Bun processes running the grammY bot
+        # We look for "bun" and "apps/grammy" or "apps\grammy" in the command line
+        $botProcesses = Get-CimInstance Win32_Process -Filter "Name = 'bun.exe' or Name = 'node.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -like "*apps/grammy*" -or $_.CommandLine -like "*apps\grammy*" }
 
         if ($botProcesses) {
             foreach ($proc in $botProcesses) {
@@ -103,8 +104,8 @@ function Stop-BotProcess {
                     $process = Get-Process -Id $proc.ProcessId -ErrorAction SilentlyContinue
                     if ($process) {
                         Stop-Process -Id $proc.ProcessId -Force -ErrorAction Stop
-                        Write-Host "        Stopped python (PID: $($proc.ProcessId))" -ForegroundColor Green
-                        Write-Log -Message "Stopped Bot - python (PID: $($proc.ProcessId))" -Level "SUCCESS" -Category "DEV"
+                        Write-Host "        Stopped $($proc.Name) (PID: $($proc.ProcessId))" -ForegroundColor Green
+                        Write-Log -Message "Stopped Bot - $($proc.Name) (PID: $($proc.ProcessId))" -Level "SUCCESS" -Category "DEV"
                         $stopped++
                     }
                 }
@@ -137,7 +138,7 @@ if ($Service -eq "all" -or $Service -eq "web") {
 }
 
 # Stop Telegram Bot
-Write-Host "  [2/3] Telegram Bot..." -ForegroundColor Yellow
+Write-Host "  [2/3] Telegram Bot (grammY)..." -ForegroundColor Yellow
 if ($Service -eq "all" -or $Service -eq "bot") {
     $botStopped = Stop-BotProcess
     if ($botStopped -eq 0) {

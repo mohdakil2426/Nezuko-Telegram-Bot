@@ -127,13 +127,13 @@ echo  Usage: nezuko [command]
 echo.
 echo  Commands:
 echo    (none)      Open interactive menu
-echo    dev         Start development servers
+echo    dev         Start development servers (Web + Bot)
 echo    stop        Stop all services
-echo    setup       First-time project setup
+echo    setup       First-time project setup (Bun install)
 echo    test        Run test suite
-echo    keygen      Generate a new Fernet encryption key
-echo    sync        Update dependencies (uv sync + bun install)
-echo    clean       Clean node_modules and .venv
+echo    keygen      Generate 32-byte hex encryption key
+echo    sync        Update dependencies (Bun install)
+echo    clean       Clean node_modules and caches
 echo    tree        Generate project folder structure
 echo    help        Show this help message
 echo.

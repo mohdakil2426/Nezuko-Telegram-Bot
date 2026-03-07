@@ -84,7 +84,7 @@ function Write-Log {
         [ValidateSet("INFO", "WARN", "ERROR", "DEBUG", "SUCCESS")]
         [string]$Level = "INFO",
         
-        [ValidateSet("INSTALL", "CLEAN", "DEV", "TEST", "MENU", "SYSTEM", "PYTHON", "NODE")]
+        [ValidateSet("INSTALL", "CLEAN", "DEV", "TEST", "MENU", "SYSTEM", "BUN", "NODE")]
         [string]$Category = "SYSTEM"
     )
     
@@ -145,7 +145,7 @@ function Write-CommandLog {
         
         [int]$ExitCode = 0,
         
-        [ValidateSet("INSTALL", "CLEAN", "DEV", "TEST", "MENU", "SYSTEM", "PYTHON", "NODE")]
+        [ValidateSet("INSTALL", "CLEAN", "DEV", "TEST", "MENU", "SYSTEM", "BUN", "NODE")]
         [string]$Category = "SYSTEM"
     )
     
@@ -180,48 +180,6 @@ function Get-LogPath {
     return $script:CurrentLogFile
 }
 
-function Get-VenvPath {
-    <#
-    .SYNOPSIS
-        Gets the virtual environment path.
-    .OUTPUTS
-        System.String - Path to .venv directory.
-    #>
-    [CmdletBinding()]
-    [OutputType([string])]
-    param()
-    
-    return Join-Path (Get-ProjectRoot) ".venv"
-}
-
-function Get-VenvPython {
-    <#
-    .SYNOPSIS
-        Gets the path to the Python executable in the virtual environment.
-    .OUTPUTS
-        System.String - Path to python.exe.
-    #>
-    [CmdletBinding()]
-    [OutputType([string])]
-    param()
-    
-    return Join-Path (Get-VenvPath) "Scripts\python.exe"
-}
-
-function Get-VenvBin {
-    <#
-    .SYNOPSIS
-        Gets the path to the scripts/bin directory in the virtual environment.
-    .OUTPUTS
-        System.String - Path to Scripts folder.
-    #>
-    [CmdletBinding()]
-    [OutputType([string])]
-    param()
-    
-    return Join-Path (Get-VenvPath) "Scripts"
-}
-
 # ============================================================
 # Prerequisite Checks
 # ============================================================
@@ -241,98 +199,76 @@ function Test-Prerequisites {
     
     $allGood = $true
     
-    # Check Python (try multiple methods)
-    # Windows has "App execution aliases" that can intercept 'python' command
-    # Use 'py' launcher first (most reliable on Windows), then fallback to direct detection
-    $pythonVersion = $null
-    
-    # Method 1: Try py launcher (Windows Python Launcher - most reliable)
+    # Check Bun
+    $bunVersion = $null
     try {
-        $result = py -3 --version 2>&1 | Out-String
-        if ($result -match "Python\s+(3\.\d+\.\d+)") {
-            $pythonVersion = $result.Trim()
-        }
-    }
-    catch { }
-    
-    # Method 2: Try finding Python in common locations
-    if (-not $pythonVersion) {
-        $commonPaths = @(
-            "C:\Program Files\Python314\python.exe",
-            "C:\Program Files\Python313\python.exe",
-            "C:\Program Files\Python312\python.exe",
-            "C:\Program Files\Python311\python.exe",
-            "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe",
-            "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe",
-            "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe"
-        )
-        
-        foreach ($pythonPath in $commonPaths) {
-            if (Test-Path $pythonPath) {
-                try {
-                    $result = & $pythonPath --version 2>&1 | Out-String
-                    if ($result -match "Python\s+(3\.\d+\.\d+)") {
-                        $pythonVersion = $result.Trim()
-                        break
-                    }
-                }
-                catch { }
-            }
-        }
-    }
-    
-    # Method 3: Try 'python' command (may trigger Windows Store alias)
-    if (-not $pythonVersion) {
-        try {
-            $result = python --version 2>&1 | Out-String
-            if ($result -match "Python\s+(3\.\d+\.\d+)") {
-                $pythonVersion = $result.Trim()
-            }
-        }
-        catch { }
-    }
-    
-    if ($pythonVersion) {
-        if (-not $Quiet) {
-            Write-Host "  ✅ $pythonVersion" -ForegroundColor Green
-        }
-    }
-    else {
-        if (-not $Quiet) {
-            Write-Host "  ❌ Python 3.x not found" -ForegroundColor Red
-            Write-Host "     Install from: https://www.python.org/downloads/" -ForegroundColor Gray
-            Write-Host "     Or disable App execution aliases in Windows Settings" -ForegroundColor Gray
-        }
-        $allGood = $false
-    }
-    
-    # Check uv
-    $uvVersion = $null
-    try {
-        $uvVersion = (uv --version 2>&1).ToString()
+        $bunVersion = (bun --version 2>&1).ToString().Trim()
     }
     catch {
-        $uvVersion = $null
+        $bunVersion = $null
     }
     
-    if ($uvVersion) {
+    if ($bunVersion) {
         if (-not $Quiet) {
-            Write-Host "  ✅ $uvVersion" -ForegroundColor Green
+            Write-Host "  ✅ Bun: v$bunVersion" -ForegroundColor Green
         }
     }
     else {
         if (-not $Quiet) {
-            Write-Host "  ❌ uv not found (https://docs.astral.sh/uv/)" -ForegroundColor Red
+            Write-Host "  ❌ Bun not found" -ForegroundColor Red
+            Write-Host "     Install from: https://bun.sh/" -ForegroundColor Gray
         }
         $allGood = $false
     }
     
-    # Check Bun
+    # Check Docker
+    $dockerVersion = $null
+    try {
+        $dockerVersion = (docker --version 2>&1).ToString().Trim()
+    }
+    catch {
+        $dockerVersion = $null
+    }
     
-    # Check Git (optional)
+    if ($dockerVersion) {
+        if (-not $Quiet) {
+            Write-Host "  ✅ $dockerVersion" -ForegroundColor Green
+        }
+    }
+    else {
+        if (-not $Quiet) {
+            Write-Host "  ⚠️  Docker not found" -ForegroundColor Yellow
+            Write-Host "     Required for local Redis cache." -ForegroundColor Gray
+        }
+        # Not strictly fatal for install, but warned
+    }
+    
+    # Check Node.js
+    $nodeVersion = $null
+    try {
+        $nodeVersion = (node --version 2>&1).ToString().Trim()
+    }
+    catch {
+        $nodeVersion = $null
+    }
+    
+    if ($nodeVersion) {
+        if (-not $Quiet) {
+            Write-Host "  ✅ Node.js: $nodeVersion" -ForegroundColor Green
+        }
+    }
+    else {
+        if (-not $Quiet) {
+            Write-Host "  ❌ Node.js not found" -ForegroundColor Red
+            Write-Host "     Install from: https://nodejs.org/" -ForegroundColor Gray
+        }
+        $allGood = $false
+    }
+    
+    # Check Git
     $gitVersion = $null
     try {
-        $gitVersion = (git --version 2>&1).ToString()
+        $gitVersion = (git --version 2>&1).ToString().Trim()
     }
     catch {
         $gitVersion = $null
@@ -340,49 +276,18 @@ function Test-Prerequisites {
     
     if ($gitVersion) {
         if (-not $Quiet) {
-            Write-Host "  ✅ Git: $gitVersion" -ForegroundColor Green
+            Write-Host "  ✅ $gitVersion" -ForegroundColor Green
         }
     }
     else {
         if (-not $Quiet) {
-            Write-Host "  ⚠️  Git not found (optional)" -ForegroundColor Yellow
+            Write-Host "  ⚠️  Git not found" -ForegroundColor Yellow
         }
     }
     
     return $allGood
 }
 
-function Test-VenvExists {
-    <#
-    .SYNOPSIS
-        Checks if the virtual environment exists.
-    .OUTPUTS
-        System.Boolean
-    #>
-    [CmdletBinding()]
-    [OutputType([bool])]
-    param()
-    
-    return Test-Path (Get-VenvPath)
-}
-
-function Test-VenvActivate {
-    <#
-    .SYNOPSIS
-        Gets the path to the venv activation script if it exists.
-    .OUTPUTS
-        System.String or $null
-    #>
-    [CmdletBinding()]
-    [OutputType([string])]
-    param()
-    
-    $activatePath = Join-Path (Get-VenvPath) "Scripts\Activate.ps1"
-    if (Test-Path $activatePath) {
-        return $activatePath
-    }
-    return $null
-}
 
 # ============================================================
 # Process Management
