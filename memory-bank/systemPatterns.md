@@ -288,6 +288,11 @@ if (result.success) {
   await ctx.answerCallbackQuery({ show_alert: true, text: VERIFY_MISSING_CHANNELS(...) });
 }
 
+// Explicit verify clicks are latency-sensitive:
+// - debounce is scoped by (groupId, userId)
+// - verify lock is released when the callback completes
+// - fresh Telegram membership checks retry briefly to absorb rejoin propagation lag
+
 // 5. Channel leave path
 // required-channel chat_member event -> write member cache
 // if left/kicked:
@@ -376,6 +381,9 @@ MEMBER_NEGATIVE_CACHE_TTL = 30;  // negative membership cache
 await verifyMembership(api, db, cache, groupId, userId, log, {
   bypassNegativeCache: true,
 });
+
+// If Telegram still briefly reports "left" right after a real rejoin,
+// explicit verify performs a couple of short fresh retries before failing.
 ```
 
 ### 8.2 — Sequentialization Rules (Phase 108)

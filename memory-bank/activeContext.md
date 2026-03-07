@@ -14,6 +14,8 @@
 
 **2026-03-07 Follow-up: Runner Self-Healing + Health Visibility — COMPLETE ✅**
 
+**2026-03-07 Follow-up: Verify Click Propagation Recovery — COMPLETE ✅**
+
 The verification UX was refined to reduce group spam from required-channel membership flapping:
 }},{
 - Required-channel `chat_member` leave events no longer push verification prompts into linked groups immediately.
@@ -56,6 +58,13 @@ The verification UX was refined to reduce group spam from required-channel membe
 - `apps/grammy/src/main.ts` dashboard-mode health now reports `degraded` from poll-heartbeat staleness instead of chat inactivity; standalone mode now has runner recovery hardening but still only exposes static mode/db details in `/health`
 - intentional stop/shutdown paths now mark bot instances as stopping before `runner.stop()` so the new supervision logic does not auto-restart a bot during a normal stop/restart/shutdown flow
   - post-fix grammY quality gates remained green: type-check ✅ lint ✅ tests 151/151 ✅ build ✅
+- Follow-up on 2026-03-07 fixed a live verify-button regression reported after users rejoined a required channel:
+  - the verify callback path had a sticky UX guard: it set a per-user debounce key before work started and also held a 15-second `verify` idempotency lock even after the attempt completed
+  - if Telegram briefly still returned `left` right after a channel rejoin, that first negative click forced the user into repeat taps while the old debounce/lock windows expired
+  - `apps/grammy/src/composers/verify.ts` now scopes debounce by `(groupId, userId)`, shortens it to 1 second, and actively clears both the debounce key and verify lock when the callback finishes
+  - `apps/grammy/src/services/verification.ts` now retries fresh explicit verify checks a small number of times with a short delay, so one click can absorb Telegram membership propagation lag after a real channel rejoin
+  - runtime coverage now proves the first verify click succeeds even when the first `getChatMember` still says `left` and the second fresh check turns `member`
+  - latest grammY quality gates after this follow-up: type-check ✅ lint ✅ tests 154/154 ✅ build ✅
 
 The post-audit stabilization work is now documented:
 

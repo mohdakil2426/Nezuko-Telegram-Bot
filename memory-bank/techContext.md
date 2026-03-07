@@ -199,6 +199,7 @@ bun run build         # next build → 0 errors
 - Verified-state freshness recheck: `VERIFIED_RECHECK_INTERVAL_MS=600000` milliseconds
 - Fast enforcement block TTL: `INTERVALS.ENFORCEMENT_BLOCK=300` seconds
 - Explicit verify clicks bypass cached negative membership results and force a fresh Telegram `getChatMember` check
+- Explicit verify clicks also do a short fresh retry loop (`VERIFY_FRESH_CHECK_RETRIES=2`, `VERIFY_FRESH_CHECK_RETRY_DELAY_MS=350`) to absorb Telegram membership propagation lag after channel rejoins
 - Group message enforcement revalidates stale previously verified users and re-restricts when needed
 - Required-channel leave now seeds `enforcement_block:{groupId}:{userId}` without immediately re-restricting linked groups; the next blocked group message performs the visible enforcement step
 - When multiple blocked messages arrive while one message-enforcement pass already holds the lock, lock-losing updates now still delete their own message immediately before returning

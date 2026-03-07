@@ -212,6 +212,37 @@ describe("verifyMembership", () => {
     );
   });
 
+  it("explicit verify retries a fresh negative Telegram result and succeeds on the same click", async () => {
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(810, "propagation")],
+    });
+
+    vi.mocked(cache.get).mockResolvedValue(null);
+    const getChatMember = vi
+      .fn()
+      .mockResolvedValueOnce({ status: "left" })
+      .mockResolvedValueOnce({ status: "member" });
+    const api = createMockApi({ getChatMember });
+
+    const result = await verifyMembership(api as never, db, cache, 1, 999, createMockLogger(), {
+      bypassNegativeCache: true,
+      freshCheckRetries: 1,
+      freshCheckRetryDelayMs: 0,
+    });
+
+    expect(result.success).toBe(true);
+    expect(getChatMember).toHaveBeenCalledTimes(2);
+    expect(cache.set).toHaveBeenCalledWith(
+      expect.stringContaining("member:810:999"),
+      "1",
+      "EX",
+      300
+    );
+  });
+
   it("group message checks still honor negative cache without hitting Telegram", async () => {
     vi.mocked(db.rpc).mockResolvedValueOnce({
       group_id: 1,

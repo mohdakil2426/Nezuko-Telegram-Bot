@@ -9,6 +9,8 @@ import {
   CACHE_NAMESPACES,
   MEMBER_CACHE_TTL,
   MEMBER_NEGATIVE_CACHE_TTL,
+  VERIFY_FRESH_CHECK_RETRIES,
+  VERIFY_FRESH_CHECK_RETRY_DELAY_MS,
 } from "../core/constants.js";
 
 /** Minimal Telegram API interface — keeps services framework-agnostic. */
@@ -25,6 +27,14 @@ export interface VerifyMembershipOptions {
   bypassNegativeCache?: boolean;
   /** Preloaded enforced channels for hot paths that already resolved the contract. */
   channels?: EnforcedChannel[];
+  /** Additional fresh Telegram membership checks after a negative result. */
+  freshCheckRetries?: number;
+  /** Delay between fresh Telegram membership retries. */
+  freshCheckRetryDelayMs?: number;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -122,46 +132,83 @@ async function checkChannelMembership(
   }
 
   // L2: Telegram API
-  try {
-    const member = await api.getChatMember(channel.channel_id, userId);
-    const isValid = (VALID_MEMBER_STATUSES as readonly string[]).includes(member.status);
+  const retryCount = options.bypassNegativeCache
+    ? Math.max(0, options.freshCheckRetries ?? VERIFY_FRESH_CHECK_RETRIES)
+    : 0;
+  const retryDelayMs = Math.max(
+    0,
+    options.freshCheckRetryDelayMs ?? VERIFY_FRESH_CHECK_RETRY_DELAY_MS
+  );
 
-    // Cache the result
+  for (let attempt = 0; attempt <= retryCount; attempt += 1) {
     try {
-      await cache.set(
-        cacheKey,
-        isValid ? "1" : "0",
-        "EX",
-        isValid ? MEMBER_CACHE_TTL : MEMBER_NEGATIVE_CACHE_TTL
-      );
-    } catch {
-      // Cache write failure is non-fatal
-    }
+      const member = await api.getChatMember(channel.channel_id, userId);
+      const isValid = (VALID_MEMBER_STATUSES as readonly string[]).includes(member.status);
 
-    return { isMember: isValid, cached: false };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+      if (!isValid && attempt < retryCount) {
+        log?.debug?.(
+          {
+            userId,
+            channelId: channel.channel_id,
+            attempt: attempt + 1,
+            maxAttempts: retryCount + 1,
+          },
+          "Required channel membership not visible yet; retrying fresh verify check"
+        );
+        await delay(retryDelayMs);
+        continue;
+      }
 
-    // EC-42: USER_ID_INVALID — treat as not a member
-    if (message.includes("400") || message.includes("USER_ID_INVALID")) {
-      log?.warn(
-        { userId, channelId: channel.channel_id },
-        "USER_ID_INVALID — treating as not a member"
+      try {
+        await cache.set(
+          cacheKey,
+          isValid ? "1" : "0",
+          "EX",
+          isValid ? MEMBER_CACHE_TTL : MEMBER_NEGATIVE_CACHE_TTL
+        );
+      } catch {
+        // Cache write failure is non-fatal
+      }
+
+      return { isMember: isValid, cached: false };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+
+      if (message.includes("400") || message.includes("USER_ID_INVALID")) {
+        log?.warn(
+          { userId, channelId: channel.channel_id },
+          "USER_ID_INVALID — treating as not a member"
+        );
+        return { isMember: false, cached: false };
+      }
+
+      if (message.includes("403") || message.includes("Forbidden")) {
+        log?.warn({ channelId: channel.channel_id }, "Channel unreachable (403) — skipping");
+        return { isMember: false, cached: false };
+      }
+
+      if (attempt < retryCount) {
+        log?.warn(
+          {
+            err,
+            userId,
+            channelId: channel.channel_id,
+            attempt: attempt + 1,
+            maxAttempts: retryCount + 1,
+          },
+          "Transient membership check error; retrying"
+        );
+        await delay(retryDelayMs);
+        continue;
+      }
+
+      log?.error(
+        { err, channelId: channel.channel_id },
+        "Unexpected error checking channel membership"
       );
       return { isMember: false, cached: false };
     }
-
-    // EC-15/16: 403 channel inaccessible (bot removed or channel private)
-    if (message.includes("403") || message.includes("Forbidden")) {
-      log?.warn({ channelId: channel.channel_id }, "Channel unreachable (403) — skipping");
-      return { isMember: false, cached: false };
-    }
-
-    // Unexpected error — treat as not a member to be safe
-    log?.error(
-      { err, channelId: channel.channel_id },
-      "Unexpected error checking channel membership"
-    );
-    return { isMember: false, cached: false };
   }
+
+  return { isMember: false, cached: false };
 }

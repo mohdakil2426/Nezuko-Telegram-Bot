@@ -31,7 +31,7 @@ export const INTERVALS = {
   /** Bot runner health watchdog interval (1 minute). */
   RUNNER_WATCHDOG: 60_000,
   /** Verify button debounce TTL in seconds. */
-  VERIFY_DEBOUNCE: 3,
+  VERIFY_DEBOUNCE: 1,
   /** Lock TTL for verification/join-request idempotency in seconds. */
   IDEMPOTENCY_LOCK: 15,
   /** Cache TTL for auto-approved join requests in seconds. */
@@ -74,3 +74,9 @@ export const MEMBER_CACHE_TTL = 300;
 
 /** Negative member cache TTL in seconds (30 seconds). */
 export const MEMBER_NEGATIVE_CACHE_TTL = 30;
+
+/** Extra fresh membership checks for explicit verify clicks after a recent channel rejoin. */
+export const VERIFY_FRESH_CHECK_RETRIES = 2;
+
+/** Delay between fresh verify retries to absorb Telegram membership propagation lag. */
+export const VERIFY_FRESH_CHECK_RETRY_DELAY_MS = 350;

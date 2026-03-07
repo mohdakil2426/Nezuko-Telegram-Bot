@@ -5,6 +5,7 @@ import {
   createMessageUpdate,
   createJoinRequestUpdate,
   createChannelChatMemberUpdate,
+  createCallbackUpdate,
 } from "../helpers/mock-update.js";
 import { createConfiguredTestBot } from "../helpers/test-bot.js";
 import type { BotDeps } from "../../../apps/grammy/src/types.js";
@@ -208,5 +209,68 @@ describe("bot-factory runtime wiring", () => {
       300
     );
     expect(apiCalls.find((call) => call.method === "sendMessage")).toBeUndefined();
+  });
+
+  it("verifies successfully on the first click when Telegram membership visibility lags briefly", async () => {
+    let membershipChecks = 0;
+    const { bot, apiCalls } = createConfiguredTestBot({
+      methodResults: {
+        getChatMember: (payload) => {
+          if (Number(payload.chat_id) === -1001111111111) {
+            membershipChecks += 1;
+            return {
+              status: membershipChecks === 1 ? "left" : "member",
+              user: {
+                id: Number(payload.user_id),
+                is_bot: false,
+                first_name: "Verifier",
+              },
+            };
+          }
+
+          return {
+            status: "member",
+            user: {
+              id: Number(payload.user_id),
+              is_bot: Number(payload.user_id) === 12345678,
+              first_name: "Verifier",
+            },
+          };
+        },
+      },
+    });
+    const deps = makeDeps();
+
+    vi.mocked(deps.db.rpc).mockResolvedValueOnce({
+      group_id: -1001234567890,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [
+        {
+          channel_id: -1001111111111,
+          title: "Required Channel",
+          username: "requiredchannel",
+          invite_link: null,
+          subscriber_count: 1,
+          linked_groups_count: 1,
+          last_sync_at: null,
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+    });
+
+    createBotWithDeps(bot, deps);
+    await bot.handleUpdate(createCallbackUpdate("verify:-1001234567890"));
+
+    expect(membershipChecks).toBe(2);
+
+    const answerCall = apiCalls.find((call) => call.method === "answerCallbackQuery");
+    expect(answerCall).toBeDefined();
+    expect(answerCall?.payload).toMatchObject({ text: "✅ Verified! You can send messages now." });
+
+    const restrictCall = apiCalls.find((call) => call.method === "restrictChatMember");
+    expect(restrictCall).toBeDefined();
+    expect((restrictCall?.payload as Record<string, unknown>).chat_id).toBe(-1001234567890);
   });
 });
