@@ -70,6 +70,8 @@ nezuko/
 - Delayed verification prompts: required-channel leave is silent, first blocked message prompts
 - Prompt dedupe per `(groupId, userId)` to avoid repeated group spam
 - Lock-loser blocked-message deletion so burst spam updates are still removed while one enforcement pass is running
+- Fast re-restriction path: required-channel leave now also re-mutes linked groups silently and seeds a short-lived enforcement-block cache
+- Single-subscription dashboard realtime coordinator with cache patching for logs/activity/bots and centralized aggregate invalidation
 - Verification logging directly to InsForge PostgreSQL
 - Status writer (heartbeat via DB UPSERT every 30s)
 - Command worker (polls admin_commands table; realtime via Socket.IO)
@@ -119,9 +121,9 @@ The original Python bot used `python-telegram-bot v22.6` with asyncio. It was fu
 | ESLint        | 0 warnings   | grammy + web |
 | TypeScript    | 0 errors     | grammy + web |
 | Prettier      | All clean    | grammy + web |
-| Vitest        | 145/145 pass | grammy       |
+| Vitest        | 147/147 pass | grammy       |
 | Next.js Build | 0 errors     | web          |
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 112 — delayed prompt flow and burst-message cleanup documented)_
+_Last Updated: 2026-03-07 (Phase 113 — realtime hot-path and dashboard coordinator improvements documented)_

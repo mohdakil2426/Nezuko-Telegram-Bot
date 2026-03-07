@@ -9,7 +9,7 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
+import { queryKeys, STALE_TIMES } from "@/lib/query-keys";
 import { useRealtimeChart } from "@/lib/hooks/use-realtime-insforge";
 import {
   listBots,
@@ -32,7 +32,7 @@ export function useBots() {
     queryKey: queryKeys.bots.list(),
     queryFn: listBots,
     staleTime: STALE_TIMES.STANDARD,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["bot_instances"],
     invalidateOnEvents: ["bot_instance_changed"],
   });

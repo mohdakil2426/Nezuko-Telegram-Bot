@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-qu
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
+import { RealtimeQueryCoordinatorProvider } from "@/lib/hooks/use-realtime-insforge";
 
 interface QueryProviderProps {
   children: ReactNode;
@@ -103,7 +104,7 @@ export function QueryProvider({ children }: QueryProviderProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <RealtimeQueryCoordinatorProvider>{children}</RealtimeQueryCoordinatorProvider>
       {process.env.NODE_ENV === "development" && (
         <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
       )}

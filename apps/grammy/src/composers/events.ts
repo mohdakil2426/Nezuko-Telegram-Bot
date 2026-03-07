@@ -103,6 +103,61 @@ async function invalidateVerifiedState(
   await Promise.all(keys.map((key) => ctx.cache.del(key).catch(() => {})));
 }
 
+function getEnforcementBlockKey(groupId: number, userId: number): string {
+  return `${CACHE_NAMESPACES.ENFORCEMENT_BLOCK}:${groupId}:${userId}`;
+}
+
+async function setEnforcementBlockState(
+  ctx: NezukoContext,
+  groupIds: number[],
+  userId: number
+): Promise<void> {
+  await Promise.all(
+    groupIds.map((groupId) =>
+      ctx.cache
+        .set(getEnforcementBlockKey(groupId, userId), "1", "EX", INTERVALS.ENFORCEMENT_BLOCK)
+        .catch(() => {})
+    )
+  );
+}
+
+async function clearEnforcementBlockState(
+  ctx: NezukoContext,
+  groupId: number,
+  userId: number
+): Promise<void> {
+  await ctx.cache.del(getEnforcementBlockKey(groupId, userId)).catch(() => {});
+}
+
+async function areAllRequiredChannelsSatisfiedFromCache(
+  ctx: NezukoContext,
+  userId: number,
+  channels: Array<{
+    channel_id: number;
+  }>
+): Promise<boolean> {
+  if (channels.length === 0) {
+    return true;
+  }
+
+  const keys = channels.map((channel) => `${CACHE_NAMESPACES.MEMBER}:${channel.channel_id}:${userId}`);
+  const cached =
+    ctx.cache.mget !== undefined
+      ? await ctx.cache.mget(keys).catch(() => keys.map(() => null))
+      : await Promise.all(keys.map((key) => ctx.cache.get(key).catch(() => null)));
+
+  return cached.length === channels.length && cached.every((value) => value === "1");
+}
+
+async function deleteCurrentMessage(ctx: NezukoContext): Promise<boolean> {
+  try {
+    await ctx.deleteMessage();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function enforceVerificationFailure(
   ctx: NezukoContext,
   groupId: number,
@@ -123,6 +178,9 @@ async function enforceVerificationFailure(
     sendPrompt: boolean;
   }
 ): Promise<void> {
+  await ctx.cache
+    .set(getEnforcementBlockKey(groupId, userId), "1", "EX", INTERVALS.ENFORCEMENT_BLOCK)
+    .catch(() => {});
   await muteUser(ctx.api, groupId, userId).catch((err) => {
     ctx.log.warn({ err, groupId, userId }, "Failed to mute unverified user");
   });
@@ -264,6 +322,7 @@ eventsComposer.on("message:left_chat_member", async (ctx) => {
   if (!leftMember.is_bot && leftMember.id) {
     const cacheKey = `${CACHE_NAMESPACES.VERIFIED}:${ctx.chat.id}:${leftMember.id}`;
     await ctx.cache.del(cacheKey).catch(() => {});
+    await clearEnforcementBlockState(ctx, ctx.chat.id, leftMember.id).catch(() => {});
     await clearActiveVerificationPrompt(ctx.cache, ctx.chat.id, leftMember.id).catch(() => {});
   }
 });
@@ -311,6 +370,21 @@ eventsComposer.on("chat_member", async (ctx, next) => {
       links.map((link) => link.group_id),
       user.id
     );
+    await setEnforcementBlockState(
+      ctx,
+      links.map((link) => link.group_id),
+      user.id
+    );
+    await Promise.allSettled(
+      links.map((link) =>
+        muteUser(ctx.api, link.group_id, user.id).catch((err) => {
+          ctx.log.warn(
+            { err, groupId: link.group_id, userId: user.id, channelId: ctx.chat.id },
+            "Failed to re-restrict user after required-channel leave"
+          );
+        })
+      )
+    );
   }
 
   await next();
@@ -351,25 +425,33 @@ eventsComposer.on("message", async (ctx, next) => {
 
   // Check Redis cache first
   const cacheKey = `${CACHE_NAMESPACES.VERIFIED}:${ctx.chat.id}:${ctx.from.id}`;
-  const cached = await ctx.cache.get(cacheKey).catch(() => null);
-  if (cached === "1") {
+  const blockKey = getEnforcementBlockKey(ctx.chat.id, ctx.from.id);
+  const [cachedVerified, blockedState] =
+    ctx.cache.mget !== undefined
+      ? await ctx.cache.mget([cacheKey, blockKey]).catch(() => [null, null] as Array<string | null>)
+      : await Promise.all([
+          ctx.cache.get(cacheKey).catch(() => null),
+          ctx.cache.get(blockKey).catch(() => null),
+        ]);
+
+  if (cachedVerified === "1") {
     await next();
     return;
   }
 
-  const latestVerification = await getLatestVerificationState(ctx.db, ctx.chat.id, ctx.from.id);
-  const latestVerifiedAt = latestVerification
-    ? Date.parse(latestVerification.timestamp)
-    : Number.NaN;
-  const recentlyVerified =
-    latestVerification?.status === "verified" &&
-    Number.isFinite(latestVerifiedAt) &&
-    Date.now() - latestVerifiedAt <= VERIFIED_RECHECK_INTERVAL_MS;
-
-  if (recentlyVerified) {
-    await ctx.cache.set(cacheKey, "1", "EX", VERIFIED_CACHE_TTL).catch(() => {});
-    await next();
-    return;
+  const hasEnforcementBlock = blockedState === "1";
+  if (hasEnforcementBlock) {
+    const channelsSatisfiedFromCache = await areAllRequiredChannelsSatisfiedFromCache(
+      ctx,
+      ctx.from.id,
+      channels
+    );
+    if (channelsSatisfiedFromCache) {
+      await clearEnforcementBlockState(ctx, ctx.chat.id, ctx.from.id).catch(() => {});
+      await ctx.cache.set(cacheKey, "1", "EX", VERIFIED_CACHE_TTL).catch(() => {});
+      await next();
+      return;
+    }
   }
 
   // EC-35: Admins always pass. Keep this after cache/DB checks so already
@@ -377,11 +459,28 @@ eventsComposer.on("message", async (ctx, next) => {
   try {
     const member = await ctx.api.getChatMember(ctx.chat.id, ctx.from.id);
     if ((ADMIN_STATUSES as readonly string[]).includes(member.status)) {
+      await clearEnforcementBlockState(ctx, ctx.chat.id, ctx.from.id).catch(() => {});
       await next();
       return;
     }
   } catch {
     // If we can't check, fall through to deletion (fail closed for non-verified users)
+  }
+
+  let latestVerification = null;
+  if (!hasEnforcementBlock) {
+    latestVerification = await getLatestVerificationState(ctx.db, ctx.chat.id, ctx.from.id);
+    const latestVerifiedAt = latestVerification ? Date.parse(latestVerification.timestamp) : Number.NaN;
+    const recentlyVerified =
+      latestVerification?.status === "verified" &&
+      Number.isFinite(latestVerifiedAt) &&
+      Date.now() - latestVerifiedAt <= VERIFIED_RECHECK_INTERVAL_MS;
+
+    if (recentlyVerified) {
+      await ctx.cache.set(cacheKey, "1", "EX", VERIFIED_CACHE_TTL).catch(() => {});
+      await next();
+      return;
+    }
   }
 
   const lockAcquired = await acquireIdempotencyLock(ctx.cache, "message-enforce", [
@@ -390,24 +489,27 @@ eventsComposer.on("message", async (ctx, next) => {
   ]).catch(() => true);
 
   if (!lockAcquired) {
-    try {
-      await ctx.deleteMessage();
-    } catch {
-      // Can't delete — bot may lack permission
-    }
+    await deleteCurrentMessage(ctx);
     return;
+  }
+
+  let messageDeleted = false;
+  if (hasEnforcementBlock) {
+    messageDeleted = await deleteCurrentMessage(ctx);
   }
 
   const result = await verifyMembership(ctx.api, ctx.db, ctx.cache, ctx.chat.id, ctx.from.id, ctx.log, {
     bypassNegativeCache: true,
+    channels,
   });
 
   if (result.success) {
     await ctx.cache.set(cacheKey, "1", "EX", VERIFIED_CACHE_TTL).catch(() => {});
+    await clearEnforcementBlockState(ctx, ctx.chat.id, ctx.from.id).catch(() => {});
     await deleteActiveVerificationPrompt(ctx.api, ctx.cache, ctx.chat.id, ctx.from.id).catch(
       () => {}
     );
-    if (latestVerification?.status !== "verified") {
+    if (hasEnforcementBlock || latestVerification?.status !== "verified") {
       await logVerification(ctx.db, {
         user_id: ctx.from.id,
         group_id: ctx.chat.id,
@@ -426,10 +528,8 @@ eventsComposer.on("message", async (ctx, next) => {
     return;
   }
 
-  try {
-    await ctx.deleteMessage();
-  } catch {
-    // Can't delete — bot may lack permission
+  if (!messageDeleted) {
+    await deleteCurrentMessage(ctx);
   }
 
   await enforceVerificationFailure(

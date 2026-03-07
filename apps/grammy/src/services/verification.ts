@@ -23,6 +23,8 @@ export interface VerifyMembershipOptions {
    * does not get stuck behind a stale negative cache entry.
    */
   bypassNegativeCache?: boolean;
+  /** Preloaded enforced channels for hot paths that already resolved the contract. */
+  channels?: EnforcedChannel[];
 }
 
 /**
@@ -49,8 +51,8 @@ export async function verifyMembership(
   options: VerifyMembershipOptions = {}
 ): Promise<VerificationResult> {
   const start = performance.now();
-  const contract = await getGroupVerificationContract(db, groupId);
-  const channels = contract.enabled ? contract.channels : [];
+  const contract = options.channels ? null : await getGroupVerificationContract(db, groupId);
+  const channels = options.channels ?? (contract?.enabled ? contract.channels : []);
 
   if (channels.length === 0) {
     return {
@@ -63,21 +65,13 @@ export async function verifyMembership(
   }
 
   const missingChannels: string[] = [];
-  let usedCache = true;
+  const results = await Promise.all(
+    channels.map((channel) => checkChannelMembership(api, cache, channel, userId, log, options))
+  );
 
-  for (const channel of channels) {
-    const { isMember, cached } = await checkChannelMembership(
-      api,
-      cache,
-      channel,
-      userId,
-      log,
-      options
-    );
-    if (!cached) {
-      usedCache = false;
-    }
-    if (!isMember) {
+  for (const [index, result] of results.entries()) {
+    if (!result.isMember) {
+      const channel = channels[index];
       const name = channel.username
         ? `@${channel.username}`
         : (channel.title ?? `Channel ${channel.channel_id}`);
@@ -91,7 +85,7 @@ export async function verifyMembership(
     success: missingChannels.length === 0,
     missingChannels,
     latencyMs,
-    cached: usedCache,
+    cached: results.every((result) => result.cached),
     checkedChannelIds: channels.map((channel) => channel.channel_id),
   };
 }

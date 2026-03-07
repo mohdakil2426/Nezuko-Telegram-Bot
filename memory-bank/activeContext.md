@@ -8,6 +8,8 @@
 
 **Phase 112: Burst Message Enforcement Cleanup — COMPLETE ✅**
 
+**Phase 113: Realtime Hot-Path + Dashboard Coordinator — COMPLETE ✅**
+
 The verification UX was refined to reduce group spam from required-channel membership flapping:
 
 - Required-channel `chat_member` leave events no longer push verification prompts into linked groups immediately.
@@ -18,7 +20,17 @@ The verification UX was refined to reduce group spam from required-channel membe
 - Group leave also clears active prompt state so re-joins can get a fresh prompt later.
 - New grammY coverage was added for silent channel leave, first-blocked-message prompting, prompt dedupe, and prompt cleanup on verify success.
 - Follow-up in Phase 112 fixed a race in the new delayed-prompt flow: when multiple blocked messages arrived quickly, only the lock-winning update deleted its message. Lock-losing updates now delete their own message immediately and return, so burst spam no longer leaves older messages visible while one enforcement pass is running.
-- Latest grammY quality gates after the burst-cleanup fix: type-check ✅ lint ✅ tests 145/145 ✅ build ✅
+- Phase 113 tightened the bot hot path further:
+  - required-channel leave now also re-restricts linked groups silently
+  - a short-lived `enforcement_block:{groupId}:{userId}` Redis key gives the message filter a low-latency fast path
+  - if all cached channel memberships are already restored, the fast path clears the block and lets the user talk again without waiting on a DB lookup
+  - `verifyMembership()` now reuses preloaded channels and checks required channels in parallel
+- Phase 113 also reworked web realtime delivery:
+  - `QueryProvider` now mounts a single realtime coordinator instead of relying on per-widget websocket subscriptions
+  - the coordinator patches cache directly for logs, activity, and bot lifecycle updates
+  - payload-covered hooks now disable connected polling and rely on websocket-driven cache work instead
+  - the Logs page now dedupes realtime stream entries against query-backed data
+- Latest quality gates after Phase 113: grammY type-check ✅ lint ✅ tests 147/147 ✅ build ✅; web type-check ✅ lint ✅ build ✅
 
 The post-audit stabilization work is now documented:
 
@@ -414,4 +426,4 @@ bot.catch(...)
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 112 — delayed prompts and burst-message cleanup documented)_
+_Last Updated: 2026-03-07 (Phase 113 — realtime hot-path and dashboard coordinator documented)_

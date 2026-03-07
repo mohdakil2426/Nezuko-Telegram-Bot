@@ -14,6 +14,7 @@ export const ADMIN_STATUSES = ["administrator", "creator"] as const;
 export const CACHE_NAMESPACES = {
   VERIFIED: "verified",
   MEMBER: "member",
+  ENFORCEMENT_BLOCK: "enforcement_block",
   DEBOUNCE: "verify_debounce",
   CONTRACT: "verify_contract",
   IDEMPOTENCY: "idempotency",
@@ -35,6 +36,8 @@ export const INTERVALS = {
   JOIN_REQUEST_APPROVED: 300,
   /** Cache TTL for an active verification prompt in seconds. */
   VERIFICATION_PROMPT: 300,
+  /** Short-lived fast-path block state for recently failed/unverified users. */
+  ENFORCEMENT_BLOCK: 300,
 } as const;
 
 /** Maximum time to wait for in-flight updates during shutdown. */

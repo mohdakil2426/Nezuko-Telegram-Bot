@@ -9,7 +9,7 @@
 
 "use client";
 
-import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
+import { queryKeys, STALE_TIMES } from "@/lib/query-keys";
 import * as chartsService from "@/lib/services/charts.service";
 import type { TrendsParams } from "@/lib/services/types";
 import { useRealtimeChart } from "@/lib/hooks/use-realtime-insforge";
@@ -26,7 +26,7 @@ export function useVerificationDistribution() {
     queryKey: queryKeys.charts.verificationDistribution(),
     queryFn: chartsService.getVerificationDistribution,
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });
@@ -40,7 +40,7 @@ export function useCacheBreakdown() {
     queryKey: queryKeys.charts.cacheBreakdown(),
     queryFn: chartsService.getCacheBreakdown,
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });
@@ -54,7 +54,7 @@ export function useGroupsStatusDistribution() {
     queryKey: queryKeys.charts.groupsStatus(),
     queryFn: chartsService.getGroupsStatusDistribution,
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });
@@ -68,7 +68,7 @@ export function useApiCallsDistribution() {
     queryKey: queryKeys.charts.apiCalls(),
     queryFn: chartsService.getApiCallsDistribution,
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });
@@ -86,7 +86,7 @@ export function useHourlyActivity() {
     queryKey: queryKeys.charts.hourlyActivity(),
     queryFn: chartsService.getHourlyActivity,
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });
@@ -100,7 +100,7 @@ export function useLatencyDistribution(params?: TrendsParams) {
     queryKey: queryKeys.charts.latencyDistribution(params as Record<string, unknown>),
     queryFn: () => chartsService.getLatencyDistribution(params),
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });
@@ -114,7 +114,7 @@ export function useTopGroups() {
     queryKey: queryKeys.charts.topGroups(),
     queryFn: chartsService.getTopGroups,
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });
@@ -132,7 +132,7 @@ export function useCacheHitRateTrend(params?: TrendsParams) {
     queryKey: queryKeys.charts.cacheHitRateTrend(params as Record<string, unknown>),
     queryFn: () => chartsService.getCacheHitRateTrend(params),
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });
@@ -146,7 +146,7 @@ export function useLatencyTrend(params?: TrendsParams) {
     queryKey: queryKeys.charts.latencyTrend(params as Record<string, unknown>),
     queryFn: () => chartsService.getLatencyTrend(params),
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });
@@ -164,7 +164,7 @@ export function useBotHealthMetrics() {
     queryKey: queryKeys.charts.botHealth(),
     queryFn: chartsService.getBotHealthMetrics,
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard", "bot_status"],
     invalidateOnEvents: ["status_changed"],
   });
@@ -178,7 +178,7 @@ export function useMembersChart() {
     queryKey: queryKeys.charts.membersChart(),
     queryFn: chartsService.getMembersChartData,
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });

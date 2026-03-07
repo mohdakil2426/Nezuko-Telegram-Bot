@@ -2,7 +2,7 @@
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — `apps/bot/` preserved for reference only. Not maintained.
-> **Last Updated**: 2026-03-07 (Phase 112)
+> **Last Updated**: 2026-03-07 (Phase 113)
 
 ---
 
@@ -62,7 +62,7 @@ apps/grammy/src/
 │   ├── fallback.ts       # Catch-all (always last)
 │   └── migration.ts      # my_chat_member handler — group migration
 ├── services/
-│   ├── verification.ts   # verifyMembership() — multi-channel AND logic + explicit verify/message recheck bypass
+│   ├── verification.ts   # verifyMembership() — multi-channel AND logic + explicit verify/message recheck bypass, preloaded channels, parallel checks
 │   ├── verification-prompt.ts # Active prompt tracking + safe prompt deletion helpers
 │   ├── idempotency.ts    # acquireIdempotencyLock() — short-lived Redis NX guards
 │   ├── protection.ts     # muteUser(), unmuteUser(), kickUser()
@@ -292,14 +292,18 @@ if (result.success) {
 // required-channel chat_member event -> write member cache
 // if left/kicked:
 //   invalidate verified cache for every linked group
+//   seed short-lived enforcement_block cache
+//   silently re-mute linked groups immediately
 //   do not prompt linked groups immediately
 //   rely on message-path enforcement for visible prompting
 
 // 6. Group message path
 // if verified cache hit -> allow
+// else if enforcement_block is set and all member caches are positive:
+//   clear block + reseed verified cache + allow
 // else if latest DB verification is still fresh -> reseed cache and allow
 // else:
-//   re-run verifyMembership(..., { bypassNegativeCache: true })
+//   re-run verifyMembership(..., { bypassNegativeCache: true, channels })
 //   success -> reseed cache and allow
 //   failure -> delete message + mute + log restricted + send one deduped prompt
 ```
@@ -343,6 +347,22 @@ if (!lockAcquired) {
 }
 
 // Only the lock winner performs verification + prompt work.
+```
+
+### 8.7 — Fast Enforcement Block State (Phase 113)
+
+```typescript
+const blockKey = `enforcement_block:${groupId}:${userId}`;
+
+// Required-channel leave:
+await cache.set(blockKey, "1", "EX", 300);
+await muteUser(api, groupId, userId);
+
+// Group message path:
+//   if blockKey exists and all member caches are now "1":
+//     clear block + reseed verified cache + allow
+//   otherwise:
+//     skip the latest-verification DB read and verify using preloaded channels
 ```
 
 ### 8.1 — Membership Cache Rules (Phase 108)
@@ -536,6 +556,19 @@ useEffect(() => {
   disconnectRef.current = disconnect;
 }, [disconnect]);
 useEffect(() => () => disconnectRef.current(), []); // unmount only
+```
+
+### 16 — Dashboard Realtime Coordinator (Phase 113)
+
+```tsx
+<QueryClientProvider client={queryClient}>
+  <RealtimeQueryCoordinatorProvider>{children}</RealtimeQueryCoordinatorProvider>
+</QueryClientProvider>
+
+// The coordinator subscribes once, patches cache for logs/activity/bots,
+// and centrally invalidates aggregate dashboard/analytics/chart queries.
+// useRealtimeChart() now consumes connection state from the coordinator
+// instead of mounting its own websocket subscription per widget.
 ```
 
 ### 15 — FK-Safe Owner Upsert (Phase 105)
@@ -745,4 +778,4 @@ const { period, summary } = extractEnvelopeMetadata(data);
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 112 — delayed prompt flow and burst-message cleanup)_
+_Last Updated: 2026-03-07 (Phase 113 — realtime hot-path and dashboard coordinator)_

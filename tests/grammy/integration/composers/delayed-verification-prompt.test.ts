@@ -69,7 +69,7 @@ describe("delayed verification prompt flow", () => {
 
   it("stays silent on required-channel leave", async () => {
     const { bot, apiCalls } = createConfiguredTestBot();
-    const { deps } = makeDepsWithPromptState();
+    const { deps, state } = makeDepsWithPromptState();
 
     vi.mocked(deps.db.getRecords).mockResolvedValueOnce([
       { group_id: GROUP_ID, channel_id: CHANNEL_ID },
@@ -87,8 +87,9 @@ describe("delayed verification prompt flow", () => {
     );
 
     expect(apiCalls.find((call) => call.method === "sendMessage")).toBeUndefined();
-    expect(apiCalls.find((call) => call.method === "restrictChatMember")).toBeUndefined();
+    expect(apiCalls.find((call) => call.method === "restrictChatMember")).toBeDefined();
     expect(deps.cache.delMany).toHaveBeenCalledWith([`verified:${GROUP_ID}:${USER_ID}`]);
+    expect(state.get(`enforcement_block:${GROUP_ID}:${USER_ID}`)).toBe("1");
   });
 
   it("deletes the first blocked message, restricts again, and sends one prompt", async () => {
@@ -129,6 +130,32 @@ describe("delayed verification prompt flow", () => {
     expect(sendIndex).toBeGreaterThan(restrictIndex);
     expect(apiCalls.filter((call) => call.method === "sendMessage")).toHaveLength(1);
     expect(state.get(`verification_prompt:${GROUP_ID}:${USER_ID}`)).toBeTruthy();
+  });
+
+  it("lets a user talk again when all required channels are already restored in cache", async () => {
+    const { bot, apiCalls } = createConfiguredTestBot();
+    const { deps, state } = makeDepsWithPromptState({
+      [`enforcement_block:${GROUP_ID}:${USER_ID}`]: "1",
+      [`member:${CHANNEL_ID}:${USER_ID}`]: "1",
+    });
+
+    vi.mocked(deps.db.rpc).mockResolvedValue(CONTRACT);
+
+    bot.use(contextEnricher(deps));
+    bot.use(eventsComposer);
+
+    await bot.handleUpdate(
+      createMessageUpdate({
+        text: "i am back",
+        from: { id: USER_ID, first_name: "User" },
+        chat: { id: GROUP_ID, type: "supergroup", title: "Test Group" },
+      })
+    );
+
+    expect(apiCalls.find((call) => call.method === "deleteMessage")).toBeUndefined();
+    expect(apiCalls.find((call) => call.method === "sendMessage")).toBeUndefined();
+    expect(state.get(`verified:${GROUP_ID}:${USER_ID}`)).toBe("1");
+    expect(state.has(`enforcement_block:${GROUP_ID}:${USER_ID}`)).toBe(false);
   });
 
   it("does not resend the prompt while one is already active", async () => {

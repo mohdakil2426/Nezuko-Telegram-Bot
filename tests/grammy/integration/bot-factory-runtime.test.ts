@@ -200,7 +200,13 @@ describe("bot-factory runtime wiring", () => {
     );
 
     expect(deps.cache.delMany).toHaveBeenCalledWith([`verified:-1001234567890:111222333`]);
-    expect(apiCalls.find((call) => call.method === "restrictChatMember")).toBeUndefined();
+    expect(apiCalls.find((call) => call.method === "restrictChatMember")).toBeDefined();
+    expect(deps.cache.set).toHaveBeenCalledWith(
+      "enforcement_block:-1001234567890:111222333",
+      "1",
+      "EX",
+      300
+    );
     expect(apiCalls.find((call) => call.method === "sendMessage")).toBeUndefined();
   });
 });

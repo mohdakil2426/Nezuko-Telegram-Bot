@@ -251,7 +251,11 @@ export default function LogsPage() {
   // Combined logs: realtime first, then initial (suppressed when cleared)
   const logs = useMemo(() => {
     const initial = isCleared ? [] : initialLogEntries;
-    return [...realtimeLogs, ...initial].slice(0, 1000);
+    const combined = [...realtimeLogs, ...initial];
+    const unique = combined.filter(
+      (item, index, self) => index === self.findIndex((candidate) => candidate.id === item.id)
+    );
+    return unique.slice(0, 1000);
   }, [realtimeLogs, initialLogEntries, isCleared]);
 
   // Note: Fallback polling is handled by `useLogs` hook via `useRealtimeChart`

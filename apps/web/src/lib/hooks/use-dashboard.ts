@@ -8,7 +8,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
+import { queryKeys, STALE_TIMES } from "@/lib/query-keys";
 import * as dashboardService from "@/lib/services/dashboard.service";
 import { useRealtimeChart } from "@/lib/hooks/use-realtime-insforge";
 
@@ -21,7 +21,7 @@ export function useDashboardStats() {
     queryKey: queryKeys.dashboard.stats(),
     queryFn: dashboardService.getDashboardStats,
     staleTime: STALE_TIMES.STANDARD,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard", "bot_status"],
     invalidateOnEvents: ["verification", "status_changed"],
   });
@@ -39,7 +39,7 @@ export function useChartData(days = 30) {
     queryKey: queryKeys.dashboard.chart(days),
     queryFn: () => dashboardService.getChartData(days),
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });
@@ -54,7 +54,7 @@ export function useActivity(limit = 10) {
     queryKey: queryKeys.dashboard.activity(limit),
     queryFn: () => dashboardService.getActivity(limit),
     staleTime: STALE_TIMES.SHORT,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });

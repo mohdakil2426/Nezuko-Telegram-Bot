@@ -7,13 +7,25 @@
  * Replaces SSE-based implementation with InsForge Realtime SDK.
  */
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import {
+  createElement,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  type ReactNode,
+} from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SocketMessage } from "@insforge/sdk";
 import { insforge } from "@/lib/insforge";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { DEV_LOGIN } from "@/lib/api/config";
 import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
+import type { ActivityItem } from "@/lib/services/types";
+import type { LogsResponse } from "@/lib/services/logs.service";
+import type { BotListResponse } from "@/lib/services/bots.service";
 
 const sharedRealtimeState: {
   channelRefs: Map<string, number>;
@@ -169,6 +181,133 @@ interface UseInsForgeRealtimeReturn {
    * Clear stored events
    */
   clearEvents: () => void;
+}
+
+interface RealtimeCoordinatorContextValue {
+  connectionState: ConnectionState;
+  isConnected: boolean;
+  isReconnecting: boolean;
+}
+
+const RealtimeCoordinatorContext = createContext<RealtimeCoordinatorContextValue | null>(null);
+
+function buildActivityItemFromVerification(event: RealtimeEvent): ActivityItem {
+  const status = typeof event.data.status === "string" ? event.data.status : "verified";
+  const userId = String(event.data.user_id ?? "unknown");
+  const groupId = String(event.data.group_id ?? "unknown");
+
+  return {
+    id: String(event.data.id ?? event.timestamp),
+    type: "verification",
+    description: `User ${userId} ${status} in group ${groupId}`,
+    timestamp: event.timestamp,
+    metadata: event.data,
+  };
+}
+
+function patchActivityCache(queryClient: ReturnType<typeof useQueryClient>, event: RealtimeEvent): void {
+  const nextItem = buildActivityItemFromVerification(event);
+  const queries = queryClient.getQueryCache().findAll({ queryKey: queryKeys.dashboard.all });
+
+  for (const query of queries) {
+    if (!Array.isArray(query.queryKey) || query.queryKey[1] !== "activity") {
+      continue;
+    }
+
+    const params =
+      query.queryKey.length > 2 && typeof query.queryKey[2] === "object" && query.queryKey[2] !== null
+        ? (query.queryKey[2] as { limit?: number })
+        : undefined;
+    const limit = params?.limit ?? 10;
+
+    queryClient.setQueryData<ActivityItem[]>(query.queryKey, (old) => {
+      if (!old) {
+        return old;
+      }
+
+      const deduped = [nextItem, ...old.filter((item) => item.id !== nextItem.id)];
+      return deduped.slice(0, limit);
+    });
+  }
+}
+
+function patchLogsCache(queryClient: ReturnType<typeof useQueryClient>, event: RealtimeEvent): void {
+  const nextLog = {
+    id: String(event.data.id ?? `rt-${event.timestamp}`),
+    level: String(event.data.level ?? "INFO"),
+    message: String(event.data.message ?? "Log entry"),
+    timestamp: String(event.data.timestamp ?? event.timestamp),
+    logger:
+      typeof event.data.logger === "string" ? event.data.logger : undefined,
+  };
+
+  const queries = queryClient.getQueryCache().findAll({ queryKey: queryKeys.logs.all });
+  for (const query of queries) {
+    if (!Array.isArray(query.queryKey) || query.queryKey[1] !== "list") {
+      continue;
+    }
+
+    const params =
+      query.queryKey.length > 2 && typeof query.queryKey[2] === "object" && query.queryKey[2] !== null
+        ? (query.queryKey[2] as { limit?: number; level?: string })
+        : undefined;
+    const limit = params?.limit ?? 100;
+    const level = params?.level;
+    const matchesLevel =
+      level === undefined || level === "all" || level.toUpperCase() === nextLog.level.toUpperCase();
+
+    queryClient.setQueryData<LogsResponse>(query.queryKey, (old) => {
+      if (!old || !matchesLevel) {
+        return old;
+      }
+
+      const items = [nextLog, ...old.items.filter((item) => item.id !== nextLog.id)].slice(0, limit);
+      return {
+        items,
+        total: Math.max(old.total, items.length),
+      };
+    });
+  }
+}
+
+function patchBotsCache(queryClient: ReturnType<typeof useQueryClient>, event: RealtimeEvent): void {
+  const operation = String(event.data.operation ?? "");
+  const instanceId = Number(event.data.id);
+  const isDeleted = Boolean(event.data.is_deleted);
+  const isActive = Boolean(event.data.is_active);
+
+  queryClient.setQueryData<BotListResponse>(queryKeys.bots.list(), (old) => {
+    if (!old) {
+      return old;
+    }
+
+    const existingIndex = old.bots.findIndex((bot) => bot.id === instanceId);
+    if (existingIndex === -1) {
+      return old;
+    }
+
+    if (operation === "DELETE" || isDeleted) {
+      const bots = old.bots.filter((bot) => bot.id !== instanceId);
+      return {
+        bots,
+        total: Math.max(0, bots.length),
+      };
+    }
+
+    const bots = old.bots.map((bot) =>
+      bot.id === instanceId
+        ? {
+            ...bot,
+            is_active: isActive,
+          }
+        : bot
+    );
+
+    return {
+      ...old,
+      bots,
+    };
+  });
 }
 
 /**
@@ -409,32 +548,87 @@ export function useInsForgeRealtime(
 }
 
 /**
+ * App-wide realtime coordinator.
+ * Maintains a single shared subscription set for query invalidation/cache patching,
+ * then exposes only connection state to query hooks.
+ */
+export function RealtimeQueryCoordinatorProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
+  const realtime = useInsForgeRealtime({
+    channels: ["dashboard", "bot_status", "logs", "bot_instances"],
+    filterTypes: ["verification", "status_changed", "new_log", "bot_instance_changed"],
+  });
+
+  useEffect(() => {
+    if (!realtime.lastEvent || !realtime.isConnected) {
+      return;
+    }
+
+    switch (realtime.lastEvent.type) {
+      case "verification":
+        patchActivityCache(queryClient, realtime.lastEvent);
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.charts.all });
+        break;
+      case "status_changed":
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.charts.botHealth() });
+        break;
+      case "new_log":
+        patchLogsCache(queryClient, realtime.lastEvent);
+        break;
+      case "bot_instance_changed":
+        patchBotsCache(queryClient, realtime.lastEvent);
+        queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
+        break;
+      default:
+        break;
+    }
+  }, [realtime.isConnected, realtime.lastEvent, queryClient]);
+
+  return createElement(
+    RealtimeCoordinatorContext.Provider,
+    {
+      value: {
+        connectionState: realtime.connectionState,
+        isConnected: realtime.isConnected,
+        isReconnecting: realtime.isReconnecting,
+      },
+    },
+    children
+  );
+}
+
+function useRealtimeCoordinator() {
+  return useContext(RealtimeCoordinatorContext);
+}
+
+/**
  * Hook for dashboard realtime updates.
  * Subscribes to dashboard, bot_status, bot_instances channels.
  */
 export function useDashboardRealtime() {
-  const queryClient = useQueryClient();
-  const realtime = useInsForgeRealtime({
+  const realtime = useRealtimeCoordinator();
+  const fallback = useInsForgeRealtime({
     channels: ["dashboard", "bot_status", "bot_instances"],
     filterTypes: ["verification", "status_changed", "bot_instance_changed"],
   });
 
-  // Invalidate dashboard queries when a real event arrives.
-  useEffect(() => {
-    if (realtime.lastEvent && realtime.isConnected) {
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.activity() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.analytics.overview() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.analytics.verificationTrends() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.analytics.userGrowth() });
-      // Bot instance changes: invalidate bots list too
-      if (realtime.lastEvent.type === "bot_instance_changed") {
-        queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
-      }
-    }
-  }, [realtime.lastEvent, realtime.isConnected, queryClient]);
+  if (realtime) {
+    return {
+      ...realtime,
+      events: [],
+      lastEvent: null,
+      totalEventCount: 0,
+      connect: async () => {},
+      disconnect: () => {},
+      clearEvents: () => {},
+    };
+  }
 
-  return realtime;
+  return fallback;
 }
 
 /**
@@ -473,7 +667,7 @@ interface UseRealtimeChartOptions<T> {
   /** Time before data is considered stale (default: 30s) */
   staleTime?: number;
   /** Polling interval when realtime is connected (default: 60s) */
-  refetchInterval?: number;
+  refetchInterval?: number | false;
   /** Event types that should trigger a refetch */
   invalidateOnEvents?: string[];
   /** Channels to subscribe to for events */
@@ -499,22 +693,9 @@ export function useRealtimeChart<T>({
   queryFn,
   staleTime = STALE_TIMES.LONG,
   refetchInterval = REFETCH_INTERVALS.SLOW,
-  invalidateOnEvents = ["verification", "status_changed"],
-  channels = ["dashboard", "bot_status"],
 }: UseRealtimeChartOptions<T>) {
-  const queryClient = useQueryClient();
-  const { events, isConnected } = useInsForgeRealtime({
-    channels,
-    filterTypes: invalidateOnEvents,
-  });
-
-  // Invalidate query when a new event arrives (first element changes, not .length)
-  useEffect(() => {
-    if (events[0] && isConnected) {
-      // Invalidate the query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey });
-    }
-  }, [events[0], isConnected, queryClient, queryKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const realtime = useRealtimeCoordinator();
+  const isConnected = realtime?.isConnected ?? false;
 
   return useQuery({
     queryKey,

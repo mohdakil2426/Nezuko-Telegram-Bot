@@ -1,13 +1,13 @@
 # Progress: What Works, What's Left
 
-## Current Phase: 112 — Burst Message Enforcement Cleanup
+## Current Phase: 113 — Realtime Hot-Path + Dashboard Coordinator
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — preserved in `apps/bot/` for historical reference only. Not maintained.
 
 ---
 
-## ✅ What Works (Confirmed as of Phase 112)
+## ✅ What Works (Confirmed as of Phase 113)
 
 ### grammY Bot Runtime
 
@@ -25,6 +25,8 @@
 | **Message-path revalidation** | Stale verified users are rechecked on group messages; failures now mute + prompt | ✅ Phase 110 |
 | **Delayed verification prompt** | Channel leave is silent; first blocked group message deletes, restricts, and sends one deduped prompt | ✅ Phase 111 |
 | **Burst blocked-message cleanup** | Messages that lose the in-flight enforcement lock are still deleted immediately, preventing older spam from remaining visible | ✅ Phase 112 |
+| **Silent re-restriction on channel leave** | Required-channel leave now also re-mutes linked groups and seeds fast enforcement-block cache state | ✅ Phase 113 |
+| **Fast block-state message path** | Message enforcement now uses Redis/member-cache state before DB reads and reuses preloaded channel contract data | ✅ Phase 113 |
 | **Join-request-first preference** | `protected_groups.params.join_request_preferred=true` by default     | ✅ Phase 109 |
 | **Join restriction**           | `eventsComposer` — mutes on `chat_member` new member                    | ✅ Ships     |
 | **Join request handling**      | `eventsComposer` — `chat_join_request` approve/decline + DM             | ✅ Phase 101 |
@@ -50,7 +52,7 @@
 | **Pino logger**                | Structured JSON, child loggers per module                               | ✅ Ships     |
 | **DB log transport**           | `db-log-transport.ts` — WARN+ logs → `admin_logs` (admin_logs realtime) | ✅ Phase 105 |
 | **API call logging**           | `apiLogTransformer` in bot-factory — all calls → `api_call_log`         | ✅ Phase 105 |
-| **Vitest tests**               | 145/145 tests passing (25 suites)                                       | ✅ Phase 112 |
+| **Vitest tests**               | 147/147 tests passing (25 suites)                                       | ✅ Phase 113 |
 
 ### Database Schema (InsForge — Migration 023)
 
@@ -84,6 +86,7 @@
 | Settings page                      | ✅     |
 | Auth (InsForge + proxy guard)      | ✅     |
 | Realtime updates (WebSocket)       | ✅     |
+| Central realtime coordinator       | ✅ Phase 113 |
 | Dark/Light theme                   | ✅     |
 | Optimistic mutations with rollback | ✅     |
 
@@ -124,17 +127,18 @@
 | Live migration 024 not yet applied                | Medium  | Bot now falls back without the RPC, but live schema should still be aligned |
 | `get_user_growth` analytics RPC is broken live    | Medium  | Postgres logs show a `verification_log.user_id` query bug |
 | Join-request-first flow still needs full live validation | Pending | Core verify path is now confirmed working live |
+| Groups/channels cross-session realtime still incomplete | Medium | Dashboard now has a central realtime coordinator, but true live updates for group/channel admin tables still need dedicated InsForge triggers |
 | grammY format check still fails on unrelated files | Low | `apps/grammy/src/database/verification.repo.ts`, `apps/grammy/src/services/idempotency.ts`, and `apps/grammy/src/utils/health.ts` have pre-existing Prettier drift |
 
 ---
 
 ## 🏗️ Next Steps
 
-1. **Apply migration 024 live** — add `get_group_verification_contract` and backfill `join_request_preferred` so fallback is no longer needed.
-2. **Validate join-request-first flow live** — verify request-only invite flow approves subscribed users without mute fallback.
-3. **Fix `get_user_growth` RPC** — backend analytics query currently references `verification_log` incorrectly.
-4. **Docker build** — update `Dockerfile` to point at `apps/grammy` (`bun install` + `bun run build` + `node dist/main.js`).
-5. **CI/CD** — update GitHub Actions workflow to run the full quality gate (type-check, lint, format:check, test, build) on every push.
+1. **Add InsForge triggers for groups/channels/link rows** — finish true cross-session dashboard realtime for admin entity changes.
+2. **Apply migration 024 live** — add `get_group_verification_contract` and backfill `join_request_preferred` so fallback is no longer needed.
+3. **Validate join-request-first flow live** — verify request-only invite flow approves subscribed users without mute fallback.
+4. **Fix `get_user_growth` RPC** — backend analytics query currently references `verification_log` incorrectly.
+5. **Docker build** — update `Dockerfile` to point at `apps/grammy` (`bun install` + `bun run build` + `node dist/main.js`).
 
 ---
 
@@ -152,4 +156,4 @@
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 112 — burst-message cleanup documented)_
+_Last Updated: 2026-03-07 (Phase 114 — CLI script modernization and Python reference purge completed)_

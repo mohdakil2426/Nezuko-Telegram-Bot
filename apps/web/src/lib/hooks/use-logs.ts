@@ -7,7 +7,7 @@
 
 "use client";
 
-import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
+import { queryKeys, STALE_TIMES } from "@/lib/query-keys";
 import * as logsService from "@/lib/services/logs.service";
 import { useRealtimeChart } from "@/lib/hooks/use-realtime-insforge";
 
@@ -20,7 +20,7 @@ export function useLogs(limit = 100, level?: string) {
     queryKey: queryKeys.logs.list(limit, level),
     queryFn: () => logsService.getLogs(limit, level),
     staleTime: STALE_TIMES.SHORT,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["logs"],
     invalidateOnEvents: ["new_log", "error", "warning"],
   });

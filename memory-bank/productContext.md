@@ -42,6 +42,7 @@ Preferred flow when admins use join-request invite links:
 The verify step must be resilient to users joining a required channel after an initial failed attempt. Explicit verify clicks should always prefer fresh membership confirmation over stale negative cache state.
 If a previously verified user later leaves a required channel, the system must revoke access again even when Telegram channel-leave delivery is delayed or missed.
 For post-verification channel leaves, the group should stay quiet until the user actually tries to chat again. On that first blocked message, the bot should delete the message immediately, restrict again, and send one deduplicated verification prompt.
+To reduce burst spam before that first visible prompt, required-channel leave now also attempts a silent re-restriction immediately across linked groups.
 
 ### For Administrators
 
@@ -100,7 +101,7 @@ Bot (grammY) ← socket.io-client          ← InsForge Realtime (Socket.IO)
 | Verification Latency (p99) | <150ms  | ✅ Achieved  |
 | Dashboard Pages            | 10      | ✅ Complete  |
 | Uptime                     | 99.9%   | ✅ On Track  |
-| grammY Tests               | 145/145 | ✅ Phase 112 |
+| grammY Tests               | 147/147 | ✅ Phase 113 |
 
 ---
 
@@ -112,4 +113,4 @@ The platform was originally built with Python + python-telegram-bot v22.6. That 
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 112 — delayed prompt enforcement behavior documented)_
+_Last Updated: 2026-03-07 (Phase 113 — realtime behavior updated for bot hot path and dashboard coordinator)_

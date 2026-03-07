@@ -230,6 +230,20 @@ describe("verifyMembership", () => {
     expect(api.getChatMember).not.toHaveBeenCalled();
   });
 
+  it("uses preloaded channels without refetching the group contract", async () => {
+    const channels = [makeChannel(901, "preloaded")];
+    vi.mocked(cache.get).mockResolvedValue("1");
+    const api = createMockApi();
+
+    const result = await verifyMembership(api as never, db, cache, 1, 999, undefined, {
+      channels,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.checkedChannelIds).toEqual([901]);
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
   it("Redis down — graceful degradation: falls back to API (EC-59)", async () => {
     vi.mocked(db.rpc).mockResolvedValueOnce({
       group_id: 1,

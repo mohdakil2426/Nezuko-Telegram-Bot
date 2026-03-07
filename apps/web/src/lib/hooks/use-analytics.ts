@@ -7,7 +7,7 @@
 
 "use client";
 
-import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
+import { queryKeys, STALE_TIMES } from "@/lib/query-keys";
 import * as analyticsService from "@/lib/services/analytics.service";
 import type { TrendsParams } from "@/lib/services/types";
 import { useRealtimeChart } from "@/lib/hooks/use-realtime-insforge";
@@ -21,7 +21,7 @@ export function useVerificationTrends(params?: TrendsParams) {
     queryKey: queryKeys.analytics.verificationTrends(params as Record<string, unknown>),
     queryFn: () => analyticsService.getVerificationTrends(params),
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });
@@ -36,7 +36,7 @@ export function useUserGrowth(params?: TrendsParams) {
     queryKey: queryKeys.analytics.userGrowth(params as Record<string, unknown>),
     queryFn: () => analyticsService.getUserGrowth(params),
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });
@@ -51,7 +51,7 @@ export function useAnalyticsOverview(period?: string) {
     queryKey: queryKeys.analytics.overview(period),
     queryFn: () => analyticsService.getAnalyticsOverview(period),
     staleTime: STALE_TIMES.STANDARD,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
+    refetchInterval: false,
     channels: ["dashboard", "bot_status"],
     invalidateOnEvents: ["verification", "status_changed"],
   });

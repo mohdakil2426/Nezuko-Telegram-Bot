@@ -197,8 +197,10 @@ bun run build         # next build → 0 errors
 - Verification/join-request idempotency lock: `INTERVALS.IDEMPOTENCY_LOCK=15` seconds
 - Active verification prompt TTL: `INTERVALS.VERIFICATION_PROMPT=300` seconds
 - Verified-state freshness recheck: `VERIFIED_RECHECK_INTERVAL_MS=600000` milliseconds
+- Fast enforcement block TTL: `INTERVALS.ENFORCEMENT_BLOCK=300` seconds
 - Explicit verify clicks bypass cached negative membership results and force a fresh Telegram `getChatMember` check
 - Group message enforcement revalidates stale previously verified users and re-restricts when needed
+- Required-channel leave now also seeds `enforcement_block:{groupId}:{userId}` and attempts silent re-restriction in linked groups
 - When multiple blocked messages arrive while one message-enforcement pass already holds the lock, lock-losing updates now still delete their own message immediately before returning
 
 ---
@@ -249,4 +251,4 @@ main()
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 112 — prompt TTL and burst-message cleanup documented)_
+_Last Updated: 2026-03-07 (Phase 113 — enforcement block TTL and dashboard coordinator documented)_
