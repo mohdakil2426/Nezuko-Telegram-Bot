@@ -23,9 +23,10 @@ import { insforge } from "@/lib/insforge";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { DEV_LOGIN } from "@/lib/api/config";
 import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
-import type { ActivityItem } from "@/lib/services/types";
+import type { ActivityItem, Group, Channel } from "@/lib/services/types";
 import type { LogsResponse } from "@/lib/services/logs.service";
 import type { BotListResponse } from "@/lib/services/bots.service";
+import type { GroupListResponse, ChannelListResponse } from "@/lib/services/types";
 
 const sharedRealtimeState: {
   channelRefs: Map<string, number>;
@@ -205,7 +206,10 @@ function buildActivityItemFromVerification(event: RealtimeEvent): ActivityItem {
   };
 }
 
-function patchActivityCache(queryClient: ReturnType<typeof useQueryClient>, event: RealtimeEvent): void {
+function patchActivityCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  event: RealtimeEvent
+): void {
   const nextItem = buildActivityItemFromVerification(event);
   const queries = queryClient.getQueryCache().findAll({ queryKey: queryKeys.dashboard.all });
 
@@ -215,7 +219,9 @@ function patchActivityCache(queryClient: ReturnType<typeof useQueryClient>, even
     }
 
     const params =
-      query.queryKey.length > 2 && typeof query.queryKey[2] === "object" && query.queryKey[2] !== null
+      query.queryKey.length > 2 &&
+      typeof query.queryKey[2] === "object" &&
+      query.queryKey[2] !== null
         ? (query.queryKey[2] as { limit?: number })
         : undefined;
     const limit = params?.limit ?? 10;
@@ -231,14 +237,16 @@ function patchActivityCache(queryClient: ReturnType<typeof useQueryClient>, even
   }
 }
 
-function patchLogsCache(queryClient: ReturnType<typeof useQueryClient>, event: RealtimeEvent): void {
+function patchLogsCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  event: RealtimeEvent
+): void {
   const nextLog = {
     id: String(event.data.id ?? `rt-${event.timestamp}`),
     level: String(event.data.level ?? "INFO"),
     message: String(event.data.message ?? "Log entry"),
     timestamp: String(event.data.timestamp ?? event.timestamp),
-    logger:
-      typeof event.data.logger === "string" ? event.data.logger : undefined,
+    logger: typeof event.data.logger === "string" ? event.data.logger : undefined,
   };
 
   const queries = queryClient.getQueryCache().findAll({ queryKey: queryKeys.logs.all });
@@ -248,7 +256,9 @@ function patchLogsCache(queryClient: ReturnType<typeof useQueryClient>, event: R
     }
 
     const params =
-      query.queryKey.length > 2 && typeof query.queryKey[2] === "object" && query.queryKey[2] !== null
+      query.queryKey.length > 2 &&
+      typeof query.queryKey[2] === "object" &&
+      query.queryKey[2] !== null
         ? (query.queryKey[2] as { limit?: number; level?: string })
         : undefined;
     const limit = params?.limit ?? 100;
@@ -261,7 +271,10 @@ function patchLogsCache(queryClient: ReturnType<typeof useQueryClient>, event: R
         return old;
       }
 
-      const items = [nextLog, ...old.items.filter((item) => item.id !== nextLog.id)].slice(0, limit);
+      const items = [nextLog, ...old.items.filter((item) => item.id !== nextLog.id)].slice(
+        0,
+        limit
+      );
       return {
         items,
         total: Math.max(old.total, items.length),
@@ -270,7 +283,10 @@ function patchLogsCache(queryClient: ReturnType<typeof useQueryClient>, event: R
   }
 }
 
-function patchBotsCache(queryClient: ReturnType<typeof useQueryClient>, event: RealtimeEvent): void {
+function patchBotsCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  event: RealtimeEvent
+): void {
   const operation = String(event.data.operation ?? "");
   const instanceId = Number(event.data.id);
   const isDeleted = Boolean(event.data.is_deleted);
@@ -308,6 +324,182 @@ function patchBotsCache(queryClient: ReturnType<typeof useQueryClient>, event: R
       bots,
     };
   });
+}
+
+function buildGroupFromRealtimeEvent(event: RealtimeEvent): Group {
+  return {
+    group_id: Number(event.data.group_id),
+    title: typeof event.data.title === "string" ? event.data.title : null,
+    enabled: Boolean(event.data.enabled),
+    params: undefined,
+    member_count: Number(event.data.member_count ?? 0),
+    linked_channels_count: Number(event.data.linked_channels_count ?? 0),
+    created_at: String(event.data.created_at ?? event.timestamp),
+    updated_at: typeof event.data.updated_at === "string" ? event.data.updated_at : null,
+  };
+}
+
+function patchGroupsCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  event: RealtimeEvent
+): void {
+  const operation = String(event.data.operation ?? "");
+  const nextGroup = buildGroupFromRealtimeEvent(event);
+  const queries = queryClient.getQueryCache().findAll({ queryKey: queryKeys.groups.all });
+
+  for (const query of queries) {
+    if (!Array.isArray(query.queryKey) || query.queryKey[1] !== "list") {
+      continue;
+    }
+
+    queryClient.setQueryData<GroupListResponse>(
+      query.queryKey,
+      (old: GroupListResponse | undefined) => {
+        if (!old) {
+          return old;
+        }
+
+        const exists = old.data.some((group: Group) => group.group_id === nextGroup.group_id);
+        let data = old.data;
+
+        if (operation === "DELETE") {
+          data = old.data.filter((group: Group) => group.group_id !== nextGroup.group_id);
+        } else if (exists) {
+          data = old.data.map((group: Group) =>
+            group.group_id === nextGroup.group_id ? { ...group, ...nextGroup } : group
+          );
+        } else if (operation === "INSERT") {
+          data = [nextGroup, ...old.data];
+        }
+
+        return {
+          ...old,
+          data,
+          meta: {
+            ...old.meta,
+            total_items:
+              operation === "DELETE"
+                ? Math.max(0, old.meta.total_items - (exists ? 1 : 0))
+                : operation === "INSERT" && !exists
+                  ? old.meta.total_items + 1
+                  : old.meta.total_items,
+            total_pages: Math.max(
+              1,
+              Math.ceil(
+                (operation === "DELETE"
+                  ? Math.max(0, old.meta.total_items - (exists ? 1 : 0))
+                  : operation === "INSERT" && !exists
+                    ? old.meta.total_items + 1
+                    : old.meta.total_items) / old.meta.per_page
+              )
+            ),
+          },
+        };
+      }
+    );
+  }
+
+  queryClient.invalidateQueries({ queryKey: queryKeys.groups.detail(nextGroup.group_id) });
+}
+
+function buildChannelFromRealtimeEvent(event: RealtimeEvent): Channel {
+  return {
+    channel_id: Number(event.data.channel_id),
+    title: typeof event.data.title === "string" ? event.data.title : null,
+    username: typeof event.data.username === "string" ? event.data.username : null,
+    invite_link: typeof event.data.invite_link === "string" ? event.data.invite_link : null,
+    subscriber_count: Number(event.data.subscriber_count ?? 0),
+    linked_groups_count: Number(event.data.linked_groups_count ?? 0),
+    created_at: String(event.data.created_at ?? event.timestamp),
+    updated_at: typeof event.data.updated_at === "string" ? event.data.updated_at : null,
+  };
+}
+
+function patchChannelsCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  event: RealtimeEvent
+): void {
+  const operation = String(event.data.operation ?? "");
+  const nextChannel = buildChannelFromRealtimeEvent(event);
+  const queries = queryClient.getQueryCache().findAll({ queryKey: queryKeys.channels.all });
+
+  for (const query of queries) {
+    if (!Array.isArray(query.queryKey) || query.queryKey[1] !== "list") {
+      continue;
+    }
+
+    queryClient.setQueryData<ChannelListResponse>(
+      query.queryKey,
+      (old: ChannelListResponse | undefined) => {
+        if (!old) {
+          return old;
+        }
+
+        const exists = old.data.some(
+          (channel: Channel) => channel.channel_id === nextChannel.channel_id
+        );
+        let data = old.data;
+
+        if (operation === "DELETE") {
+          data = old.data.filter(
+            (channel: Channel) => channel.channel_id !== nextChannel.channel_id
+          );
+        } else if (exists) {
+          data = old.data.map((channel: Channel) =>
+            channel.channel_id === nextChannel.channel_id ? { ...channel, ...nextChannel } : channel
+          );
+        } else if (operation === "INSERT") {
+          data = [nextChannel, ...old.data];
+        }
+
+        return {
+          ...old,
+          data,
+          meta: {
+            ...old.meta,
+            total_items:
+              operation === "DELETE"
+                ? Math.max(0, old.meta.total_items - (exists ? 1 : 0))
+                : operation === "INSERT" && !exists
+                  ? old.meta.total_items + 1
+                  : old.meta.total_items,
+            total_pages: Math.max(
+              1,
+              Math.ceil(
+                (operation === "DELETE"
+                  ? Math.max(0, old.meta.total_items - (exists ? 1 : 0))
+                  : operation === "INSERT" && !exists
+                    ? old.meta.total_items + 1
+                    : old.meta.total_items) / old.meta.per_page
+              )
+            ),
+          },
+        };
+      }
+    );
+  }
+
+  queryClient.invalidateQueries({ queryKey: queryKeys.channels.detail(nextChannel.channel_id) });
+}
+
+function invalidateGroupLinkCaches(
+  queryClient: ReturnType<typeof useQueryClient>,
+  event: RealtimeEvent
+): void {
+  const groupId = Number(event.data.group_id);
+  const channelId = Number(event.data.channel_id);
+
+  if (Number.isFinite(groupId)) {
+    queryClient.invalidateQueries({ queryKey: queryKeys.groups.detail(groupId) });
+  }
+  if (Number.isFinite(channelId)) {
+    queryClient.invalidateQueries({ queryKey: queryKeys.channels.detail(channelId) });
+  }
+
+  queryClient.invalidateQueries({ queryKey: queryKeys.groups.all });
+  queryClient.invalidateQueries({ queryKey: queryKeys.channels.all });
+  queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+  queryClient.invalidateQueries({ queryKey: queryKeys.charts.all });
 }
 
 /**
@@ -469,6 +661,9 @@ export function useInsForgeRealtime(
       "command_updated",
       "new_log",
       "bot_instance_changed",
+      "group_changed",
+      "channel_changed",
+      "group_link_changed",
       "error",
       "warning",
     ];
@@ -555,8 +750,24 @@ export function useInsForgeRealtime(
 export function RealtimeQueryCoordinatorProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const realtime = useInsForgeRealtime({
-    channels: ["dashboard", "bot_status", "logs", "bot_instances"],
-    filterTypes: ["verification", "status_changed", "new_log", "bot_instance_changed"],
+    channels: [
+      "dashboard",
+      "bot_status",
+      "logs",
+      "bot_instances",
+      "groups",
+      "channels",
+      "group_links",
+    ],
+    filterTypes: [
+      "verification",
+      "status_changed",
+      "new_log",
+      "bot_instance_changed",
+      "group_changed",
+      "channel_changed",
+      "group_link_changed",
+    ],
   });
 
   useEffect(() => {
@@ -583,6 +794,19 @@ export function RealtimeQueryCoordinatorProvider({ children }: { children: React
         patchBotsCache(queryClient, realtime.lastEvent);
         queryClient.invalidateQueries({ queryKey: queryKeys.bots.all });
         break;
+      case "group_changed":
+        patchGroupsCache(queryClient, realtime.lastEvent);
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.charts.all });
+        break;
+      case "channel_changed":
+        patchChannelsCache(queryClient, realtime.lastEvent);
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.charts.all });
+        break;
+      case "group_link_changed":
+        invalidateGroupLinkCaches(queryClient, realtime.lastEvent);
+        break;
       default:
         break;
     }
@@ -605,38 +829,66 @@ function useRealtimeCoordinator() {
   return useContext(RealtimeCoordinatorContext);
 }
 
-/**
- * Hook for dashboard realtime updates.
- * Subscribes to dashboard, bot_status, bot_instances channels.
- */
-export function useDashboardRealtime() {
+function createCoordinatorOnlyRealtimeState(
+  realtime: RealtimeCoordinatorContextValue
+): UseInsForgeRealtimeReturn {
+  return {
+    ...realtime,
+    events: [],
+    lastEvent: null,
+    totalEventCount: 0,
+    connect: async () => {},
+    disconnect: () => {},
+    clearEvents: () => {},
+  };
+}
+
+function useScopedRealtimeOrCoordinator(
+  options: UseInsForgeRealtimeOptions
+): UseInsForgeRealtimeReturn {
   const realtime = useRealtimeCoordinator();
   const fallback = useInsForgeRealtime({
-    channels: ["dashboard", "bot_status", "bot_instances"],
-    filterTypes: ["verification", "status_changed", "bot_instance_changed"],
+    ...options,
+    autoConnect: realtime ? false : (options.autoConnect ?? true),
   });
 
   if (realtime) {
-    return {
-      ...realtime,
-      events: [],
-      lastEvent: null,
-      totalEventCount: 0,
-      connect: async () => {},
-      disconnect: () => {},
-      clearEvents: () => {},
-    };
+    return createCoordinatorOnlyRealtimeState(realtime);
   }
 
   return fallback;
 }
 
+function useCoordinatorConnectionStateOrFallback(
+  options: UseInsForgeRealtimeOptions = {}
+): UseInsForgeRealtimeReturn {
+  const realtime = useRealtimeCoordinator();
+  const fallback = useInsForgeRealtime({
+    ...options,
+    autoConnect: realtime ? false : (options.autoConnect ?? true),
+  });
+
+  if (realtime && (options.channels === undefined || options.channels.length === 0)) {
+    return createCoordinatorOnlyRealtimeState(realtime);
+  }
+
+  return fallback;
+}
+
+
 /**
- * Hook for log stream realtime updates.
- * Subscribes to logs channel.
+ * Hook for dashboard realtime updates.
+ * Subscribes to dashboard, bot_status, bot_instances channels.
  */
+export function useDashboardRealtime() {
+  return useScopedRealtimeOrCoordinator({
+    channels: ["dashboard", "bot_status", "bot_instances"],
+    filterTypes: ["verification", "status_changed", "bot_instance_changed"],
+  });
+}
+
 export function useLogsRealtime() {
-  return useInsForgeRealtime({
+  return useScopedRealtimeOrCoordinator({
     channels: ["logs"],
     filterTypes: ["new_log", "error", "warning"],
   });
@@ -647,10 +899,11 @@ export function useLogsRealtime() {
  * Subscribes to commands channel.
  */
 export function useCommandsRealtime() {
-  return useInsForgeRealtime({
+  return useScopedRealtimeOrCoordinator({
     channels: ["commands"],
   });
 }
+
 
 // =============================================================================
 // Realtime Chart Hooks (replacing use-realtime-chart.ts)
@@ -761,7 +1014,7 @@ export function useRealtimeBotHealthChart<T>(
  * Used by activity-feed.tsx.
  */
 export function useRealtimeActivity() {
-  return useInsForgeRealtime({
+  return useScopedRealtimeOrCoordinator({
     channels: ["dashboard"],
     filterTypes: ["verification"],
   });
@@ -772,7 +1025,7 @@ export function useRealtimeActivity() {
  * Used by overview-cards.tsx.
  */
 export function useRealtimeAnalytics() {
-  return useInsForgeRealtime({
+  return useScopedRealtimeOrCoordinator({
     channels: ["dashboard", "bot_status"],
     filterTypes: ["verification", "status_changed"],
   });
@@ -792,7 +1045,7 @@ export function useRealtimeLogs() {
  * Used by the Bots page to react instantly to add/activate/deactivate/delete.
  */
 export function useBotsRealtime() {
-  return useInsForgeRealtime({
+  return useScopedRealtimeOrCoordinator({
     channels: ["bot_instances"],
     filterTypes: ["bot_instance_changed"],
   });
@@ -803,5 +1056,5 @@ export function useBotsRealtime() {
  * Used by connection-status.tsx.
  */
 export function useRealtime(options: UseInsForgeRealtimeOptions = {}) {
-  return useInsForgeRealtime(options);
+  return useCoordinatorConnectionStateOrFallback(options);
 }

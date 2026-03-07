@@ -66,13 +66,16 @@ export async function getLatestVerificationState(
   groupId: number,
   userId: number
 ): Promise<LatestVerificationState | null> {
-  const rows = await db.getRecords<Pick<VerificationLog, "status" | "timestamp">>("verification_log", {
-    group_id: `eq.${groupId}`,
-    user_id: `eq.${userId}`,
-    select: "status,timestamp",
-    order: "timestamp.desc,id.desc",
-    limit: "1",
-  });
+  const rows = await db.getRecords<Pick<VerificationLog, "status" | "timestamp">>(
+    "verification_log",
+    {
+      group_id: `eq.${groupId}`,
+      user_id: `eq.${userId}`,
+      select: "status,timestamp",
+      order: "timestamp.desc,id.desc",
+      limit: "1",
+    }
+  );
 
   const latest = rows[0];
   if (!latest) {

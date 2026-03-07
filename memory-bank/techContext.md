@@ -167,7 +167,7 @@ bun run build         # next build → 0 errors
 - **Latest Incremental Migration**: `insforge/migrations/024_verification_contract_hardening.sql`
 - **Tables**: 12 (all with RLS)
 - **RPC Functions**: analytics functions plus verification contract RPC after migration 024 is applied live
-- **Realtime Channels**: 5 (`dashboard`, `bot_status`, `logs`, `commands`, `bot_instances`)
+- **Realtime Channels**: live backend now exposes 9 enabled patterns (`dashboard`, `bot_status`, `logs`, `commands`, `bot_instances`, `groups`, `channels`, `group_links`, `verification:%`)
 - **Edge Functions**: 2 (`manage-bot`, `test-webhook/index.js`)
 - **Storage Buckets**: 2 (`bot-assets` public, `bot-exports` private)
 - **SQL Migrations**: 24 files (`001` through `023_fresh_grammy_schema.sql`)
@@ -200,7 +200,7 @@ bun run build         # next build → 0 errors
 - Fast enforcement block TTL: `INTERVALS.ENFORCEMENT_BLOCK=300` seconds
 - Explicit verify clicks bypass cached negative membership results and force a fresh Telegram `getChatMember` check
 - Group message enforcement revalidates stale previously verified users and re-restricts when needed
-- Required-channel leave now also seeds `enforcement_block:{groupId}:{userId}` and attempts silent re-restriction in linked groups
+- Required-channel leave now seeds `enforcement_block:{groupId}:{userId}` without immediately re-restricting linked groups; the next blocked group message performs the visible enforcement step
 - When multiple blocked messages arrive while one message-enforcement pass already holds the lock, lock-losing updates now still delete their own message immediately before returning
 
 ---

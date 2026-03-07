@@ -140,7 +140,9 @@ async function areAllRequiredChannelsSatisfiedFromCache(
     return true;
   }
 
-  const keys = channels.map((channel) => `${CACHE_NAMESPACES.MEMBER}:${channel.channel_id}:${userId}`);
+  const keys = channels.map(
+    (channel) => `${CACHE_NAMESPACES.MEMBER}:${channel.channel_id}:${userId}`
+  );
   const cached =
     ctx.cache.mget !== undefined
       ? await ctx.cache.mget(keys).catch(() => keys.map(() => null))
@@ -365,26 +367,9 @@ eventsComposer.on("chat_member", async (ctx, next) => {
     .catch(() => {});
 
   if (!isValidMember) {
-    await invalidateVerifiedState(
-      ctx,
-      links.map((link) => link.group_id),
-      user.id
-    );
-    await setEnforcementBlockState(
-      ctx,
-      links.map((link) => link.group_id),
-      user.id
-    );
-    await Promise.allSettled(
-      links.map((link) =>
-        muteUser(ctx.api, link.group_id, user.id).catch((err) => {
-          ctx.log.warn(
-            { err, groupId: link.group_id, userId: user.id, channelId: ctx.chat.id },
-            "Failed to re-restrict user after required-channel leave"
-          );
-        })
-      )
-    );
+    const linkedGroupIds = links.map((link) => link.group_id);
+    await invalidateVerifiedState(ctx, linkedGroupIds, user.id);
+    await setEnforcementBlockState(ctx, linkedGroupIds, user.id);
   }
 
   await next();
@@ -470,7 +455,9 @@ eventsComposer.on("message", async (ctx, next) => {
   let latestVerification = null;
   if (!hasEnforcementBlock) {
     latestVerification = await getLatestVerificationState(ctx.db, ctx.chat.id, ctx.from.id);
-    const latestVerifiedAt = latestVerification ? Date.parse(latestVerification.timestamp) : Number.NaN;
+    const latestVerifiedAt = latestVerification
+      ? Date.parse(latestVerification.timestamp)
+      : Number.NaN;
     const recentlyVerified =
       latestVerification?.status === "verified" &&
       Number.isFinite(latestVerifiedAt) &&
@@ -493,15 +480,18 @@ eventsComposer.on("message", async (ctx, next) => {
     return;
   }
 
-  let messageDeleted = false;
-  if (hasEnforcementBlock) {
-    messageDeleted = await deleteCurrentMessage(ctx);
-  }
-
-  const result = await verifyMembership(ctx.api, ctx.db, ctx.cache, ctx.chat.id, ctx.from.id, ctx.log, {
-    bypassNegativeCache: true,
-    channels,
-  });
+  const result = await verifyMembership(
+    ctx.api,
+    ctx.db,
+    ctx.cache,
+    ctx.chat.id,
+    ctx.from.id,
+    ctx.log,
+    {
+      bypassNegativeCache: true,
+      channels,
+    }
+  );
 
   if (result.success) {
     await ctx.cache.set(cacheKey, "1", "EX", VERIFIED_CACHE_TTL).catch(() => {});
@@ -528,9 +518,7 @@ eventsComposer.on("message", async (ctx, next) => {
     return;
   }
 
-  if (!messageDeleted) {
-    await deleteCurrentMessage(ctx);
-  }
+  await deleteCurrentMessage(ctx);
 
   await enforceVerificationFailure(
     ctx,

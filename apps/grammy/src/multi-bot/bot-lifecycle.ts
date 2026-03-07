@@ -7,11 +7,171 @@ import type { Logger } from "../utils/logger.js";
 import type { InsForgeClient } from "../core/insforge-client.js";
 import type { CacheClient } from "../core/cache.js";
 import type { BotInstance, BotRegistry } from "./bot-registry.js";
-import { ALLOWED_UPDATES } from "../core/constants.js";
+import { ALLOWED_UPDATES, INTERVALS, RUNNER_STALL_THRESHOLD_MS } from "../core/constants.js";
 import { syncBotCommands } from "../core/bot-commands.js";
 import { upsertBotStatus } from "../database/bot-status.repo.js";
 import { startStatusWriter } from "../services/status-writer.js";
 import { startMemberSync } from "../services/member-sync.js";
+
+interface ActivityTrackedBot extends Bot<NezukoContext> {
+  __nezukoGetLastUpdateAt?: () => number;
+  __nezukoGetLastPollAt?: () => number;
+}
+
+function getLastPollAt(bot: Bot<NezukoContext>): number | null {
+  const trackedBot = bot as ActivityTrackedBot;
+  return trackedBot.__nezukoGetLastPollAt?.() ?? null;
+}
+
+function startRunnerWatchdog(
+  instance: BotInstance,
+  botId: number,
+  log: Logger,
+  onStall: () => Promise<void>
+): NodeJS.Timeout {
+  let restarting = false;
+
+  const tick = async (): Promise<void> => {
+    if (instance.isStopping) return;
+
+    const lastPollAt = getLastPollAt(instance.bot);
+    if (lastPollAt === null) return;
+
+    const idleForMs = Date.now() - lastPollAt;
+    if (idleForMs < RUNNER_STALL_THRESHOLD_MS || restarting) {
+      return;
+    }
+
+    restarting = true;
+    log.error(
+      { botId, idleForMs, thresholdMs: RUNNER_STALL_THRESHOLD_MS },
+      "Bot runner appears stalled; restarting bot instance"
+    );
+
+    try {
+      await onStall();
+    } finally {
+      restarting = false;
+    }
+  };
+
+  const interval = setInterval(() => {
+    void tick().catch((err: unknown) => {
+      log.error(
+        { botId, error: err instanceof Error ? err.message : "unknown" },
+        "Runner watchdog failed"
+      );
+    });
+  }, INTERVALS.RUNNER_WATCHDOG);
+  interval.unref();
+  return interval;
+}
+
+function watchRunnerTask(
+  instance: BotInstance,
+  botId: number,
+  log: Logger,
+  onStop: () => Promise<void>
+): void {
+  const task = instance.runner.task();
+  if (!task) return;
+
+  void task.then(
+    () => {
+      if (instance.isStopping) {
+        return;
+      }
+      log.warn({ botId }, "grammY runner task completed unexpectedly");
+      return onStop();
+    },
+    (err: unknown) => {
+      if (instance.isStopping) {
+        return;
+      }
+      log.error(
+        { botId, error: err instanceof Error ? err.message : "unknown" },
+        "grammY runner task failed"
+      );
+      return onStop();
+    }
+  );
+}
+
+async function stopRunner(instance: BotInstance): Promise<void> {
+  instance.runner.stop();
+  await Promise.race([
+    instance.runner.task(),
+    new Promise<void>((resolve) => setTimeout(resolve, 8_000)),
+  ]);
+}
+
+function clearBotIntervals(instance: BotInstance): void {
+  clearInterval(instance.statusInterval);
+  clearInterval(instance.syncInterval);
+  if (instance.watchdogInterval) {
+    clearInterval(instance.watchdogInterval);
+  }
+}
+
+async function markBotOffline(
+  db: InsForgeClient,
+  botId: number,
+  botInstanceId: number,
+  startedAt: Date,
+  log: Logger
+): Promise<void> {
+  try {
+    await upsertBotStatus(db, {
+      bot_id: botId,
+      bot_instance_id: botInstanceId,
+      status: "offline",
+      uptime_seconds: Math.floor((Date.now() - startedAt.getTime()) / 1000),
+    });
+  } catch (err: unknown) {
+    log.warn({
+      botId,
+      msg: "Failed to update offline status in DB",
+      error: err instanceof Error ? err.message : "unknown",
+    });
+  }
+}
+
+async function restartInstance(
+  lifecycle: BotLifecycleManager,
+  config: BotStartConfig,
+  reason: string
+): Promise<void> {
+  lifecycle["logger"].warn({ botId: config.botId, reason }, "Restarting bot after runner issue");
+  await lifecycle.restartBot(config.botId, config);
+}
+
+function attachRunnerSupervision(
+  lifecycle: BotLifecycleManager,
+  instance: BotInstance,
+  config: BotStartConfig,
+  log: Logger
+): NodeJS.Timeout {
+  const onRunnerStop = async (): Promise<void> => {
+    if (lifecycle["registry"].get(config.botId) !== instance) return;
+    clearBotIntervals(instance);
+    lifecycle["registry"].remove(config.botId);
+    await markBotOffline(config.db, config.botId, config.botInstanceId, instance.startedAt, log);
+    await restartInstance(lifecycle, config, "runner-stopped");
+  };
+
+  watchRunnerTask(instance, config.botId, log, onRunnerStop);
+
+  return startRunnerWatchdog(instance, config.botId, log, async () => {
+    if (lifecycle["registry"].get(config.botId) !== instance) return;
+    instance.isStopping = true;
+    await stopRunner(instance);
+    clearBotIntervals(instance);
+    lifecycle["registry"].remove(config.botId);
+    await markBotOffline(config.db, config.botId, config.botInstanceId, instance.startedAt, log);
+    await restartInstance(lifecycle, config, "runner-stalled");
+  });
+}
+
 
 /** Configuration required to start a new bot instance. */
 export interface BotStartConfig {
@@ -131,7 +291,10 @@ export class BotLifecycleManager {
       syncInterval,
       runner,
       bot,
+      isStopping: false,
     };
+
+    instance.watchdogInterval = attachRunnerSupervision(this, instance, config, botLog);
 
     this.registry.add(instance);
 
@@ -158,38 +321,21 @@ export class BotLifecycleManager {
       return;
     }
 
+    instance.isStopping = true;
+
+    // Clear background intervals first so intentional shutdown cannot race into restart logic.
+    clearBotIntervals(instance);
+
     // Stop accepting new updates
-    instance.runner.stop();
-
-    // Await in-flight updates — max 8s (Decision 10 / SHUTDOWN_TIMEOUT_MS)
-    const SHUTDOWN_MAX_MS = 8_000;
-    await Promise.race([
-      instance.runner.task(),
-      new Promise<void>((resolve) => setTimeout(resolve, SHUTDOWN_MAX_MS)),
-    ]);
-
-    // Clear background intervals
-    clearInterval(instance.statusInterval);
-    clearInterval(instance.syncInterval);
+    await stopRunner(instance);
 
     // Remove from registry
     this.registry.remove(botId);
 
     // Update DB status to offline
-    try {
-      await upsertBotStatus(db, {
-        bot_id: botId,
-        bot_instance_id: botInstanceId,
-        status: "offline",
-        uptime_seconds: Math.floor((Date.now() - instance.startedAt.getTime()) / 1000),
-      });
-    } catch (err: unknown) {
-      this.logger.warn({
-        botId,
-        msg: "Failed to update offline status in DB",
-        error: err instanceof Error ? err.message : "unknown",
-      });
-    }
+    await markBotOffline(db, botId, botInstanceId, instance.startedAt, this.logger);
+
+    await instance.bot.api.close().catch(() => {});
 
     this.logger.info({ botId, msg: "Bot stopped" });
   }

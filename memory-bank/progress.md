@@ -1,6 +1,6 @@
 # Progress: What Works, What's Left
 
-## Current Phase: 113 — Realtime Hot-Path + Dashboard Coordinator
+## Current Phase: 114 — First-Message Enforcement Flow Restore (with 2026-03-07 follow-up fixes)
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — preserved in `apps/bot/` for historical reference only. Not maintained.
@@ -21,12 +21,13 @@
 | **Verification contract read** | RPC when available, direct-table fallback when live schema lags              | ✅ Phase 110 |
 | **Idempotent verify/join-request** | Redis NX locks suppress duplicate callback/join-request work       | ✅ Phase 109 |
 | **Channel-side cache invalidation** | Required-channel `chat_member` updates refresh membership/verified cache | ✅ Phase 109 |
-| **Post-leave re-restriction** | Leaving a required channel revokes verified state; visible prompting is deferred to message-path enforcement | ✅ Phase 111 |
+| **Post-leave enforcement state** | Leaving a required channel revokes verified state and seeds message-path enforcement without immediately re-muting the user | ✅ Phase 114 |
 | **Message-path revalidation** | Stale verified users are rechecked on group messages; failures now mute + prompt | ✅ Phase 110 |
 | **Delayed verification prompt** | Channel leave is silent; first blocked group message deletes, restricts, and sends one deduped prompt | ✅ Phase 111 |
 | **Burst blocked-message cleanup** | Messages that lose the in-flight enforcement lock are still deleted immediately, preventing older spam from remaining visible | ✅ Phase 112 |
-| **Silent re-restriction on channel leave** | Required-channel leave now also re-mutes linked groups and seeds fast enforcement-block cache state | ✅ Phase 113 |
+| **Silent leave handling** | Required-channel leave stays silent, seeds fast enforcement-block cache state, and waits for the next blocked group message before muting again | ✅ Phase 114 |
 | **Fast block-state message path** | Message enforcement now uses Redis/member-cache state before DB reads and reuses preloaded channel contract data | ✅ Phase 113 |
+| **First blocked message flow** | The first blocked group message after a required-channel leave now performs the full delete → restrict → one-prompt flow | ✅ Phase 114 |
 | **Join-request-first preference** | `protected_groups.params.join_request_preferred=true` by default     | ✅ Phase 109 |
 | **Join restriction**           | `eventsComposer` — mutes on `chat_member` new member                    | ✅ Ships     |
 | **Join request handling**      | `eventsComposer` — `chat_join_request` approve/decline + DM             | ✅ Phase 101 |
@@ -42,7 +43,9 @@
 | **Command worker**             | `command-worker.ts` — realtime + 30s poll                               | ✅ Phase 101 |
 | **Realtime client**            | `realtime-client.ts` — socket.io connection                             | ✅ Phase 101 |
 | **Graceful shutdown**          | `shutdown.ts` — SIGINT/SIGTERM handling                                 | ✅ Ships     |
-| **Health endpoint**            | `health.ts` — `/health` HTTP server                                     | ✅ Ships     |
+| **Health endpoint**            | `health.ts` — `/health` HTTP server with reporter/degraded support       | ✅ 2026-03-07 follow-up |
+| **Runner stall detection**     | Poll-heartbeat tracking + watchdog restart for managed bots, with intentional-stop guards | ✅ 2026-03-07 follow-up |
+| **Unexpected runner recovery** | `RunnerHandle.task()` supervision triggers bot restart on stop/failure   | ✅ 2026-03-07 follow-up |
 | **Duplicate-start protection** | `process-lock.ts` — blocks multiple local pollers for same mode/bot     | ✅ Phase 107 |
 | **HTML parse mode**            | Custom API transformer (not `parseMode()`)                              | ✅ Ships     |
 | **Redis L1 cache**             | `ioredis` with `nezuko:v2:` prefix, pipelined bulk delete, health helpers | ✅ Phase 110 |
@@ -52,7 +55,7 @@
 | **Pino logger**                | Structured JSON, child loggers per module                               | ✅ Ships     |
 | **DB log transport**           | `db-log-transport.ts` — WARN+ logs → `admin_logs` (admin_logs realtime) | ✅ Phase 105 |
 | **API call logging**           | `apiLogTransformer` in bot-factory — all calls → `api_call_log`         | ✅ Phase 105 |
-| **Vitest tests**               | 147/147 tests passing (25 suites)                                       | ✅ Phase 113 |
+| **Vitest tests**               | 151/151 tests passing (26 suites)                                       | ✅ 2026-03-07 follow-up |
 
 ### Database Schema (InsForge — Migration 023)
 
@@ -87,6 +90,7 @@
 | Auth (InsForge + proxy guard)      | ✅     |
 | Realtime updates (WebSocket)       | ✅     |
 | Central realtime coordinator       | ✅ Phase 113 |
+| Route-stable realtime wrappers     | ✅ 2026-03-07 follow-up |
 | Dark/Light theme                   | ✅     |
 | Optimistic mutations with rollback | ✅     |
 
@@ -124,6 +128,7 @@
 | Admin alert channel (bot→admin DM on error)       | Low         | Not wired; `bot.catch()` only logs              |
 | Webhook mode                                      | Not planned | grammY uses long-polling via `@grammyjs/runner` |
 | Existing duplicate bot processes must be stopped once | Medium  | Code now prevents new duplicates, but old local pollers can still conflict until restarted |
+| Standalone `/health` still lacks runner inactivity details | Low | Standalone mode now has self-healing runner recovery, but health output still only exposes static mode/db details |
 | Live migration 024 not yet applied                | Medium  | Bot now falls back without the RPC, but live schema should still be aligned |
 | `get_user_growth` analytics RPC is broken live    | Medium  | Postgres logs show a `verification_log.user_id` query bug |
 | Join-request-first flow still needs full live validation | Pending | Core verify path is now confirmed working live |
@@ -139,6 +144,7 @@
 3. **Validate join-request-first flow live** — verify request-only invite flow approves subscribed users without mute fallback.
 4. **Fix `get_user_growth` RPC** — backend analytics query currently references `verification_log` incorrectly.
 5. **Docker build** — update `Dockerfile` to point at `apps/grammy` (`bun install` + `bun run build` + `node dist/main.js`).
+6. **Expose standalone runner health** — make standalone `/health` include runner inactivity/degraded state like dashboard mode.
 
 ---
 
@@ -156,4 +162,4 @@
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 114 — CLI script modernization and Python reference purge completed)_
+_Last Updated: 2026-03-07 (Phase 114 + runner self-healing / health visibility follow-up documented)_

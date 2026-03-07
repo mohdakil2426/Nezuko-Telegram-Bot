@@ -17,10 +17,14 @@ export interface BotInstance {
   statusInterval: NodeJS.Timeout;
   /** NodeJS interval for the 15min member count sync. */
   syncInterval: NodeJS.Timeout;
+  /** NodeJS interval for the runner stall watchdog. */
+  watchdogInterval?: NodeJS.Timeout;
   /** grammY runner handle returned by run(). */
   runner: RunnerHandle;
   /** The grammY Bot instance. */
   bot: Bot<NezukoContext>;
+  /** True when this instance is shutting down intentionally. */
+  isStopping?: boolean;
 }
 
 /**

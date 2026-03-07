@@ -11,11 +11,7 @@ export async function acquireIdempotencyLock(
   parts: Array<string | number>,
   options: IdempotencyLockOptions = {}
 ): Promise<boolean> {
-  const key = [
-    CACHE_NAMESPACES.IDEMPOTENCY,
-    scope,
-    ...parts.map((part) => String(part)),
-  ].join(":");
+  const key = [CACHE_NAMESPACES.IDEMPOTENCY, scope, ...parts.map((part) => String(part))].join(":");
 
   return cache.setIfAbsent(key, "1", options.ttlSeconds ?? INTERVALS.IDEMPOTENCY_LOCK);
 }

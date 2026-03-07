@@ -14,14 +14,13 @@ interface BotInstanceRecord {
   bot_id: number;
   bot_username: string;
   bot_name: string;
-  token_encrypted: string; // column name in fresh schema
+  token_encrypted: string;
   is_active: boolean;
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
 }
 
-/** Overall status snapshot returned by getStatus(). */
 export interface BotManagerStatus {
   total: number;
   running: number;
@@ -29,440 +28,240 @@ export interface BotManagerStatus {
     botId: number;
     startedAt: Date;
     uptimeSeconds: number;
+    lastPollAgeMs: number | null;
+    lastUpdateAgeMs: number | null;
   }>;
 }
 
-/** Options for constructing a BotManager. */
+interface ActivityTrackedBot extends Bot<NezukoContext> {
+  __nezukoGetLastUpdateAt?: () => number;
+  __nezukoGetLastPollAt?: () => number;
+}
+
+function getLastPollAgeMs(bot: Bot<NezukoContext>): number | null {
+  const lastPollAt = (bot as ActivityTrackedBot).__nezukoGetLastPollAt?.();
+  return lastPollAt ? Date.now() - lastPollAt : null;
+}
+
+function getLastUpdateAgeMs(bot: Bot<NezukoContext>): number | null {
+  const lastUpdateAt = (bot as ActivityTrackedBot).__nezukoGetLastUpdateAt?.();
+  return lastUpdateAt ? Date.now() - lastUpdateAt : null;
+}
+
+function toStatusInstance(instance: BotInstance): BotManagerStatus["instances"][number] {
+  return {
+    botId: instance.botId,
+    startedAt: instance.startedAt,
+    uptimeSeconds: Math.floor((Date.now() - instance.startedAt.getTime()) / 1000),
+    lastPollAgeMs: getLastPollAgeMs(instance.bot),
+    lastUpdateAgeMs: getLastUpdateAgeMs(instance.bot),
+  };
+}
+
 export interface BotManagerOptions {
   db: InsForgeClient;
   cache: CacheClient;
   logger: Logger;
-  /** Factory that wires all middleware/composers onto a Bot instance. */
   botFactory: (bot: Bot<NezukoContext>, deps: BotDeps) => void;
 }
 
-/**
- * Coordinates all bot instances in dashboard (multi-bot) mode.
- *
- * Responsibilities:
- *   - `initialize()`: fetch active bots from DB, decrypt tokens, start each
- *   - `handleCommand()`: dispatch start/stop/restart/update_settings commands
- *   - `getStatus()`: return a snapshot of all running bots
- *
- * Decryption failure for one bot is non-fatal — the failed bot is skipped
- * and an error is logged, while other bots continue starting (EC-55).
- */
 export class BotManager {
-  private readonly registry: BotRegistry;
-  private readonly lifecycle: BotLifecycleManager;
   private readonly db: InsForgeClient;
   private readonly cache: CacheClient;
   private readonly logger: Logger;
   private readonly botFactory: (bot: Bot<NezukoContext>, deps: BotDeps) => void;
-  private syncTimer: NodeJS.Timeout | null = null;
+  private readonly registry: BotRegistry;
+  private readonly lifecycle: BotLifecycleManager;
+  private syncInterval: NodeJS.Timeout | null = null;
 
-  constructor(options: BotManagerOptions) {
-    this.db = options.db;
-    this.cache = options.cache;
-    this.botFactory = options.botFactory;
-    this.logger = options.logger.child({ module: "bot-manager" });
+  constructor({ db, cache, logger, botFactory }: BotManagerOptions) {
+    this.db = db;
+    this.cache = cache;
+    this.logger = logger.child({ module: "bot-manager" });
+    this.botFactory = botFactory;
     this.registry = new BotRegistry();
-    this.lifecycle = new BotLifecycleManager({
-      registry: this.registry,
-      logger: options.logger,
-    });
+    this.lifecycle = new BotLifecycleManager({ registry: this.registry, logger: this.logger });
   }
 
-  /**
-   * Initialise dashboard mode: fetch all active bot_instances from DB,
-   * decrypt each token, and start each bot.
-   *
-   * EC-55: If decryption fails for a bot, skip it and continue with the rest.
-   */
   async initialize(): Promise<void> {
-    this.logger.info({ msg: "BotManager initializing — fetching active bot instances" });
+    this.logger.info("Initializing BotManager...");
+    const activeBots = await this.fetchActiveBots();
 
-    let records: BotInstanceRecord[];
-    try {
-      records = await this.db.getRecords<BotInstanceRecord>("bot_instances", {
-        is_active: "eq.true",
-        is_deleted: "eq.false",
-      });
-    } catch (err: unknown) {
-      this.logger.error({
-        msg: "Failed to fetch bot_instances from DB",
-        error: err instanceof Error ? err.message : "unknown",
-      });
-      return;
+    for (const botRecord of activeBots) {
+      await this.startBotFromRecord(botRecord);
     }
 
-    this.logger.info({ msg: `Found ${records.length} active bot instance(s)` });
-
-    for (const record of records) {
-      let token: string;
-
-      // EC-55: Decryption failure → skip bot, log error, continue others
-      try {
-        token = await decryptToken(record.token_encrypted, this.db);
-      } catch (err: unknown) {
-        this.logger.error({
-          botId: record.bot_id,
-          botInstanceId: record.id,
-          msg: "Token decryption failed (EC-55) — skipping this bot",
-          error: err instanceof Error ? err.message : "unknown",
-          // NEVER log encrypted_token or plaintext token
-        });
-        continue;
-      }
-
-      const config: BotStartConfig = {
-        botId: record.bot_id,
-        token,
-        botInstanceId: record.id,
-        botFactory: this.botFactory,
-        db: this.db,
-        cache: this.cache,
-        logger: this.logger,
-      };
-
-      await this.lifecycle.startBot(config);
-    }
-
-    this.logger.info({
-      msg: `BotManager initialized — ${this.registry.count()} bot(s) running`,
-    });
+    this.logger.info({ count: this.registry.count() }, "BotManager initialization complete");
   }
 
-  /**
-   * Start the 30-second sync loop that continuously reconciles running bots
-   * against the DB. New active bots are started; removed/deactivated bots are
-   * stopped. Mirrors PTB BotManager.run() sync loop.
-   *
-   * Call this AFTER initialize() so the first sync runs immediately.
-   */
   startSyncLoop(): void {
-    if (this.syncTimer !== null) {
-      this.logger.warn({ msg: "Sync loop already running" });
+    if (this.syncInterval) {
+      this.logger.warn("Sync loop already running");
       return;
     }
 
-    this.logger.info({ msg: "Bot sync loop started (30s interval)" });
-
-    this.syncTimer = setInterval(() => {
-      this.syncBots().catch((err: unknown) => {
-        this.logger.error({
-          msg: "Sync loop error",
-          error: err instanceof Error ? err.message : "unknown",
-        });
+    this.syncInterval = setInterval(() => {
+      void this.syncBots().catch((err: unknown) => {
+        this.logger.error(
+          { error: err instanceof Error ? err.message : "unknown error" },
+          "Bot sync failed"
+        );
       });
-    }, INTERVALS.STATUS_HEARTBEAT); // 30s — reuse existing constant
+    }, INTERVALS.STATUS_HEARTBEAT);
+
+    this.syncInterval.unref();
+    this.logger.info({ intervalMs: INTERVALS.STATUS_HEARTBEAT }, "Bot sync loop started");
   }
 
-  /**
-   * Stop the sync loop (called during shutdown).
-   */
-  stopSyncLoop(): void {
-    if (this.syncTimer !== null) {
-      clearInterval(this.syncTimer);
-      this.syncTimer = null;
-      this.logger.info({ msg: "Bot sync loop stopped" });
-    }
-  }
-
-  /**
-   * Reconcile running bots against DB state.
-   *
-   * Algorithm (mirrors PTB BotManager._sync_bots):
-   *   1. Fetch all is_active=true, is_deleted=false rows from bot_instances
-   *   2. Start any bot that is in DB but not running
-   *   3. Stop any bot that is running but no longer in DB (deleted/deactivated)
-   */
-  private async syncBots(): Promise<void> {
-    let records: BotInstanceRecord[];
-    try {
-      records = await this.db.getRecords<BotInstanceRecord>("bot_instances", {
-        is_active: "eq.true",
-        is_deleted: "eq.false",
-      });
-    } catch (err: unknown) {
-      this.logger.warn({
-        msg: "Sync: failed to fetch bot_instances",
-        error: err instanceof Error ? err.message : "unknown",
-      });
-      return;
-    }
-
-    const dbBotIds = new Set(records.map((r) => r.bot_id));
-    const runningBotIds = new Set(this.registry.getAll().map((i) => i.botId));
-
-    // Start new bots (in DB but not running)
-    for (const record of records) {
-      if (runningBotIds.has(record.bot_id)) continue;
-
-      let token: string;
-      try {
-        token = await decryptToken(record.token_encrypted, this.db);
-      } catch (err: unknown) {
-        this.logger.error({
-          botId: record.bot_id,
-          msg: "Sync: token decryption failed (EC-55) — skipping",
-          error: err instanceof Error ? err.message : "unknown",
-        });
-        continue;
-      }
-
-      this.logger.info({ botId: record.bot_id, msg: "Sync: starting new bot" });
-
-      const config: BotStartConfig = {
-        botId: record.bot_id,
-        token,
-        botInstanceId: record.id,
-        botFactory: this.botFactory,
-        db: this.db,
-        cache: this.cache,
-        logger: this.logger,
-      };
-
-      await this.lifecycle.startBot(config);
-    }
-
-    // Stop deactivated/deleted bots (running but not in DB)
-    for (const instance of this.registry.getAll()) {
-      if (dbBotIds.has(instance.botId)) continue;
-
-      this.logger.info({ botId: instance.botId, msg: "Sync: stopping deactivated bot" });
-
-      // Best-effort botInstanceId from record (may be 0 if not found)
-      const record = records.find((r) => r.bot_id === instance.botId);
-      const botInstanceId = record?.id ?? 0;
-      await this.lifecycle.stopBot(instance.botId, this.db, botInstanceId);
-    }
-  }
-
-  /**
-   * Handle a dashboard command dispatched from the admin_commands table.
-   *
-   * Supported command types: start, stop, restart, update_settings.
-   *
-   * @param command - DashboardCommand row from admin_commands table
-   */
   async handleCommand(command: DashboardCommand): Promise<void> {
-    const { command_type, bot_id } = command;
+    const { bot_id: botId, command_type: commandType } = command;
 
-    this.logger.info({
-      commandId: command.id,
-      botId: bot_id,
-      type: command_type,
-      msg: "Handling dashboard command",
-    });
+    this.logger.info({ commandId: command.id, botId, commandType }, "Handling dashboard command");
 
-    switch (command_type) {
+    const botRecord = (await this.db.getRecords<BotInstanceRecord>("bot_instances", {
+      bot_id: `eq.${botId}`,
+      is_deleted: "eq.false",
+      limit: "1",
+    }))[0];
+
+    switch (commandType) {
       case "start": {
-        if (this.registry.has(bot_id)) {
-          this.logger.warn({ botId: bot_id, msg: "Bot already running — ignoring start command" });
+        if (!botRecord || !botRecord.is_active) {
+          throw new Error(`Cannot start bot ${botId}: bot is missing or inactive`);
+        }
+        if (this.registry.has(botId)) {
+          this.logger.warn({ botId }, "Start command ignored — bot already running");
           return;
         }
-
-        // Fetch the bot instance record to get the encrypted token
-        let records: BotInstanceRecord[];
-        try {
-          records = await this.db.getRecords<BotInstanceRecord>("bot_instances", {
-            bot_id: `eq.${bot_id}`,
-          });
-        } catch (err: unknown) {
-          this.logger.error({
-            botId: bot_id,
-            msg: "Failed to fetch bot_instances for start command",
-            error: err instanceof Error ? err.message : "unknown",
-          });
-          return;
-        }
-
-        const record = records[0];
-        if (!record) {
-          this.logger.error({ botId: bot_id, msg: "No bot_instances row found for start command" });
-          return;
-        }
-
-        let token: string;
-        try {
-          token = await decryptToken(record.token_encrypted, this.db);
-        } catch (err: unknown) {
-          this.logger.error({
-            botId: bot_id,
-            msg: "Token decryption failed during start command (EC-55)",
-            error: err instanceof Error ? err.message : "unknown",
-          });
-          return;
-        }
-
-        await this.lifecycle.startBot({
-          botId: bot_id,
-          token,
-          botInstanceId: record.id,
-          botFactory: this.botFactory,
-          db: this.db,
-          cache: this.cache,
-          logger: this.logger,
-        });
-        break;
+        await this.startBotFromRecord(botRecord);
+        return;
       }
 
       case "stop": {
-        // Determine botInstanceId from registry or DB
-        const instance = this.registry.get(bot_id);
-        if (!instance) {
-          this.logger.warn({ botId: bot_id, msg: "Bot not running — ignoring stop command" });
-          return;
+        if (!botRecord) {
+          throw new Error(`Cannot stop bot ${botId}: bot record not found`);
         }
-
-        // Fetch botInstanceId from DB
-        let records: BotInstanceRecord[];
-        try {
-          records = await this.db.getRecords<BotInstanceRecord>("bot_instances", {
-            bot_id: `eq.${bot_id}`,
-          });
-        } catch {
-          records = [];
-        }
-
-        const botInstanceId = records[0]?.id ?? 0;
-        await this.lifecycle.stopBot(bot_id, this.db, botInstanceId);
-        break;
+        await this.lifecycle.stopBot(botId, this.db, botRecord.id);
+        return;
       }
 
       case "restart": {
-        const instance = this.registry.get(bot_id);
-        if (!instance) {
-          this.logger.warn({ botId: bot_id, msg: "Bot not running — cannot restart" });
-          return;
+        if (!botRecord || !botRecord.is_active) {
+          throw new Error(`Cannot restart bot ${botId}: bot is missing or inactive`);
         }
-
-        // Fetch fresh record for restart
-        let records: BotInstanceRecord[];
-        try {
-          records = await this.db.getRecords<BotInstanceRecord>("bot_instances", {
-            bot_id: `eq.${bot_id}`,
-          });
-        } catch (err: unknown) {
-          this.logger.error({
-            botId: bot_id,
-            msg: "Failed to fetch bot_instances for restart command",
-            error: err instanceof Error ? err.message : "unknown",
-          });
-          return;
-        }
-
-        const record = records[0];
-        if (!record) {
-          this.logger.error({ botId: bot_id, msg: "No bot_instances row found for restart" });
-          return;
-        }
-
-        let token: string;
-        try {
-          token = await decryptToken(record.token_encrypted, this.db);
-        } catch (err: unknown) {
-          this.logger.error({
-            botId: bot_id,
-            msg: "Token decryption failed during restart (EC-55)",
-            error: err instanceof Error ? err.message : "unknown",
-          });
-          return;
-        }
-
-        await this.lifecycle.restartBot(bot_id, {
-          botId: bot_id,
-          token,
-          botInstanceId: record.id,
-          botFactory: this.botFactory,
-          db: this.db,
-          cache: this.cache,
-          logger: this.logger,
-        });
-        break;
+        const config = await this.buildStartConfig(botRecord);
+        await this.lifecycle.restartBot(botId, config);
+        return;
       }
 
-      case "update_settings": {
-        this.logger.info({
-          botId: bot_id,
-          msg: "update_settings command — config reload not yet implemented (P2 scaffold)",
-        });
-        break;
-      }
-
-      default: {
-        this.logger.warn({
-          botId: bot_id,
-          type: command_type,
-          msg: "Unknown command type — ignoring",
-        });
-      }
+      default:
+        this.logger.warn({ commandId: command.id, commandType }, "Unknown dashboard command type");
     }
   }
 
-  /**
-   * Return a status snapshot of all running bot instances.
-   */
   getStatus(): BotManagerStatus {
-    const instances = this.registry.getAll();
-    const now = Date.now();
+    const instances = this.registry.getAll().map((instance) => toStatusInstance(instance));
 
     return {
       total: instances.length,
       running: instances.length,
-      instances: instances.map((inst: BotInstance) => ({
-        botId: inst.botId,
-        startedAt: inst.startedAt,
-        uptimeSeconds: Math.floor((now - inst.startedAt.getTime()) / 1000),
-      })),
+      instances,
     };
   }
 
-  /**
-   * Gracefully stop all running bot instances.
-   *
-   * Called on SIGINT/SIGTERM in dashboard mode. Each bot's runner is stopped,
-   * its intervals are cleared, and its DB status is set to "offline".
-   *
-   * Errors during individual bot shutdown are logged but do not prevent other
-   * bots from shutting down.
-   */
   async shutdown(): Promise<void> {
-    // Stop the sync loop first — prevents new bots starting during teardown
-    this.stopSyncLoop();
+    this.logger.info("Shutting down BotManager...");
+
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+      this.syncInterval = null;
+    }
 
     const instances = this.registry.getAll();
-    this.logger.info({ count: instances.length, msg: "BotManager shutting down all bots" });
+    const records = await this.fetchActiveBots();
+    const botInstanceIds = new Map(records.map((record) => [record.bot_id, record.id]));
 
-    const stops = instances.map(async (inst: BotInstance) => {
-      try {
-        // Fetch botInstanceId for status writer cleanup
-        let records: BotInstanceRecord[] = [];
-        try {
-          records = await this.db.getRecords<BotInstanceRecord>("bot_instances", {
-            bot_id: `eq.${inst.botId}`,
-          });
-        } catch {
-          // Non-fatal — proceed with stop
-        }
-        const botInstanceId = records[0]?.id ?? 0;
-        await this.lifecycle.stopBot(inst.botId, this.db, botInstanceId);
-      } catch (err: unknown) {
-        this.logger.error({
-          botId: inst.botId,
-          msg: "Error stopping bot during shutdown",
-          error: err instanceof Error ? err.message : "unknown",
-        });
+    for (const instance of instances) {
+      const botInstanceId = botInstanceIds.get(instance.botId);
+      if (!botInstanceId) {
+        this.logger.warn({ botId: instance.botId }, "Skipping shutdown for bot without DB record");
+        continue;
       }
-    });
+      await this.lifecycle.stopBot(instance.botId, this.db, botInstanceId);
+    }
 
-    await Promise.allSettled(stops);
-    this.logger.info({ msg: "All bots stopped" });
+    this.logger.info("BotManager shutdown complete");
   }
 
-  /** Access the underlying registry (for testing / introspection). */
-  get botRegistry(): BotRegistry {
-    return this.registry;
+  private async syncBots(): Promise<void> {
+    const activeBots = await this.fetchActiveBots();
+    const activeBotIds = new Set(activeBots.map((bot) => bot.bot_id));
+    const botInstanceIds = new Map(activeBots.map((bot) => [bot.bot_id, bot.id]));
+
+    for (const botRecord of activeBots) {
+      if (!this.registry.has(botRecord.bot_id)) {
+        this.logger.info({ botId: botRecord.bot_id }, "Detected new active bot — starting");
+        await this.startBotFromRecord(botRecord);
+      }
+    }
+
+    for (const instance of this.registry.getAll()) {
+      if (!activeBotIds.has(instance.botId)) {
+        const botInstanceId = botInstanceIds.get(instance.botId);
+        this.logger.info({ botId: instance.botId }, "Detected inactive/deleted bot — stopping");
+        if (!botInstanceId) {
+          this.logger.warn({ botId: instance.botId }, "Cannot stop bot without DB record id");
+          continue;
+        }
+        await this.lifecycle.stopBot(instance.botId, this.db, botInstanceId);
+      }
+    }
+  }
+
+  private async fetchActiveBots(): Promise<BotInstanceRecord[]> {
+    const rows = await this.db.getRecords<BotInstanceRecord>("bot_instances", {
+      is_active: "eq.true",
+      is_deleted: "eq.false",
+      order: "id.asc",
+    });
+
+    this.logger.debug({ count: rows.length }, "Fetched active bot instances from DB");
+    return rows;
+  }
+
+  private async startBotFromRecord(botRecord: BotInstanceRecord): Promise<void> {
+    try {
+      const config = await this.buildStartConfig(botRecord);
+      const instance = await this.lifecycle.startBot(config);
+
+      if (!instance) {
+        this.logger.error({ botId: botRecord.bot_id }, "Failed to start bot instance");
+        return;
+      }
+
+      this.logger.info({ botId: botRecord.bot_id }, "Managed bot started successfully");
+    } catch (err: unknown) {
+      this.logger.error(
+        {
+          botId: botRecord.bot_id,
+          error: err instanceof Error ? err.message : "unknown error",
+        },
+        "Failed to start managed bot"
+      );
+    }
+  }
+
+  private async buildStartConfig(botRecord: BotInstanceRecord): Promise<BotStartConfig> {
+    const token = await decryptToken(botRecord.token_encrypted, this.db);
+
+    return {
+      botId: botRecord.bot_id,
+      token,
+      botInstanceId: botRecord.id,
+      botFactory: this.botFactory,
+      db: this.db,
+      cache: this.cache,
+      logger: this.logger,
+    };
   }
 }

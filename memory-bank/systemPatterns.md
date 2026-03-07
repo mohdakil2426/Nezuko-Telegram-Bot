@@ -356,7 +356,8 @@ const blockKey = `enforcement_block:${groupId}:${userId}`;
 
 // Required-channel leave:
 await cache.set(blockKey, "1", "EX", 300);
-await muteUser(api, groupId, userId);
+// do not mute or prompt yet; the next blocked group message is the
+// visible enforcement point
 
 // Group message path:
 //   if blockKey exists and all member caches are now "1":
@@ -569,6 +570,35 @@ useEffect(() => () => disconnectRef.current(), []); // unmount only
 // and centrally invalidates aggregate dashboard/analytics/chart queries.
 // useRealtimeChart() now consumes connection state from the coordinator
 // instead of mounting its own websocket subscription per widget.
+```
+
+### 16.1 — Route-Level Realtime Hooks Must Reuse Coordinator State
+
+```tsx
+// After the coordinator exists, route/page convenience hooks must not become
+// effective owners of the shared socket lifecycle during navigation.
+// Wrappers such as useRealtimeActivity/useRealtimeLogs/useDashboardRealtime/
+// useBotsRealtime/useRealtime should return coordinator state when available,
+// and only fall back to useInsForgeRealtime when the coordinator is absent.
+
+// This avoids the regression where navigating between dashboard pages could
+// release channels or disconnect the shared socket, causing the UI to show
+// polling until a hard reload restored live updates.
+```
+
+### 8.8 — First Blocked Message After Channel Leave Must Stay Deterministic
+
+```typescript
+// required-channel leave remains silent and seeds enforcement_block.
+// On the first actually blocked group message:
+//   if enforcement_block exists and cached member state is fully restored:
+//     allow without deleting or prompting
+//   else:
+//     re-run verification
+//     if still failing -> delete message + restrict again + send exactly one prompt
+//
+// This keeps the UX quiet on channel leave while ensuring the first blocked
+// message is the visible enforcement flow for still-unverified users.
 ```
 
 ### 15 — FK-Safe Owner Upsert (Phase 105)

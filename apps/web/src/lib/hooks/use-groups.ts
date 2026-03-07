@@ -5,23 +5,24 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryKeys, STALE_TIMES, REFETCH_INTERVALS } from "@/lib/query-keys";
+import { queryKeys, STALE_TIMES } from "@/lib/query-keys";
 import * as groupsService from "@/lib/services/groups.service";
 import type { GroupsParams, GroupUpdateRequest } from "@/lib/services/types";
 import { useRealtimeChart } from "@/lib/hooks/use-realtime-insforge";
 
 /**
  * Hook to fetch paginated groups list.
- * Invalidates on verification events — member counts update when users verify.
+ * Uses realtime invalidation for group/link updates and verification-driven aggregate changes.
+ * Falls back to polling only when the websocket is disconnected.
  */
 export function useGroups(params?: GroupsParams) {
   return useRealtimeChart({
     queryKey: queryKeys.groups.list(params as Record<string, unknown>),
     queryFn: () => groupsService.getGroups(params),
     staleTime: STALE_TIMES.SHORT,
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
-    channels: ["dashboard"],
-    invalidateOnEvents: ["verification"],
+    refetchInterval: false,
+    channels: ["groups", "group_links", "dashboard"],
+    invalidateOnEvents: ["group_changed", "group_link_changed", "verification"],
   });
 }
 

@@ -70,7 +70,7 @@ nezuko/
 - Delayed verification prompts: required-channel leave is silent, first blocked message prompts
 - Prompt dedupe per `(groupId, userId)` to avoid repeated group spam
 - Lock-loser blocked-message deletion so burst spam updates are still removed while one enforcement pass is running
-- Fast re-restriction path: required-channel leave now also re-mutes linked groups silently and seeds a short-lived enforcement-block cache
+- Required-channel leave now only invalidates verified state and seeds a short-lived enforcement-block cache; the first blocked message performs the visible delete/mute/prompt flow
 - Single-subscription dashboard realtime coordinator with cache patching for logs/activity/bots and centralized aggregate invalidation
 - Verification logging directly to InsForge PostgreSQL
 - Status writer (heartbeat via DB UPSERT every 30s)

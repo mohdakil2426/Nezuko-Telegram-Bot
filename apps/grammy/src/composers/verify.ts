@@ -48,6 +48,9 @@ verifyComposer.callbackQuery(/^verify:(-?\d+)$/, async (ctx) => {
     // Cache verification status (6h TTL)
     const cacheKey = `${CACHE_NAMESPACES.VERIFIED}:${groupId}:${userId}`;
     await ctx.cache.set(cacheKey, "1", "EX", VERIFIED_CACHE_TTL).catch(() => {});
+    await ctx.cache
+      .del(`${CACHE_NAMESPACES.ENFORCEMENT_BLOCK}:${groupId}:${userId}`)
+      .catch(() => {});
 
     // Log to verification_log
     await logVerification(ctx.db, {

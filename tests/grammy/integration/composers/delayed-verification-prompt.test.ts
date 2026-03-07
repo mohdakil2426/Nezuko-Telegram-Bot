@@ -43,6 +43,9 @@ function makeDepsWithPromptState(initialState: Record<string, string> = {}) {
 
   const state = new Map(Object.entries(initialState));
   vi.mocked(deps.cache.get).mockImplementation(async (key: string) => state.get(key) ?? null);
+  vi.mocked(deps.cache.mget).mockImplementation(
+    async (keys: string[]) => keys.map((key) => state.get(key) ?? null)
+  );
   vi.mocked(deps.cache.set).mockImplementation(async (key: string, value: string) => {
     state.set(key, value);
   });
@@ -65,6 +68,7 @@ function makeDepsWithPromptState(initialState: Record<string, string> = {}) {
 describe("delayed verification prompt flow", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it("stays silent on required-channel leave", async () => {
@@ -87,12 +91,12 @@ describe("delayed verification prompt flow", () => {
     );
 
     expect(apiCalls.find((call) => call.method === "sendMessage")).toBeUndefined();
-    expect(apiCalls.find((call) => call.method === "restrictChatMember")).toBeDefined();
+    expect(apiCalls.find((call) => call.method === "restrictChatMember")).toBeUndefined();
     expect(deps.cache.delMany).toHaveBeenCalledWith([`verified:${GROUP_ID}:${USER_ID}`]);
     expect(state.get(`enforcement_block:${GROUP_ID}:${USER_ID}`)).toBe("1");
   });
 
-  it("deletes the first blocked message, restricts again, and sends one prompt", async () => {
+  it("deletes the first blocked message, restricts the user, and sends one prompt after channel leave", async () => {
     const { bot, apiCalls } = createConfiguredTestBot({
       methodResults: {
         getChatMember: (payload) => {
@@ -112,6 +116,14 @@ describe("delayed verification prompt flow", () => {
 
     bot.use(contextEnricher(deps));
     bot.use(eventsComposer);
+
+    await bot.handleUpdate(
+      createChannelChatMemberUpdate({
+        user: { id: USER_ID, first_name: "Leaver" },
+        oldStatus: "member",
+        newStatus: "left",
+      })
+    );
 
     await bot.handleUpdate(
       createMessageUpdate({
@@ -250,6 +262,7 @@ describe("delayed verification prompt flow", () => {
     await bot.handleUpdate(createCallbackUpdate(`verify:${GROUP_ID}`));
 
     expect(state.has(`verification_prompt:${GROUP_ID}:${USER_ID}`)).toBe(false);
+    expect(state.has(`enforcement_block:${GROUP_ID}:${USER_ID}`)).toBe(false);
     expect(
       apiCalls.filter((call) => call.method === "deleteMessage").length
     ).toBeGreaterThanOrEqual(1);

@@ -27,7 +27,11 @@ import { startMemberSync } from "./services/member-sync.js";
 import { CommandWorker } from "./services/command-worker.js";
 import { InsForgeRealtimeClient } from "./core/realtime-client.js";
 import { startHealthServer } from "./utils/health.js";
-import { ALLOWED_UPDATES, SHUTDOWN_TIMEOUT_MS } from "./core/constants.js";
+import {
+  ALLOWED_UPDATES,
+  RUNNER_STALL_THRESHOLD_MS,
+  SHUTDOWN_TIMEOUT_MS,
+} from "./core/constants.js";
 import { createDbLogDestination } from "./core/db-log-transport.js";
 import type { BotDeps } from "./types.js";
 import { acquireProcessLock } from "./utils/process-lock.js";
@@ -181,7 +185,13 @@ async function runStandaloneMode(
   let statusInterval: NodeJS.Timeout | undefined; // unused in standalone mode
 
   // Health server
-  const healthServer = await startHealthServer(config.healthPort, effectiveLogger);
+  const healthServer = await startHealthServer(config.healthPort, effectiveLogger, () => ({
+    status: "ok",
+    details: {
+      mode: "standalone",
+      dbAvailable: db !== null,
+    },
+  }));
   if (healthServer) {
     effectiveLogger.info(`✅  Health server listening on port ${config.healthPort}`);
   } else {
@@ -291,7 +301,27 @@ async function runDashboardMode(
   );
 
   // Health server
-  const healthServer = await startHealthServer(config.healthPort, effectiveLogger);
+  const healthServer = await startHealthServer(config.healthPort, effectiveLogger, () => {
+    const managerStatus = manager.getStatus();
+    const unhealthyBots = managerStatus.instances.filter(
+      (instance) =>
+        instance.lastPollAgeMs !== null && instance.lastPollAgeMs > RUNNER_STALL_THRESHOLD_MS
+    );
+
+    return {
+      status: unhealthyBots.length === 0 ? "ok" : "degraded",
+      details: {
+        mode: "dashboard",
+        realtimeConnected: realtime?.isConnected ?? false,
+        totalBots: managerStatus.total,
+        unhealthyBots: unhealthyBots.map((instance) => ({
+          botId: instance.botId,
+          lastPollAgeMs: instance.lastPollAgeMs,
+          lastUpdateAgeMs: instance.lastUpdateAgeMs,
+        })),
+      },
+    };
+  });
   if (healthServer) {
     effectiveLogger.info(`✅  Health server listening on port ${config.healthPort}`);
   } else {

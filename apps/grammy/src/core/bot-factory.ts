@@ -140,6 +140,27 @@ function wireCoreCommands(bot: Bot<NezukoContext>, deps: BotDeps): void {
 // ── Core Bot Wiring ────────────────────────────────────────────────────────────
 
 function wireBotMiddleware(bot: Bot<NezukoContext>, deps: BotDeps): void {
+  let lastUpdateAt: number | null = null;
+  let lastPollAt = Date.now();
+
+  const updateActivityMiddleware: Middleware<NezukoContext> = async (_ctx, next) => {
+    lastUpdateAt = Date.now();
+    await next();
+  };
+
+  Object.defineProperty(bot, "__nezukoGetLastUpdateAt", {
+    value: () => lastUpdateAt,
+    enumerable: false,
+    configurable: true,
+    writable: false,
+  });
+  Object.defineProperty(bot, "__nezukoGetLastPollAt", {
+    value: () => lastPollAt,
+    enumerable: false,
+    configurable: true,
+    writable: false,
+  });
+
   // ── 1. API Transformers (outgoing) ──────────────────────────────
   bot.api.config.use(
     autoRetry({
@@ -158,6 +179,15 @@ function wireBotMiddleware(bot: Bot<NezukoContext>, deps: BotDeps): void {
   const API_LOG_SKIP = new Set(["getUpdates"]);
 
   const apiLogTransformer: Transformer = async (prev, method, payload, signal) => {
+    if (method === "getUpdates") {
+      lastPollAt = Date.now();
+      try {
+        return await prev(method, payload, signal);
+      } finally {
+        lastPollAt = Date.now();
+      }
+    }
+
     if (API_LOG_SKIP.has(method)) return prev(method, payload, signal);
 
     const start = performance.now();
@@ -198,7 +228,10 @@ function wireBotMiddleware(bot: Bot<NezukoContext>, deps: BotDeps): void {
   // ── 2. Debug Middleware ─────────────────────────────────────────
   installDebugMiddleware(bot, deps.logger);
 
-  // ── 3. sequentialize — MUST be first middleware ──────────────────
+  // ── 3. Update activity tracking ──────────────────────────────────
+  bot.use(updateActivityMiddleware);
+
+  // ── 4. sequentialize — MUST be first stateful middleware ─────────
   bot.use(sequentializeMiddleware);
 
   // ── 4. hydrate ───────────────────────────────────────────────────

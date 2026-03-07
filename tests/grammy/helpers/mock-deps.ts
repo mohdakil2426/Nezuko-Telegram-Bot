@@ -14,6 +14,7 @@ export function createMockDb(): InsForgeClient {
     postRecords: vi.fn().mockResolvedValue([]),
     patchRecords: vi.fn().mockResolvedValue([]),
     deleteRecords: vi.fn().mockResolvedValue(undefined),
+    logger: createMockLogger(),
   } as unknown as InsForgeClient;
 }
 

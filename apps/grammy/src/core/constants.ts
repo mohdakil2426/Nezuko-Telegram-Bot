@@ -28,6 +28,8 @@ export const INTERVALS = {
   STATUS_HEARTBEAT: 30_000,
   /** Member sync interval (15 minutes). */
   MEMBER_SYNC: 900_000,
+  /** Bot runner health watchdog interval (1 minute). */
+  RUNNER_WATCHDOG: 60_000,
   /** Verify button debounce TTL in seconds. */
   VERIFY_DEBOUNCE: 3,
   /** Lock TTL for verification/join-request idempotency in seconds. */
@@ -39,6 +41,9 @@ export const INTERVALS = {
   /** Short-lived fast-path block state for recently failed/unverified users. */
   ENFORCEMENT_BLOCK: 300,
 } as const;
+
+/** Maximum time a bot may go without processing Telegram updates before it is considered stalled. */
+export const RUNNER_STALL_THRESHOLD_MS = 10 * 60_000;
 
 /** Maximum time to wait for in-flight updates during shutdown. */
 export const SHUTDOWN_TIMEOUT_MS = 8_000;

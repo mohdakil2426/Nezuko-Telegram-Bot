@@ -10,8 +10,12 @@
 
 **Phase 113: Realtime Hot-Path + Dashboard Coordinator — COMPLETE ✅**
 
-The verification UX was refined to reduce group spam from required-channel membership flapping:
+**Phase 114: First-Message Enforcement Flow Restore — COMPLETE ✅**
 
+**2026-03-07 Follow-up: Runner Self-Healing + Health Visibility — COMPLETE ✅**
+
+The verification UX was refined to reduce group spam from required-channel membership flapping:
+}},{
 - Required-channel `chat_member` leave events no longer push verification prompts into linked groups immediately.
 - Channel leave now silently invalidates verified state and updates membership cache without fan-out prompting.
 - The first blocked group message from an unverified user is now the visible enforcement point: delete message first, re-apply mute/restriction, then send exactly one verification prompt.
@@ -30,7 +34,28 @@ The verification UX was refined to reduce group spam from required-channel membe
   - the coordinator patches cache directly for logs, activity, and bot lifecycle updates
   - payload-covered hooks now disable connected polling and rely on websocket-driven cache work instead
   - the Logs page now dedupes realtime stream entries against query-backed data
-- Latest quality gates after Phase 113: grammY type-check ✅ lint ✅ tests 147/147 ✅ build ✅; web type-check ✅ lint ✅ build ✅
+- Follow-up on 2026-03-07 fixed a coordinator regression in `apps/web/src/lib/hooks/use-realtime-insforge.ts`:
+  - page-level wrappers like `useRealtimeActivity`, `useRealtimeLogs`, `useDashboardRealtime`, `useBotsRealtime`, and bare `useRealtime` now reuse coordinator state instead of effectively owning extra route-level realtime lifecycles
+  - this removes the navigation bug where dashboard/log pages could show polling after route changes even though a full reload restored live updates
+- Follow-up on 2026-03-07 also tightened delayed prompt enforcement in `apps/grammy/src/composers/events.ts`:
+  - required-channel leave still stays silent and seeds `enforcement_block`
+  - the first truly blocked group message now consistently drives the intended delete → verify → mute + prompt flow
+  - users whose required-channel membership is already restored in cache still pass cleanly without a false delete/prompt
+- Follow-up on 2026-03-07 then restored the intended post-leave UX after live validation:
+- required-channel leave now stays fully silent: it invalidates verified state and seeds `enforcement_block`, but it does not immediately re-mute linked groups or send a fallback prompt
+- the first blocked group message after that leave is again the single visible enforcement point: verify fresh membership, then delete + restrict + send one prompt only if the user is still missing a required channel
+- this removes the regression where users were being muted before sending any new group message
+- explicit verify success still clears `enforcement_block` so stale fast-path state does not linger after recovery
+- Latest quality gates after the follow-ups: grammY type-check ✅ lint ✅ tests 151/151 ✅ build ✅; web type-check ✅ lint ✅ build ✅
+- Follow-up on 2026-03-07 hardened long-running bot liveness after a live report that the process could stay up for ~7 hours while commands stopped responding:
+  - DB/log evidence showed `bot_status` heartbeats and scheduled member-sync/API activity could continue even when the grammY long-poll runner stopped making useful progress
+- `apps/grammy/src/core/bot-factory.ts` now records both per-bot last-update activity and `getUpdates` poll activity
+- `apps/grammy/src/multi-bot/bot-lifecycle.ts` now supervises each `RunnerHandle`: if `runner.task()` completes/fails unexpectedly or no `getUpdates` polling activity is seen for `RUNNER_STALL_THRESHOLD_MS`, the bot is marked offline and restarted automatically
+- `apps/grammy/src/utils/health.ts` now supports structured health reporters and degraded responses
+- `apps/grammy/src/multi-bot/bot-manager.ts` was cleaned up to expose per-instance `lastPollAgeMs` and `lastUpdateAgeMs` through `getStatus()` so dashboard-mode health can surface truly unhealthy bots instead of reporting quiet bots as degraded
+- `apps/grammy/src/main.ts` dashboard-mode health now reports `degraded` from poll-heartbeat staleness instead of chat inactivity; standalone mode now has runner recovery hardening but still only exposes static mode/db details in `/health`
+- intentional stop/shutdown paths now mark bot instances as stopping before `runner.stop()` so the new supervision logic does not auto-restart a bot during a normal stop/restart/shutdown flow
+  - post-fix grammY quality gates remained green: type-check ✅ lint ✅ tests 151/151 ✅ build ✅
 
 The post-audit stabilization work is now documented:
 
@@ -422,8 +447,9 @@ bot.catch(...)
 1. **Apply migration 024 live** — keep backend schema aligned with the bot’s preferred contract path.
 2. **Live join-request validation** — create/use a join-request invite link and confirm verified users are approved without a mute cycle.
 3. **Fix `get_user_growth` RPC** — current analytics function is still broken live.
-4. **Keep single-process runtime discipline** — avoid reintroducing long-polling conflicts.
+4. **Expose standalone runner health in `/health`** — standalone mode now self-recovers but still reports only static mode/db details.
+5. **Keep single-process runtime discipline** — avoid reintroducing long-polling conflicts.
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 113 — realtime hot-path and dashboard coordinator documented)_
+_Last Updated: 2026-03-07 (Phase 114 + runner self-healing / health visibility follow-up documented)_

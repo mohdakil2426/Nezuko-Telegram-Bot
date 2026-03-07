@@ -1,24 +1,24 @@
 import type { InsForgeClient } from "../core/insforge-client.js";
-import type { EnforcedChannel } from "./types.js";
+import type { Logger } from "../utils/logger.js";
 import { getGroupChannels } from "./group.repo.js";
+
+export interface GroupVerificationContract {
+  groupId: number;
+  enabled: boolean;
+  joinRequestPreferred: boolean;
+  channels: Awaited<ReturnType<typeof getGroupChannels>>;
+}
 
 export interface GroupVerificationSettings {
   enabled: boolean;
   joinRequestPreferred: boolean;
 }
 
-export interface GroupVerificationContract {
-  groupId: number;
-  enabled: boolean;
-  joinRequestPreferred: boolean;
-  channels: EnforcedChannel[];
-}
-
 interface GroupVerificationContractRow {
   group_id: number;
   enabled: boolean;
   join_request_preferred: boolean;
-  channels: EnforcedChannel[];
+  channels: Awaited<ReturnType<typeof getGroupChannels>>;
 }
 
 interface ProtectedGroupRow {
@@ -29,14 +29,88 @@ interface ProtectedGroupRow {
   } | null;
 }
 
-export async function getGroupVerificationContract(
+let groupVerificationContractRpcAvailable = true;
+let hasWarnedAboutMissingGroupVerificationContractRpc = false;
+
+function getDbLogger(db: InsForgeClient): Logger {
+  return (db as unknown as { logger: Logger }).logger;
+}
+
+function isMissingGroupVerificationContractRpc(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.includes("InsForge RPC get_group_verification_contract: 404")
+  );
+}
+
+export function resetGroupVerificationContractRpcAvailabilityForTests(): void {
+  groupVerificationContractRpcAvailable = true;
+  hasWarnedAboutMissingGroupVerificationContractRpc = false;
+}
+
+async function getGroupVerificationContractFallback(
   db: InsForgeClient,
   groupId: number
 ): Promise<GroupVerificationContract> {
+  const groups = await db.getRecords<ProtectedGroupRow>("protected_groups", {
+    group_id: `eq.${groupId}`,
+    select: "group_id,enabled,params",
+    limit: "1",
+  });
+
+  const group = groups[0];
+  if (!group) {
+    return {
+      groupId,
+      enabled: false,
+      joinRequestPreferred: false,
+      channels: [],
+    };
+  }
+
+  return {
+    groupId: group.group_id,
+    enabled: group.enabled,
+    joinRequestPreferred: Boolean(group.params?.join_request_preferred),
+    channels: group.enabled ? await getGroupChannels(db, groupId) : [],
+  };
+}
+
+function warnAboutMissingGroupVerificationContractRpcOnce(db: InsForgeClient): void {
+  if (hasWarnedAboutMissingGroupVerificationContractRpc) {
+    return;
+  }
+
+  hasWarnedAboutMissingGroupVerificationContractRpc = true;
+  getDbLogger(db).warn(
+    "InsForge RPC get_group_verification_contract is unavailable; using direct table fallback until process restart"
+  );
+}
+
+function markGroupVerificationContractRpcUnavailable(db: InsForgeClient): void {
+  groupVerificationContractRpcAvailable = false;
+  warnAboutMissingGroupVerificationContractRpcOnce(db);
+}
+
+function readGroupVerificationContractRpc(
+  db: InsForgeClient,
+  groupId: number
+): Promise<GroupVerificationContractRow> {
+  return db.rpc<GroupVerificationContractRow>("get_group_verification_contract", {
+    p_group_id: groupId,
+  });
+}
+
+async function tryGetGroupVerificationContractFromRpc(
+  db: InsForgeClient,
+  groupId: number
+): Promise<GroupVerificationContract | null> {
+  if (!groupVerificationContractRpcAvailable) {
+    return null;
+  }
+
   try {
-    const row = await db.rpc<GroupVerificationContractRow>("get_group_verification_contract", {
-      p_group_id: groupId,
-    });
+    const row = await readGroupVerificationContractRpc(db, groupId);
 
     return {
       groupId: row.group_id,
@@ -44,30 +118,26 @@ export async function getGroupVerificationContract(
       joinRequestPreferred: row.join_request_preferred,
       channels: row.channels ?? [],
     };
-  } catch {
-    const groups = await db.getRecords<ProtectedGroupRow>("protected_groups", {
-      group_id: `eq.${groupId}`,
-      select: "group_id,enabled,params",
-      limit: "1",
-    });
-
-    const group = groups[0];
-    if (!group) {
-      return {
-        groupId,
-        enabled: false,
-        joinRequestPreferred: false,
-        channels: [],
-      };
+  } catch (error) {
+    if (isMissingGroupVerificationContractRpc(error)) {
+      markGroupVerificationContractRpcUnavailable(db);
+      return null;
     }
 
-    return {
-      groupId: group.group_id,
-      enabled: group.enabled,
-      joinRequestPreferred: Boolean(group.params?.join_request_preferred),
-      channels: group.enabled ? await getGroupChannels(db, groupId) : [],
-    };
+    throw error;
   }
+}
+
+export async function getGroupVerificationContract(
+  db: InsForgeClient,
+  groupId: number
+): Promise<GroupVerificationContract> {
+  const contractFromRpc = await tryGetGroupVerificationContractFromRpc(db, groupId);
+  if (contractFromRpc) {
+    return contractFromRpc;
+  }
+
+  return getGroupVerificationContractFallback(db, groupId);
 }
 
 export async function getGroupVerificationSettings(
