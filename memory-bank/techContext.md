@@ -203,6 +203,7 @@ bun run build         # next build → 0 errors
 - Group message enforcement revalidates stale previously verified users and re-restricts when needed
 - Required-channel leave now seeds `enforcement_block:{groupId}:{userId}` without immediately re-restricting linked groups; the next blocked group message performs the visible enforcement step
 - When multiple blocked messages arrive while one message-enforcement pass already holds the lock, lock-losing updates now still delete their own message immediately before returning
+- Managed multi-bot recovery now serializes lifecycle transitions per `botId` so watchdog-driven restarts cannot race with the 30-second sync loop and create duplicate local long-pollers
 
 ---
 

@@ -99,8 +99,9 @@ function watchRunnerTask(
 
 async function stopRunner(instance: BotInstance): Promise<void> {
   instance.runner.stop();
+  const runnerTask = instance.runner.task();
   await Promise.race([
-    instance.runner.task(),
+    runnerTask?.catch(() => undefined) ?? Promise.resolve(),
     new Promise<void>((resolve) => setTimeout(resolve, 8_000)),
   ]);
 }
@@ -153,9 +154,7 @@ function attachRunnerSupervision(
 ): NodeJS.Timeout {
   const onRunnerStop = async (): Promise<void> => {
     if (lifecycle["registry"].get(config.botId) !== instance) return;
-    clearBotIntervals(instance);
-    lifecycle["registry"].remove(config.botId);
-    await markBotOffline(config.db, config.botId, config.botInstanceId, instance.startedAt, log);
+    instance.isStopping = true;
     await restartInstance(lifecycle, config, "runner-stopped");
   };
 
@@ -164,10 +163,6 @@ function attachRunnerSupervision(
   return startRunnerWatchdog(instance, config.botId, log, async () => {
     if (lifecycle["registry"].get(config.botId) !== instance) return;
     instance.isStopping = true;
-    await stopRunner(instance);
-    clearBotIntervals(instance);
-    lifecycle["registry"].remove(config.botId);
-    await markBotOffline(config.db, config.botId, config.botInstanceId, instance.startedAt, log);
     await restartInstance(lifecycle, config, "runner-stalled");
   });
 }
@@ -211,10 +206,31 @@ export interface LifecycleManagerOptions {
 export class BotLifecycleManager {
   private readonly registry: BotRegistry;
   private readonly logger: Logger;
+  private readonly transitionLocks = new Map<number, Promise<void>>();
 
   constructor({ registry, logger }: LifecycleManagerOptions) {
     this.registry = registry;
     this.logger = logger.child({ module: "bot-lifecycle" });
+  }
+
+  private async withTransitionLock<T>(botId: number, operation: () => Promise<T>): Promise<T> {
+    const previous = this.transitionLocks.get(botId) ?? Promise.resolve();
+    let release!: () => void;
+    const current = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    this.transitionLocks.set(botId, current);
+    await previous.catch(() => undefined);
+
+    try {
+      return await operation();
+    } finally {
+      release();
+      if (this.transitionLocks.get(botId) === current) {
+        this.transitionLocks.delete(botId);
+      }
+    }
   }
 
   /**
@@ -223,7 +239,7 @@ export class BotLifecycleManager {
    * @param config - Bot configuration including token and factory function
    * @returns The registered BotInstance on success, null on failure
    */
-  async startBot(config: BotStartConfig): Promise<BotInstance | null> {
+  private async startBotUnlocked(config: BotStartConfig): Promise<BotInstance | null> {
     const { botId, token, botInstanceId, botFactory, db, cache, logger } = config;
 
     if (this.registry.has(botId)) {
@@ -302,6 +318,10 @@ export class BotLifecycleManager {
     return instance;
   }
 
+  async startBot(config: BotStartConfig): Promise<BotInstance | null> {
+    return this.withTransitionLock(config.botId, () => this.startBotUnlocked(config));
+  }
+
   /**
    * Stop a running bot instance gracefully.
    *
@@ -313,7 +333,11 @@ export class BotLifecycleManager {
    * @param db - InsForgeClient used to update offline status
    * @param botInstanceId - DB row ID for the bot_instances record
    */
-  async stopBot(botId: number, db: InsForgeClient, botInstanceId: number): Promise<void> {
+  private async stopBotUnlocked(
+    botId: number,
+    db: InsForgeClient,
+    botInstanceId: number
+  ): Promise<void> {
     const instance = this.registry.get(botId);
 
     if (!instance) {
@@ -340,6 +364,10 @@ export class BotLifecycleManager {
     this.logger.info({ botId, msg: "Bot stopped" });
   }
 
+  async stopBot(botId: number, db: InsForgeClient, botInstanceId: number): Promise<void> {
+    await this.withTransitionLock(botId, () => this.stopBotUnlocked(botId, db, botInstanceId));
+  }
+
   /**
    * Restart a bot — fully stops the old instance then starts a fresh one.
    *
@@ -347,9 +375,16 @@ export class BotLifecycleManager {
    * @param config - Fresh start configuration (same token allowed)
    * @returns New BotInstance on success, null if start fails
    */
-  async restartBot(botId: number, config: BotStartConfig): Promise<BotInstance | null> {
+  private async restartBotUnlocked(
+    botId: number,
+    config: BotStartConfig
+  ): Promise<BotInstance | null> {
     this.logger.info({ botId, msg: "Restarting bot" });
-    await this.stopBot(botId, config.db, config.botInstanceId);
-    return this.startBot(config);
+    await this.stopBotUnlocked(botId, config.db, config.botInstanceId);
+    return this.startBotUnlocked(config);
+  }
+
+  async restartBot(botId: number, config: BotStartConfig): Promise<BotInstance | null> {
+    return this.withTransitionLock(botId, () => this.restartBotUnlocked(botId, config));
   }
 }

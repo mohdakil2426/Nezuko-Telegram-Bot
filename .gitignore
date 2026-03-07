@@ -126,8 +126,6 @@ apps/api/alembic/versions/*.pyc
 /apps/bot/logs/**/*
 !/apps/bot/logs/.gitkeep
 
-# local Docs
-docs/local/
 
 # Debug scripts in app roots (tests should be in tests/ folders)
 apps/*/test_*.py

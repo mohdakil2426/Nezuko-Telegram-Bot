@@ -408,6 +408,20 @@ await acquireIdempotencyLock(cache, "group-join", [groupId, userId]);
 await acquireIdempotencyLock(cache, "message-enforce", [groupId, userId]);
 ```
 
+### 8.9 — Managed Bot Recovery Must Be Serialized Per Bot ID
+
+```typescript
+// Runner watchdog/task failure recovery must not remove the bot from the
+// registry and then start a replacement outside the lifecycle lock, otherwise
+// the 30s sync loop can observe the gap and start the same bot a second time.
+
+await lifecycle.restartBot(botId, config);
+
+// BotLifecycleManager now serializes start/stop/restart per bot id.
+// stopRunner() also swallows rejected runner.task() promises so cleanup still
+// completes after getUpdates 409 conflicts or failed runner tasks.
+```
+
 ### 8.4 — Channel-Side Invalidation + Message Recheck (Phase 110)
 
 ```typescript

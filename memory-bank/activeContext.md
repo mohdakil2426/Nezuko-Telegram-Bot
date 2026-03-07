@@ -16,6 +16,8 @@
 
 **2026-03-07 Follow-up: Verify Click Propagation Recovery — COMPLETE ✅**
 
+**2026-03-07 Follow-up: Duplicate Restart Race from bot.log — COMPLETE ✅**
+
 The verification UX was refined to reduce group spam from required-channel membership flapping:
 }},{
 - Required-channel `chat_member` leave events no longer push verification prompts into linked groups immediately.
@@ -65,6 +67,14 @@ The verification UX was refined to reduce group spam from required-channel membe
   - `apps/grammy/src/services/verification.ts` now retries fresh explicit verify checks a small number of times with a short delay, so one click can absorb Telegram membership propagation lag after a real channel rejoin
   - runtime coverage now proves the first verify click succeeds even when the first `getChatMember` still says `left` and the second fresh check turns `member`
   - latest grammY quality gates after this follow-up: type-check ✅ lint ✅ tests 154/154 ✅ build ✅
+- Follow-up on 2026-03-07 analyzed `apps/grammy/logs/bot.log` against the runner lifecycle code and found a real restart race:
+  - one genuine runner-stall event triggered the watchdog while the 30-second sync loop simultaneously saw the bot missing from the registry and started the same token again
+  - the log evidence is explicit: at `12:37:16` the watchdog reported a stall, the sync loop logged `Detected new active bot — starting`, and then two `grammY runner started` lines appeared at `12:37:19` and `12:37:20`
+  - that duplicate local start produced the later real `getUpdates` `409 Conflict`, duplicated background intervals, and repeated false stall restarts
+  - `apps/grammy/src/multi-bot/bot-lifecycle.ts` now serializes start/stop/restart transitions per bot id and routes watchdog/task recovery back through that lifecycle path instead of manually removing the bot from the registry first
+  - `stopRunner()` now tolerates an already-rejected runner task so cleanup still completes after a `409` or runner failure
+  - new unit coverage proves cleanup after rejected runner tasks and serialization of concurrent lifecycle transitions
+  - latest grammY quality gates after this follow-up: type-check ✅ lint ✅ tests 156/156 ✅ build ✅
 
 The post-audit stabilization work is now documented:
 

@@ -29,6 +29,7 @@
 | **Fast block-state message path** | Message enforcement now uses Redis/member-cache state before DB reads and reuses preloaded channel contract data | ✅ Phase 113 |
 | **First blocked message flow** | The first blocked group message after a required-channel leave now performs the full delete → restrict → one-prompt flow | ✅ Phase 114 |
 | **Single-click rejoin verification** | Verify callbacks now absorb short Telegram membership propagation lag and no longer leave sticky post-attempt verify locks/debounce state | ✅ 2026-03-07 follow-up |
+| **Serialized runner recovery** | Managed-bot restart/stop/start transitions are now serialized per bot id, preventing sync-loop + watchdog duplicate starts and follow-on `getUpdates` 409 loops | ✅ 2026-03-07 follow-up |
 | **Join-request-first preference** | `protected_groups.params.join_request_preferred=true` by default     | ✅ Phase 109 |
 | **Join restriction**           | `eventsComposer` — mutes on `chat_member` new member                    | ✅ Ships     |
 | **Join request handling**      | `eventsComposer` — `chat_join_request` approve/decline + DM             | ✅ Phase 101 |
@@ -56,7 +57,7 @@
 | **Pino logger**                | Structured JSON, child loggers per module                               | ✅ Ships     |
 | **DB log transport**           | `db-log-transport.ts` — WARN+ logs → `admin_logs` (admin_logs realtime) | ✅ Phase 105 |
 | **API call logging**           | `apiLogTransformer` in bot-factory — all calls → `api_call_log`         | ✅ Phase 105 |
-| **Vitest tests**               | 154/154 tests passing (27 suites)                                       | ✅ 2026-03-07 follow-up |
+| **Vitest tests**               | 156/156 tests passing (28 suites)                                       | ✅ 2026-03-07 follow-up |
 
 ### Database Schema (InsForge — Migration 023)
 
