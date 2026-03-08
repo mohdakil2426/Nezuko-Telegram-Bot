@@ -5,6 +5,7 @@ import { groupOnly } from "../middleware/group-only.js";
 import { permissionCheck } from "../middleware/permission-check.js";
 import { linkChannel, unlinkChannel } from "../services/channel-linker.js";
 import { getGroupChannels } from "../database/group.repo.js";
+import { invalidateGroupContractCache } from "../database/group-contract.repo.js";
 import { scheduleDelete } from "../utils/auto-delete.js";
 import { AUTO_DELETE_DELAY } from "../core/constants.js";
 import {
@@ -74,6 +75,8 @@ adminComposer.command("protect", adminGuard(), groupOnly(), permissionCheck(), a
   );
 
   if (result.success) {
+    // S6: Invalidate contract cache so message-path reads pick up the new channel
+    await invalidateGroupContractCache(ctx.cache, ctx.chat.id).catch(() => {});
     const msg = await ctx.reply(PROTECT_SUCCESS(channelUsername));
     scheduleDelete(msg, AUTO_DELETE_DELAY);
   } else {
@@ -93,6 +96,8 @@ adminComposer.command("unprotect", adminGuard(), groupOnly(), async (ctx) => {
   const result = await unlinkChannel(ctx.api, ctx.db, ctx.log, ctx.chat.id, channelUsername);
 
   if (result.success) {
+    // S6: Invalidate contract cache so next verification reads fresh config
+    await invalidateGroupContractCache(ctx.cache, ctx.chat.id).catch(() => {});
     const msg = await ctx.reply(UNPROTECT_SUCCESS(channelUsername));
     scheduleDelete(msg, AUTO_DELETE_DELAY);
   } else {

@@ -75,13 +75,16 @@ export async function verifyMembership(
   }
 
   const missingChannels: string[] = [];
-  const results = await Promise.all(
+  // S2: Promise.allSettled — a Telegram error on one channel (e.g. 403, network blip)
+  // doesn't abort the remaining parallel checks. Rejected = treated as not a member.
+  const results = await Promise.allSettled(
     channels.map((channel) => checkChannelMembership(api, cache, channel, userId, log, options))
   );
 
-  for (const [index, result] of results.entries()) {
-    if (!result.isMember) {
-      const channel = channels[index];
+  for (const [index, settlement] of results.entries()) {
+    const channel = channels[index];
+    const isMember = settlement.status === "fulfilled" ? settlement.value.isMember : false;
+    if (!isMember) {
       const name = channel.username
         ? `@${channel.username}`
         : (channel.title ?? `Channel ${channel.channel_id}`);
@@ -95,7 +98,7 @@ export async function verifyMembership(
     success: missingChannels.length === 0,
     missingChannels,
     latencyMs,
-    cached: results.every((result) => result.cached),
+    cached: results.every((s) => s.status === "fulfilled" && s.value.cached),
     checkedChannelIds: channels.map((channel) => channel.channel_id),
   };
 }

@@ -1,9 +1,11 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getGroupVerificationContract,
+  getGroupVerificationContractCached,
+  invalidateGroupContractCache,
   resetGroupVerificationContractRpcAvailabilityForTests,
 } from "../../../../apps/grammy/src/database/group-contract.repo.js";
-import { createMockDb, createMockLogger } from "../../helpers/mock-deps.js";
+import { createMockDb, createMockCache, createMockLogger } from "../../helpers/mock-deps.js";
 
 describe("getGroupVerificationContract", () => {
   beforeEach(() => {
@@ -86,5 +88,100 @@ describe("getGroupVerificationContract", () => {
       "InsForge RPC get_group_verification_contract: 500 Internal Server Error"
     );
     expect(db.getRecords).not.toHaveBeenCalled();
+  });
+});
+
+// ── S6: Contract cache tests ───────────────────────────────────────────────────
+
+describe("getGroupVerificationContractCached", () => {
+  beforeEach(() => {
+    resetGroupVerificationContractRpcAvailabilityForTests();
+    vi.clearAllMocks();
+  });
+
+  const MOCK_CONTRACT = {
+    groupId: 42,
+    enabled: true,
+    joinRequestPreferred: false,
+    channels: [{ channel_id: 999, title: "Chan", username: "chan", invite_link: null }],
+  };
+
+  it("S6: returns cached contract from Redis without hitting the DB", async () => {
+    const db = createMockDb();
+    const cache = createMockCache();
+
+    // Simulate Redis cache hit
+    vi.mocked(cache.get).mockResolvedValueOnce(JSON.stringify(MOCK_CONTRACT));
+
+    const contract = await getGroupVerificationContractCached(db, cache, 42);
+
+    expect(contract).toEqual(MOCK_CONTRACT);
+    // DB should never be called when cache has the data
+    expect(db.rpc).not.toHaveBeenCalled();
+    expect(db.getRecords).not.toHaveBeenCalled();
+  });
+
+  it("S6: fetches from DB and writes to Redis on cache miss", async () => {
+    const db = createMockDb();
+    const cache = createMockCache();
+
+    // Cache miss
+    vi.mocked(cache.get).mockResolvedValueOnce(null);
+    // DB returns the contract
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 42,
+      enabled: true,
+      join_request_preferred: false,
+      channels: MOCK_CONTRACT.channels,
+    });
+
+    const contract = await getGroupVerificationContractCached(db, cache, 42);
+
+    expect(contract.groupId).toBe(42);
+    expect(contract.enabled).toBe(true);
+    // Should have written the result to Redis
+    expect(cache.set).toHaveBeenCalledWith(
+      expect.stringContaining("group_contract:42"),
+      expect.any(String),
+      "EX",
+      300
+    );
+  });
+
+  it("S6: Redis failure falls through to DB read gracefully", async () => {
+    const db = createMockDb();
+    const cache = createMockCache();
+
+    // Simulate Redis failure
+    vi.mocked(cache.get).mockRejectedValueOnce(new Error("Redis down"));
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 42,
+      enabled: true,
+      join_request_preferred: false,
+      channels: [],
+    });
+
+    const contract = await getGroupVerificationContractCached(db, cache, 42);
+
+    expect(contract.groupId).toBe(42);
+    expect(db.rpc).toHaveBeenCalledOnce();
+  });
+});
+
+describe("invalidateGroupContractCache", () => {
+  it("S6: deletes the group contract cache key", async () => {
+    const cache = createMockCache();
+
+    await invalidateGroupContractCache(cache, 999);
+
+    expect(cache.del).toHaveBeenCalledWith(expect.stringContaining("group_contract:999"));
+  });
+
+  it("S6: silently ignores Redis errors on invalidation", async () => {
+    const cache = createMockCache();
+    vi.mocked(cache.del).mockRejectedValueOnce(new Error("Redis error"));
+
+    // Should not throw
+    await expect(invalidateGroupContractCache(cache, 888)).resolves.toBeUndefined();
   });
 });

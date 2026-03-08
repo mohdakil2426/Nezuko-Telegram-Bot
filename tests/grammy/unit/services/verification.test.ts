@@ -312,4 +312,56 @@ describe("verifyMembership", () => {
     expect(typeof result.latencyMs).toBe("number");
     expect(result.latencyMs).toBeGreaterThanOrEqual(0);
   });
+
+  // ── S2 Promise.allSettled tests ────────────────────────────────────────────
+
+  it("S2: a network error on one channel does not abort checks on other channels", async () => {
+    // Two channels — channel A throws, channel B returns "member"
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(1001, "chanA"), makeChannel(1002, "chanB")],
+    });
+
+    vi.mocked(cache.get).mockResolvedValue(null); // no cache
+
+    const getChatMember = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("Network error for chanA"))
+      .mockResolvedValueOnce({ status: "member" }); // chanB succeeds
+    const api = createMockApi({ getChatMember });
+    const log = createMockLogger();
+
+    const result = await verifyMembership(api as never, db, cache, 1, 999, log);
+
+    // chanA failed (rejected = not a member); chanB passed
+    // Both channels must have been attempted (Promise.allSettled behavior)
+    expect(getChatMember).toHaveBeenCalledTimes(2);
+    // chanA missing, chanB present => overall failure (conservative)
+    expect(result.success).toBe(false);
+    expect(result.missingChannels).toContain("@chanA");
+    expect(result.missingChannels).not.toContain("@chanB");
+  });
+
+  it("S2: a rejected channel settlement is treated as not a member (fail-closed)", async () => {
+    vi.mocked(db.rpc).mockResolvedValueOnce({
+      group_id: 1,
+      enabled: true,
+      join_request_preferred: true,
+      channels: [makeChannel(1003, "errorChan")],
+    });
+
+    vi.mocked(cache.get).mockResolvedValue(null);
+    // The checkChannelMembership catch block returns { isMember: false, cached: false }
+    // for most errors, so getChatMember throwing should still produce a "not a member" result
+    const getChatMember = vi.fn().mockRejectedValue(new Error("Unexpected error"));
+    const api = createMockApi({ getChatMember });
+    const log = createMockLogger();
+
+    const result = await verifyMembership(api as never, db, cache, 1, 999, log);
+
+    expect(result.success).toBe(false);
+    expect(result.missingChannels).toContain("@errorChan");
+  });
 });

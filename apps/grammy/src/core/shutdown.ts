@@ -23,6 +23,12 @@ interface ShutdownDeps {
   healthServer?: { close(): void } | null;
   statusInterval?: NodeJS.Timeout;
   syncInterval?: NodeJS.Timeout;
+  /**
+   * Optional callback invoked at the very start of the shutdown sequence,
+   * before the runner is stopped. Use to clean up external loops such as
+   * the keep-alive self-ping interval.
+   */
+  onBeforeShutdown?: () => void;
 }
 
 /**
@@ -45,6 +51,9 @@ export function setupShutdown(handle: RunnerHandle, deps: ShutdownDeps): void {
     isShuttingDown = true;
 
     deps.log.info({ signal }, "Shutdown initiated");
+
+    // Step 0: Invoke caller-supplied pre-stop cleanup (e.g. keep-alive loop)
+    deps.onBeforeShutdown?.();
 
     // Step 1: Stop accepting new updates
     handle.stop();

@@ -1,6 +1,6 @@
 # Progress: What Works, What's Left
 
-## Current Phase: 114 — First-Message Enforcement Flow Restore (with 2026-03-07 follow-up fixes)
+## Current Phase: 116 — Latency Gap Fixes + Dashboard Runner Self-Healing
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — preserved in `apps/bot/` for historical reference only. Not maintained.
@@ -18,6 +18,12 @@
 | **Multi-bot support**          | `BotManager` + `BotRegistry` + `BotLifecycleManager`                    | ✅ Ships     |
 | **Token decryption**           | AES-256-GCM via `encryption.ts` + Security Vault                        | ✅ Ships     |
 | **Membership verification**    | `verifyMembership()` — multi-channel AND logic, inline keyboard         | ✅ Ships     |
+| **Two-phase callback ack (S1)** | `answerCallbackQuery` called immediately before verification work; user sees response in ~363 ms avg | ✅ Phase 115 |
+| **allSettled membership checks (S2)** | `Promise.allSettled` in `verifyMembership` — one channel error doesn't abort others | ✅ Phase 115 |
+| **Moderation state cache (S4)** | Skips `restrictChatMember` when user already unrestricted (saves 746 ms avg per call) | ✅ Phase 115 |
+| **Contract Redis cache (S6)**   | `getGroupVerificationContractCached()` — 300s TTL, invalidated on admin commands | ✅ Phase 115 |
+| **Async log writes (S7)**       | `logVerification` fire-and-forget in verify + message-path hot paths | ✅ Phase 115 |
+| **Stage telemetry (S11)**       | Per-verify `t_ack`, `t_checks`, `t_moderation`, `t_total` logged as structured events | ✅ Phase 115 |
 | **Verification contract read** | RPC when available, direct-table fallback when live schema lags              | ✅ Phase 110 |
 | **Idempotent verify/join-request** | Redis NX locks suppress duplicate callback/join-request work       | ✅ Phase 109 |
 | **Channel-side cache invalidation** | Required-channel `chat_member` updates refresh membership/verified cache | ✅ Phase 109 |
@@ -57,7 +63,14 @@
 | **Pino logger**                | Structured JSON, child loggers per module                               | ✅ Ships     |
 | **DB log transport**           | `db-log-transport.ts` — WARN+ logs → `admin_logs` (admin_logs realtime) | ✅ Phase 105 |
 | **API call logging**           | `apiLogTransformer` in bot-factory — all calls → `api_call_log`         | ✅ Phase 105 |
-| **Vitest tests**               | 156/156 tests passing (28 suites)                                       | ✅ 2026-03-07 follow-up |
+| **S6 contract cache — verify path** | `verify.ts` now calls `getGroupVerificationContractCached()` before `verifyMembership()`, passing preloaded channels; eliminates 200–280 ms InsForge read on every verify tap | ✅ Phase 116 |
+| **S4 restricted state seeding**     | `events.ts` `enforceVerificationFailure()` now writes `mod_state:"restricted"` to Redis after `muteUser()`; enables verify.ts to skip redundant `restrictChatMember` on verify-fail path | ✅ Phase 116 |
+| **Fast runner restart (dashboard)** | `bot-lifecycle.ts` `restartRunnerOnly()` stops only the stalled poll loop and starts a new one on the same Bot instance; skips getMe/syncBotCommands/DB offline round-trip; recovery in ~1–2 s vs 10–15 s | ✅ Phase 116 |
+| **Reduced stall threshold**         | `RUNNER_STALL_THRESHOLD_MS` lowered from 10 min → 2 min; watchdog now fires before users notice the bot is dead | ✅ Phase 116 |
+| **Keep-alive module**               | `utils/keep-alive.ts` self-pings `/health` on a configurable interval; prevents idle spin-down on free-tier cloud hosts; `KEEP_ALIVE_URL` + `KEEP_ALIVE_INTERVAL_MS` env vars | ✅ Phase 116 |
+| **onBeforeShutdown hook**           | `ShutdownDeps.onBeforeShutdown` optional callback; lets callers inject cleanup (e.g. keep-alive stop) without coupling shutdown.ts to external modules | ✅ Phase 116 |
+| **Config: keep-alive vars**         | `config.ts` exposes `keepAliveUrl` + `keepAliveIntervalMs` validated from env | ✅ Phase 116 |
+| **Vitest tests**                    | 163/163 tests passing (28 suites)                                       | ✅ Phase 116 |
 
 ### Database Schema (InsForge — Migration 023)
 
@@ -119,6 +132,13 @@
 | Phase 106   | Group command composer mounting fixed; runtime wiring tests expanded               | grammY     |
 | Phase 107   | Duplicate poller guard + InsForge request timeouts to reduce command latency       | grammY     |
 | Phase 108   | Explicit verify bypasses stale negative cache; group sequentialization narrowed    | grammY     |
+| Phase 109   | Idempotent verify/join-request with Redis NX locks                                 | grammY     |
+| Phase 110   | Message-path revalidation + InsForge request timeouts                              | grammY     |
+| Phase 111   | Delayed verification prompt on required-channel leave                              | grammY     |
+| Phase 112   | Burst blocked-message cleanup (lock-loser deletion)                                | grammY     |
+| Phase 113   | Fast block-state message path + central realtime coordinator                       | grammY     |
+| Phase 114   | First blocked message flow restore + 2026-03-07 follow-up fixes                   | grammY     |
+| Phase 115   | Latency V2: S1 immediate ack, S2 allSettled, S4 mod cache, S6 contract cache, S7 async logs, S11 telemetry | grammY |
 
 ---
 
@@ -130,12 +150,12 @@
 | Admin alert channel (bot→admin DM on error)       | Low         | Not wired; `bot.catch()` only logs              |
 | Webhook mode                                      | Not planned | grammY uses long-polling via `@grammyjs/runner` |
 | Existing duplicate bot processes must be stopped once | Medium  | Code now prevents new duplicates, but old local pollers can still conflict until restarted |
-| Standalone `/health` still lacks runner inactivity details | Low | Standalone mode now has self-healing runner recovery, but health output still only exposes static mode/db details |
+| Standalone `/health` still lacks runner inactivity details | Low | Standalone mode has `standalone-watchdog.ts` (file created but not wired into main.ts — deferred) |
 | Live migration 024 not yet applied                | Medium  | Bot now falls back without the RPC, but live schema should still be aligned |
 | `get_user_growth` analytics RPC is broken live    | Medium  | Postgres logs show a `verification_log.user_id` query bug |
 | Join-request-first flow still needs full live validation | Pending | Core verify path is now confirmed working live |
 | Groups/channels cross-session realtime still incomplete | Medium | Dashboard now has a central realtime coordinator, but true live updates for group/channel admin tables still need dedicated InsForge triggers |
-| grammY format check still fails on unrelated files | Low | `apps/grammy/src/database/verification.repo.ts`, `apps/grammy/src/services/idempotency.ts`, and `apps/grammy/src/utils/health.ts` have pre-existing Prettier drift |
+| `standalone-watchdog.ts` created but not wired   | Low        | Created as utility; standalone mode 95% unused — deferred |
 
 ---
 
@@ -146,7 +166,8 @@
 3. **Validate join-request-first flow live** — verify request-only invite flow approves subscribed users without mute fallback.
 4. **Fix `get_user_growth` RPC** — backend analytics query currently references `verification_log` incorrectly.
 5. **Docker build** — update `Dockerfile` to point at `apps/grammy` (`bun install` + `bun run build` + `node dist/main.js`).
-6. **Expose standalone runner health** — make standalone `/health` include runner inactivity/degraded state like dashboard mode.
+6. **S3 verdict-level L2 cache** — implement `setVerificationVerdict()` in verify.ts to skip repeat getChatMember checks on re-taps.
+7. **Wire standalone-watchdog.ts into main.ts** — complete standalone runner supervision if standalone mode gains more users.
 
 ---
 
@@ -164,4 +185,4 @@
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 114 + runner self-healing / health visibility follow-up documented)_
+_Last Updated: 2026-03-08 (Phase 116 — S6 verify-path gap fix, S4 restricted seeding, fast runner restart in dashboard mode, RUNNER_STALL_THRESHOLD_MS 10 min → 2 min, keep-alive module, 163/163 tests)_

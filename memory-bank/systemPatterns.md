@@ -2,7 +2,7 @@
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — `apps/bot/` preserved for reference only. Not maintained.
-> **Last Updated**: 2026-03-07 (Phase 113)
+> **Last Updated**: 2026-03-08 (Phase 116)
 
 ---
 
@@ -89,6 +89,8 @@ apps/grammy/src/
     ├── messages.ts       # All user-facing HTML message strings (constants)
     ├── auto-delete.ts    # scheduleDelete() — setTimeout → msg.delete()
     ├── health.ts         # startHealthServer() — /health HTTP endpoint
+    ├── keep-alive.ts     # startKeepAlive() — self-ping loop for cloud idle-timeout prevention
+    ├── standalone-watchdog.ts # startStandaloneWatchdog() — task+poll supervision for standalone mode (created, not yet wired)
     └── process-lock.ts   # acquireProcessLock() — prevents duplicate local bot starts
 ```
 

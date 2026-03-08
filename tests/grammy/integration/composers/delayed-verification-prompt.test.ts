@@ -43,8 +43,8 @@ function makeDepsWithPromptState(initialState: Record<string, string> = {}) {
 
   const state = new Map(Object.entries(initialState));
   vi.mocked(deps.cache.get).mockImplementation(async (key: string) => state.get(key) ?? null);
-  vi.mocked(deps.cache.mget).mockImplementation(
-    async (keys: string[]) => keys.map((key) => state.get(key) ?? null)
+  vi.mocked(deps.cache.mget).mockImplementation(async (keys: string[]) =>
+    keys.map((key) => state.get(key) ?? null)
   );
   vi.mocked(deps.cache.set).mockImplementation(async (key: string, value: string) => {
     state.set(key, value);

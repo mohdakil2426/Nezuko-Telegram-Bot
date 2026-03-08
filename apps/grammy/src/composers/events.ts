@@ -1,7 +1,11 @@
 import { Composer, InlineKeyboard } from "grammy";
 import type { NezukoContext } from "../types.js";
 import { setGroupActive } from "../database/group.repo.js";
-import { getGroupVerificationContract } from "../database/group-contract.repo.js";
+import {
+  getGroupVerificationContract,
+  getGroupVerificationContractCached,
+  invalidateGroupContractCache,
+} from "../database/group-contract.repo.js";
 import { getLatestVerificationState, logVerification } from "../database/verification.repo.js";
 import { muteUser } from "../services/protection.js";
 import { verifyMembership } from "../services/verification.js";
@@ -20,6 +24,7 @@ import {
   INTERVALS,
   MEMBER_CACHE_TTL,
   MEMBER_NEGATIVE_CACHE_TTL,
+  MOD_STATE_CACHE_TTL,
   VERIFIED_CACHE_TTL,
   VERIFIED_RECHECK_INTERVAL_MS,
 } from "../core/constants.js";
@@ -186,6 +191,18 @@ async function enforceVerificationFailure(
   await muteUser(ctx.api, groupId, userId).catch((err) => {
     ctx.log.warn({ err, groupId, userId }, "Failed to mute unverified user");
   });
+  // S4 — After muting, record the "restricted" moderation state in Redis.
+  // When the user subsequently taps Verify and fails membership checks,
+  // verify.ts will read this key and skip calling restrictChatMember (740 ms avg)
+  // because the user is already restricted. Safe to ignore cache write failure.
+  await ctx.cache
+    .set(
+      `${CACHE_NAMESPACES.MOD_STATE}:${groupId}:${userId}`,
+      "restricted",
+      "EX",
+      MOD_STATE_CACHE_TTL
+    )
+    .catch(() => {});
   await logVerification(ctx.db, {
     user_id: userId,
     group_id: groupId,
@@ -401,7 +418,8 @@ eventsComposer.on("message", async (ctx, next) => {
     return;
   }
 
-  const contract = await getGroupVerificationContract(ctx.db, ctx.chat.id);
+  // S6: Use Redis-cached contract (saves 200-280ms InsForge read on every group message)
+  const contract = await getGroupVerificationContractCached(ctx.db, ctx.cache, ctx.chat.id);
   const channels = contract.enabled ? contract.channels : [];
   if (channels.length === 0) {
     await next();
@@ -500,7 +518,8 @@ eventsComposer.on("message", async (ctx, next) => {
       () => {}
     );
     if (hasEnforcementBlock || latestVerification?.status !== "verified") {
-      await logVerification(ctx.db, {
+      // S7: Fire-and-forget log write — don't block the message pass-through on a DB write
+      logVerification(ctx.db, {
         user_id: ctx.from.id,
         group_id: ctx.chat.id,
         channel_id: result.checkedChannelIds[0] ?? 0,
@@ -520,7 +539,8 @@ eventsComposer.on("message", async (ctx, next) => {
 
   await deleteCurrentMessage(ctx);
 
-  await enforceVerificationFailure(
+  // S7: Fire-and-forget enforcement failure log + prompt — don't block message deletion
+  enforceVerificationFailure(
     ctx,
     ctx.chat.id,
     ctx.from.id,
@@ -528,7 +548,12 @@ eventsComposer.on("message", async (ctx, next) => {
     channels,
     result,
     { sendPrompt: true }
-  );
+  ).catch((err) => {
+    ctx.log.warn(
+      { err, chatId: ctx.chat.id, userId: ctx.from?.id },
+      "enforceVerificationFailure failed"
+    );
+  });
 });
 
 // ── my_chat_member — bot added/demoted/removed ────────────────────
@@ -565,6 +590,8 @@ eventsComposer.on("my_chat_member", async (ctx) => {
     } catch {
       // Can't send — ignore
     }
+    // S6: Config changed — invalidate contract cache for this group
+    await invalidateGroupContractCache(ctx.cache, chatId).catch(() => {});
     await setGroupActive(ctx.db, chatId, false).catch(() => {});
     return;
   }
@@ -572,6 +599,8 @@ eventsComposer.on("my_chat_member", async (ctx) => {
   // Bot removed/kicked → mark inactive + cleanup (EC-49)
   if (newStatus === "left" || newStatus === "kicked") {
     ctx.log.warn({ chatId }, "Bot removed — marking group inactive");
+    // S6: Bot removed — invalidate contract cache (group may be re-added later with different config)
+    await invalidateGroupContractCache(ctx.cache, chatId).catch(() => {});
     await setGroupActive(ctx.db, chatId, false).catch(() => {});
   }
 });

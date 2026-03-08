@@ -74,7 +74,7 @@ describe("bot-factory runtime wiring", () => {
   it("handles /status through the full shipped wiring for group admins", async () => {
     const { bot, apiCalls } = createConfiguredTestBot({
       methodResults: {
-        getChatMember: (payload) => ({
+        getChatMember: (payload: Record<string, unknown>) => ({
           status: Number(payload.user_id) === 111222333 ? "administrator" : "administrator",
           user: {
             id: Number(payload.user_id),
@@ -215,7 +215,7 @@ describe("bot-factory runtime wiring", () => {
     let membershipChecks = 0;
     const { bot, apiCalls } = createConfiguredTestBot({
       methodResults: {
-        getChatMember: (payload) => {
+        getChatMember: (payload: Record<string, unknown>) => {
           if (Number(payload.chat_id) === -1001111111111) {
             membershipChecks += 1;
             return {
@@ -265,9 +265,15 @@ describe("bot-factory runtime wiring", () => {
 
     expect(membershipChecks).toBe(2);
 
-    const answerCall = apiCalls.find((call) => call.method === "answerCallbackQuery");
-    expect(answerCall).toBeDefined();
-    expect(answerCall?.payload).toMatchObject({ text: "✅ Verified! You can send messages now." });
+    // S1: verify now answers TWICE — first with VERIFY_PROCESSING (immediate ack),
+    // then with VERIFY_SUCCESS (actual result). The last call contains the success text.
+    const allAnswerCalls = apiCalls.filter((call) => call.method === "answerCallbackQuery");
+    expect(allAnswerCalls.length).toBeGreaterThanOrEqual(1);
+    const lastAnswerCall = allAnswerCalls.at(-1);
+    expect(lastAnswerCall).toBeDefined();
+    expect(lastAnswerCall?.payload).toMatchObject({
+      text: "✅ Verified! You can send messages now.",
+    });
 
     const restrictCall = apiCalls.find((call) => call.method === "restrictChatMember");
     expect(restrictCall).toBeDefined();

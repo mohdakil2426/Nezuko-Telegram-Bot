@@ -1,6 +1,8 @@
 import type { InsForgeClient } from "../core/insforge-client.js";
 import type { Logger } from "../utils/logger.js";
+import type { CacheClient } from "../core/cache.js";
 import { getGroupChannels } from "./group.repo.js";
+import { CACHE_NAMESPACES, GROUP_CONTRACT_CACHE_TTL } from "../core/constants.js";
 
 export interface GroupVerificationContract {
   groupId: number;
@@ -149,4 +151,60 @@ export async function getGroupVerificationSettings(
     enabled: contract.enabled,
     joinRequestPreferred: contract.joinRequestPreferred,
   };
+}
+
+/**
+ * S6 — Redis-cached verification contract reader.
+ *
+ * Hot-path replacement for `getGroupVerificationContract()`. Reads from a
+ * 300-second Redis cache keyed by group ID before hitting InsForge. Cache is
+ * invalidated by `invalidateGroupContractCache()` whenever an admin modifies
+ * the group configuration (/protect, /unprotect, /settings).
+ *
+ * @param db    - InsForge REST client
+ * @param cache - Redis cache client
+ * @param groupId - Telegram group ID
+ */
+export async function getGroupVerificationContractCached(
+  db: InsForgeClient,
+  cache: CacheClient,
+  groupId: number
+): Promise<GroupVerificationContract> {
+  const cacheKey = `${CACHE_NAMESPACES.GROUP_CONTRACT}:${groupId}`;
+
+  try {
+    const cached = await cache.get(cacheKey);
+    if (cached !== null) {
+      return JSON.parse(cached) as GroupVerificationContract;
+    }
+  } catch {
+    // Redis down or parse error — fall through to DB read
+  }
+
+  const contract = await getGroupVerificationContract(db, groupId);
+
+  try {
+    await cache.set(cacheKey, JSON.stringify(contract), "EX", GROUP_CONTRACT_CACHE_TTL);
+  } catch {
+    // Cache write failure is non-fatal
+  }
+
+  return contract;
+}
+
+/**
+ * S6 — Invalidate the group contract Redis cache.
+ *
+ * Must be called after any admin command that modifies group protection settings.
+ * Safe to call when Redis is down — failure is silently ignored.
+ *
+ * @param cache   - Redis cache client
+ * @param groupId - Telegram group ID whose contract changed
+ */
+export async function invalidateGroupContractCache(
+  cache: CacheClient,
+  groupId: number
+): Promise<void> {
+  const cacheKey = `${CACHE_NAMESPACES.GROUP_CONTRACT}:${groupId}`;
+  await cache.del(cacheKey).catch(() => {});
 }

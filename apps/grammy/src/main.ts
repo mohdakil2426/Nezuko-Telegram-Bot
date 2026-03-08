@@ -35,6 +35,7 @@ import {
 import { createDbLogDestination } from "./core/db-log-transport.js";
 import type { BotDeps } from "./types.js";
 import { acquireProcessLock } from "./utils/process-lock.js";
+import { startKeepAlive } from "./utils/keep-alive.js";
 
 // ─── Banner helpers ───────────────────────────────────────────────────────────
 
@@ -198,6 +199,16 @@ async function runStandaloneMode(
     effectiveLogger.warn("⚠  Health server disabled");
   }
 
+  // Keep-alive loop — prevents idle shutdown on free-tier cloud hosts (Render,
+  // Railway, Fly.io) and local machines entering sleep. Self-pings the health
+  // endpoint every 10 minutes (or KEEP_ALIVE_INTERVAL_MS). Enable by setting
+  // KEEP_ALIVE_URL=https://your-host.example.com/health in apps/grammy/.env
+  const keepAlive = startKeepAlive(
+    effectiveLogger,
+    config.keepAliveUrl,
+    config.keepAliveIntervalMs
+  );
+
   // Graceful shutdown
   setupShutdown(handle, {
     db,
@@ -208,6 +219,7 @@ async function runStandaloneMode(
     healthServer,
     statusInterval,
     syncInterval,
+    onBeforeShutdown: () => keepAlive?.stop(),
   });
 
   logger.info("Bot is running. Press Ctrl+C to stop.");
@@ -330,6 +342,13 @@ async function runDashboardMode(
 
   effectiveLogger.info("Dashboard mode running. Press Ctrl+C to stop all bots.");
 
+  // Keep-alive loop — same purpose as in standalone mode
+  const keepAlive = startKeepAlive(
+    effectiveLogger,
+    config.keepAliveUrl,
+    config.keepAliveIntervalMs
+  );
+
   // Keep process alive until SIGINT/SIGTERM (mirrors PTB bot's asyncio.run(bot_manager.run()))
   await new Promise<void>((resolve) => {
     const doShutdown = (): void => {
@@ -341,6 +360,7 @@ async function runDashboardMode(
   });
 
   // Graceful teardown
+  keepAlive?.stop();
   commandWorker.stop();
   realtime?.disconnect();
   await manager.shutdown(); // also stops sync loop

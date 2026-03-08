@@ -49,6 +49,14 @@ const configSchema = z.object({
     .string()
     .default("false")
     .transform((v) => v === "true"),
+
+  // Keep-alive self-ping — prevents idle shutdown on free-tier hosts
+  KEEP_ALIVE_URL: z
+    .string()
+    .url()
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  KEEP_ALIVE_INTERVAL_MS: z.coerce.number().int().positive().default(600_000),
 });
 
 /** Validated configuration derived from environment variables. */
@@ -75,6 +83,17 @@ export interface Config {
   dashboardMode: boolean;
   /** True when DASHBOARD_MODE=false (single-bot mode). Convenience alias. */
   standaloneMode: boolean;
+  /**
+   * URL to self-ping to prevent idle shutdown on free-tier cloud hosts.
+   * When set, the keep-alive loop GETs this URL every keepAliveIntervalMs.
+   * Typically set to the public URL of the /health endpoint.
+   */
+  keepAliveUrl: string | undefined;
+  /**
+   * Keep-alive ping interval in milliseconds. Defaults to 10 minutes.
+   * Tune down to 8 minutes if the host has a 15-min idle timeout.
+   */
+  keepAliveIntervalMs: number;
 }
 
 /**
@@ -107,5 +126,7 @@ export function loadConfig(): Config {
     insforgeRequestTimeoutMs: parsed.INSFORGE_REQUEST_TIMEOUT_MS,
     dashboardMode,
     standaloneMode: !dashboardMode,
+    keepAliveUrl: parsed.KEEP_ALIVE_URL,
+    keepAliveIntervalMs: parsed.KEEP_ALIVE_INTERVAL_MS,
   };
 }

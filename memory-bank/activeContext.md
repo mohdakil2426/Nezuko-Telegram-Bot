@@ -18,6 +18,10 @@
 
 **2026-03-07 Follow-up: Duplicate Restart Race from bot.log — COMPLETE ✅**
 
+**Phase 115: Latency V2 — S1/S2/S4(partial)/S6/S7/S11 — COMPLETE ✅**
+
+**Phase 116: Latency Gap Fixes + Dashboard Runner Self-Healing — COMPLETE ✅**
+
 The verification UX was refined to reduce group spam from required-channel membership flapping:
 }},{
 - Required-channel `chat_member` leave events no longer push verification prompts into linked groups immediately.
@@ -75,6 +79,18 @@ The verification UX was refined to reduce group spam from required-channel membe
   - `stopRunner()` now tolerates an already-rejected runner task so cleanup still completes after a `409` or runner failure
   - new unit coverage proves cleanup after rejected runner tasks and serialization of concurrent lifecycle transitions
   - latest grammY quality gates after this follow-up: type-check ✅ lint ✅ tests 156/156 ✅ build ✅
+
+- **Phase 116 (2026-03-08)** closed two latency gaps identified in the latencyV2 audit and added dashboard-mode runner self-healing:
+  - **S6 verify-path gap**: `verify.ts` now calls `getGroupVerificationContractCached()` *before* `verifyMembership()` and passes preloaded channels into it, eliminating the 200–280 ms uncached InsForge read that was happening on every verify button tap even though the message-path already cached the contract.
+  - **S4 restricted-state seeding**: `events.ts` `enforceVerificationFailure()` now writes `mod_state:"restricted"` to Redis immediately after `muteUser()`, so the verify path can correctly detect an already-restricted user and skip redundant `restrictChatMember` calls (saves ~746 ms per verify-fail re-tap).
+  - **Keep-alive module** (`utils/keep-alive.ts`): self-pings the `/health` endpoint on a configurable interval to prevent idle spin-down on free-tier cloud hosts (Render, Railway). `KEEP_ALIVE_URL` + `KEEP_ALIVE_INTERVAL_MS` are new env vars validated in `config.ts`. Left blank by default for local-machine runs.
+  - **`ShutdownDeps.onBeforeShutdown`** optional callback added to `shutdown.ts` — lets callers (e.g. keep-alive) inject cleanup steps before the runner stops without coupling them to the shutdown module.
+  - **Fast runner restart** (`bot-lifecycle.ts` `restartRunnerOnly()`): replaces the full `restartBot()` path used by automatic watchdog/task-watcher triggers. Stops only the stalled polling loop and starts a new one on the same Bot instance, skipping `getMe()`, `syncBotCommands()`, and DB offline↔online round-trips. Recovery time: **~1–2 s vs 10–15 s**.
+  - **`RUNNER_STALL_THRESHOLD_MS` lowered**: 10 min → **2 min**. The previous threshold matched the user-reported 10–15 min idle → dead window exactly. At 2 min the watchdog fires before users notice.
+  - `utils/standalone-watchdog.ts` created (ports both supervision mechanisms to standalone mode) but not wired to `main.ts` — deferred since dashboard mode is the 95% path.
+  - `apps/grammy/.env` updated: added `INSFORGE_REQUEST_TIMEOUT_MS`, lowered `LOG_LEVEL` from `debug` → `info`, disabled `DEBUG_UPDATES`, added `KEEP_ALIVE_URL`/`KEEP_ALIVE_INTERVAL_MS`.
+  - `apps/grammy/.env.example` updated with keep-alive section and hosting platform guidance.
+  - Quality gates after Phase 116: grammY type-check ✅ lint ✅ format ✅ tests **163/163** ✅ build ✅
 
 The post-audit stabilization work is now documented:
 

@@ -17,6 +17,12 @@ export const CACHE_NAMESPACES = {
   ENFORCEMENT_BLOCK: "enforcement_block",
   DEBOUNCE: "verify_debounce",
   CONTRACT: "verify_contract",
+  /** Aggregated verdict cache keyed by (group, user, contract revision). */
+  VERDICT: "verdict",
+  /** Moderation state cache — tracks whether a user is restricted or unrestricted. */
+  MOD_STATE: "mod_state",
+  /** Verification contract cache — group enforcement configuration. */
+  GROUP_CONTRACT: "group_contract",
   IDEMPOTENCY: "idempotency",
   JOIN_REQUEST_APPROVED: "join_request_approved",
   VERIFICATION_PROMPT: "verification_prompt",
@@ -42,8 +48,26 @@ export const INTERVALS = {
   ENFORCEMENT_BLOCK: 300,
 } as const;
 
-/** Maximum time a bot may go without processing Telegram updates before it is considered stalled. */
-export const RUNNER_STALL_THRESHOLD_MS = 10 * 60_000;
+/**
+ * S6 — Verification contract Redis cache TTL in seconds.
+ * Contracts only change when an admin runs /protect, /unprotect, or /settings.
+ */
+export const GROUP_CONTRACT_CACHE_TTL = 300;
+
+/**
+ * S4 — Moderation state cache TTL in seconds.
+ * Tracks whether a user is "restricted" or "unrestricted" to skip redundant
+ * restrictChatMember calls at 746 ms average per call.
+ */
+export const MOD_STATE_CACHE_TTL = 300;
+
+/** Maximum time a bot may go without processing Telegram updates before it is considered stalled.
+ *
+ * Set to 2 minutes (was 10 minutes). The previous 10-minute threshold caused the bot to appear
+ * dead for up to 10+ minutes during inactivity periods before the watchdog fired.
+ * At 2 minutes the watchdog fires while the stall is still invisible to users.
+ */
+export const RUNNER_STALL_THRESHOLD_MS = 2 * 60_000;
 
 /** Maximum time to wait for in-flight updates during shutdown. */
 export const SHUTDOWN_TIMEOUT_MS = 8_000;

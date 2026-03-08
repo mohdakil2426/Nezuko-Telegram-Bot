@@ -118,11 +118,13 @@ export class BotManager {
 
     this.logger.info({ commandId: command.id, botId, commandType }, "Handling dashboard command");
 
-    const botRecord = (await this.db.getRecords<BotInstanceRecord>("bot_instances", {
-      bot_id: `eq.${botId}`,
-      is_deleted: "eq.false",
-      limit: "1",
-    }))[0];
+    const botRecord = (
+      await this.db.getRecords<BotInstanceRecord>("bot_instances", {
+        bot_id: `eq.${botId}`,
+        is_deleted: "eq.false",
+        limit: "1",
+      })
+    )[0];
 
     switch (commandType) {
       case "start": {
