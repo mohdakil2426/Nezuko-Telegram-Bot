@@ -63,8 +63,14 @@ export const UNPROTECT_NOT_LINKED = (channel: string): string =>
 
 export const VERIFY_SUCCESS = "✅ Verified! You can send messages now.";
 
-export const VERIFY_MISSING_CHANNELS = (channels: string[]): string =>
-  `❌ Please join: ${channels.join(", ")}`;
+export const VERIFY_MISSING_CHANNELS = (channels: string[]): string => {
+  // answerCallbackQuery is plain text only — no HTML/Markdown.
+  // t.me/username URLs are auto-detected by Telegram and rendered as tappable links.
+  const links = channels
+    .map((ch) => (ch.startsWith("@") ? `t.me/${ch.slice(1)}` : ch))
+    .join("\n");
+  return `❌ Join first:\n${links}`;
+};
 
 export const VERIFY_PROCESSING = "⏳ Processing...";
 

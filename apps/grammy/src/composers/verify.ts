@@ -44,139 +44,132 @@ verifyComposer.callbackQuery(/^verify:(-?\d+)$/, async (ctx) => {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // S1 — Phase A: Acknowledge the callback IMMEDIATELY.
+  // BUG FIX — "Please join: @channel" popup was never appearing for users who
+  // hadn't joined the required channel(s).
   //
-  // Telegram shows a loading spinner on the button until answerCallbackQuery
-  // is called. The old code awaited verifyMembership (~400 ms) + unmuteUser
-  // (~746 ms) BEFORE answering, so users saw the spinner for ~1,323 ms avg.
+  // ROOT CAUSE: Telegram permits answerCallbackQuery exactly ONCE per callback
+  // query ID. The old two-phase design called answerCallbackQuery("Verifying…")
+  // immediately (S1 spinner-dismiss) which consumed that single allowed token.
+  // On the failure path, the second call with show_alert: true was silently
+  // dropped by Telegram — the popup never appeared.
   //
-  // By answering first with "Verifying…" the user sees feedback in the next
-  // Telegram polling cycle (~363 ms avg based on live telemetry). All actual
-  // enforcement work happens in Phase B below.
+  // FIX: Run the membership check FIRST, then branch:
+  //   • FAILURE → single answerCallbackQuery with show_alert: true (the popup)
+  //   • SUCCESS → two-phase: VERIFY_PROCESSING spinner-dismiss, then success msg
+  //
+  // The S1 latency optimisation is preserved on the success path only. The
+  // failure path trades ~400 ms spinner visibility for a guaranteed alert popup.
   // ──────────────────────────────────────────────────────────────────────────
-  const tStart = performance.now();
-  await ctx.answerCallbackQuery({ text: VERIFY_PROCESSING }).catch(() => {});
-  const tAck = performance.now();
 
   try {
-    // ────────────────────────────────────────────────────────────────────────
+    const tStart = performance.now();
+
     // S6 — Load the group verification contract from Redis BEFORE calling
     // verifyMembership. This skips the 200–280 ms InsForge REST round-trip
-    // that verifyMembership would make internally via getGroupVerificationContract
-    // (the non-cached version). By resolving the contract here and passing
-    // `channels` as an option, verifyMembership only talks to Telegram.
-    // ────────────────────────────────────────────────────────────────────────
+    // that verifyMembership would make internally via getGroupVerificationContract.
     const tContractStart = performance.now();
     const contract = await getGroupVerificationContractCached(ctx.db, ctx.cache, groupId);
     const contractChannels = contract.enabled ? contract.channels : [];
 
-    // ────────────────────────────────────────────────────────────────────────
-    // S11 — Stage telemetry: track per-stage latency so we can measure the
-    // impact of each optimization and surface regressions early.
-    // ────────────────────────────────────────────────────────────────────────
     const result = await verifyMembership(ctx.api, ctx.db, ctx.cache, groupId, userId, ctx.log, {
       bypassNegativeCache: true,
       channels: contractChannels, // S6: preloaded — skips the DB read inside
     });
     const tContractEnd = performance.now();
 
-    if (result.success) {
-      // ──────────────────────────────────────────────────────────────────────
-      // S4 — Moderation state cache: skip restrictChatMember when the user is
-      // already unrestricted.  Telegram's restrictChatMember averages 746 ms
-      // per call. By caching the last known moderation state we avoid most of
-      // these calls for users who successfully verified recently.
-      // ──────────────────────────────────────────────────────────────────────
-      const modStateKey = `${CACHE_NAMESPACES.MOD_STATE}:${groupId}:${userId}`;
-      const tModerationStart = performance.now();
-      let moderationSkipped = false;
-      try {
-        const modState = await ctx.cache.get(modStateKey);
-        if (modState === "unrestricted") {
-          // Already unrestricted — no need to call Telegram API
-          moderationSkipped = true;
-        } else {
-          await unmuteUser(ctx.api, groupId, userId);
-          // Cache the new state so subsequent verifies skip the API call
-          await ctx.cache
-            .set(modStateKey, "unrestricted", "EX", MOD_STATE_CACHE_TTL)
-            .catch(() => {});
-        }
-      } catch {
-        // Cache read failed — fall through to unconditional unmute
-        await unmuteUser(ctx.api, groupId, userId).catch(() => {});
-      }
-      const tModerationEnd = performance.now();
-
-      // Update verified cache and clear enforcement block
-      const cacheKey = `${CACHE_NAMESPACES.VERIFIED}:${groupId}:${userId}`;
-      await ctx.cache.set(cacheKey, "1", "EX", VERIFIED_CACHE_TTL).catch(() => {});
-      await ctx.cache
-        .del(`${CACHE_NAMESPACES.ENFORCEMENT_BLOCK}:${groupId}:${userId}`)
-        .catch(() => {});
-
-      // S7 — Fire-and-forget DB log write. logVerification hits InsForge over
-      // HTTP (200–280 ms). Awaiting it here would extend user-perceived latency
-      // with a write that has no bearing on the outcome the user sees.
+    // ── FAILURE PATH ───────────────────────────────────────────────────────
+    // User has not joined one or more required channels.
+    // Use the ONE allowed answerCallbackQuery as the show_alert popup so the
+    // "Please join: @channel" message actually appears.
+    if (!result.success) {
+      // S7 — Fire-and-forget restriction log
       logVerification(ctx.db, {
         user_id: userId,
         group_id: groupId,
         channel_id: result.checkedChannelIds[0] ?? 0,
-        status: "verified",
+        status: "restricted",
         latency_ms: result.latencyMs,
         cached: result.cached,
-      }).catch((err) => ctx.log.warn({ err }, "Failed to log verification"));
+      }).catch(() => {});
 
-      const tEnd = performance.now();
+      const tEndFail = performance.now();
 
-      // S11 — Log verification stage timings as a structured event
+      // S11 — Log failure stage timings
       ctx.log.debug(
         {
           event: "verify_stage_timings",
           userId,
           groupId,
-          t_ack_ms: Math.round(tAck - tStart),
           t_checks_ms: Math.round(tContractEnd - tContractStart),
-          t_moderation_ms: Math.round(tModerationEnd - tModerationStart),
-          t_total_ms: Math.round(tEnd - tStart),
-          moderation_skipped: moderationSkipped,
+          t_total_ms: Math.round(tEndFail - tStart),
+          moderation_skipped: false,
           cached: result.cached,
+          outcome: "missing_channels",
+          missing_count: result.missingChannels.length,
         },
         "verify callback stage timings"
       );
 
-      await deleteActiveVerificationPrompt(ctx.api, ctx.cache, groupId, userId).catch(() => {});
-
+      // Single allowed answer — must be show_alert so the popup appears.
       try {
-        // S1 — Send the final success notification as a separate answerCallbackQuery.
-        // Telegram allows multiple calls — the first (VERIFY_PROCESSING) cleared
-        // the spinner; this second call shows the real outcome message.
-        await ctx.answerCallbackQuery({ text: VERIFY_SUCCESS });
+        await ctx.answerCallbackQuery({
+          text: VERIFY_MISSING_CHANNELS(result.missingChannels),
+          show_alert: true,
+        });
       } catch {
-        // EC-12: Expired callback query — silently ignore
-      }
-
-      try {
-        await ctx.deleteMessage();
-      } catch {
-        // EC-14: Message already deleted — silently ignore
+        // EC-12: Expired callback query
       }
       return;
     }
 
-    // S7 — Fire-and-forget restriction log
+    // ── SUCCESS PATH ───────────────────────────────────────────────────────
+    // User is a member of all required channels.
+    // S1: ack with "Verifying…" first to dismiss the spinner immediately, then
+    // do moderation + cache work, then send the real success notification.
+    const tAck = performance.now();
+    await ctx.answerCallbackQuery({ text: VERIFY_PROCESSING }).catch(() => {});
+
+    // S4 — Moderation state cache: skip restrictChatMember when user is already
+    // unrestricted. Telegram's restrictChatMember averages 746 ms per call.
+    const modStateKey = `${CACHE_NAMESPACES.MOD_STATE}:${groupId}:${userId}`;
+    const tModerationStart = performance.now();
+    let moderationSkipped = false;
+    try {
+      const modState = await ctx.cache.get(modStateKey);
+      if (modState === "unrestricted") {
+        moderationSkipped = true;
+      } else {
+        await unmuteUser(ctx.api, groupId, userId);
+        await ctx.cache
+          .set(modStateKey, "unrestricted", "EX", MOD_STATE_CACHE_TTL)
+          .catch(() => {});
+      }
+    } catch {
+      // Cache read failed — fall through to unconditional unmute
+      await unmuteUser(ctx.api, groupId, userId).catch(() => {});
+    }
+    const tModerationEnd = performance.now();
+
+    // Update verified cache and clear enforcement block
+    const cacheKey = `${CACHE_NAMESPACES.VERIFIED}:${groupId}:${userId}`;
+    await ctx.cache.set(cacheKey, "1", "EX", VERIFIED_CACHE_TTL).catch(() => {});
+    await ctx.cache
+      .del(`${CACHE_NAMESPACES.ENFORCEMENT_BLOCK}:${groupId}:${userId}`)
+      .catch(() => {});
+
+    // S7 — Fire-and-forget DB log write
     logVerification(ctx.db, {
       user_id: userId,
       group_id: groupId,
       channel_id: result.checkedChannelIds[0] ?? 0,
-      status: "restricted",
+      status: "verified",
       latency_ms: result.latencyMs,
       cached: result.cached,
-    }).catch(() => {});
+    }).catch((err) => ctx.log.warn({ err }, "Failed to log verification"));
 
-    const tEndFail = performance.now();
+    const tEnd = performance.now();
 
-    // S11 — Log failure stage timings too so we can track negative-path performance
+    // S11 — Log verification stage timings as a structured event
     ctx.log.debug(
       {
         event: "verify_stage_timings",
@@ -184,22 +177,29 @@ verifyComposer.callbackQuery(/^verify:(-?\d+)$/, async (ctx) => {
         groupId,
         t_ack_ms: Math.round(tAck - tStart),
         t_checks_ms: Math.round(tContractEnd - tContractStart),
-        t_total_ms: Math.round(tEndFail - tStart),
-        moderation_skipped: false,
+        t_moderation_ms: Math.round(tModerationEnd - tModerationStart),
+        t_total_ms: Math.round(tEnd - tStart),
+        moderation_skipped: moderationSkipped,
         cached: result.cached,
-        outcome: "missing_channels",
-        missing_count: result.missingChannels.length,
       },
       "verify callback stage timings"
     );
 
+    await deleteActiveVerificationPrompt(ctx.api, ctx.cache, groupId, userId).catch(() => {});
+
+    // S1 — Second answerCallbackQuery with the real success message.
+    // On the success path ONLY: the first call above consumed the spinner-dismiss
+    // slot silently; this second call shows the outcome text.
     try {
-      await ctx.answerCallbackQuery({
-        text: VERIFY_MISSING_CHANNELS(result.missingChannels),
-        show_alert: true,
-      });
+      await ctx.answerCallbackQuery({ text: VERIFY_SUCCESS });
     } catch {
-      // EC-12: Expired callback query
+      // EC-12: Expired callback query — silently ignore
+    }
+
+    try {
+      await ctx.deleteMessage();
+    } catch {
+      // EC-14: Message already deleted — silently ignore
     }
   } finally {
     await ctx.cache.del(debounceKey).catch(() => {});
