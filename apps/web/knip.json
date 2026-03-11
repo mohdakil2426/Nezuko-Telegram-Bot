@@ -1,7 +1,11 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["src/app/**/*.{ts,tsx}", "next.config.ts"],
+  "entry": ["src/app/**/*.{ts,tsx}"],
   "project": ["src/**/*.{ts,tsx}"],
   "ignore": ["src/components/ui/**"],
-  "ignoreDependencies": ["eslint-config-next", "postcss", "tailwindcss", "autoprefixer"]
+  "ignoreDependencies": ["postcss", "tailwindcss"],
+  "ignoreExportsUsedInFile": {
+    "interface": true,
+    "type": true
+  }
 }

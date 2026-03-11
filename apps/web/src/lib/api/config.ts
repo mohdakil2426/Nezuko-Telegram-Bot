@@ -16,4 +16,4 @@ export const DEV_LOGIN = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
 /**
  * Default pagination settings
  */
-export const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;

@@ -6,10 +6,10 @@
 export { useDashboardStats, useChartData, useActivity } from "./use-dashboard";
 
 // Groups hooks
-export { useGroups, useUpdateGroup, useDeleteGroup, useToggleGroupProtection } from "./use-groups";
+export { useGroups,  useDeleteGroup, useToggleGroupProtection } from "./use-groups";
 
 // Channels hooks
-export { useChannels, useCreateChannel, useDeleteChannel } from "./use-channels";
+export { useChannels,  useDeleteChannel } from "./use-channels";
 
 // Analytics hooks
 export { useVerificationTrends, useUserGrowth, useAnalyticsOverview } from "./use-analytics";
@@ -30,28 +30,28 @@ export {
 } from "./use-charts";
 
 // Bots hooks (ARCH-M2)
-export { useBots, useAddBot, useUpdateBot, useDeleteBot } from "./use-bots";
+;
 
 // Auth hooks (ARCH-M2)
-export { useAuth, useUser } from "./use-auth";
+;
 
 // InsForge Realtime hooks (replaces SSE)
 export {
-  useInsForgeRealtime,
-  useDashboardRealtime,
-  useLogsRealtime,
-  useCommandsRealtime,
-  useRealtimeChart,
-  useRealtimeVerificationChart,
-  useRealtimeActivityChart,
-  useRealtimeBotHealthChart,
+  
+  
+  
+  
+  
+  
+  
+  
   // Backward compatibility exports
-  useRealtime,
+  
   useRealtimeActivity,
   useRealtimeAnalytics,
   useRealtimeLogs,
-  type ConnectionState,
-  type RealtimeEvent,
+  
+  
 } from "./use-realtime-insforge";
 
 // Logs hooks

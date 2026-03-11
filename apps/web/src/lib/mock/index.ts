@@ -3,7 +3,7 @@
  */
 
 // Utils
-export { delay, generateTelegramId, randomInt, randomFrom } from "./utils";
+;
 
 // Dashboard
 export { getDashboardStats, getChartData, getActivity } from "./dashboard.mock";

@@ -2,4 +2,4 @@
 
 import { m, AnimatePresence } from "motion/react";
 
-export { m as motion, AnimatePresence };
+export { m as motion,  };

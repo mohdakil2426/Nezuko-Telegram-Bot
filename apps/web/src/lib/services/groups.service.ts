@@ -63,7 +63,7 @@ export async function getGroups(params?: GroupsParams): Promise<GroupListRespons
 /**
  * Get single group by ID with linked channels and stats
  */
-export async function getGroup(id: number): Promise<GroupDetail | null> {
+async function getGroup(id: number): Promise<GroupDetail | null> {
   if (USE_MOCK) {
     return mockData.getGroup(id);
   }

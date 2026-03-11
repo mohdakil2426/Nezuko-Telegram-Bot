@@ -6,7 +6,7 @@
 // Shared Components
 export { ChartEmptyState } from "./chart-empty-state";
 export { ChartPeriodSelector } from "./chart-period-selector";
-export type { PeriodValue } from "./chart-period-selector";
+;
 
 // Donut Charts
 export { VerificationDistributionChart } from "./verification-distribution-chart";

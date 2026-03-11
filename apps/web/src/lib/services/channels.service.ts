@@ -59,7 +59,7 @@ export async function getChannels(params?: ChannelsParams): Promise<ChannelListR
 /**
  * Get single channel by ID with linked groups
  */
-export async function getChannel(id: number): Promise<ChannelDetail | null> {
+async function getChannel(id: number): Promise<ChannelDetail | null> {
   if (USE_MOCK) {
     return mockData.getChannel(id);
   }

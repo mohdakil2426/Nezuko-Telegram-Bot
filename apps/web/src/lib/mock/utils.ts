@@ -14,7 +14,7 @@ export async function delay(..._args: number[]): Promise<void> {
 /**
  * Generate a realistic Telegram-style ID (large number)
  */
-export function generateTelegramId(): number {
+function generateTelegramId(): number {
   // Telegram IDs are typically 9-10 digit numbers
   return Math.floor(1000000000 + Math.random() * 9000000000);
 }
@@ -38,7 +38,7 @@ export function toISOString(date: Date): string {
 /**
  * Format date to YYYY-MM-DD
  */
-export function toDateString(date: Date): string {
+function toDateString(date: Date): string {
   return date.toISOString().split("T")[0];
 }
 

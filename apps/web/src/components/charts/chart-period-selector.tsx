@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 export type PeriodValue = "7d" | "30d" | "90d";
 
-export interface ChartPeriodSelectorProps {
+interface ChartPeriodSelectorProps {
   value: PeriodValue;
   onValueChange: (value: PeriodValue) => void;
 }

@@ -94,7 +94,7 @@ export async function addBot(token: string): Promise<Bot> {
 /**
  * Verify a bot token without saving it.
  */
-export async function verifyBotToken(token: string): Promise<BotVerifyResponse> {
+async function verifyBotToken(token: string): Promise<BotVerifyResponse> {
   const { data, error } = await insforge.functions.invoke("manage-bot", {
     body: { action: "verify", token },
   });

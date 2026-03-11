@@ -10,7 +10,7 @@
 /**
  * Pagination metadata
  */
-export interface PaginationMeta {
+interface PaginationMeta {
   page: number;
   per_page: number;
   total_items: number;
@@ -21,7 +21,7 @@ export interface PaginationMeta {
  * Generic success response wrapper (kept for potential future use)
  * @internal
  */
-export interface SuccessResponse<T> {
+interface SuccessResponse<T> {
   status: "success";
   data: T;
   meta?: Record<string, unknown>;
@@ -90,7 +90,7 @@ export interface GroupChannelLink {
 /**
  * Base group fields
  */
-export interface GroupBase {
+interface GroupBase {
   title: string | null;
   enabled: boolean;
   params?: Record<string, unknown>;
@@ -144,7 +144,7 @@ export interface ChannelGroupLink {
 /**
  * Base channel fields
  */
-export interface ChannelBase {
+interface ChannelBase {
   title: string | null;
   username: string | null;
   invite_link?: string | null;
@@ -187,7 +187,7 @@ export type ChannelListResponse = PaginatedResponse<Channel>;
 /**
  * Generic data point for charts
  */
-export interface DataPoint {
+interface DataPoint {
   date: string;
   value: number;
   metadata?: Record<string, unknown>;
@@ -253,7 +253,7 @@ export interface ChartDataPoint {
 /**
  * Pagination parameters
  */
-export interface PaginationParams {
+interface PaginationParams {
   page?: number;
   per_page?: number;
 }

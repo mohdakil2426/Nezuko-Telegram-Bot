@@ -29,7 +29,7 @@ export function useGroups(params?: GroupsParams) {
 /**
  * Hook to update a group.
  */
-export function useUpdateGroup() {
+function useUpdateGroup() {
   const queryClient = useQueryClient();
 
   return useMutation({

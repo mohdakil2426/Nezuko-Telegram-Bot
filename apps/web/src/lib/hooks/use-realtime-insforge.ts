@@ -103,12 +103,12 @@ async function ensureSharedRealtimeConnected(): Promise<void> {
 /**
  * Connection state (compatible with old SSE interface)
  */
-export type ConnectionState = "connected" | "connecting" | "disconnected";
+type ConnectionState = "connected" | "connecting" | "disconnected";
 
 /**
  * Realtime event (compatible with old SSE event structure)
  */
-export interface RealtimeEvent {
+interface RealtimeEvent {
   type: string;
   data: Record<string, unknown>;
   timestamp: string;
@@ -509,7 +509,7 @@ function invalidateGroupLinkCaches(
  * @param options - Configuration options
  * @returns Realtime state and controls
  */
-export function useInsForgeRealtime(
+function useInsForgeRealtime(
   options: UseInsForgeRealtimeOptions = {}
 ): UseInsForgeRealtimeReturn {
   const { channels = [], filterTypes, autoConnect = true } = options;
@@ -880,14 +880,14 @@ function useCoordinatorConnectionStateOrFallback(
  * Hook for dashboard realtime updates.
  * Subscribes to dashboard, bot_status, bot_instances channels.
  */
-export function useDashboardRealtime() {
+function useDashboardRealtime() {
   return useScopedRealtimeOrCoordinator({
     channels: ["dashboard", "bot_status", "bot_instances"],
     filterTypes: ["verification", "status_changed", "bot_instance_changed"],
   });
 }
 
-export function useLogsRealtime() {
+function useLogsRealtime() {
   return useScopedRealtimeOrCoordinator({
     channels: ["logs"],
     filterTypes: ["new_log", "error", "warning"],
@@ -898,7 +898,7 @@ export function useLogsRealtime() {
  * Hook for commands realtime updates.
  * Subscribes to commands channel.
  */
-export function useCommandsRealtime() {
+function useCommandsRealtime() {
   return useScopedRealtimeOrCoordinator({
     channels: ["commands"],
   });
@@ -963,7 +963,7 @@ export function useRealtimeChart<T>({
  * Pre-configured real-time chart hook for verification-related data.
  * Invalidates on verification and stats_update events.
  */
-export function useRealtimeVerificationChart<T>(
+function useRealtimeVerificationChart<T>(
   queryKey: readonly unknown[],
   queryFn: () => Promise<T>
 ) {
@@ -979,7 +979,7 @@ export function useRealtimeVerificationChart<T>(
  * Pre-configured real-time chart hook for activity-related data.
  * Invalidates on activity, member_join, and member_leave events.
  */
-export function useRealtimeActivityChart<T>(
+function useRealtimeActivityChart<T>(
   queryKey: readonly unknown[],
   queryFn: () => Promise<T>
 ) {
@@ -996,7 +996,7 @@ export function useRealtimeActivityChart<T>(
  * Pre-configured real-time chart hook for bot health metrics.
  * Invalidates on bot_status and stats_update events.
  */
-export function useRealtimeBotHealthChart<T>(
+function useRealtimeBotHealthChart<T>(
   queryKey: readonly unknown[],
   queryFn: () => Promise<T>
 ) {
@@ -1044,7 +1044,7 @@ export function useRealtimeLogs() {
  * Subscribes to the bot_instances channel (Phase 87).
  * Used by the Bots page to react instantly to add/activate/deactivate/delete.
  */
-export function useBotsRealtime() {
+function useBotsRealtime() {
   return useScopedRealtimeOrCoordinator({
     channels: ["bot_instances"],
     filterTypes: ["bot_instance_changed"],
@@ -1055,6 +1055,6 @@ export function useBotsRealtime() {
  * Core realtime hook alias.
  * Used by connection-status.tsx.
  */
-export function useRealtime(options: UseInsForgeRealtimeOptions = {}) {
+function useRealtime(options: UseInsForgeRealtimeOptions = {}) {
   return useCoordinatorConnectionStateOrFallback(options);
 }

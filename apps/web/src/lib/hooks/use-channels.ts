@@ -29,7 +29,7 @@ export function useChannels(params?: ChannelsParams) {
 /**
  * Hook to create a channel.
  */
-export function useCreateChannel() {
+function useCreateChannel() {
   const queryClient = useQueryClient();
 
   return useMutation({

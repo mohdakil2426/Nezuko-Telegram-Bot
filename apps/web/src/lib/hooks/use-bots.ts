@@ -135,4 +135,4 @@ export function useDeleteBot() {
   });
 }
 
-export type { Bot, BotListResponse, BotVerifyResponse };
+export type { Bot,   };
