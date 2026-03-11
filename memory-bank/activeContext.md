@@ -2,11 +2,76 @@
 
 ### Current Status
 
-**Phase 121: grammY Plugin Integration (Throttler · Autoquote · Menu · Conversations) — COMPLETE ✅**
+**Phase 122: grammY Bot Reliability & Security Hardening (Watchdog · Rate Limiting · CommandGroup) — COMPLETE ✅**
 
 ---
 
-#### Phase 121 Changes (2026-03-11)
+#### Phase 122 Changes (2026-03-11)
+
+Hardened the bot's reliability, security, and maintainability via key grammY plugin integrations:
+
+**1. Standalone Runner Watchdog**
+
+- Wired `startStandaloneWatchdog` in `main.ts` for standalone mode.
+- Monitors the grammY runner task and automatically restarts the polling loop if it stalls or crashes.
+- Properly integrated `stopWatchdog()` into the `onBeforeShutdown` cleanup callback.
+
+**2. Redis-Backed Distributed Rate Limiting**
+
+- Integrated `@grammyjs/ratelimiter` v1.2.1 using the existing Redis client.
+- Configured with a 2-second timeframe and 3-request limit per user.
+- Prevents spam attacks from exhausting Telegram API limits.
+- Optimized mock dependencies in `tests/grammy/helpers/mock-deps.ts` to support `incr` and `pexpire` for unit testing rate-limited paths.
+
+**3. Official Commands Management**
+
+- Migrated core command handlers (`/start`, `/help`) to `@grammyjs/commands` v1.3.2.
+- Uses `CommandGroup` for structured command registration and automatic menu synchronization.
+- Updated `NezukoContext` to include `CommandsFlavor` correctly in the transformative flavor stack.
+
+**4. HTML Transformer Restoration**
+
+- Restored the custom `htmlTransformer` after discovering `@grammyjs/parse-mode` v2.2.1 in this environment is purely a formatting utility and does not include the API transformer found in newer versions.
+- Ensures all outgoing messages remain correctly formatted as HTML without manual `parse_mode` injection.
+
+**5. Managed Dependency Cleanup**
+
+- Uninstalled unused `@sentry/node` package to reduce bundle size and dependency surface.
+
+---
+
+#### Phase 125 Changes (2026-03-11)
+
+Optimized the Next.js 16 dashboard for maximum performance and cost efficiency:
+
+**1. Next.js 16 Cache Components & PPR**
+
+- Enabled `experimental.cacheComponents: true` in `next.config.ts`.
+- Migrated Security Vault fetching from legacy patterns to the native `'use cache'` directive.
+- Implemented `cacheTag(VAULT_CACHE_TAG)` for targeted invalidation.
+- Switched to `updateTag(VAULT_CACHE_TAG)` for immediate, same-request cache invalidation when saving keys.
+
+**2. Settings Page Streaming**
+
+- Refactored `SettingsPageContent` to support child streaming.
+- Moved `SecurityVaultCard` into a suspended `VaultSection` component.
+- The settings page now renders its shell (Title, Theme, Profile) instantly while the vault data streams in.
+- Resolved "Blocking Route" errors by wrapping auth-dependent providers in `Suspense` within the root layout.
+
+**3. Vercel Cost & Performance Pruning**
+
+- Removed dead code and unused components/hooks (7+ files deleted).
+- Disabled aggressive `Link` prefetching (`prefetch={false}`) on non-critical dashboard routes to reduce compute invocations.
+- Enabled Turbopack build cache for faster CI cycles.
+
+**4. Bot Runtime Stabilization (Follow-up)**
+
+- Fixed `idm_lock` key format in `verification.ts` to match intended `[groupId, userId]` composite keys.
+- Confirmed type-check and test green status for both app and bot.
+
+---
+
+**Phase 121: grammY Plugin Integration (Throttler · Autoquote · Menu · Conversations) — COMPLETE ✅**
 
 Four grammY plugins integrated into `apps/grammy/` — skipping `@grammyjs/i18n` (deferred):
 
@@ -48,14 +113,14 @@ Four grammY plugins integrated into `apps/grammy/` — skipping `@grammyjs/i18n`
 
 ```
 throttler → autoRetry → htmlTransformer → apiLogTransformer   [API transformers]
-sequentialize → hydrate → chatMembers → autoQuote → contextEnricher
+sequentialize → limit → hydrate → commands → chatMembers → autoQuote → contextEnricher
 → conversations() → setupWizardConversation
-→ settingsMenu → privateMenu → wireCoreCommands
+→ settingsMenu → privateMenu → wireCoreCommands (CommandGroup)
 → setupComposer → adminComposer → channelsComposer → migrationComposer
 → eventsComposer → verifyComposer → fallbackComposer → bot.catch()
 ```
 
-**Quality gates (final run):** type-check ✅ lint ✅ format ✅ tests 163/163 ✅ build ✅
+**Quality gates (final run):** type-check ✅ lint ✅ format ✅ tests **163/163** ✅ build ✅
 
 ---
 
@@ -507,14 +572,14 @@ Per managed bot (dashboard mode)
 
 ### Key grammY Implementation Facts (from code inspection)
 
-| Fact                          | Detail                                                                                                    |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `htmlTransformer`             | Custom `Transformer` installed on `bot.api.config` — sets `parse_mode: "HTML"` on all send methods        |
-| Core commands wired inline    | `/start` and `/help` wired directly in `bot-factory.ts` `wireCoreCommands()` — not via composer singleton |
-| `CACHE_PREFIX = "nezuko:v2:"` | All Redis keys use this prefix to avoid conflict with old Python bot keys                                 |
-| `botInstanceId = 0`           | Standalone mode sentinel — skips `bot_status` upsert (no `bot_instances` FK row)                          |
-| `CommandsFlavor` removed      | `NezukoContext` does NOT include `CommandsFlavor` — grammY built-in `.command()` is used                  |
-| `token_encrypted` column      | `bot_instances` table uses this column name in `023_fresh_grammy_schema.sql`                              |
+| Fact                          | Detail                                                                                                                                   |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `htmlTransformer`             | Custom `Transformer` restored — sets `parse_mode: "HTML"` on all send methods (replaces missing @grammyjs/parse-mode v2.2.1 transformer) |
+| Core commands via Group       | `/start` and `/help` wired in `bot-factory.ts` using `@grammyjs/commands` `CommandGroup`                                                 |
+| `CACHE_PREFIX = "nezuko:v2:"` | All Redis keys use this prefix to avoid conflict with old Python bot keys                                                                |
+| `botInstanceId = 0`           | Standalone mode sentinel — skips `bot_status` upsert (no `bot_instances` FK row)                                                         |
+| `CommandsFlavor` enabled      | `NezukoContext` now includes `CommandsFlavor` for better command management visibility                                                   |
+| `token_encrypted` column      | `bot_instances` table uses this column name in `023_fresh_grammy_schema.sql`                                                             |
 
 ### Middleware Order (CRITICAL — do not reorder)
 

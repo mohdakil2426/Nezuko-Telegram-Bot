@@ -2,6 +2,7 @@ import type { Context } from "grammy";
 import type { ConversationFlavor } from "@grammyjs/conversations";
 import type { HydrateFlavor } from "@grammyjs/hydrate";
 import type { ChatMembersFlavor } from "@grammyjs/chat-members";
+import type { CommandsFlavor } from "@grammyjs/commands";
 import type { InsForgeClient } from "./core/insforge-client.js";
 import type { CacheClient } from "./core/cache.js";
 import type { Logger } from "./utils/logger.js";
@@ -16,34 +17,23 @@ export interface NezukoContextFlavor {
 
 /**
  * Fully composed context type for all Nezuko handlers.
- *
- * Context flavor composition order (per grammY docs):
- *  - HydrateFlavor<>      — outermost (transformative, adds shortcuts on API results)
- *  - ConversationFlavor<> — second (transformative, adds ctx.conversation.enter())
- *  - ChatMembersFlavor    — additive, plain intersection
- *  - NezukoContextFlavor  — additive, plain intersection (db, cache, botId, log)
- *
- * Note: @grammyjs/parse-mode v2.2.1 is formatting-utilities only and no
- * longer ships a ParseModeFlavor context wrapper. The parseMode("HTML")
- * transformer is installed on bot.api.config instead (Decision #4).
- *
- * Note: CommandsFlavor was removed - the @grammyjs/commands plugin is not
- * installed (we use built-in Composer.command() instead). Including the
- * flavor without the plugin middleware can cause TypeScript confusion.
  */
-export type NezukoContext = HydrateFlavor<
-  ConversationFlavor<Context & NezukoContextFlavor & ChatMembersFlavor>
->;
+export type NezukoContext = Context &
+  HydrateFlavor<Context> &
+  CommandsFlavor<Context> &
+  ConversationFlavor<Context> &
+  ChatMembersFlavor &
+  NezukoContextFlavor;
 
 /** Dependencies required by bot factory and middleware. */
 export interface BotDeps {
   db: InsForgeClient;
   cache: CacheClient;
-  botId: number;
   logger: Logger;
+  botId: number;
 }
 
-/** Result of a verification membership check. */
+/** Result of a user membership verification check. */
 export interface VerificationResult {
   success: boolean;
   missingChannels: string[];
@@ -52,13 +42,7 @@ export interface VerificationResult {
   checkedChannelIds: number[];
 }
 
-/** Result of a protection action (mute/unmute/kick). */
-export interface ProtectionResult {
-  success: boolean;
-  error?: string;
-}
-
-/** Dashboard command from admin_commands table. */
+/** A command issued from the Web Dashboard. */
 export interface DashboardCommand {
   id: number;
   bot_id: number;
@@ -68,4 +52,10 @@ export interface DashboardCommand {
   result: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+}
+
+/** Result of a protection action (mute, kick, etc). */
+export interface ProtectionResult {
+  success: boolean;
+  error?: string;
 }

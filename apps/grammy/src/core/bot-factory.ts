@@ -28,9 +28,11 @@ import { type Middleware, Bot, Composer, GrammyError, HttpError } from "grammy";
 import type { NextFunction, Transformer } from "grammy";
 import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { autoRetry } from "@grammyjs/auto-retry";
+import { autoQuote } from "@roziscoding/grammy-autoquote";
 import { hydrate } from "@grammyjs/hydrate";
 import { chatMembers } from "@grammyjs/chat-members";
-import { autoQuote } from "@roziscoding/grammy-autoquote";
+import { limit } from "@grammyjs/ratelimiter";
+import { CommandGroup, commands } from "@grammyjs/commands";
 import type { BotError } from "grammy";
 import type { NezukoContext, BotDeps } from "../types.js";
 import { sequentializeMiddleware } from "../middleware/sequentialize.js";
@@ -127,12 +129,11 @@ function installDebugMiddleware(bot: Bot<NezukoContext>, logger: Logger): void {
  * 3. Error boundary nesting problems
  */
 function wireCoreCommands(bot: Bot<NezukoContext>, deps: BotDeps): void {
-  // /start — different response for private vs group
-  bot.command("start", async (ctx) => {
+  const coreCommands = new CommandGroup<NezukoContext>();
+
+  coreCommands.command("start", "Start the bot", async (ctx) => {
     deps.logger.info({ chatId: ctx.chat.id, chatType: ctx.chat.type }, "[COMMAND] /start matched");
     if (ctx.chat.type === "private") {
-      // Private chat: send welcome with the interactive menu so users have
-      // quick access to Commands, How it Works, About, and Quick Start.
       await ctx.reply(WELCOME_PRIVATE, { reply_markup: privateMenu });
     } else {
       const msg = await ctx.reply(WELCOME_GROUP);
@@ -140,13 +141,14 @@ function wireCoreCommands(bot: Bot<NezukoContext>, deps: BotDeps): void {
     }
   });
 
-  // /help — HTML command list
-  bot.command("help", async (ctx) => {
+  coreCommands.command("help", "Show help info", async (ctx) => {
     const msg = await ctx.reply(HELP_TEXT);
     if (ctx.chat.type !== "private") {
       scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
     }
   });
+
+  bot.use(coreCommands);
 }
 
 // ── Core Bot Wiring ────────────────────────────────────────────────────────────
@@ -252,10 +254,31 @@ function wireBotMiddleware(bot: Bot<NezukoContext>, deps: BotDeps): void {
   // ── 4. sequentialize — MUST be first stateful middleware ─────────
   bot.use(sequentializeMiddleware);
 
+  // ── 3. rate-limiter ─────────────────────────────────────────────
+  // Uses Redis for distributed rate limiting across all bot instances.
+  // Limit: 3 requests per 2 seconds per user.
+  bot.use(
+    limit({
+      timeFrame: 2000,
+      limit: 3,
+      storageClient: deps.cache.redis,
+      onLimitExceeded: async (ctx) => {
+        // Only reply if it's a private chat to avoid group noise
+        if (ctx.chat?.type === "private") {
+          await ctx.reply("⚠️ Please refrain from sending too many requests.").catch(() => {});
+        }
+      },
+      keyGenerator: (ctx) => ctx.from?.id.toString(),
+    })
+  );
+
   // ── 4. hydrate ───────────────────────────────────────────────────
   bot.use(hydrate());
 
-  // ── 5. chatMembers ───────────────────────────────────────────────
+  // ── 5. commands flavor ───────────────────────────────────────────
+  bot.use(commands());
+
+  // ── 6. chatMembers ───────────────────────────────────────────────
   bot.use(chatMembers(deps.cache.chatMembersAdapter));
 
   // ── 6. autoQuote — auto-quotes the triggering message in all replies ──

@@ -42,24 +42,6 @@ export async function logVerification(
   ]);
 }
 
-/**
- * Check whether a user has a recent successful verification for a group.
- *
- * Queries `verification_log` for a "verified" entry for the given user+group.
- *
- * @param db - InsForgeClient instance
- * @param groupId - Telegram group ID
- * @param userId - Telegram user ID
- * @returns true if a "verified" entry exists for this user+group
- */
-export async function isUserVerified(
-  db: InsForgeClient,
-  groupId: number,
-  userId: number
-): Promise<boolean> {
-  const latest = await getLatestVerificationState(db, groupId, userId);
-  return latest?.status === "verified";
-}
 
 export async function getLatestVerificationState(
   db: InsForgeClient,

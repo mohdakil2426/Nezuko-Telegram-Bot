@@ -33,7 +33,13 @@ export function createMockCache(): CacheClient {
     ping: vi.fn().mockResolvedValue(true),
     isHealthy: vi.fn().mockReturnValue(true),
     quit: vi.fn().mockResolvedValue(undefined),
-    redis: {} as CacheClient["redis"],
+    redis: {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue("OK"),
+      del: vi.fn().mockResolvedValue(1),
+      incr: vi.fn().mockResolvedValue(1),
+      pexpire: vi.fn().mockResolvedValue(1),
+    } as unknown as CacheClient["redis"],
     chatMembersAdapter: {
       read: vi.fn().mockResolvedValue(undefined),
       write: vi.fn().mockResolvedValue(undefined),

@@ -79,16 +79,6 @@ export const VERIFY_STATUS_VERIFIED = "✅ You're verified! You can send message
 export const VERIFY_STATUS_NOT_VERIFIED = (channels: string[]): string =>
   `❌ Not verified. Please join: ${channels.join(", ")}`;
 
-export const SETTINGS_PROTECTED = (
-  channels: string[],
-  memberCount: number,
-  lastSync: string
-): string =>
-  "⚙️ <b>Group Settings</b>\n\n" +
-  `🔒 <b>Status:</b> Active\n` +
-  `📡 <b>Channels:</b>\n${channels.map((c) => `  • ${c}`).join("\n")}\n` +
-  `👥 <b>Members:</b> ${memberCount}\n` +
-  `🔄 <b>Last sync:</b> ${lastSync}`;
 
 export const SETTINGS_NOT_PROTECTED =
   "⚙️ No channels linked. Use <code>/protect @channel</code> to get started.";
@@ -136,9 +126,6 @@ export const STATS_FORMAT = (stats: {
   `👥 <b>Members:</b> ${stats.memberCount}\n` +
   `📡 <b>Channels:</b> ${stats.channelsCount}`;
 
-export const ERROR_GENERIC = "⚠️ Something went wrong. Please try again.";
-
-export const ERROR_PERMISSION = "⚠️ I need <b>Restrict Members</b> permission to work!";
 
 export const BOT_ADDED_WELCOME =
   "👋 Hi! I'm <b>Nezuko</b> 🌸 — use <code>/protect @channel</code> to enable verification.";

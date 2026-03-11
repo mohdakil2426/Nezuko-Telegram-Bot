@@ -154,6 +154,8 @@ cd apps/web && bun run lint
 cd apps/web && bun x prettier src --write
 cd apps/web && bun x prettier src --check
 cd apps/web && bun run type-check
+cd apps/web && bun knip                    # find dead code
+cd apps/web && bun knip --fix              # auto-fix exports/files
 cd apps/web && bun run build
 ```
 
@@ -287,7 +289,10 @@ cd apps/web && bun run lint
 cd apps/web && bun x prettier src --write
 cd apps/web && bun x prettier src --check
 
-# 4. Build — MUST complete with zero errors (validates RSC boundaries, routes, types)
+# 4. Knip — MUST show "Excellent, Knip found no issues."
+cd apps/web && bun knip
+
+# 5. Build — MUST complete with zero errors (validates RSC boundaries, routes, types)
 cd apps/web && bun run build
 ```
 

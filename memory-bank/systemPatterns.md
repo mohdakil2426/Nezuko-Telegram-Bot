@@ -795,8 +795,67 @@ const BASE_URL = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
 if (!BASE_URL) throw new Error("NEXT_PUBLIC_INSFORGE_BASE_URL is required");
 
 // ✅ Open redirect prevention
+// ✅ Open redirect prevention
 const redirectTo =
   rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
+```
+
+### 11 — Next.js 16 Caching & PPR Patterns (Phase 125)
+
+The dashboard leverages Next.js 16 Cache Components and Partial Prerendering (PPR) for high performance.
+
+#### `'use cache'` Directive
+
+Used for expensive or sensitive data fetching (e.g., Master Key). Unlike `unstable_cache`, it is native to the Next.js 16 runtime.
+
+```typescript
+async function getCachedData() {
+  "use cache";
+  cacheTag("my-tag");
+  // ... fetch data
+}
+```
+
+#### Atomic Invalidation with `updateTag`
+
+Used to invalidate cache immediately within a server action, ensuring the UI is consistent without background revalidation lag.
+
+```typescript
+export async function updateAction() {
+  // ... save data
+  updateTag("my-tag"); // Instant invalidation
+  revalidatePath("/dashboard/settings");
+}
+```
+
+#### Partial Prerendering (PPR)
+
+The Root Layout and page shells are static and prerendered. Dynamic components (Auth providers, Vault sections) are wrapped in `Suspense`.
+
+```tsx
+// Root Layout
+<Suspense>
+  <DynamicAuthProviderWrapper>
+    {children}
+  </DynamicAuthProviderWrapper>
+</Suspense>
+
+// Settings Page
+<SettingsPageContent>
+  <Suspense fallback={<Skeleton />}>
+    <VaultSection />
+  </Suspense>
+</SettingsPageContent>
+```
+
+#### Cost Optimization (Prefetching)
+
+To prevent excessive Vercel compute usage, `Link` prefetching is disabled for non-essential dashboard routes.
+
+```tsx
+<Link href="/dashboard/logs" prefetch={false}>
+  View Logs
+</Link>
 ```
 
 ### RPC Envelope Helper

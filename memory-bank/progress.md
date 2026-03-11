@@ -1,6 +1,6 @@
 # Progress: What Works, What's Left
 
-## Current Phase: 121 — grammY Plugin Integration (Throttler · Autoquote · Menu · Conversations)
+## Current Phase: 125 — Dashboard Performance & Cost Optimization (Next.js 16 PPR · Cache Components · Cost Pruning)
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — preserved in `apps/bot/` for historical reference only. Not maintained.
@@ -107,13 +107,15 @@
 | Channels page                      | ✅                      |
 | Bots management page               | ✅                      |
 | Logs page (realtime)               | ✅                      |
-| Settings page                      | ✅                      |
+| Settings page (Streaming + PPR)    | ✅ Phase 125            |
 | Auth (InsForge + proxy guard)      | ✅                      |
 | Realtime updates (WebSocket)       | ✅                      |
 | Central realtime coordinator       | ✅ Phase 113            |
 | Route-stable realtime wrappers     | ✅ 2026-03-07 follow-up |
 | Dark/Light theme                   | ✅                      |
 | Optimistic mutations with rollback | ✅                      |
+| Vercel Cost Optimization           | ✅ Phase 125            |
+| Partial Prerendering (PPR)         | ✅ Phase 125            |
 
 ---
 
@@ -123,6 +125,18 @@
 
 | Phase       | Description                                                                                                | Runtime    |
 | ----------- | ---------------------------------------------------------------------------------------------------------- | ---------- |
+| Phase 1–80  | Initial Python PTB bot development                                                                         | Python PTB |
+| Phase 80–95 | Python bot stabilization, analytics, Redis, encryption                                                     | Python PTB |
+| Phase 96    | grammY TypeScript port begins — canonical runtime switches                                                 | **grammY** |
+| Phase 97    | grammY standalone + dashboard modes complete                                                               | grammY     |
+| Phase 98    | grammY multi-bot with BotManager                                                                           | grammY     |
+| Phase 99    | grammY encryption + Security Vault                                                                         | grammY     |
+| Phase 100   | grammY test coverage foundation                                                                            | grammY     |
+| Phase 101   | grammY PRD completion + realtime + join requests                                                           | grammY     |
+| Phase 102   | grammY command menus + /status parity                                                                      | grammY     |
+| Phase 103   | Group command reliability + 127 tests ✅                                                                   | grammY     |
+| Phase 104   | System audit — 14 bugs found, 7 P0/P1 fixed                                                                | grammY     |
+| Phase 105   | Remaining P2 bugs fixed — log transport, API logging, realtime hook, DB constraint                         | grammY     |
 | Phase 1–80  | Initial Python PTB bot development                                                                         | Python PTB |
 | Phase 80–95 | Python bot stabilization, analytics, Redis, encryption                                                     | Python PTB |
 | Phase 96    | grammY TypeScript port begins — canonical runtime switches                                                 | **grammY** |
@@ -147,6 +161,8 @@
 | Phase 115   | Latency V2: S1 immediate ack, S2 allSettled, S4 mod cache, S6 contract cache, S7 async logs, S11 telemetry | grammY     |
 | Phase 116   | Latency Gap Fixes + Dashboard Runner Self-Healing                                                          | grammY     |
 | Phase 117   | grammY Plugin Research & Integration Plan                                                                  | grammY     |
+| Phase 121   | grammY Plugin Integration (Throttler · Autoquote · Menu · Conversations)                                   | grammY     |
+| Phase 125   | Dashboard Performance & Cost Optimization (Next.js 16 PPR · Cache Components · Cost Pruning)               | Next.js    |
 
 ---
 

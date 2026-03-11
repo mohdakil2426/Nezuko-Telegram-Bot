@@ -26,6 +26,7 @@ import { setupShutdown } from "./core/shutdown.js";
 import { startMemberSync } from "./services/member-sync.js";
 import { CommandWorker } from "./services/command-worker.js";
 import { InsForgeRealtimeClient } from "./core/realtime-client.js";
+import { startStandaloneWatchdog } from "./utils/standalone-watchdog.js";
 import { startHealthServer } from "./utils/health.js";
 import {
   ALLOWED_UPDATES,
@@ -166,6 +167,9 @@ async function runStandaloneMode(
     runner: { fetch: { allowed_updates: [...ALLOWED_UPDATES] } },
   });
 
+  // Supervision: watchdog restarts the runner if it stalls or crashes (BUG-12 fix)
+  const stopWatchdog = startStandaloneWatchdog(handle, bot, logger);
+
   // Background services:
   //   - statusWriter requires a valid bot_instances row (bot_instance_id FK).
   //     In standalone mode the grammY bot may not be registered in bot_instances yet,
@@ -219,7 +223,10 @@ async function runStandaloneMode(
     healthServer,
     statusInterval,
     syncInterval,
-    onBeforeShutdown: () => keepAlive?.stop(),
+    onBeforeShutdown: () => {
+      stopWatchdog();
+      keepAlive?.stop();
+    },
   });
 
   logger.info("Bot is running. Press Ctrl+C to stop.");

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { isUserVerified } from "../../../../apps/grammy/src/database/verification.repo.js";
+import { getLatestVerificationState } from "../../../../apps/grammy/src/database/verification.repo.js";
 import { createMockDb } from "../../helpers/mock-deps.js";
 
 describe("verification.repo", () => {
@@ -7,15 +7,17 @@ describe("verification.repo", () => {
     vi.restoreAllMocks();
   });
 
-  it("treats the user as verified only when the latest verification row is verified", async () => {
+  it("fetches the latest verification state correctly", async () => {
     const db = createMockDb();
     vi.mocked(db.getRecords).mockResolvedValueOnce([
       {
         status: "restricted",
+        timestamp: "2026-03-01T12:00:00Z",
       },
     ]);
 
-    await expect(isUserVerified(db, -1001234567890, 111222333)).resolves.toBe(false);
+    const state = await getLatestVerificationState(db, -1001234567890, 111222333);
+    expect(state?.status).toBe("restricted");
 
     expect(db.getRecords).toHaveBeenCalledWith("verification_log", {
       group_id: "eq.-1001234567890",

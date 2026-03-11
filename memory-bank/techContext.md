@@ -36,7 +36,7 @@
 
 | Package          | Version | Purpose                                                         |
 | ---------------- | ------- | --------------------------------------------------------------- |
-| Next.js          | 16.1+   | React framework (App Router)                                    |
+| Next.js          | 16.1+   | React framework (App Router) + Cache Components                 |
 | React            | 19.2+   | UI library                                                      |
 | TypeScript       | 5.9+    | Type safety                                                     |
 | Tailwind CSS     | 4.1+    | Styling                                                         |
@@ -59,6 +59,12 @@
 | **Docker**        | Bot containerisation                                            |
 | **Caddy**         | Reverse proxy                                                   |
 | **Bun**           | Package manager (grammy + web)                                  |
+
+### Performance & Monitoring
+
+- **Vercel Doctor**: Used for auditing cost-heavy patterns and dead code.
+- **Turbopack**: Enabled for dev and build caching.
+- **Partial Prerendering (PPR)**: Enabled via Next.js 16 `experimental.cacheComponents`.
 
 ---
 
