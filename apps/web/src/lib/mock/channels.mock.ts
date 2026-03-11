@@ -1,15 +1,4 @@
-/**
- * Channels Mock Data
- * Realistic mock data for enforced channels
- */
-
-import type {
-  Channel,
-  ChannelDetail,
-  ChannelListResponse,
-  ChannelsParams,
-  ChannelGroupLink,
-} from "@/lib/services/types";
+import type { Channel, ChannelListResponse, ChannelsParams } from "@/lib/services/types";
 import { delay, toISOString, randomDateWithinDays } from "./utils";
 
 /**
@@ -119,21 +108,6 @@ const mockChannels: Channel[] = [
 ];
 
 /**
- * Mock group links for channel details
- */
-const mockGroupLinks: Record<number, ChannelGroupLink[]> = {
-  [1001122334455]: [
-    { group_id: -1001234567890, title: "Crypto Signals VIP" },
-    { group_id: -1001555666777, title: "Crypto Academy" },
-    { group_id: -1001888999000, title: "Premium Investors Club" },
-  ],
-  [1001223344556]: [
-    { group_id: -1001234567890, title: "Crypto Signals VIP" },
-    { group_id: -1001987654321, title: "Trading Masters Elite" },
-  ],
-};
-
-/**
  * Get paginated list of channels
  */
 export async function getChannels(params?: ChannelsParams): Promise<ChannelListResponse> {
@@ -183,22 +157,5 @@ export async function getChannels(params?: ChannelsParams): Promise<ChannelListR
       total_items: filtered.length,
       total_pages: Math.ceil(filtered.length / perPage),
     },
-  };
-}
-
-/**
- * Get single channel by ID
- */
-export async function getChannel(id: number): Promise<ChannelDetail | null> {
-  await delay();
-
-  const channel = mockChannels.find((c) => c.channel_id === id);
-  if (!channel) return null;
-
-  const linkedGroups = mockGroupLinks[id] ?? [];
-
-  return {
-    ...channel,
-    linked_groups: linkedGroups,
   };
 }

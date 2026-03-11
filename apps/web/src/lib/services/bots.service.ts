@@ -24,16 +24,6 @@ export interface BotListResponse {
 }
 
 /**
- * Response after verifying a bot token
- */
-export interface BotVerifyResponse {
-  bot_id: number;
-  username: string;
-  first_name: string;
-  is_valid: boolean;
-}
-
-/**
  * List all bots (non-deleted).
  * Uses `is_deleted` boolean — the canonical delete flag used by bot_manager.
  */
@@ -89,17 +79,6 @@ export async function addBot(token: string): Promise<Bot> {
   }
 
   return result.data as Bot;
-}
-
-/**
- * Verify a bot token without saving it.
- */
-async function verifyBotToken(token: string): Promise<BotVerifyResponse> {
-  const { data, error } = await insforge.functions.invoke("manage-bot", {
-    body: { action: "verify", token },
-  });
-  if (error) throw error;
-  return data as BotVerifyResponse;
 }
 
 /**

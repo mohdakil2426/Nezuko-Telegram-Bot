@@ -1,6 +1,6 @@
 # Progress: What Works, What's Left
 
-## Current Phase: 125 — Dashboard Performance & Cost Optimization (Next.js 16 PPR · Cache Components · Cost Pruning)
+## Current Phase: 126 — UI Refactoring & Quality Consolidation (React Compiler · Code Pruning · Performance Purity)
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — preserved in `apps/bot/` for historical reference only. Not maintained.
@@ -195,18 +195,20 @@
 
 ---
 
-## Phase 103 Quality Gate Baseline
+## Phase 126 Quality Gate Baseline
 
 | Check                 | Result               |
 | --------------------- | -------------------- |
 | `grammy type-check`   | ✅ 0 errors          |
 | `grammy lint`         | ✅ 0 warnings        |
 | `grammy format:check` | ✅ All files conform |
-| `grammy test`         | ✅ 139/139 passed    |
+| `grammy test`         | ✅ 163/163 passed    |
 | `web type-check`      | ✅ 0 errors          |
 | `web lint`            | ✅ 0 warnings        |
+| `web knip`            | ✅ 0 issues          |
 | `web prettier check`  | ✅ All files conform |
+| `web build`           | ✅ 0 errors          |
 
 ---
 
-_Last Updated: 2026-03-08 (Phase 116 — S6 verify-path gap fix, S4 restricted seeding, fast runner restart in dashboard mode, RUNNER_STALL_THRESHOLD_MS 10 min → 2 min, keep-alive module, 163/163 tests)_
+_Last Updated: 2026-03-11 (Phase 126 — UI Refactoring, React Compiler compatibility, heavy library code-splitting, Suspense boundaries, dead code pruning, 163/163 tests, knip zero issues)_

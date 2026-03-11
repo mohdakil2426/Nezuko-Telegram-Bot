@@ -67,8 +67,8 @@ export function AppearanceCard() {
           <div className="space-y-3">
             <Label>Theme</Label>
             <div className="grid gap-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-[72px] w-full rounded-lg" />
+              {["theme-sk-1", "theme-sk-2", "theme-sk-3"].map((id) => (
+                <Skeleton key={id} className="h-[72px] w-full rounded-lg" />
               ))}
             </div>
           </div>

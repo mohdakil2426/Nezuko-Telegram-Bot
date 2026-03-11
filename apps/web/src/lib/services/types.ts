@@ -18,16 +18,6 @@ interface PaginationMeta {
 }
 
 /**
- * Generic success response wrapper (kept for potential future use)
- * @internal
- */
-interface SuccessResponse<T> {
-  status: "success";
-  data: T;
-  meta?: Record<string, unknown>;
-}
-
-/**
  * Generic paginated response wrapper
  */
 export interface PaginatedResponse<T> {
@@ -69,25 +59,6 @@ export interface ActivityItem {
 // =============================================================================
 
 /**
- * Group statistics
- */
-export interface GroupStatistics {
-  verifications_today: number;
-  verifications_week: number;
-  success_rate: number;
-}
-
-/**
- * Channel link info within a group
- */
-export interface GroupChannelLink {
-  channel_id: number;
-  title: string | null;
-  username: string | null;
-  is_required: boolean;
-}
-
-/**
  * Base group fields
  */
 interface GroupBase {
@@ -108,14 +79,6 @@ export interface Group extends GroupBase {
 }
 
 /**
- * Detailed group response with relationships
- */
-export interface GroupDetail extends Group {
-  linked_channels: GroupChannelLink[];
-  stats: GroupStatistics;
-}
-
-/**
  * Group update request payload
  */
 export interface GroupUpdateRequest {
@@ -132,14 +95,6 @@ export type GroupListResponse = PaginatedResponse<Group>;
 // =============================================================================
 // Channel Types
 // =============================================================================
-
-/**
- * Group link info within a channel
- */
-export interface ChannelGroupLink {
-  group_id: number;
-  title: string | null;
-}
 
 /**
  * Base channel fields
@@ -162,20 +117,6 @@ export interface Channel extends ChannelBase {
 }
 
 /**
- * Detailed channel response with relationships
- */
-export interface ChannelDetail extends Channel {
-  linked_groups: ChannelGroupLink[];
-}
-
-/**
- * Channel create request payload
- */
-export interface ChannelCreateRequest extends ChannelBase {
-  channel_id: number;
-}
-
-/**
  * Channel list response
  */
 export type ChannelListResponse = PaginatedResponse<Channel>;
@@ -187,12 +128,6 @@ export type ChannelListResponse = PaginatedResponse<Channel>;
 /**
  * Generic data point for charts
  */
-interface DataPoint {
-  date: string;
-  value: number;
-  metadata?: Record<string, unknown>;
-}
-
 /**
  * Verification trend series point
  */

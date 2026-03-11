@@ -14,4 +14,4 @@
  * Now uses real authentication via InsForge hosted auth.
  */
 
-export { useAuth,  } from "@insforge/nextjs";
+export { useAuth } from "@insforge/nextjs";

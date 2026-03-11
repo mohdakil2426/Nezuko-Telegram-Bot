@@ -12,14 +12,6 @@ export async function delay(..._args: number[]): Promise<void> {
 }
 
 /**
- * Generate a realistic Telegram-style ID (large number)
- */
-function generateTelegramId(): number {
-  // Telegram IDs are typically 9-10 digit numbers
-  return Math.floor(1000000000 + Math.random() * 9000000000);
-}
-
-/**
  * Generate a random date within the last N days
  */
 export function randomDateWithinDays(days: number): Date {

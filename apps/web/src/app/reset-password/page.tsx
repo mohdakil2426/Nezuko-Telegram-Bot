@@ -50,11 +50,18 @@ function ResetPasswordForm() {
 
   // Step 1: OTP code entry → get reset token
   // Step 2: New password entry → call resetPassword
-  const [step, setStep] = useState<1 | 2>(1);
-  const [otp, setOtp] = useState("");
-  const [resetToken, setResetToken] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isPending, setIsPending] = useState(false);
+  const [state, setState] = useState({
+    step: 1 as 1 | 2,
+    otp: "",
+    resetToken: "",
+    showPassword: false,
+    isPending: false,
+  });
+
+  const { step, otp, resetToken, showPassword, isPending } = state;
+
+  const updateState = (updates: Partial<typeof state>) =>
+    setState((prev) => ({ ...prev, ...updates }));
 
   const {
     register,
@@ -66,7 +73,7 @@ function ResetPasswordForm() {
   const handleExchangeCode = async () => {
     if (otp.length !== 6) return;
 
-    setIsPending(true);
+    updateState({ isPending: true });
     try {
       const { data, error } = await insforge.auth.exchangeResetPasswordToken({
         email,
@@ -75,24 +82,25 @@ function ResetPasswordForm() {
 
       if (error) {
         toast.error(error.message ?? "Invalid or expired code.");
+        updateState({ isPending: false });
         return;
       }
 
       if (data?.token) {
-        setResetToken(data.token);
-        setStep(2);
+        updateState({ resetToken: data.token, step: 2, isPending: false });
         toast.success("Code verified! Now set your new password.");
+      } else {
+        updateState({ isPending: false });
       }
     } catch {
       toast.error("An unexpected error occurred.");
-    } finally {
-      setIsPending(false);
+      updateState({ isPending: false });
     }
   };
 
   // ── Step 2: Set new password ────────────────────────────────────────────
   const onSubmitPassword = async ({ newPassword }: FormData) => {
-    setIsPending(true);
+    updateState({ isPending: true });
     try {
       const { data, error } = await insforge.auth.resetPassword({
         newPassword,
@@ -101,17 +109,19 @@ function ResetPasswordForm() {
 
       if (error) {
         toast.error(error.message ?? "Failed to reset password.");
+        updateState({ isPending: false });
         return;
       }
 
       if (data) {
         toast.success("Password reset successfully! Please sign in.");
         router.push("/login");
+      } else {
+        updateState({ isPending: false });
       }
     } catch {
       toast.error("An unexpected error occurred.");
-    } finally {
-      setIsPending(false);
+      updateState({ isPending: false });
     }
   };
 
@@ -160,7 +170,12 @@ function ResetPasswordForm() {
         {/* ── Step 1: OTP ─────────────────────────────────────────────── */}
         {step === 1 && (
           <div className="flex flex-col items-center gap-4">
-            <InputOTP maxLength={6} value={otp} onChange={setOtp} onComplete={handleExchangeCode}>
+            <InputOTP
+              maxLength={6}
+              value={otp}
+              onChange={(v) => updateState({ otp: v })}
+              onComplete={handleExchangeCode}
+            >
               <InputOTPGroup>
                 <InputOTPSlot index={0} />
                 <InputOTPSlot index={1} />
@@ -204,7 +219,7 @@ function ResetPasswordForm() {
                 <button
                   type="button"
                   className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 absolute top-2.5 right-3 cursor-pointer rounded-sm transition-colors focus-visible:ring-[3px] focus-visible:outline-none"
-                  onClick={() => setShowPassword((v) => !v)}
+                  onClick={() => updateState({ showPassword: !showPassword })}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

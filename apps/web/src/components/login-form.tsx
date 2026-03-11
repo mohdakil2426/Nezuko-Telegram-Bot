@@ -13,9 +13,9 @@
  * user authenticates on the InsForge hosted page and is redirected back.
  */
 
+import { Suspense } from "react";
 import { ShieldCheck, LogIn, Loader2, AlertCircle } from "lucide-react";
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { redirect, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SignInButton, useAuth } from "@insforge/nextjs";
 
@@ -25,7 +25,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { DEV_LOGIN } from "@/lib/api/config";
 
-export function LoginForm() {
+// ── Inner form that reads searchParams ─────────────────────────────────────
+function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawRedirect = searchParams.get("redirectTo") || "/dashboard";
@@ -36,11 +37,9 @@ export function LoginForm() {
   const { isLoaded, isSignedIn } = useAuth();
 
   // Auto-redirect to dashboard if already signed in
-  useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      router.replace(redirectTo);
-    }
-  }, [isLoaded, isSignedIn, redirectTo, router]);
+  if (isLoaded && isSignedIn) {
+    redirect(redirectTo);
+  }
 
   /** Dev-only: skip auth and go straight to dashboard */
   function handleDevBypass() {
@@ -89,11 +88,7 @@ export function LoginForm() {
              * insforge_session cookie → afterSignInUrl="/dashboard" kicks in.
              */}
             <SignInButton>
-              <Button
-                id="sign-in-btn"
-                size="lg"
-                className="w-full gap-2"
-              >
+              <Button id="sign-in-btn" size="lg" className="w-full gap-2">
                 <LogIn className="h-5 w-5" />
                 Sign In with InsForge
               </Button>
@@ -144,5 +139,23 @@ export function LoginForm() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Main LoginForm component wrapped in Suspense to satisfy Next.js bailout rules.
+ */
+export function LoginForm() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center space-y-2 py-8">
+          <Loader2 className="text-primary h-8 w-8 animate-spin" />
+          <p className="text-muted-foreground text-sm">Initializing auth…</p>
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
   );
 }

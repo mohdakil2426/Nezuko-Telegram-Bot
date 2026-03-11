@@ -58,16 +58,18 @@ function ForgotPasswordForm() {
 
       if (error) {
         toast.error(error.message ?? "Failed to send reset email.");
+        setIsPending(false);
         return;
       }
 
       if (data?.success) {
         toast.success("Check your email for the 6-digit reset code.");
         router.push(`/reset-password?email=${encodeURIComponent(email)}`);
+      } else {
+        setIsPending(false);
       }
     } catch {
       toast.error("An unexpected error occurred. Please try again.");
-    } finally {
       setIsPending(false);
     }
   };
@@ -112,12 +114,7 @@ function ForgotPasswordForm() {
             )}
           </div>
 
-          <Button
-            id="send-reset-btn"
-            type="submit"
-            className="w-full gap-2"
-            disabled={isPending}
-          >
+          <Button id="send-reset-btn" type="submit" className="w-full gap-2" disabled={isPending}>
             {isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (

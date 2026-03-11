@@ -7,7 +7,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys, STALE_TIMES } from "@/lib/query-keys";
 import * as groupsService from "@/lib/services/groups.service";
-import type { GroupsParams, GroupUpdateRequest } from "@/lib/services/types";
+import type { GroupsParams } from "@/lib/services/types";
 import { useRealtimeChart } from "@/lib/hooks/use-realtime-insforge";
 
 /**
@@ -23,22 +23,6 @@ export function useGroups(params?: GroupsParams) {
     refetchInterval: false,
     channels: ["groups", "group_links", "dashboard"],
     invalidateOnEvents: ["group_changed", "group_link_changed", "verification"],
-  });
-}
-
-/**
- * Hook to update a group.
- */
-function useUpdateGroup() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: GroupUpdateRequest }) =>
-      groupsService.updateGroup(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.groups.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.groups.detail(id) });
-    },
   });
 }
 

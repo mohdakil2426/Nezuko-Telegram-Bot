@@ -66,9 +66,7 @@ export const VERIFY_SUCCESS = "✅ Verified! You can send messages now.";
 export const VERIFY_MISSING_CHANNELS = (channels: string[]): string => {
   // answerCallbackQuery is plain text only — no HTML/Markdown.
   // t.me/username URLs are auto-detected by Telegram and rendered as tappable links.
-  const links = channels
-    .map((ch) => (ch.startsWith("@") ? `t.me/${ch.slice(1)}` : ch))
-    .join("\n");
+  const links = channels.map((ch) => (ch.startsWith("@") ? `t.me/${ch.slice(1)}` : ch)).join("\n");
   return `❌ Join first:\n${links}`;
 };
 
@@ -78,7 +76,6 @@ export const VERIFY_STATUS_VERIFIED = "✅ You're verified! You can send message
 
 export const VERIFY_STATUS_NOT_VERIFIED = (channels: string[]): string =>
   `❌ Not verified. Please join: ${channels.join(", ")}`;
-
 
 export const SETTINGS_NOT_PROTECTED =
   "⚙️ No channels linked. Use <code>/protect @channel</code> to get started.";
@@ -125,7 +122,6 @@ export const STATS_FORMAT = (stats: {
   `📈 <b>Success rate:</b> ${stats.successRate}%\n` +
   `👥 <b>Members:</b> ${stats.memberCount}\n` +
   `📡 <b>Channels:</b> ${stats.channelsCount}`;
-
 
 export const BOT_ADDED_WELCOME =
   "👋 Hi! I'm <b>Nezuko</b> 🌸 — use <code>/protect @channel</code> to enable verification.";

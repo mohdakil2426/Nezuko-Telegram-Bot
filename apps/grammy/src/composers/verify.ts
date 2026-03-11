@@ -140,9 +140,7 @@ verifyComposer.callbackQuery(/^verify:(-?\d+)$/, async (ctx) => {
         moderationSkipped = true;
       } else {
         await unmuteUser(ctx.api, groupId, userId);
-        await ctx.cache
-          .set(modStateKey, "unrestricted", "EX", MOD_STATE_CACHE_TTL)
-          .catch(() => {});
+        await ctx.cache.set(modStateKey, "unrestricted", "EX", MOD_STATE_CACHE_TTL).catch(() => {});
       }
     } catch {
       // Cache read failed — fall through to unconditional unmute

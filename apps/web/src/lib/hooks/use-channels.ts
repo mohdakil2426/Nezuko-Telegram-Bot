@@ -7,7 +7,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys, STALE_TIMES } from "@/lib/query-keys";
 import * as channelsService from "@/lib/services/channels.service";
-import type { ChannelsParams, ChannelCreateRequest } from "@/lib/services/types";
+import type { ChannelsParams } from "@/lib/services/types";
 import { useRealtimeChart } from "@/lib/hooks/use-realtime-insforge";
 
 /**
@@ -23,20 +23,6 @@ export function useChannels(params?: ChannelsParams) {
     refetchInterval: false,
     channels: ["channels", "group_links", "dashboard"],
     invalidateOnEvents: ["channel_changed", "group_link_changed", "verification"],
-  });
-}
-
-/**
- * Hook to create a channel.
- */
-function useCreateChannel() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: ChannelCreateRequest) => channelsService.createChannel(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.channels.lists() });
-    },
   });
 }
 

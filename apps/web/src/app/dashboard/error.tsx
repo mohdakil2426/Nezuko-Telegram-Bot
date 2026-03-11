@@ -20,9 +20,7 @@ export default function DashboardError({
           </div>
           <div>
             <h2 className="text-lg font-semibold">Dashboard error</h2>
-            <p className="text-muted-foreground text-sm">
-              This dashboard section failed to load.
-            </p>
+            <p className="text-muted-foreground text-sm">This dashboard section failed to load.</p>
           </div>
         </div>
         {error.digest && <p className="text-muted-foreground mb-4 text-xs">Ref: {error.digest}</p>}

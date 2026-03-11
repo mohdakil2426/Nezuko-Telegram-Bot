@@ -3,6 +3,7 @@
  * Displays verification trends and growth metrics
  */
 
+import { Suspense } from "react";
 import { AnalyticsPageContent } from "@/components/analytics";
 
 export default function AnalyticsPage() {
@@ -13,7 +14,9 @@ export default function AnalyticsPage() {
         <p className="text-muted-foreground">Track verification trends and user growth.</p>
       </div>
 
-      <AnalyticsPageContent />
+      <Suspense fallback={<div className="bg-muted h-[400px] w-full animate-pulse rounded-xl" />}>
+        <AnalyticsPageContent />
+      </Suspense>
     </div>
   );
 }

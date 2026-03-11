@@ -5,13 +5,7 @@
 
 import { USE_MOCK } from "@/lib/api/config";
 import { insforge } from "@/lib/insforge";
-import type {
-  Channel,
-  ChannelDetail,
-  ChannelListResponse,
-  ChannelsParams,
-  ChannelCreateRequest,
-} from "@/lib/services/types";
+import type { Channel, ChannelListResponse, ChannelsParams } from "@/lib/services/types";
 import * as mockData from "@/lib/mock";
 
 /**
@@ -54,61 +48,6 @@ export async function getChannels(params?: ChannelsParams): Promise<ChannelListR
       total_pages: Math.ceil(totalItems / perPage),
     },
   };
-}
-
-/**
- * Get single channel by ID with linked groups
- */
-async function getChannel(id: number): Promise<ChannelDetail | null> {
-  if (USE_MOCK) {
-    return mockData.getChannel(id);
-  }
-
-  const { data, error } = await insforge.database
-    .from("enforced_channels")
-    .select("*, group_channel_links(group_id, protected_groups(title))")
-    .eq("channel_id", id)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
-
-  const links = (data.group_channel_links ?? []) as Array<{
-    group_id: number;
-    protected_groups: { title: string | null } | null;
-  }>;
-
-  const linkedGroups = links.map((link) => ({
-    group_id: link.group_id,
-    title: link.protected_groups?.title ?? null,
-  }));
-
-  return {
-    ...data,
-    linked_groups: linkedGroups,
-  } as ChannelDetail;
-}
-
-/**
- * Create a new channel
- */
-export async function createChannel(input: ChannelCreateRequest): Promise<Channel> {
-  if (USE_MOCK) {
-    return {
-      ...input,
-      created_at: new Date().toISOString(),
-      updated_at: null,
-      subscriber_count: 0,
-      linked_groups_count: 0,
-    };
-  }
-
-  const { data, error } = await insforge.database
-    .from("enforced_channels")
-    .insert(input)
-    .select()
-    .single();
-  if (error) throw error;
-  return data as Channel;
 }
 
 /**

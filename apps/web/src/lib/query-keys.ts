@@ -113,8 +113,3 @@ export const queryKeys = {
       [...queryKeys.logs.all, "list", { limit, level }] as const,
   },
 } as const;
-
-/**
- * Type helper for extracting query key types
- */
-type QueryKeys = typeof queryKeys;

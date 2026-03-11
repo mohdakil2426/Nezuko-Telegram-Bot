@@ -326,7 +326,6 @@ function AddBotDialog() {
                 name="bot-token"
                 autoComplete="off"
                 spellCheck={false}
-                autoFocus
                 placeholder="123456789:ABCdefGHIjklMNOpqrSTUvwxYZ"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}

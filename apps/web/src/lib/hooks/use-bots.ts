@@ -18,7 +18,6 @@ import {
   deleteBot,
   type Bot,
   type BotListResponse,
-  type BotVerifyResponse,
 } from "@/lib/services/bots.service";
 
 /**
@@ -135,4 +134,4 @@ export function useDeleteBot() {
   });
 }
 
-export type { Bot,   };
+export type { Bot };

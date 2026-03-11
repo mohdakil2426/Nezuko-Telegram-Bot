@@ -12,8 +12,3 @@ export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
  * ⚠️  Must be false in production / Vercel deployment.
  */
 export const DEV_LOGIN = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
-
-/**
- * Default pagination settings
- */
-const DEFAULT_PAGE_SIZE = 10;

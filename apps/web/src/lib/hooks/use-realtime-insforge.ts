@@ -95,8 +95,10 @@ async function ensureSharedRealtimeConnected(): Promise<void> {
 
   try {
     await sharedRealtimeState.connectPromise;
-  } finally {
     sharedRealtimeState.connectPromise = null;
+  } catch (err) {
+    sharedRealtimeState.connectPromise = null;
+    throw err;
   }
 }
 
@@ -509,9 +511,7 @@ function invalidateGroupLinkCaches(
  * @param options - Configuration options
  * @returns Realtime state and controls
  */
-function useInsForgeRealtime(
-  options: UseInsForgeRealtimeOptions = {}
-): UseInsForgeRealtimeReturn {
+function useInsForgeRealtime(options: UseInsForgeRealtimeOptions = {}): UseInsForgeRealtimeReturn {
   const { channels = [], filterTypes, autoConnect = true } = options;
   const { isSignedIn } = useAuth();
 
@@ -859,56 +859,6 @@ function useScopedRealtimeOrCoordinator(
   return fallback;
 }
 
-function useCoordinatorConnectionStateOrFallback(
-  options: UseInsForgeRealtimeOptions = {}
-): UseInsForgeRealtimeReturn {
-  const realtime = useRealtimeCoordinator();
-  const fallback = useInsForgeRealtime({
-    ...options,
-    autoConnect: realtime ? false : (options.autoConnect ?? true),
-  });
-
-  if (realtime && (options.channels === undefined || options.channels.length === 0)) {
-    return createCoordinatorOnlyRealtimeState(realtime);
-  }
-
-  return fallback;
-}
-
-
-/**
- * Hook for dashboard realtime updates.
- * Subscribes to dashboard, bot_status, bot_instances channels.
- */
-function useDashboardRealtime() {
-  return useScopedRealtimeOrCoordinator({
-    channels: ["dashboard", "bot_status", "bot_instances"],
-    filterTypes: ["verification", "status_changed", "bot_instance_changed"],
-  });
-}
-
-function useLogsRealtime() {
-  return useScopedRealtimeOrCoordinator({
-    channels: ["logs"],
-    filterTypes: ["new_log", "error", "warning"],
-  });
-}
-
-/**
- * Hook for commands realtime updates.
- * Subscribes to commands channel.
- */
-function useCommandsRealtime() {
-  return useScopedRealtimeOrCoordinator({
-    channels: ["commands"],
-  });
-}
-
-
-// =============================================================================
-// Realtime Chart Hooks (replacing use-realtime-chart.ts)
-// =============================================================================
-
 // Disconnected fallback — use STANDARD (30s) for reasonable polling when WS is unavailable
 const DISCONNECTED_REFETCH_INTERVAL = REFETCH_INTERVALS.STANDARD;
 
@@ -930,16 +880,6 @@ interface UseRealtimeChartOptions<T> {
 /**
  * Hook for charts that need real-time updates.
  * Combines TanStack Query polling with InsForge realtime event-triggered invalidation.
- *
- * @example
- * ```tsx
- * const { data, isPending, isFetching } = useRealtimeChart({
- *   queryKey: queryKeys.charts.verificationDistribution(),
- *   queryFn: chartsService.getVerificationDistribution,
- *   channels: ["verifications", "dashboard"],
- *   invalidateOnEvents: ["INSERT_verification", "UPDATE_verification", "stats_update"],
- * });
- * ```
  */
 export function useRealtimeChart<T>({
   queryKey,
@@ -959,55 +899,9 @@ export function useRealtimeChart<T>({
   });
 }
 
-/**
- * Pre-configured real-time chart hook for verification-related data.
- * Invalidates on verification and stats_update events.
- */
-function useRealtimeVerificationChart<T>(
-  queryKey: readonly unknown[],
-  queryFn: () => Promise<T>
-) {
-  return useRealtimeChart({
-    queryKey,
-    queryFn,
-    channels: ["dashboard"],
-    invalidateOnEvents: ["verification"],
-  });
-}
-
-/**
- * Pre-configured real-time chart hook for activity-related data.
- * Invalidates on activity, member_join, and member_leave events.
- */
-function useRealtimeActivityChart<T>(
-  queryKey: readonly unknown[],
-  queryFn: () => Promise<T>
-) {
-  return useRealtimeChart({
-    queryKey,
-    queryFn,
-    channels: ["dashboard"],
-    invalidateOnEvents: ["verification"],
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
-  });
-}
-
-/**
- * Pre-configured real-time chart hook for bot health metrics.
- * Invalidates on bot_status and stats_update events.
- */
-function useRealtimeBotHealthChart<T>(
-  queryKey: readonly unknown[],
-  queryFn: () => Promise<T>
-) {
-  return useRealtimeChart({
-    queryKey,
-    queryFn,
-    channels: ["bot_status", "dashboard"],
-    invalidateOnEvents: ["status_changed"],
-    refetchInterval: REFETCH_INTERVALS.FALLBACK,
-  });
-}
+// =============================================================================
+// Realtime Activity & Analytics Hooks
+// =============================================================================
 
 /**
  * Hook for subscribing to activity events only.
@@ -1036,25 +930,8 @@ export function useRealtimeAnalytics() {
  * Used by logs/page.tsx.
  */
 export function useRealtimeLogs() {
-  return useLogsRealtime();
-}
-
-/**
- * Hook for subscribing to bot instance lifecycle events.
- * Subscribes to the bot_instances channel (Phase 87).
- * Used by the Bots page to react instantly to add/activate/deactivate/delete.
- */
-function useBotsRealtime() {
   return useScopedRealtimeOrCoordinator({
-    channels: ["bot_instances"],
-    filterTypes: ["bot_instance_changed"],
+    channels: ["logs"],
+    filterTypes: ["new_log", "error", "warning"],
   });
-}
-
-/**
- * Core realtime hook alias.
- * Used by connection-status.tsx.
- */
-function useRealtime(options: UseInsForgeRealtimeOptions = {}) {
-  return useCoordinatorConnectionStateOrFallback(options);
 }

@@ -89,7 +89,7 @@ export async function saveMasterKey(keyValue: string, description?: string) {
   if (!validated.success) {
     return {
       success: false,
-      error: validated.error.errors[0].message || "Invalid master key format.",
+      error: validated.error.issues[0].message || "Invalid master key format.",
     };
   }
 

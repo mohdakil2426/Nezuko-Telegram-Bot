@@ -5,7 +5,7 @@
  * Shows recent verification and system activity with real-time SSE updates.
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useEffect, useCallback, useMemo, useRef, useReducer } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   CheckCircle,
@@ -124,15 +124,58 @@ function ConnectionStatus({
 export function ActivityFeed() {
   const { data: initialActivities, isPending, error } = useActivity(10);
   const { events, totalEventCount, isConnected, isReconnecting } = useRealtimeActivity();
-  const [realtimeActivities, setRealtimeActivities] = useState<ActivityItem[]>([]);
-  const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
+  // State management for activity feed
+  interface FeedState {
+    realtimeActivities: ActivityItem[];
+    newItemIds: Set<string>;
+    tick: number;
+  }
+
+  const initialState: FeedState = {
+    realtimeActivities: [],
+    newItemIds: new Set(),
+    tick: 0,
+  };
+
+  function reducer(
+    state: FeedState,
+    action:
+      | { type: "ADD_ACTIVITIES"; payload: ActivityItem[]; newIds: string[] }
+      | { type: "CLEAR_HIGHLIGHTS"; ids: string[] }
+      | { type: "TICK" }
+  ): FeedState {
+    switch (action.type) {
+      case "ADD_ACTIVITIES": {
+        const combined = [...action.payload, ...state.realtimeActivities];
+        const unique = combined.filter(
+          (item, index) => combined.findIndex((t) => t.id === item.id) === index
+        );
+        return {
+          ...state,
+          realtimeActivities: unique.slice(0, 50),
+          newItemIds: new Set([...state.newItemIds, ...action.newIds]),
+        };
+      }
+      case "CLEAR_HIGHLIGHTS": {
+        const next = new Set(state.newItemIds);
+        action.ids.forEach((id) => next.delete(id));
+        return { ...state, newItemIds: next };
+      }
+      case "TICK":
+        return { ...state, tick: state.tick + 1 };
+      default:
+        return state;
+    }
+  }
+
+  const [feedState, dispatch] = useReducer(reducer, initialState);
+  const { realtimeActivities, newItemIds } = feedState;
   const lastProcessedIndexRef = useRef(0);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Force re-render every 30s to refresh relative timestamps
-  const [, setTick] = useState(0);
   useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 30_000);
+    const interval = setInterval(() => dispatch({ type: "TICK" }), 30_000);
     return () => clearInterval(interval);
   }, []);
 
@@ -207,33 +250,16 @@ export function ActivityFeed() {
     }
 
     if (newActivities.length > 0) {
-      // Use requestAnimationFrame to batch state updates outside of render
-      requestAnimationFrame(() => {
-        setRealtimeActivities((prev) => {
-          const combined = [...newActivities, ...prev];
-          // Remove duplicates and limit
-          const unique = combined.filter(
-            (item, index) => combined.findIndex((t) => t.id === item.id) === index
-          );
-          return unique.slice(0, 50);
-        });
+      const newIds = newActivities.map((a) => a.id);
+      dispatch({ type: "ADD_ACTIVITIES", payload: newActivities, newIds });
 
-        // Mark new items for animation
-        const newIds = new Set(newActivities.map((a) => a.id));
-        setNewItemIds((prev) => new Set([...prev, ...newIds]));
-
-        // Clear previous highlight timer and set new one
-        if (highlightTimerRef.current) {
-          clearTimeout(highlightTimerRef.current);
-        }
-        highlightTimerRef.current = setTimeout(() => {
-          setNewItemIds((prev) => {
-            const next = new Set(prev);
-            newIds.forEach((id) => next.delete(id));
-            return next;
-          });
-        }, 1000);
-      });
+      // Clear previous highlight timer and set new one
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current);
+      }
+      highlightTimerRef.current = setTimeout(() => {
+        dispatch({ type: "CLEAR_HIGHLIGHTS", ids: newIds });
+      }, 1000);
     }
   }, [events, totalEventCount, convertEventToActivity]);
 

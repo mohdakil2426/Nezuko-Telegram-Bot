@@ -101,9 +101,9 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
       } else {
         toast.error(result.error);
       }
+      setIsPending(false);
     } catch (error) {
       toast.error("An unexpected error occurred while saving the vault.");
-    } finally {
       setIsPending(false);
     }
   };

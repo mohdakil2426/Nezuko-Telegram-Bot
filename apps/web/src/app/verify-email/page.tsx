@@ -50,6 +50,7 @@ function VerifyEmailForm() {
 
       if (error) {
         toast.error(error.message ?? "Verification failed. Please try again.");
+        setIsPending(false);
         return;
       }
 
@@ -58,10 +59,11 @@ function VerifyEmailForm() {
         // InsforgeBrowserProvider picks up the new session automatically.
         // Push to /api/auth to sync the cookie, then to dashboard.
         router.push("/dashboard");
+      } else {
+        setIsPending(false);
       }
     } catch {
       toast.error("An unexpected error occurred. Please try again.");
-    } finally {
       setIsPending(false);
     }
   };
@@ -75,6 +77,7 @@ function VerifyEmailForm() {
 
       if (error) {
         toast.error(error.message ?? "Failed to resend verification email.");
+        setIsResending(false);
         return;
       }
 
@@ -82,9 +85,9 @@ function VerifyEmailForm() {
         toast.success("Verification code resent! Check your inbox.");
         setOtp("");
       }
+      setIsResending(false);
     } catch {
       toast.error("An unexpected error occurred.");
-    } finally {
       setIsResending(false);
     }
   };

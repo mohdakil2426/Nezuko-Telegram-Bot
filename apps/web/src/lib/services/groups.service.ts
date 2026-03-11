@@ -7,7 +7,6 @@ import { USE_MOCK } from "@/lib/api/config";
 import { insforge } from "@/lib/insforge";
 import type {
   Group,
-  GroupDetail,
   GroupListResponse,
   GroupsParams,
   GroupUpdateRequest,
@@ -61,54 +60,11 @@ export async function getGroups(params?: GroupsParams): Promise<GroupListRespons
 }
 
 /**
- * Get single group by ID with linked channels and stats
- */
-async function getGroup(id: number): Promise<GroupDetail | null> {
-  if (USE_MOCK) {
-    return mockData.getGroup(id);
-  }
-
-  const { data, error } = await insforge.database
-    .from("protected_groups")
-    .select("*, group_channel_links(channel_id, enforced_channels(title, username))")
-    .eq("group_id", id)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
-
-  // Build linked channels from join
-  const links = (data.group_channel_links ?? []) as Array<{
-    channel_id: number;
-    enforced_channels: { title: string | null; username: string | null } | null;
-  }>;
-
-  const linkedChannels = links.map((link) => ({
-    channel_id: link.channel_id,
-    title: link.enforced_channels?.title ?? null,
-    username: link.enforced_channels?.username ?? null,
-    is_required: true,
-  }));
-
-  return {
-    ...data,
-    linked_channels: linkedChannels,
-    // TODO: Fetch real per-group stats via RPC when available
-    stats: {
-      verifications_today: 0,
-      verifications_week: 0,
-      success_rate: 0,
-    },
-  } as GroupDetail;
-}
-
-/**
  * Update a group
  */
-export async function updateGroup(id: number, updates: GroupUpdateRequest): Promise<Group> {
+async function updateGroup(id: number, updates: GroupUpdateRequest): Promise<Group> {
   if (USE_MOCK) {
-    const group = await mockData.getGroup(id);
-    if (!group) throw new Error("Group not found");
-    return { ...group, ...updates };
+    return { group_id: id, ...updates } as Group;
   }
 
   const { data, error } = await insforge.database

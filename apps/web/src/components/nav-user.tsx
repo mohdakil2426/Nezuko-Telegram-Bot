@@ -74,7 +74,6 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
     } catch (err) {
       toast.error("Failed to sign out. Please try again.");
       console.error("[handleSignOut]", err);
-    } finally {
       setIsSigningOut(false);
     }
   };

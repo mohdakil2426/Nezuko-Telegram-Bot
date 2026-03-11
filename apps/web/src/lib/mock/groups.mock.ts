@@ -3,15 +3,8 @@
  * Realistic mock data for protected groups
  */
 
-import type {
-  Group,
-  GroupDetail,
-  GroupListResponse,
-  GroupsParams,
-  GroupChannelLink,
-  GroupStatistics,
-} from "@/lib/services/types";
-import { delay, toISOString, randomDateWithinDays, randomInt } from "./utils";
+import type { Group, GroupListResponse, GroupsParams } from "@/lib/services/types";
+import { delay, toISOString, randomDateWithinDays } from "./utils";
 
 /**
  * Mock groups data with realistic Telegram-style IDs
@@ -140,46 +133,6 @@ const mockGroups: Group[] = [
 ];
 
 /**
- * Mock channel links for group details
- */
-const mockChannelLinks: Record<number, GroupChannelLink[]> = {
-  [-1001234567890]: [
-    {
-      channel_id: 1001122334455,
-      title: "Crypto Signals Channel",
-      username: "cryptosignals_vip",
-      is_required: true,
-    },
-    {
-      channel_id: 1001223344556,
-      title: "Premium Alerts",
-      username: "premium_alerts",
-      is_required: true,
-    },
-    {
-      channel_id: 1001334455667,
-      title: "News Updates",
-      username: "crypto_news_daily",
-      is_required: false,
-    },
-  ],
-  [-1001987654321]: [
-    {
-      channel_id: 1001445566778,
-      title: "Trading Signals",
-      username: "trading_masters",
-      is_required: true,
-    },
-    {
-      channel_id: 1001556677889,
-      title: "Market Analysis",
-      username: "market_analysis_pro",
-      is_required: true,
-    },
-  ],
-};
-
-/**
  * Get paginated list of groups
  */
 export async function getGroups(params?: GroupsParams): Promise<GroupListResponse> {
@@ -232,28 +185,5 @@ export async function getGroups(params?: GroupsParams): Promise<GroupListRespons
       total_items: filtered.length,
       total_pages: Math.ceil(filtered.length / perPage),
     },
-  };
-}
-
-/**
- * Get single group by ID
- */
-export async function getGroup(id: number): Promise<GroupDetail | null> {
-  await delay();
-
-  const group = mockGroups.find((g) => g.group_id === id);
-  if (!group) return null;
-
-  const linkedChannels = mockChannelLinks[id] ?? [];
-  const stats: GroupStatistics = {
-    verifications_today: randomInt(50, 200),
-    verifications_week: randomInt(500, 2000),
-    success_rate: randomInt(85, 99),
-  };
-
-  return {
-    ...group,
-    linked_channels: linkedChannels,
-    stats,
   };
 }

@@ -5,7 +5,7 @@
  * Displays key metrics in a grid of cards with real-time updates via SSE
  */
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useReducer } from "react";
 import { Activity, AlertTriangle, CheckCircle, Clock, TrendingUp } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,16 +77,46 @@ export function AnalyticsOverviewCards() {
   const { data, isPending, error } = useAnalyticsOverview();
   const { events, totalEventCount } = useRealtimeAnalytics();
 
-  // Track which cards were recently updated
-  const [updatedCards, setUpdatedCards] = useState<Set<string>>(new Set());
-  const lastProcessedIndexRef = useRef(0);
+  // State management for real-time updates
+  interface RealtimeState {
+    updatedCards: Set<string>;
+    stats: {
+      total_verifications?: number;
+      success_rate?: number;
+      avg_latency_ms?: number;
+    };
+  }
 
-  // Real-time state override
-  const [realtimeStats, setRealtimeStats] = useState<{
-    total_verifications?: number;
-    success_rate?: number;
-    avg_latency_ms?: number;
-  }>({});
+  const initialState: RealtimeState = {
+    updatedCards: new Set(),
+    stats: {},
+  };
+
+  function reducer(
+    state: RealtimeState,
+    action:
+      | { type: "UPDATE_STATS"; payload: RealtimeState["stats"]; keys: string[] }
+      | { type: "CLEAR_HIGHLIGHTS" }
+  ): RealtimeState {
+    switch (action.type) {
+      case "UPDATE_STATS":
+        return {
+          ...state,
+          stats: { ...state.stats, ...action.payload },
+          updatedCards: new Set(action.keys),
+        };
+      case "CLEAR_HIGHLIGHTS":
+        return {
+          ...state,
+          updatedCards: new Set(),
+        };
+      default:
+        return state;
+    }
+  }
+
+  const [realtimeState, dispatch] = useReducer(reducer, initialState);
+  const lastProcessedIndexRef = useRef(0);
 
   // Process SSE events for stats updates
   useEffect(() => {
@@ -100,34 +130,27 @@ export function AnalyticsOverviewCards() {
 
     for (const event of newEvents) {
       const eventData = event.data as Record<string, unknown>;
+      const updates: RealtimeState["stats"] = {};
+      const updatedKeys: string[] = [];
 
-      // Update real-time stats based on event data
-      setRealtimeStats((prev) => {
-        const updates: typeof prev = {};
-        const updatedKeys: string[] = [];
+      if (typeof eventData.total_verifications === "number") {
+        updates.total_verifications = eventData.total_verifications;
+        updatedKeys.push("total_verifications");
+      }
+      if (typeof eventData.success_rate === "number") {
+        updates.success_rate = eventData.success_rate;
+        updatedKeys.push("success_rate");
+      }
+      if (typeof eventData.avg_latency_ms === "number") {
+        updates.avg_latency_ms = eventData.avg_latency_ms;
+        updatedKeys.push("avg_latency_ms");
+      }
 
-        if (typeof eventData.total_verifications === "number") {
-          updates.total_verifications = eventData.total_verifications;
-          updatedKeys.push("total_verifications");
-        }
-        if (typeof eventData.success_rate === "number") {
-          updates.success_rate = eventData.success_rate;
-          updatedKeys.push("success_rate");
-        }
-        if (typeof eventData.avg_latency_ms === "number") {
-          updates.avg_latency_ms = eventData.avg_latency_ms;
-          updatedKeys.push("avg_latency_ms");
-        }
-
-        // Mark cards as updated
-        if (updatedKeys.length > 0) {
-          setUpdatedCards(new Set(updatedKeys));
-          // Clear update indicators after animation
-          setTimeout(() => setUpdatedCards(new Set()), 500);
-        }
-
-        return Object.keys(updates).length > 0 ? { ...prev, ...updates } : prev;
-      });
+      if (updatedKeys.length > 0) {
+        dispatch({ type: "UPDATE_STATS", payload: updates, keys: updatedKeys });
+        // Clear update indicators after animation
+        setTimeout(() => dispatch({ type: "CLEAR_HIGHLIGHTS" }), 500);
+      }
     }
   }, [events, totalEventCount]);
 
@@ -137,17 +160,22 @@ export function AnalyticsOverviewCards() {
   // Merge real-time stats with initial data
   const mergedData = useMemo(() => {
     return {
-      total_verifications: realtimeStats.total_verifications ?? data?.total_verifications ?? 0,
-      success_rate: realtimeStats.success_rate ?? data?.success_rate ?? 0,
-      avg_latency_ms: realtimeStats.avg_latency_ms ?? data?.avg_latency_ms ?? 0,
+      total_verifications:
+        realtimeState.stats.total_verifications ?? data?.total_verifications ?? 0,
+      success_rate: realtimeState.stats.success_rate ?? data?.success_rate ?? 0,
+      avg_latency_ms: realtimeState.stats.avg_latency_ms ?? data?.avg_latency_ms ?? 0,
     };
-  }, [data, realtimeStats]);
+  }, [data, realtimeState.stats]);
 
   // API calls snapshot (cache misses)
   const { data: cacheSnapshot } = useCacheBreakdown();
   const { data: apiCallsDistribution } = useApiCallsDistribution();
   const totalApiCalls = useMemo(
-    () => (apiCallsDistribution ?? []).reduce((sum, item) => sum + item.count, 0),
+    () =>
+      (apiCallsDistribution ?? []).reduce(
+        (sum: number, item: { count: number }) => sum + item.count,
+        0
+      ),
     [apiCallsDistribution]
   );
 
@@ -180,21 +208,21 @@ export function AnalyticsOverviewCards() {
         value={formatNumber(mergedData.total_verifications)}
         description="Last 30 days"
         icon={<CheckCircle className="text-muted-foreground h-4 w-4" aria-hidden="true" />}
-        isUpdated={updatedCards.has("total_verifications")}
+        isUpdated={realtimeState.updatedCards.has("total_verifications")}
       />
       <OverviewCard
         title="Success Rate"
         value={`${mergedData.success_rate}%`}
         description="Verification success"
         icon={<TrendingUp className="text-muted-foreground h-4 w-4" aria-hidden="true" />}
-        isUpdated={updatedCards.has("success_rate")}
+        isUpdated={realtimeState.updatedCards.has("success_rate")}
       />
       <OverviewCard
         title="Avg Response Time"
         value={`${mergedData.avg_latency_ms}ms`}
         description="Bot response latency"
         icon={<Clock className="text-muted-foreground h-4 w-4" aria-hidden="true" />}
-        isUpdated={updatedCards.has("avg_latency_ms")}
+        isUpdated={realtimeState.updatedCards.has("avg_latency_ms")}
       />
       <OverviewCard
         title="API Calls"

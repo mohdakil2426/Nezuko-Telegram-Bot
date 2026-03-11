@@ -3,16 +3,14 @@
  */
 
 // Utils
-;
-
 // Dashboard
 export { getDashboardStats, getChartData, getActivity } from "./dashboard.mock";
 
 // Groups
-export { getGroups, getGroup } from "./groups.mock";
+export { getGroups } from "./groups.mock";
 
 // Channels
-export { getChannels, getChannel } from "./channels.mock";
+export { getChannels } from "./channels.mock";
 
 // Analytics
 export {

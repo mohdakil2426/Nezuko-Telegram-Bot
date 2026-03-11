@@ -1,5 +1,5 @@
 "use client";
 
-import { m, AnimatePresence } from "motion/react";
+import { m } from "motion/react";
 
-export { m as motion,  };
+export { m as motion };

@@ -42,7 +42,6 @@ export async function logVerification(
   ]);
 }
 
-
 export async function getLatestVerificationState(
   db: InsForgeClient,
   groupId: number,
