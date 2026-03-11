@@ -35,7 +35,7 @@ param(
 
 # ── Bootstrap ────────────────────────────────────────────────
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-. "$ScriptRoot\..\core\utils.ps1"
+. "$ScriptRoot\..\core\utils.ps1"   # also loads config.ps1 via utils.ps1
 
 Initialize-LogSystem
 Write-LogSection -Title "DEV SERVICES STOP"
@@ -46,7 +46,7 @@ Write-Host "   Stopping Nezuko Services" -ForegroundColor Red
 Write-Host "  =====================================" -ForegroundColor Cyan
 Write-Host ""
 
-$WEB_PORT = 3000
+$WEB_PORT = $script:NEZUKO_WEB_PORT
 
 # ============================================================
 # Stop a process listening on a specific TCP port
@@ -108,7 +108,7 @@ function Stop-BotAndWebProcesses {
 
     $stopped = 0
 
-    foreach ($name in @("bun", "node", "next", "turbo")) {
+    foreach ($name in $script:NEZUKO_KILL_PROC_NAMES) {
         Get-Process -Name $name -ErrorAction SilentlyContinue |
             Where-Object { $_.Id -ne $PID } |
             ForEach-Object {
@@ -158,7 +158,7 @@ else {
 # Step 3 — Redis Docker container
 # ============================================================
 
-Write-Host "  [3/3] Redis (Docker: nezuko-redis-local)..." -ForegroundColor Magenta
+Write-Host "  [3/3] Redis (Docker: $($script:NEZUKO_REDIS_CONTAINER))..." -ForegroundColor Magenta
 
 $shouldStopRedis = ($Service -eq "all" -or $Service -eq "docker") -and (-not $KeepRedis)
 
@@ -171,14 +171,14 @@ else {
         Write-Host "        Docker not available — skipping" -ForegroundColor Gray
     }
     else {
-        $composeFile = Join-Path (Get-ProjectRoot) "docker-compose.local.yml"
+        $composeFile = Join-Path (Get-ProjectRoot) $script:NEZUKO_COMPOSE_FILE
 
         if (-not (Test-Path $composeFile)) {
             Write-Host "        docker-compose.local.yml not found" -ForegroundColor Gray
         }
         else {
-            $running = docker ps --filter "name=nezuko-redis-local" --format "{{.Names}}" 2>$null
-            if ($running -eq "nezuko-redis-local") {
+            $running = docker ps --filter "name=$($script:NEZUKO_REDIS_CONTAINER)" --format "{{.Names}}" 2>$null
+            if ($running -eq $script:NEZUKO_REDIS_CONTAINER) {
                 docker compose -f $composeFile stop 2>$null | Out-Null
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "        Stopped Redis container (data preserved)" -ForegroundColor Green

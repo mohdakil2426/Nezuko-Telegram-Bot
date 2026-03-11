@@ -38,7 +38,7 @@ param(
 
 # ── Bootstrap ────────────────────────────────────────────────
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-. "$ScriptDir\..\core\utils.ps1"
+. "$ScriptDir\..\core\utils.ps1"   # also loads config.ps1 via utils.ps1
 
 $ProjectRoot = Get-ProjectRoot
 
@@ -109,14 +109,7 @@ Write-Host ""
 Write-Host "  [1] Removing build caches..." -ForegroundColor Blue
 Write-Log "Step 1: Removing build caches" -Category "CLEAN"
 
-$cachePaths = @(
-    "apps\web\.next",
-    "apps\web\.turbo",
-    "apps\grammy\dist",
-    "apps\grammy\.turbo",
-    ".turbo",
-    ".next"
-)
+$cachePaths = $script:NEZUKO_CACHE_DIRS
 
 $cacheCount = 0
 foreach ($rel in $cachePaths) {
@@ -144,11 +137,7 @@ else {
     Write-Host "  [2] Removing node_modules..." -ForegroundColor Blue
     Write-Log "Step 2: Removing node_modules" -Category "CLEAN"
 
-    $nmPaths = @(
-        "node_modules",
-        "apps\web\node_modules",
-        "apps\grammy\node_modules"
-    )
+    $nmPaths = $script:NEZUKO_NM_DIRS
 
     $nmCount = 0
     foreach ($rel in $nmPaths) {
@@ -174,7 +163,7 @@ else {
         Write-Host "  [3] Reinstalling dependencies..." -ForegroundColor Blue
         Write-Log "Step 3: Reinstalling dependencies" -Category "CLEAN"
 
-        foreach ($appPath in @("apps\web", "apps\grammy")) {
+        foreach ($appPath in $script:NEZUKO_INSTALL_APPS) {
             $full = Join-Path $ProjectRoot $appPath
 
             if (-not (Test-Path $full)) { continue }

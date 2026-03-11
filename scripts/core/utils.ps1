@@ -9,6 +9,12 @@
 #>
 
 # ============================================================
+# Bootstrap — load centralised config constants
+# ============================================================
+
+. "$PSScriptRoot\config.ps1"
+
+# ============================================================
 # Path Utilities
 # ============================================================
 
@@ -209,7 +215,7 @@ function Check-Dependencies {
     $projectRoot = Get-ProjectRoot
     $allGood = $true
 
-    foreach ($app in @("apps\web", "apps\grammy")) {
+    foreach ($app in $script:NEZUKO_INSTALL_APPS) {
         $nodeModules = Join-Path $projectRoot "$app\node_modules"
         if (-not (Test-Path $nodeModules)) {
             Write-Failure "Missing node_modules in $app"
@@ -217,12 +223,14 @@ function Check-Dependencies {
             continue
         }
 
-        # Canary package check for web — caught the tw-animate-css corruption
-        if ($app -eq "apps\web") {
-            $canary = Join-Path $nodeModules "tw-animate-css"
-            if (-not (Test-Path $canary)) {
-                Write-Failure "Critical package 'tw-animate-css' missing in $app — installation may be corrupted."
-                $allGood = $false
+        # Canary package checks — defined in config.ps1
+        foreach ($canary in $script:NEZUKO_CANARY_PACKAGES) {
+            if ($canary.App -eq $app) {
+                $pkgPath = Join-Path $nodeModules $canary.Package
+                if (-not (Test-Path $pkgPath)) {
+                    Write-Failure "Critical package '$($canary.Package)' missing in $app — installation may be corrupted."
+                    $allGood = $false
+                }
             }
         }
     }
@@ -250,7 +258,7 @@ function Stop-ProjectProcesses {
 
     $killedCount = 0
 
-    foreach ($procName in @("bun", "node", "next", "turbo")) {
+    foreach ($procName in $script:NEZUKO_KILL_PROC_NAMES) {
         $stopped = Get-Process -Name $procName -ErrorAction SilentlyContinue |
                    Where-Object { $_.Id -ne $PID } |
                    ForEach-Object {

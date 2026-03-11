@@ -30,7 +30,7 @@ param(
 
 # ── Bootstrap ────────────────────────────────────────────────
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-. "$ScriptRoot\..\core\utils.ps1"
+. "$ScriptRoot\..\core\utils.ps1"   # also loads config.ps1 via utils.ps1
 
 $ProjectRoot = Get-ProjectRoot
 
@@ -67,7 +67,7 @@ else {
     Write-Step -Step "2/4" -Message "Installing Web dependencies (apps/web)..."
     Write-Log "Step 2/4: Installing Web dependencies" -Category "NODE"
 
-    $webDir = Join-Path $ProjectRoot "apps\web"
+    $webDir = Join-Path $ProjectRoot $script:NEZUKO_APP_WEB
 
     if (-not (Test-Path $webDir)) {
         Write-Failure "apps/web directory not found"
@@ -103,7 +103,7 @@ else {
     Write-Step -Step "3/4" -Message "Installing Bot dependencies (apps/grammy)..."
     Write-Log "Step 3/4: Installing Bot dependencies" -Category "NODE"
 
-    $botDir = Join-Path $ProjectRoot "apps\grammy"
+    $botDir = Join-Path $ProjectRoot $script:NEZUKO_APP_BOT
 
     if (-not (Test-Path $botDir)) {
         Write-Failure "apps/grammy directory not found"

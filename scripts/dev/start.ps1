@@ -28,7 +28,7 @@ param(
 
 # ── Bootstrap ────────────────────────────────────────────────
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-. "$ScriptRoot\..\core\utils.ps1"
+. "$ScriptRoot\..\core\utils.ps1"   # also loads config.ps1 via utils.ps1
 
 Initialize-LogSystem
 Write-LogSection -Title "DEV SERVICES START"
@@ -87,7 +87,7 @@ Write-Log "Dependency check passed" -Category "DEV"
 Write-Host "  [Redis] Starting Redis cache (Docker)..." -ForegroundColor Magenta
 Write-Log "Starting Redis via docker compose" -Category "DEV"
 
-$composeFile = Join-Path $ProjectRoot "docker-compose.local.yml"
+$composeFile = Join-Path $ProjectRoot $script:NEZUKO_COMPOSE_FILE
 $dockerAvail = $null -ne (Get-Command docker -ErrorAction SilentlyContinue)
 
 if (-not $dockerAvail) {
@@ -106,7 +106,7 @@ else {
     }
 
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "        ✅ Redis running (nezuko-redis-local → port 6379)" -ForegroundColor Green
+        Write-Host "        ✅ Redis running ($($script:NEZUKO_REDIS_CONTAINER) → port $($script:NEZUKO_REDIS_PORT))" -ForegroundColor Green
         Write-Log "Redis started successfully" -Level "SUCCESS" -Category "DEV"
     }
     else {
@@ -131,9 +131,9 @@ if ($Service -eq "all" -or $Service -eq "web") {
 
     $webCmd = @"
 `$Host.UI.RawUI.WindowTitle = 'Nezuko Web Dashboard'
-Set-Location '$ProjectRoot\apps\web'
+Set-Location '$ProjectRoot\$($script:NEZUKO_APP_WEB)'
 Write-Host '  🌐 Nezuko Web Dashboard' -ForegroundColor Cyan
-Write-Host '  http://localhost:3000' -ForegroundColor Blue
+Write-Host "  http://localhost:$($script:NEZUKO_WEB_PORT)" -ForegroundColor Blue
 Write-Host ''
 bun dev
 "@
@@ -148,7 +148,7 @@ if ($Service -eq "all" -or $Service -eq "bot") {
 
     $botCmd = @"
 `$Host.UI.RawUI.WindowTitle = 'Nezuko Telegram Bot'
-Set-Location '$ProjectRoot\apps\grammy'
+Set-Location '$ProjectRoot\$($script:NEZUKO_APP_BOT)'
 Write-Host '  🤖 Nezuko Telegram Bot (grammY)' -ForegroundColor Yellow
 Write-Host ''
 bun run dev
@@ -165,9 +165,9 @@ Write-Host "  =====================================" -ForegroundColor Cyan
 Write-Host "   ✅ Services started!" -ForegroundColor Green
 Write-Host "  =====================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "   Redis: " -NoNewline; Write-Host "nezuko-redis-local (port 6379)" -ForegroundColor Magenta
+Write-Host "   Redis: " -NoNewline; Write-Host "$($script:NEZUKO_REDIS_CONTAINER) (port $($script:NEZUKO_REDIS_PORT))" -ForegroundColor Magenta
 if ($Service -eq "all" -or $Service -eq "web") {
-    Write-Host "   Web:   " -NoNewline; Write-Host "http://localhost:3000" -ForegroundColor Blue
+    Write-Host "   Web:   " -NoNewline; Write-Host "http://localhost:$($script:NEZUKO_WEB_PORT)" -ForegroundColor Blue
 }
 if ($Service -eq "all" -or $Service -eq "bot") {
     Write-Host "   Bot:   " -NoNewline; Write-Host "Running in polling mode" -ForegroundColor Yellow

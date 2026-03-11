@@ -18,6 +18,7 @@ $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ScriptRoot = Resolve-Path (Join-Path $ScriptDir "..")
 
 $targets = @(
+    'core\config.ps1',
     'core\utils.ps1',
     'core\menu.ps1',
     'dev\stop.ps1',
