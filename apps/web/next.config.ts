@@ -14,7 +14,9 @@ const nextConfig: NextConfig = {
     ],
     // Restore scroll position on back/forward navigation (smoother UX)
     scrollRestoration: true,
+    turbopackFileSystemCacheForBuild: true,
   },
+  cacheComponents: true,
 };
 
 export default nextConfig;

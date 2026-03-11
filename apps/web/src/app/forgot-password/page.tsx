@@ -130,7 +130,7 @@ function ForgotPasswordForm() {
 
       <CardFooter className="justify-center border-t pt-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/login" className="gap-2">
+          <Link href="/login" className="gap-2" prefetch={false}>
             <ArrowLeft className="h-3 w-3" />
             Back to login
           </Link>

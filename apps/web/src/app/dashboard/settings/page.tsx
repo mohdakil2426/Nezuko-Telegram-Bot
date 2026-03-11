@@ -3,14 +3,10 @@
  * Theme and preferences management
  */
 
-import { SettingsPageContent } from "@/components/settings";
-import { getMasterKey } from "@/lib/actions/vault";
+import { SettingsPageContent, VaultSection } from "@/components/settings";
 
-export const dynamic = "force-dynamic";
 
-export default async function SettingsPage() {
-  const masterKey = await getMasterKey();
-
+export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
@@ -18,7 +14,9 @@ export default async function SettingsPage() {
         <p className="text-muted-foreground">Manage your dashboard and platform security</p>
       </div>
 
-      <SettingsPageContent masterKey={masterKey} />
+      <SettingsPageContent>
+        <VaultSection />
+      </SettingsPageContent>
     </div>
   );
 }

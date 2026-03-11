@@ -1,9 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { getAuthFromCookies } from "@insforge/nextjs/server";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-import { ThemeProvider, QueryProvider, MotionProvider, InsforgeProvider } from "@/providers";
+import { Suspense } from "react";
+import {
+  ThemeProvider,
+  QueryProvider,
+  MotionProvider,
+  InsforgeProviderWrapper,
+} from "@/providers";
 import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
@@ -23,9 +27,6 @@ export const metadata: Metadata = {
   description: "Telegram bot management dashboard",
 };
 
-// Auth hydration reads cookies at the root, so this app is intentionally dynamic.
-export const dynamic = "force-dynamic";
-
 // RESP-M1: viewportFit=cover enables env(safe-area-inset-*) CSS variables for iOS notch support
 export const viewport: Viewport = {
   width: "device-width",
@@ -38,13 +39,11 @@ export const viewport: Viewport = {
   ],
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const initialState = await getAuthFromCookies();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -58,15 +57,21 @@ export default async function RootLayout({
         >
           Skip to content
         </a>
-        {/* InsForgeProvider must be outermost client wrapper for auth context */}
-        <InsforgeProvider initialState={initialState}>
-          <ThemeProvider>
-            <QueryProvider>
-              <MotionProvider>{children}</MotionProvider>
-              <Toaster />
-            </QueryProvider>
-          </ThemeProvider>
-        </InsforgeProvider>
+        {/* 
+          Suspense enables Partial Prerendering (PPR) for the Root Layout. 
+          The html, body, and fonts are prerendered and sent instantly.
+          The InsforgeProviderWrapper fetches the auth session dynamically.
+        */}
+        <Suspense>
+          <InsforgeProviderWrapper>
+            <ThemeProvider>
+              <QueryProvider>
+                <MotionProvider>{children}</MotionProvider>
+                <Toaster />
+              </QueryProvider>
+            </ThemeProvider>
+          </InsforgeProviderWrapper>
+        </Suspense>
       </body>
     </html>
   );

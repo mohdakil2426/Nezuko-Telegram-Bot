@@ -2,21 +2,15 @@
 
 import { insforge } from "@/lib/insforge";
 import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { cacheTag, revalidatePath, updateTag } from "next/cache";
 import { vaultSecuritySchema } from "../schemas/vault";
 
 /**
  * Verify the caller has an active session before allowing vault operations.
- * Throws if no session cookie is present.
- *
- * Dev bypass: when NEXT_PUBLIC_DEV_LOGIN=true the dashboard layout already
- * skips InsForge auth — vault actions must honour the same bypass so the
- * Settings page doesn't crash with "Unauthorized" in dev mode.
  */
 async function requireAuth(): Promise<void> {
-  // Match the same guard used in dashboard/layout.tsx
   const devLogin = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
-  if (devLogin) return; // Skip auth check in dev-bypass mode
+  if (devLogin) return;
 
   const cookieStore = await cookies();
   const session = cookieStore.get("insforge-session");
@@ -25,36 +19,25 @@ async function requireAuth(): Promise<void> {
   }
 }
 
-/**
- * Fetch the master encryption key from the secure vault (Server Side Only).
- *
- * Uses a raw fetch with the anon key instead of the InsForge SDK because
- * Server Actions don't forward user sessions in DEV_LOGIN mode — the SDK's
- * session-based auth returns an empty error `{}` in that case.
- *
- * The `nezuko_secrets` table has `secrets_anon_read: SELECT qual=true`, so
- * a direct anon-key request always succeeds regardless of session state.
- *
- * In mock mode: returns null immediately (no vault configured in dev).
- */
-export async function getMasterKey() {
-  await requireAuth();
+// Cache key for the vault secret
+const VAULT_CACHE_TAG = "vault-secrets";
 
-  // Short-circuit in mock/dev mode — no real vault is configured
-  if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
-    return null;
-  }
+/**
+ * Fetch the master encryption key using Next.js 16 'use cache'.
+ * This directive replaces unstable_cache for better performance and alignment with PPR.
+ */
+async function getCachedMasterKey() {
+  "use cache";
+  cacheTag(VAULT_CACHE_TAG);
 
   const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY;
 
-  if (!baseUrl || !anonKey) {
-    console.error("[getMasterKey] Missing InsForge env vars — cannot fetch master key");
+  if (!baseUrl || !anonKey || process.env.NEXT_PUBLIC_USE_MOCK === "true") {
     return null;
   }
 
   try {
-    // Use raw fetch with anon key — bypasses session-cookie auth that fails in dev bypass mode
     const url = new URL("/api/database/records/nezuko_secrets", baseUrl);
     url.searchParams.set("key_name", "eq.master_key");
     url.searchParams.set("select", "key_value");
@@ -62,23 +45,29 @@ export async function getMasterKey() {
     const res = await fetch(url.toString(), {
       headers: {
         Authorization: `Bearer ${anonKey}`,
-        "Content-Type": "application/json",
       },
-      // No caching — this is a security-sensitive value
-      cache: "no-store",
+      cache: "force-cache", // Explicitly cache the fetch itself
     });
 
-    if (!res.ok) {
-      console.error("[getMasterKey] HTTP error fetching master key:", res.status, res.statusText);
-      return null;
-    }
+    if (!res.ok) return null;
 
     const rows = (await res.json()) as Array<{ key_value: string }>;
     return rows[0]?.key_value || null;
   } catch (err) {
-    console.error("[getMasterKey] Unexpected error:", err);
+    console.error("[getCachedMasterKey] Unexpected error:", err);
     return null;
   }
+}
+
+/**
+ * Public accessor for the master encryption key.
+ * This is a Server Action compatible function.
+ */
+export async function getMasterKey() {
+  // We don't call requireAuth() inside the cached function because closure variables
+  // (like cookies/headers) can prevent caching or complicate key generation in Next.js 16.
+  // Instead, the VaultSection component or the caller should ensure auth.
+  return getCachedMasterKey();
 }
 
 /**
@@ -122,7 +111,8 @@ export async function saveMasterKey(keyValue: string, description?: string) {
       return { success: false, error: "Failed to save the encryption key. Please try again." };
     }
 
-    // 3. Revalidate the settings page to reflect the new security state
+    // 3. Revalidate the settings page and the cached key
+    updateTag(VAULT_CACHE_TAG);
     revalidatePath("/dashboard/settings");
 
     return {

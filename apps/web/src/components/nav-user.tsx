@@ -144,7 +144,7 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings">
+                <Link href="/dashboard/settings" prefetch={false}>
                   <Settings />
                   Settings
                 </Link>

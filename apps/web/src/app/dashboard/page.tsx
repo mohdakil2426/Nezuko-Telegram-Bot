@@ -41,7 +41,7 @@ export default function DashboardPage() {
             <p className="text-muted-foreground text-sm">Key performance metrics at a glance</p>
           </div>
           <Button asChild variant="outline" size="sm">
-            <Link href="/dashboard/analytics">
+            <Link href="/dashboard/analytics" prefetch={false}>
               View Full Analytics
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>

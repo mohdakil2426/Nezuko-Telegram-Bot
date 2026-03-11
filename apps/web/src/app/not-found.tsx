@@ -34,7 +34,7 @@ export default function NotFound() {
         </CardContent>
         <CardFooter className="justify-center">
           <Button asChild>
-            <Link href="/dashboard">
+            <Link href="/dashboard" prefetch={false}>
               <Home className="mr-2 h-4 w-4" />
               Go to Dashboard
             </Link>

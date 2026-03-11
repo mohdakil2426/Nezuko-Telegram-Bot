@@ -42,7 +42,7 @@ export function NavMain({ items }: NavMainProps) {
           return (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                <Link href={item.url}>
+                <Link href={item.url} prefetch={false}>
                   <item.icon />
                   <span>{item.title}</span>
                 </Link>

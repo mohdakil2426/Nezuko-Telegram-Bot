@@ -7,19 +7,16 @@
 
 import { AppearanceCard } from "./appearance-card";
 import { AccountInfoCard } from "./account-info-card";
-import { SecurityVaultCard } from "./security-vault-card";
 import { RevealItem, PageTransition } from "@/components/page-transition";
 
 interface SettingsPageContentProps {
-  masterKey?: string | null;
+  children: React.ReactNode;
 }
 
-export function SettingsPageContent({ masterKey }: SettingsPageContentProps) {
+export function SettingsPageContent({ children }: SettingsPageContentProps) {
   return (
     <PageTransition className="grid gap-6 md:grid-cols-2">
-      <RevealItem className="md:col-span-2">
-        <SecurityVaultCard initialKey={masterKey} />
-      </RevealItem>
+      <RevealItem className="md:col-span-2">{children}</RevealItem>
       <RevealItem>
         <AppearanceCard />
       </RevealItem>

@@ -16,7 +16,6 @@ import {
   addBot,
   updateBot,
   deleteBot,
-  verifyBotToken,
   type Bot,
   type BotListResponse,
   type BotVerifyResponse,
@@ -54,18 +53,6 @@ export function useAddBot() {
     },
     onError: (error: Error) => {
       console.error(`Failed to add bot: ${error.message}`);
-    },
-  });
-}
-
-/**
- * Hook for verifying a bot token (without adding).
- */
-export function useVerifyBotToken() {
-  return useMutation<BotVerifyResponse, Error, string>({
-    mutationFn: (token: string) => verifyBotToken(token),
-    onError: (error: Error) => {
-      console.error(`Failed to verify bot token: ${error.message}`);
     },
   });
 }

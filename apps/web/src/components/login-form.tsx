@@ -106,6 +106,7 @@ export function LoginForm() {
 
             <Link
               href="/forgot-password"
+              prefetch={false}
               className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 transition-colors hover:underline"
             >
               Forgot your password?

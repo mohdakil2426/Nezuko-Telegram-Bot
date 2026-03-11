@@ -14,7 +14,7 @@ export function BrandLogo() {
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton size="lg" asChild>
-          <Link href="/dashboard" aria-label="Nezuko Dashboard home">
+          <Link href="/dashboard" aria-label="Nezuko Dashboard home" prefetch={false}>
             {/* suppressHydrationWarning: Dark Reader extension injects data-darkreader-inline-stroke into SVGs */}
             <div
               suppressHydrationWarning
