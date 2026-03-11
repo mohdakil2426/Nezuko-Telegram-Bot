@@ -68,13 +68,11 @@ export async function getMasterKey(db: InsForgeClient): Promise<string | null> {
   return key ?? null;
 }
 
-/** Invalidate the cached key (e.g. after a known rotation). */
+/** Invalidate the cached key (e.g. after a known rotation or in tests). */
 export function invalidateMasterKeyCache(): void {
   _cachedKey = null;
   _cachedAt = 0;
 }
-
-// ── Decryption ─────────────────────────────────────────────────────────────────
 
 /**
  * Decrypt a bot token encrypted with AES-256-GCM (v2 format).

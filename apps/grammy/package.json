@@ -14,7 +14,8 @@
     "format:check": "prettier src/ ../../tests/grammy --check",
     "test": "vitest run",
     "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "knip": "knip"
   },
   "dependencies": {
     "@grammyjs/auto-retry": "2.0.2",
@@ -35,13 +36,13 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
+    "@eslint/js": "^9.28.0",
     "@types/node": "22.15.0",
     "@typescript-eslint/eslint-plugin": "8",
     "@typescript-eslint/parser": "8",
     "@vitest/coverage-v8": "4.0.18",
     "eslint": "9.28.0",
     "knip": "^5.86.0",
-    "pino-pretty": "13.0.0",
     "prettier": "^3.8.1",
     "typescript": "5.9.3",
     "vitest": "4.0.18"

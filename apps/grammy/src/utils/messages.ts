@@ -38,18 +38,6 @@ export const ADMIN_CHECK_UNAVAILABLE =
 export const ADMIN_CHECK_FAILED =
   "⚠️ I couldn't check your admin permissions right now. Please try again.";
 
-export const PROTECT_CHANNEL_NOT_FOUND = (channel: string): string =>
-  `❌ Channel <b>${channel}</b> not found.`;
-
-export const PROTECT_NOT_ADMIN_IN_CHANNEL = (channel: string): string =>
-  `❌ I need to be an admin in <b>${channel}</b> first.`;
-
-export const PROTECT_ALREADY_LINKED = (channel: string): string =>
-  `ℹ️ <b>${channel}</b> is already linked to this group.`;
-
-export const PROTECT_MAX_CHANNELS =
-  "⚠️ Maximum 5 channels per group. Remove one first with /unprotect.";
-
 export const PROTECT_BOT_NOT_ADMIN =
   "⚠️ I need <b>Restrict Members</b> and <b>Delete Messages</b> permissions to work!";
 

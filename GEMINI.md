@@ -367,8 +367,6 @@ Skills are located in `.agent/skills/` or `.agents/skills/` — check the path c
 
 ### Backend (Bot & BaaS)
 
-@.agents/skils/grammy/GEMINI.md
-
 | Skill            | When to Use                   | Path                          |
 | ---------------- | ----------------------------- | ----------------------------- |
 | **grammy**       | Any bot work in `apps/grammy` | `.agents/skills/grammy`       |

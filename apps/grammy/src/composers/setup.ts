@@ -48,7 +48,7 @@ const MAX_ATTEMPTS = 3;
  * NOTE: This is a module-level function — grammY conversations MUST NOT be
  * defined inside handlers or other functions that create new instances.
  */
-export async function setupWizard(conversation: SetupConversation, ctx: NezukoContext) {
+async function setupWizard(conversation: SetupConversation, ctx: NezukoContext) {
   const chatId = ctx.chat?.id ?? 0;
   const chatTitle = ctx.chat?.title ?? "this group";
 

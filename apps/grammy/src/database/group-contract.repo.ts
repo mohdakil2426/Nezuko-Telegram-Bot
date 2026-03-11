@@ -11,11 +11,6 @@ export interface GroupVerificationContract {
   channels: Awaited<ReturnType<typeof getGroupChannels>>;
 }
 
-export interface GroupVerificationSettings {
-  enabled: boolean;
-  joinRequestPreferred: boolean;
-}
-
 interface GroupVerificationContractRow {
   group_id: number;
   enabled: boolean;
@@ -140,17 +135,6 @@ export async function getGroupVerificationContract(
   }
 
   return getGroupVerificationContractFallback(db, groupId);
-}
-
-export async function getGroupVerificationSettings(
-  db: InsForgeClient,
-  groupId: number
-): Promise<GroupVerificationSettings> {
-  const contract = await getGroupVerificationContract(db, groupId);
-  return {
-    enabled: contract.enabled,
-    joinRequestPreferred: contract.joinRequestPreferred,
-  };
 }
 
 /**
