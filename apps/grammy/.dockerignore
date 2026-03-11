@@ -1,13 +1,21 @@
+# F-D02: Exclude non-essential files from Docker build context.
+# Reduces build time and prevents leaking dev artifacts into the image.
+
 node_modules
+dist
 .git
-tests
-docs
+*.md
+tests/
+memory-bank/
 .env
 .env.local
 .env.example
-*.md
+.agent/
+.agents/
+docs/
+scripts/
+openspec/
 vitest.config.ts
-dist
 .DS_Store
 *.log
 coverage

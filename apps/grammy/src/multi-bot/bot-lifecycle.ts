@@ -320,7 +320,7 @@ export class BotLifecycleManager {
     }
 
     const bot = new Bot<NezukoContext>(token, {
-      client: { timeoutSeconds: 30 },
+      client: { timeoutSeconds: 60 },
     });
 
     // EC-53: Validate token by calling getMe() before wiring anything

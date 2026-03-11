@@ -2,7 +2,62 @@
 
 ### Current Status
 
-**Phase 110: Verification Enforcement Recovery + Redis Hardening — COMPLETE ✅**
+**Phase 121: grammY Plugin Integration (Throttler · Autoquote · Menu · Conversations) — COMPLETE ✅**
+
+---
+
+#### Phase 121 Changes (2026-03-11)
+
+Four grammY plugins integrated into `apps/grammy/` — skipping `@grammyjs/i18n` (deferred):
+
+**1. `@grammyjs/transformer-throttler` v1.2.1**
+
+- `apiThrottler()` installed as the **first** API transformer in `bot-factory.ts` — before `autoRetry`
+- Proactively queues outgoing calls within Telegram limits (30/s global, 20/min group, 1/s private)
+- Prevents 429 flood-wait bans. `autoRetry` stays as reactive second defence ("Double Defence")
+
+**2. `@roziscoding/grammy-autoquote` v2.0.9**
+
+- `autoQuote({ allowSendingWithoutReply: true })` installed globally after `hydrate()`
+- Every `ctx.reply()` now automatically quotes the triggering message
+- `allowSendingWithoutReply: true` prevents failures when original message was deleted
+
+**3. `@grammyjs/menu` v1.3.1**
+
+- `src/menus/settings.menu.ts` — group admin settings menu for `/settings` command
+  - Dynamic range: renders linked channels from DB per group
+  - Refresh (re-renders in-place) + Close buttons
+- `src/menus/private.menu.ts` — private chat navigation menu for `/start` in DMs
+  - Root menu: Commands · How it Works · About · Quick Start
+  - Each button navigates to a child sub-menu with section content + `⬅️ Back`
+  - All navigation uses `ctx.editMessageText()` — single message, no new messages sent
+- Both menus are module-level (memory-leak safe), installed via `bot.use()` before composers
+
+**4. `@grammyjs/conversations` v2.1.1**
+
+- `ConversationFlavor<>` added to `NezukoContext` in `types.ts` (second transformative wrapper, inside `HydrateFlavor<>`)
+- `src/composers/setup.ts` — `/setup` guided channel-linking wizard
+  - Guards: admin-only, group-only, permission-check, supergroup-only
+  - Max 3 retry attempts per session; `/cancel` exits cleanly at any step
+  - All DB/cache calls wrapped in `conversation.external()` — Golden Rule compliant
+  - `invalidateGroupContractCache()` called after successful link
+- `conversations()` + `setupWizardConversation` installed after `contextEnricher` in `bot-factory.ts`
+- ⚠️ Conversations NOT added to verification hot-path (`verify.ts`, `events.ts`) — Redis-lock system stays untouched
+
+**Middleware order (final):**
+
+```
+throttler → autoRetry → htmlTransformer → apiLogTransformer   [API transformers]
+sequentialize → hydrate → chatMembers → autoQuote → contextEnricher
+→ conversations() → setupWizardConversation
+→ settingsMenu → privateMenu → wireCoreCommands
+→ setupComposer → adminComposer → channelsComposer → migrationComposer
+→ eventsComposer → verifyComposer → fallbackComposer → bot.catch()
+```
+
+**Quality gates (final run):** type-check ✅ lint ✅ format ✅ tests 163/163 ✅ build ✅
+
+---
 
 **Phase 111: Delayed Verification Prompt Flow — COMPLETE ✅**
 
@@ -22,8 +77,15 @@
 
 **Phase 116: Latency Gap Fixes + Dashboard Runner Self-Healing — COMPLETE ✅**
 
+**Phase 117: grammY Plugin Research & Integration Plan — COMPLETE ✅**
+
+**Phase 118: Bot Connectivity & Realtime Robustness — COMPLETE ✅**
+
+**Phase 119: Unmatched Message Fallback — COMPLETE ✅**
+
 The verification UX was refined to reduce group spam from required-channel membership flapping:
 }},{
+
 - Required-channel `chat_member` leave events no longer push verification prompts into linked groups immediately.
 - Channel leave now silently invalidates verified state and updates membership cache without fan-out prompting.
 - The first blocked group message from an unverified user is now the visible enforcement point: delete message first, re-apply mute/restriction, then send exactly one verification prompt.
@@ -81,7 +143,7 @@ The verification UX was refined to reduce group spam from required-channel membe
   - latest grammY quality gates after this follow-up: type-check ✅ lint ✅ tests 156/156 ✅ build ✅
 
 - **Phase 116 (2026-03-08)** closed two latency gaps identified in the latencyV2 audit and added dashboard-mode runner self-healing:
-  - **S6 verify-path gap**: `verify.ts` now calls `getGroupVerificationContractCached()` *before* `verifyMembership()` and passes preloaded channels into it, eliminating the 200–280 ms uncached InsForge read that was happening on every verify button tap even though the message-path already cached the contract.
+  - **S6 verify-path gap**: `verify.ts` now calls `getGroupVerificationContractCached()` _before_ `verifyMembership()` and passes preloaded channels into it, eliminating the 200–280 ms uncached InsForge read that was happening on every verify button tap even though the message-path already cached the contract.
   - **S4 restricted-state seeding**: `events.ts` `enforceVerificationFailure()` now writes `mod_state:"restricted"` to Redis immediately after `muteUser()`, so the verify path can correctly detect an already-restricted user and skip redundant `restrictChatMember` calls (saves ~746 ms per verify-fail re-tap).
   - **Keep-alive module** (`utils/keep-alive.ts`): self-pings the `/health` endpoint on a configurable interval to prevent idle spin-down on free-tier cloud hosts (Render, Railway). `KEEP_ALIVE_URL` + `KEEP_ALIVE_INTERVAL_MS` are new env vars validated in `config.ts`. Left blank by default for local-machine runs.
   - **`ShutdownDeps.onBeforeShutdown`** optional callback added to `shutdown.ts` — lets callers (e.g. keep-alive) inject cleanup steps before the runner stops without coupling them to the shutdown module.
@@ -91,6 +153,28 @@ The verification UX was refined to reduce group spam from required-channel membe
   - `apps/grammy/.env` updated: added `INSFORGE_REQUEST_TIMEOUT_MS`, lowered `LOG_LEVEL` from `debug` → `info`, disabled `DEBUG_UPDATES`, added `KEEP_ALIVE_URL`/`KEEP_ALIVE_INTERVAL_MS`.
   - `apps/grammy/.env.example` updated with keep-alive section and hosting platform guidance.
   - Quality gates after Phase 116: grammY type-check ✅ lint ✅ format ✅ tests **163/163** ✅ build ✅
+
+- **Phase 118 (2026-03-10)** resolved critical bot connectivity and stable polling issues:
+  - **Runner Timeout Race Fix**: Increased the grammY client `timeoutSeconds` from 30s to 60s in `bot-lifecycle.ts`. This prevents the client from timing out simultaneously with Telegram's 30s long-poll response, which previously caused frequent `HttpError: Network request for 'getUpdates' failed!` crashes.
+  - **Realtime Connectivity Hardening**: Enabled HTTP polling as a fallback transport for the Socket.IO `InsForgeRealtimeClient`. This allows the bot to connect to the dashboard realtime stream even in restricted network environments where WebSockets are blocked (fixing the repeated `Realtime connect_error` / `websocket error` logs).
+  - **Verified Quality Gates**: grammY type-check ✅ tests **163/163** ✅ format:check ✅
+
+- **Phase 120 (Current)**: Plugin Integration Research & Reporting.
+  - **Comprehensive Research**: Conducted a deep-dive into Throttler, Autoquote, i18n/Fluent, Menu, and Conversations plugins.
+  - **Research Report**: Created `RESEARCH_REPORT_PLUGIN_INTEGRATION.md` in the root directory, detailing architecture changes, technical gotchas (Fluent isolation marks, Conversation replays), and a 3-phase roadmap.
+  - **Status**: Ready for Implementation Phase.
+
+- **Phase 119 (2026-03-10)**: Improved user accessibility for unrecognized messages.
+  - **Private Chat Fallback**: Optimized the `fallbackComposer` to acknowledge regular text messages in private chats that don't match commands.
+  - **Contextual Guidance**: Instead of staying silent, the bot now replies with a friendly prompt directing the user to `/help`. This prevents users from thinking the bot is offline when they send plain text like "hi".
+  - **Verified Quality Gates**: grammY type-check ✅ tests **163/163** (no regressions) ✅
+
+- **Phase 117 (2026-03-09)**: grammY Plugin Research & Integration Plan initiated.
+  - Analyzed codebase for plugin gaps: Throttler, i18n/Fluent, Menus, Autoquote, and Conversations identified as key improvements.
+  - Created `PLUGIN_INTEGRATION_PLAN.md` in the root directory.
+  - Planned migration of hardcoded messages to Fluent `.ftl` files.
+  - Outlined a transition from static admin replies to reactive menus using `@grammyjs/menu`.
+  - Proposed proactive rate limiting via `@grammyjs/transformer-throttler`.
 
 The post-audit stabilization work is now documented:
 
@@ -116,29 +200,29 @@ The post-audit stabilization work is now documented:
 
 ### Root Causes Confirmed
 
-| Issue | Root Cause | Status |
-| --- | --- | --- |
+| Issue                                      | Root Cause                                                                                     | Status                                               |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
 | Bot replies were very slow or inconsistent | Multiple local bot processes were polling the same token, producing `getUpdates` 409 conflicts | ✅ Fixed in code, operational restart still required |
-| DB-backed commands could hang for too long | `InsForgeClient` had no request timeout, so API/network failures stalled command handling | ✅ Fixed |
+| DB-backed commands could hang for too long | `InsForgeClient` had no request timeout, so API/network failures stalled command handling      | ✅ Fixed                                             |
 
 ### Evidence Captured
 
-| Source | Finding |
-| --- | --- |
-| `apps/grammy/runtime.log` | Repeated `409 Conflict: terminated by other getUpdates request` |
-| `apps/grammy/runtime-2.log` | Same duplicate poller conflict during long polling |
+| Source                      | Finding                                                                                                            |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `apps/grammy/runtime.log`   | Repeated `409 Conflict: terminated by other getUpdates request`                                                    |
+| `apps/grammy/runtime-2.log` | Same duplicate poller conflict during long polling                                                                 |
 | `apps/grammy/runtime-3.log` | Repeated InsForge failures: socket open failures, heartbeat write failures, command poll errors, connection resets |
 
 ### Files Changed in Phase 107
 
-| File | Change |
-| --- | --- |
-| `apps/grammy/src/utils/process-lock.ts` | **NEW** startup lock to prevent duplicate bot instances on the same machine |
-| `apps/grammy/src/main.ts` | Acquires/releases process lock and injects InsForge request timeout config |
-| `apps/grammy/src/core/insforge-client.ts` | Added `AbortController`-based fetch timeout wrapper for all REST calls |
-| `apps/grammy/src/config.ts` | Added `INSFORGE_REQUEST_TIMEOUT_MS` config with 5000ms default |
-| `tests/grammy/unit/core/config.test.ts` | Added config coverage for timeout env handling |
-| `tests/grammy/unit/database/insforge-client.test.ts` | Added timeout behavior coverage |
+| File                                                 | Change                                                                      |
+| ---------------------------------------------------- | --------------------------------------------------------------------------- |
+| `apps/grammy/src/utils/process-lock.ts`              | **NEW** startup lock to prevent duplicate bot instances on the same machine |
+| `apps/grammy/src/main.ts`                            | Acquires/releases process lock and injects InsForge request timeout config  |
+| `apps/grammy/src/core/insforge-client.ts`            | Added `AbortController`-based fetch timeout wrapper for all REST calls      |
+| `apps/grammy/src/config.ts`                          | Added `INSFORGE_REQUEST_TIMEOUT_MS` config with 5000ms default              |
+| `tests/grammy/unit/core/config.test.ts`              | Added config coverage for timeout env handling                              |
+| `tests/grammy/unit/database/insforge-client.test.ts` | Added timeout behavior coverage                                             |
 
 ### Operational Note
 
@@ -150,31 +234,31 @@ The post-audit stabilization work is now documented:
 
 ### Root Causes Confirmed
 
-| Issue | Root Cause | Status |
-| --- | --- | --- |
+| Issue                                                           | Root Cause                                                                                                                                             | Status   |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
 | User joined required channel but Verify still said “not joined” | Negative `member:{channelId}:{userId}` cache entries were reused for up to 5 minutes, so explicit verify clicks could trust stale “not a member” state | ✅ Fixed |
-| Group-only responses felt late under traffic | `sequentializeMiddleware` keyed all updates by `chat.id`, so one busy group serialized unrelated users behind a single queue | ✅ Fixed |
+| Group-only responses felt late under traffic                    | `sequentializeMiddleware` keyed all updates by `chat.id`, so one busy group serialized unrelated users behind a single queue                           | ✅ Fixed |
 
 ### Evidence Captured
 
-| Source | Finding |
-| --- | --- |
-| `apps/grammy/src/services/verification.ts` | Membership checks cached both positive and negative results with the same 5 minute TTL |
-| `apps/grammy/src/middleware/sequentialize.ts` | All group traffic was serialized by chat only |
-| InsForge metadata + SQL | Protected group and channel link existed live, but `verification_log` still had 0 rows during the broken verification reports |
-| `apps/grammy/runtime.log` + `runtime-3.log` | Separate operational issues also existed: duplicate pollers and intermittent InsForge connectivity failures |
+| Source                                        | Finding                                                                                                                       |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `apps/grammy/src/services/verification.ts`    | Membership checks cached both positive and negative results with the same 5 minute TTL                                        |
+| `apps/grammy/src/middleware/sequentialize.ts` | All group traffic was serialized by chat only                                                                                 |
+| InsForge metadata + SQL                       | Protected group and channel link existed live, but `verification_log` still had 0 rows during the broken verification reports |
+| `apps/grammy/runtime.log` + `runtime-3.log`   | Separate operational issues also existed: duplicate pollers and intermittent InsForge connectivity failures                   |
 
 ### Files Changed in Phase 108
 
-| File | Change |
-| --- | --- |
-| `apps/grammy/src/services/verification.ts` | Added `bypassNegativeCache` option so explicit verify clicks force a fresh Telegram membership check when Redis says “not joined” |
-| `apps/grammy/src/composers/verify.ts` | Explicit verify path now calls `verifyMembership(..., { bypassNegativeCache: true })` |
-| `apps/grammy/src/core/constants.ts` | Added `MEMBER_NEGATIVE_CACHE_TTL=30` while keeping positive membership cache at 5 minutes |
-| `apps/grammy/src/middleware/sequentialize.ts` | Queue key narrowed to `chatId:userId` for ordinary user traffic; commands and membership updates remain chat-serialized |
-| `apps/grammy/src/composers/events.ts` | Group message filter now checks verified cache/DB before doing the extra admin membership roundtrip |
-| `tests/grammy/unit/services/verification.test.ts` | Added stale negative cache and short negative TTL coverage |
-| `tests/grammy/unit/middleware/sequentialize.test.ts` | Added queue-key behavior coverage |
+| File                                                 | Change                                                                                                                            |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/grammy/src/services/verification.ts`           | Added `bypassNegativeCache` option so explicit verify clicks force a fresh Telegram membership check when Redis says “not joined” |
+| `apps/grammy/src/composers/verify.ts`                | Explicit verify path now calls `verifyMembership(..., { bypassNegativeCache: true })`                                             |
+| `apps/grammy/src/core/constants.ts`                  | Added `MEMBER_NEGATIVE_CACHE_TTL=30` while keeping positive membership cache at 5 minutes                                         |
+| `apps/grammy/src/middleware/sequentialize.ts`        | Queue key narrowed to `chatId:userId` for ordinary user traffic; commands and membership updates remain chat-serialized           |
+| `apps/grammy/src/composers/events.ts`                | Group message filter now checks verified cache/DB before doing the extra admin membership roundtrip                               |
+| `tests/grammy/unit/services/verification.test.ts`    | Added stale negative cache and short negative TTL coverage                                                                        |
+| `tests/grammy/unit/middleware/sequentialize.test.ts` | Added queue-key behavior coverage                                                                                                 |
 
 ### Live Backend Findings
 
@@ -194,27 +278,27 @@ The post-audit stabilization work is now documented:
 
 ### Root Causes Confirmed
 
-| Issue | Root Cause | Status |
-| --- | --- | --- |
-| Verification hot path still did duplicate DB reads | `verifyMembership()` still loaded group enforcement state with multiple queries | ✅ Fixed |
-| Duplicate verify/join-request work could still happen under retried updates | No idempotency lock existed for callback or join-request processing | ✅ Fixed |
-| Channel joins/leaves only refreshed membership state on explicit verify | Required-channel `chat_member` updates were not invalidating membership/verified cache | ✅ Fixed |
-| Join-request path existed but was not the preferred persisted mode | Group configuration did not persist a join-request-first preference | ✅ Fixed |
+| Issue                                                                       | Root Cause                                                                             | Status   |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------- |
+| Verification hot path still did duplicate DB reads                          | `verifyMembership()` still loaded group enforcement state with multiple queries        | ✅ Fixed |
+| Duplicate verify/join-request work could still happen under retried updates | No idempotency lock existed for callback or join-request processing                    | ✅ Fixed |
+| Channel joins/leaves only refreshed membership state on explicit verify     | Required-channel `chat_member` updates were not invalidating membership/verified cache | ✅ Fixed |
+| Join-request path existed but was not the preferred persisted mode          | Group configuration did not persist a join-request-first preference                    | ✅ Fixed |
 
 ### Files Changed in Phase 109
 
-| File | Change |
-| --- | --- |
-| `apps/grammy/src/core/insforge-client.ts` | Added `rpc()` support for InsForge SQL functions |
-| `apps/grammy/src/core/cache.ts` | Added `setIfAbsent()` for Redis NX idempotency locks |
-| `apps/grammy/src/database/group-contract.repo.ts` | **NEW** single-read verification contract repo |
-| `apps/grammy/src/services/idempotency.ts` | **NEW** short-lived idempotency lock helper |
-| `apps/grammy/src/services/verification.ts` | Switched to verification-contract RPC and now returns cache metadata + checked channel IDs |
-| `apps/grammy/src/composers/events.ts` | Added idempotent join-request handling, verified-cache seeding, join-request approval cache, and channel-side membership invalidation |
-| `apps/grammy/src/database/verification.repo.ts` | `isUserVerified()` now checks the latest verification row instead of any historical success |
-| `apps/grammy/src/composers/events.ts` | Channel leave events now re-mute users in linked groups and resend verification prompts |
-| `apps/grammy/src/composers/verify.ts` | Added verify idempotency lock and single-row verification logging |
-| `insforge/migrations/024_verification_contract_hardening.sql` | **NEW** incremental migration for RPC + params backfill |
+| File                                                          | Change                                                                                                                                |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/grammy/src/core/insforge-client.ts`                     | Added `rpc()` support for InsForge SQL functions                                                                                      |
+| `apps/grammy/src/core/cache.ts`                               | Added `setIfAbsent()` for Redis NX idempotency locks                                                                                  |
+| `apps/grammy/src/database/group-contract.repo.ts`             | **NEW** single-read verification contract repo                                                                                        |
+| `apps/grammy/src/services/idempotency.ts`                     | **NEW** short-lived idempotency lock helper                                                                                           |
+| `apps/grammy/src/services/verification.ts`                    | Switched to verification-contract RPC and now returns cache metadata + checked channel IDs                                            |
+| `apps/grammy/src/composers/events.ts`                         | Added idempotent join-request handling, verified-cache seeding, join-request approval cache, and channel-side membership invalidation |
+| `apps/grammy/src/database/verification.repo.ts`               | `isUserVerified()` now checks the latest verification row instead of any historical success                                           |
+| `apps/grammy/src/composers/events.ts`                         | Channel leave events now re-mute users in linked groups and resend verification prompts                                               |
+| `apps/grammy/src/composers/verify.ts`                         | Added verify idempotency lock and single-row verification logging                                                                     |
+| `insforge/migrations/024_verification_contract_hardening.sql` | **NEW** incremental migration for RPC + params backfill                                                                               |
 
 ### Operational Note
 
@@ -227,33 +311,33 @@ The post-audit stabilization work is now documented:
 
 ### Root Causes Confirmed
 
-| Issue | Root Cause | Status |
-| --- | --- | --- |
-| Users could still chat after leaving a required channel | Group message filter trusted historical verification state unless a channel-side leave event arrived | ✅ Fixed |
-| Some live enforcement paths could throw before muting/prompting | Production InsForge does not currently expose RPC `get_group_verification_contract` | ✅ Fixed in bot via fallback |
-| Verified-state invalidation did extra one-by-one Redis deletes | Cache client lacked a bulk invalidation primitive | ✅ Fixed |
+| Issue                                                           | Root Cause                                                                                           | Status                       |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------- |
+| Users could still chat after leaving a required channel         | Group message filter trusted historical verification state unless a channel-side leave event arrived | ✅ Fixed                     |
+| Some live enforcement paths could throw before muting/prompting | Production InsForge does not currently expose RPC `get_group_verification_contract`                  | ✅ Fixed in bot via fallback |
+| Verified-state invalidation did extra one-by-one Redis deletes  | Cache client lacked a bulk invalidation primitive                                                    | ✅ Fixed                     |
 
 ### Live Evidence Captured
 
-| Source | Finding |
-| --- | --- |
+| Source                                 | Finding                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------ |
 | InsForge `information_schema.routines` | `get_group_verification_contract` missing live; only `get_user_growth` present |
-| InsForge `verification_log` | 6 live rows exist for one real verification sequence |
-| InsForge `admin_logs` | runtime boot confirms Redis connected/ready and one active bot process |
-| Docker + `redis-cli ping` | local Redis container healthy and responds `PONG` |
+| InsForge `verification_log`            | 6 live rows exist for one real verification sequence                           |
+| InsForge `admin_logs`                  | runtime boot confirms Redis connected/ready and one active bot process         |
+| Docker + `redis-cli ping`              | local Redis container healthy and responds `PONG`                              |
 
 ### Files Changed in Phase 110
 
-| File | Change |
-| --- | --- |
-| `apps/grammy/src/composers/events.ts` | Message filter now performs fresh revalidation on stale verified users and enforces mute + prompt on message-path failures |
-| `apps/grammy/src/database/group-contract.repo.ts` | Falls back to direct `protected_groups` + linked-channel reads when RPC is absent |
-| `apps/grammy/src/database/verification.repo.ts` | Added latest verification state lookup with timestamp |
-| `apps/grammy/src/core/constants.ts` | Added stale-verification recheck interval constant |
-| `apps/grammy/src/core/cache.ts` | Added `mget()`, pipelined `delMany()`, and Redis health helpers |
-| `tests/grammy/helpers/mock-deps.ts` | Extended cache mocks for new Redis methods |
-| `tests/grammy/integration/bot-factory-runtime.test.ts` | Updated runtime coverage for bulk verified-cache invalidation |
-| `tests/grammy/unit/database/verification-repo.test.ts` | Updated latest-state query expectations |
+| File                                                   | Change                                                                                                                     |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `apps/grammy/src/composers/events.ts`                  | Message filter now performs fresh revalidation on stale verified users and enforces mute + prompt on message-path failures |
+| `apps/grammy/src/database/group-contract.repo.ts`      | Falls back to direct `protected_groups` + linked-channel reads when RPC is absent                                          |
+| `apps/grammy/src/database/verification.repo.ts`        | Added latest verification state lookup with timestamp                                                                      |
+| `apps/grammy/src/core/constants.ts`                    | Added stale-verification recheck interval constant                                                                         |
+| `apps/grammy/src/core/cache.ts`                        | Added `mget()`, pipelined `delMany()`, and Redis health helpers                                                            |
+| `tests/grammy/helpers/mock-deps.ts`                    | Extended cache mocks for new Redis methods                                                                                 |
+| `tests/grammy/integration/bot-factory-runtime.test.ts` | Updated runtime coverage for bulk verified-cache invalidation                                                              |
+| `tests/grammy/unit/database/verification-repo.test.ts` | Updated latest-state query expectations                                                                                    |
 
 ### Operational Note
 
@@ -266,16 +350,16 @@ The post-audit stabilization work is now documented:
 
 ### Root Cause
 
-| Issue | Root Cause | Status |
-| --- | --- | --- |
+| Issue                                 | Root Cause                                                                                                                                                      | Status   |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | Many group commands produced no reply | `composer.errorBoundary(...)` was applied incorrectly in `bot-factory.ts`, so several composers were effectively not mounted into the real bot middleware chain | ✅ Fixed |
 
 ### Files Changed in Phase 106
 
-| File | Change |
-| --- | --- |
-| `apps/grammy/src/core/bot-factory.ts` | Mounted each composer inside a real protected error boundary instead of replacing it with an empty wrapper |
-| `tests/grammy/integration/bot-factory-runtime.test.ts` | Added runtime wiring coverage for shipped group commands through the actual bot factory |
+| File                                                   | Change                                                                                                     |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `apps/grammy/src/core/bot-factory.ts`                  | Mounted each composer inside a real protected error boundary instead of replacing it with an empty wrapper |
+| `tests/grammy/integration/bot-factory-runtime.test.ts` | Added runtime wiring coverage for shipped group commands through the actual bot factory                    |
 
 ---
 

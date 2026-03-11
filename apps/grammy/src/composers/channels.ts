@@ -20,7 +20,7 @@ channelsComposer.command("channels", async (ctx) => {
 
   if (channels.length === 0) {
     const msg = await ctx.reply(CHANNELS_EMPTY);
-    if (ctx.chat.type !== "private") scheduleDelete(msg, AUTO_DELETE_DELAY);
+    if (ctx.chat.type !== "private") scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
     return;
   }
 
@@ -55,10 +55,10 @@ channelsComposer.command("verify", async (ctx) => {
 
   if (result.success) {
     const msg = await ctx.reply(VERIFY_STATUS_VERIFIED);
-    if (ctx.chat.type !== "private") scheduleDelete(msg, AUTO_DELETE_DELAY);
+    if (ctx.chat.type !== "private") scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
   } else {
     const msg = await ctx.reply(VERIFY_STATUS_NOT_VERIFIED(result.missingChannels));
-    if (ctx.chat.type !== "private") scheduleDelete(msg, AUTO_DELETE_DELAY);
+    if (ctx.chat.type !== "private") scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
   }
 });
 
@@ -87,5 +87,5 @@ channelsComposer.command("stats", async (ctx) => {
       channelsCount: channels.length,
     })
   );
-  if (ctx.chat.type !== "private") scheduleDelete(msg, AUTO_DELETE_DELAY);
+  if (ctx.chat.type !== "private") scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
 });

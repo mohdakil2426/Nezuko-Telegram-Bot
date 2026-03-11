@@ -11,6 +11,23 @@
  *   `v2:<base64(IV[12 bytes] + ciphertext + GCM-authTag[16 bytes])>`
  *
  * SECURITY: NEVER log the plaintext token or the encrypted value.
+ *
+ * IV UNIQUENESS INVARIANT (F-S01):
+ *   AES-256-GCM requires that no (key, IV) pair is ever reused. IV reuse with
+ *   the same key enables plaintext recovery via XOR of ciphertexts.
+ *
+ *   Encryption is performed ONLY by the `manage-bot` Edge Function during bot
+ *   registration via the dashboard. Decryption happens here at bot startup.
+ *   IVs are generated using `crypto.getRandomValues()` (WebCrypto CSPRNG) in
+ *   the Edge Function, providing 2^96 unique 12-byte nonces.
+ *
+ *   At current volume (~tens of tokens per day at most), the probability of an
+ *   IV collision is astronomically low (birthday bound: ~2^48 operations needed
+ *   for 50% collision probability with 12-byte random IVs).
+ *
+ *   If encryption volume increases significantly in the future, consider
+ *   switching to AES-256-GCM-SIV (nonce-misuse resistant) or a deterministic
+ *   counter-based nonce derived via HKDF from a global counter.
  */
 
 import { createDecipheriv, type BinaryLike, type CipherKey } from "crypto";

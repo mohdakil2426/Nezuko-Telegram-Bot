@@ -4,14 +4,18 @@
  * Plugin installation order (CRITICAL — per grammY deployment checklist and
  * grammy/references/guide/middleware.md):
  *
- *   API Transformers (outgoing):
- *     autoRetry → htmlTransformer
+ *   API Transformers (outgoing — order matters):
+ *     throttler    (FIRST: proactive queue — prevents Telegram rate-limit hits)
+ *     → autoRetry  (reactive retry for 429/500 after throttler)
+ *     → htmlTransformer
+ *     → apiLogTransformer
  *
  *   Middleware (upstream → downstream):
  *     [debugUpdates (DEBUG_UPDATES=true only)]
  *     → sequentialize  (must be FIRST — before all state-touching middleware)
  *     → hydrate        (adds .editText(), .delete() shortcuts on API results)
  *     → chatMembers    (caches getChatMember; listens to chat_member events)
+ *     → autoQuote      (auto-quotes triggering message in all replies)
  *     → contextEnricher(injects db, cache, botId, log into ctx)
  *
  *   Composers (with per-composer errorBoundary):
@@ -22,9 +26,11 @@
 
 import { type Middleware, Bot, Composer, GrammyError, HttpError } from "grammy";
 import type { NextFunction, Transformer } from "grammy";
+import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { autoRetry } from "@grammyjs/auto-retry";
 import { hydrate } from "@grammyjs/hydrate";
 import { chatMembers } from "@grammyjs/chat-members";
+import { autoQuote } from "@roziscoding/grammy-autoquote";
 import type { BotError } from "grammy";
 import type { NezukoContext, BotDeps } from "../types.js";
 import { sequentializeMiddleware } from "../middleware/sequentialize.js";
@@ -40,6 +46,10 @@ import { migrationComposer } from "../composers/migration.js";
 import { eventsComposer } from "../composers/events.js";
 import { verifyComposer } from "../composers/verify.js";
 import { fallbackComposer } from "../composers/fallback.js";
+import { settingsMenu } from "../menus/settings.menu.js";
+import { privateMenu } from "../menus/private.menu.js";
+import { conversations } from "@grammyjs/conversations";
+import { setupComposer, setupWizardConversation } from "../composers/setup.js";
 
 // ── HTML Parse Mode Transformer ────────────────────────────────────────────────
 
@@ -121,10 +131,12 @@ function wireCoreCommands(bot: Bot<NezukoContext>, deps: BotDeps): void {
   bot.command("start", async (ctx) => {
     deps.logger.info({ chatId: ctx.chat.id, chatType: ctx.chat.type }, "[COMMAND] /start matched");
     if (ctx.chat.type === "private") {
-      await ctx.reply(WELCOME_PRIVATE);
+      // Private chat: send welcome with the interactive menu so users have
+      // quick access to Commands, How it Works, About, and Quick Start.
+      await ctx.reply(WELCOME_PRIVATE, { reply_markup: privateMenu });
     } else {
       const msg = await ctx.reply(WELCOME_GROUP);
-      scheduleDelete(msg, AUTO_DELETE_DELAY);
+      scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
     }
   });
 
@@ -132,7 +144,7 @@ function wireCoreCommands(bot: Bot<NezukoContext>, deps: BotDeps): void {
   bot.command("help", async (ctx) => {
     const msg = await ctx.reply(HELP_TEXT);
     if (ctx.chat.type !== "private") {
-      scheduleDelete(msg, AUTO_DELETE_DELAY);
+      scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
     }
   });
 }
@@ -162,12 +174,18 @@ function wireBotMiddleware(bot: Bot<NezukoContext>, deps: BotDeps): void {
   });
 
   // ── 1. API Transformers (outgoing) ──────────────────────────────
+  // Throttler MUST be first: proactively queues outgoing calls to stay within
+  // Telegram's rate limits (30 req/s global, 20/min per group, 1/s private).
+  // This prevents the 429 flood-wait errors that auto-retry reacts to.
+  bot.api.config.use(apiThrottler());
+
+  // auto-retry is second: reactive fallback for any 429/500 that slips through.
   bot.api.config.use(
     autoRetry({
       maxRetryAttempts: 3,
-      maxDelaySeconds: 60,
-      rethrowInternalServerErrors: false,
-      rethrowHttpErrors: false,
+      maxDelaySeconds: 10,
+      rethrowInternalServerErrors: true,
+      rethrowHttpErrors: true,
     })
   );
 
@@ -240,19 +258,42 @@ function wireBotMiddleware(bot: Bot<NezukoContext>, deps: BotDeps): void {
   // ── 5. chatMembers ───────────────────────────────────────────────
   bot.use(chatMembers(deps.cache.chatMembersAdapter));
 
-  // ── 6. contextEnricher ───────────────────────────────────────────
+  // ── 6. autoQuote — auto-quotes the triggering message in all replies ──
+  // Installed after hydrate() so hydrated shortcuts (.reply()) are available.
+  // allowSendingWithoutReply: true prevents failures when the original message
+  // was deleted before the bot could reply.
+  bot.use(autoQuote({ allowSendingWithoutReply: true }));
+
+  // ── 7. contextEnricher ───────────────────────────────────────────
   bot.use(contextEnricher(deps));
 
-  // ── 7. Core Commands (WIRED DIRECTLY) ─────────────────────────────
+  // ── 8a. Conversations plugin ─────────────────────────────────────
+  // MUST be installed AFTER contextEnricher so ctx.db/ctx.cache/ctx.log are
+  // available inside conversation.external() closures via the outer ctx.
+  // MUST be installed BEFORE createConversation() and before any handler
+  // that calls ctx.conversation.enter().
+  bot.use(conversations());
+  bot.use(setupWizardConversation);
+
+  // ── 8. Core Commands (WIRED DIRECTLY) ─────────────────────────────
+  // Per @grammyjs/menu docs: install menus BEFORE composers (especially before
+  // any middleware that uses callback_query), so the menu can intercept and
+  // handle its own callback queries before fallbackComposer answers them.
+  bot.use(settingsMenu); // Group admin settings menu (/settings)
+  bot.use(privateMenu); // Private chat welcome menu (/start in DMs)
+
   wireCoreCommands(bot, deps);
 
-  // ── 8. Additional Composers ───────────────────────────────────────
+  // ── 9. Additional Composers ───────────────────────────────────────
   const errorHandler = makeErrorHandler(deps.logger);
   const mountProtectedComposer = (composer: Composer<NezukoContext>): void => {
     const boundary = new Composer<NezukoContext>().errorBoundary(errorHandler);
     boundary.use(composer);
     bot.use(boundary);
   };
+
+  // Setup wizard composer (/setup guided channel-linking)
+  mountProtectedComposer(setupComposer);
 
   // Admin commands (/protect, /unprotect, /settings)
   mountProtectedComposer(adminComposer);
@@ -272,7 +313,7 @@ function wireBotMiddleware(bot: Bot<NezukoContext>, deps: BotDeps): void {
   // Fallback — ALWAYS last, no errorBoundary
   bot.use(fallbackComposer);
 
-  // ── 9. Global error handler (bot.catch) ─────────────────────────
+  // ── 10. Global error handler (bot.catch) ─────────────────────────
   bot.catch(async (err) => {
     const ctx = err.ctx;
     const e = err.error;

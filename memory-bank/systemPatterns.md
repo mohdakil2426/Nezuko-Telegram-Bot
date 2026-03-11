@@ -2,7 +2,7 @@
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
 > **Python PTB Bot**: 🗄️ ARCHIVED — `apps/bot/` preserved for reference only. Not maintained.
-> **Last Updated**: 2026-03-08 (Phase 116)
+> **Last Updated**: 2026-03-11 (Phase 121)
 
 ---
 
@@ -36,7 +36,7 @@ Bot and web both talk directly to InsForge REST / SDK.
 apps/grammy/src/
 ├── main.ts               # Entry point: runStandaloneMode() + runDashboardMode()
 ├── config.ts             # Zod v4 soft validation — all fields optional at schema level
-├── types.ts              # NezukoContext + BotDeps types
+├── types.ts              # NezukoContext (HydrateFlavor<ConversationFlavor<Context & NezukoContextFlavor & ChatMembersFlavor>>) + BotDeps
 ├── core/
 │   ├── bot-factory.ts    # createBot() + createBotWithDeps() + apiLogTransformer
 │   ├── bot-commands.ts   # syncBotCommands() — private/group/group-admin menu scopes
@@ -55,12 +55,16 @@ apps/grammy/src/
 │   ├── group-only.ts     # Must be in group/supergroup
 │   └── permission-check.ts# Bot must have admin rights in group — replies on 403
 ├── composers/
-│   ├── admin.ts          # /protect, /unprotect, /settings, /status
+│   ├── admin.ts          # /protect, /unprotect, /settings (→ settingsMenu), /status
 │   ├── channels.ts       # /channels, /verify, /stats
 │   ├── events.ts         # chat_member + chat_join_request handlers
 │   ├── verify.ts         # callback_query verification handler
 │   ├── fallback.ts       # Catch-all (always last)
-│   └── migration.ts      # my_chat_member handler — group migration
+│   ├── migration.ts      # my_chat_member handler — group migration
+│   └── setup.ts          # /setup guided wizard (@grammyjs/conversations; Golden Rule compliant)
+├── menus/
+│   ├── settings.menu.ts  # Group admin /settings menu — dynamic channel range, Refresh, Close
+│   └── private.menu.ts   # Private DM menu — 4 sub-menus (Commands/How/About/QuickStart) + Back nav
 ├── services/
 │   ├── verification.ts   # verifyMembership() — multi-channel AND logic + explicit verify/message recheck bypass, preloaded channels, parallel checks
 │   ├── verification-prompt.ts # Active prompt tracking + safe prompt deletion helpers
@@ -376,8 +380,8 @@ await cache.set(blockKey, "1", "EX", 300);
 ### 8.1 — Membership Cache Rules (Phase 108)
 
 ```typescript
-MEMBER_CACHE_TTL = 300;          // positive membership cache
-MEMBER_NEGATIVE_CACHE_TTL = 30;  // negative membership cache
+MEMBER_CACHE_TTL = 300; // positive membership cache
+MEMBER_NEGATIVE_CACHE_TTL = 30; // negative membership cache
 
 // Explicit verify clicks must not trust stale cached "0" results.
 await verifyMembership(api, db, cache, groupId, userId, log, {

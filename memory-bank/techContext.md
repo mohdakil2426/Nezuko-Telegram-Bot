@@ -4,26 +4,30 @@
 
 ### Bot (grammY — TypeScript, ACTIVE ✅)
 
-| Package                | Version | Purpose                                                   |
-| ---------------------- | ------- | --------------------------------------------------------- |
-| grammy                 | 1.41.1  | Telegram Bot API framework (TypeScript)                   |
-| @grammyjs/auto-retry   | 2.0.2   | Automatic retry on 429/500 errors                         |
-| @grammyjs/hydrate      | 1.6.0   | Hydrate API call results (no `hydrateReply` export)       |
-| @grammyjs/parse-mode   | 2.2.1   | HTML parse mode transformer (no `ParseModeFlavor` export) |
-| @grammyjs/runner       | 2.0.3   | Long polling runner + sequentialize middleware            |
-| @grammyjs/ratelimiter  | 1.2.1   | Per-user rate limiting                                    |
-| @grammyjs/commands     | 1.3.2   | Command registration (`setMyCommands` scopes)             |
-| @grammyjs/chat-members | 1.2.0   | Chat member caching (L1 cache)                            |
-| ioredis                | 5.10.0  | Redis client for caching                                  |
-| pino                   | 10.3.1  | Structured JSON logging                                   |
-| zod                    | 4.3.6   | Config validation (`.default()` before `.transform()`)    |
-| @sentry/node           | 10.41.0 | Error monitoring                                          |
-| socket.io-client       | 4.8.3   | InsForge Realtime WebSocket client                        |
-| **typescript**         | 5.9.3   | Type checking (strict mode, NodeNext resolution)          |
-| **vitest**             | 4.0.18  | Test runner with v8 coverage                              |
-| **prettier**           | 3.8.1   | Code formatting (root `.prettierrc`, no tailwind plugin)  |
-| **eslint**             | 9.28.0  | Linting (flat config with TypeScript ESLint)              |
-| **bun**                | Latest  | Package manager + dev server                              |
+| Package                         | Version | Purpose                                                           |
+| ------------------------------- | ------- | ----------------------------------------------------------------- |
+| grammy                          | 1.41.1  | Telegram Bot API framework (TypeScript)                           |
+| @grammyjs/auto-retry            | 2.0.2   | Automatic retry on 429/500 errors                                 |
+| @grammyjs/hydrate               | 1.6.0   | Hydrate API call results (no `hydrateReply` export)               |
+| @grammyjs/parse-mode            | 2.2.1   | HTML parse mode transformer (no `ParseModeFlavor` export)         |
+| @grammyjs/runner                | 2.0.3   | Long polling runner + sequentialize middleware                    |
+| @grammyjs/ratelimiter           | 1.2.1   | Per-user rate limiting                                            |
+| @grammyjs/commands              | 1.3.2   | Command registration (`setMyCommands` scopes)                     |
+| @grammyjs/chat-members          | 1.2.0   | Chat member caching (L1 cache)                                    |
+| @grammyjs/transformer-throttler | 1.2.1   | Proactive API rate limiting (first transformer, before autoRetry) |
+| @grammyjs/menu                  | 1.3.1   | Interactive inline keyboard menus (settings + private DM)         |
+| @grammyjs/conversations         | 2.1.1   | Multi-step wizard conversations (`/setup`)                        |
+| @roziscoding/grammy-autoquote   | 2.0.9   | Auto-quotes triggering message in all bot replies                 |
+| ioredis                         | 5.10.0  | Redis client for caching                                          |
+| pino                            | 10.3.1  | Structured JSON logging                                           |
+| zod                             | 4.3.6   | Config validation (`.default()` before `.transform()`)            |
+| @sentry/node                    | 10.41.0 | Error monitoring                                                  |
+| socket.io-client                | 4.8.3   | InsForge Realtime WebSocket client                                |
+| **typescript**                  | 5.9.3   | Type checking (strict mode, NodeNext resolution)                  |
+| **vitest**                      | 4.0.18  | Test runner with v8 coverage                                      |
+| **prettier**                    | 3.8.1   | Code formatting (root `.prettierrc`, no tailwind plugin)          |
+| **eslint**                      | 9.28.0  | Linting (flat config with TypeScript ESLint)                      |
+| **bun**                         | Latest  | Package manager + dev server                                      |
 
 > **⚠️ Runtime**: Bun for development, Node.js 22 for production (Dockerfile).
 > **⚠️ ESM only**: `"type": "module"` in package.json, `NodeNext` module resolution.
@@ -236,12 +240,12 @@ main()
 
 ### Graceful Degradation (standalone mode)
 
-| Config State                   | Behaviour                                                            |
-| ------------------------------ | -------------------------------------------------------------------- |
-| `BOT_TOKEN` + `INSFORGE_*` set | Full mode: bot + DB + Redis                                          |
-| `BOT_TOKEN` only (no INSFORGE) | Degraded: bot works, no status writer / member sync / command worker |
-| `BOT_TOKEN` missing            | Fatal error with clear message, `process.exit(1)`                    |
-| `INSFORGE_BASE_URL=""` (blank) | Treated as not set (Zod coerces to `undefined`)                      |
+| Config State                   | Behaviour                                                             |
+| ------------------------------ | --------------------------------------------------------------------- |
+| `BOT_TOKEN` + `INSFORGE_*` set | Full mode: bot + DB + Redis                                           |
+| `BOT_TOKEN` only (no INSFORGE) | Degraded: bot works, no status writer / member sync / command worker  |
+| `BOT_TOKEN` missing            | Fatal error with clear message, `process.exit(1)`                     |
+| `INSFORGE_BASE_URL=""` (blank) | Treated as not set (Zod coerces to `undefined`)                       |
 | InsForge unreachable           | DB-backed operations fail fast via request timeout instead of hanging |
 
 ### `botInstanceId` Sentinel Values

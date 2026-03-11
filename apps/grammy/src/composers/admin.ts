@@ -13,12 +13,12 @@ import {
   PROTECT_USAGE,
   UNPROTECT_SUCCESS,
   UNPROTECT_NOT_LINKED,
-  SETTINGS_PROTECTED,
   SETTINGS_NOT_PROTECTED,
   STATUS_PROTECTED,
   STATUS_NOT_PROTECTED,
   SUPERGROUP_REQUIRED,
 } from "../utils/messages.js";
+import { settingsMenu } from "../menus/settings.menu.js";
 
 export const adminComposer = new Composer<NezukoContext>();
 
@@ -34,7 +34,7 @@ adminComposer.command("status", adminGuard(), groupOnly(), async (ctx) => {
 
   if (channels.length === 0) {
     const msg = await ctx.reply(STATUS_NOT_PROTECTED(chatTitle));
-    scheduleDelete(msg, AUTO_DELETE_DELAY);
+    scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
     return;
   }
 
@@ -78,10 +78,10 @@ adminComposer.command("protect", adminGuard(), groupOnly(), permissionCheck(), a
     // S6: Invalidate contract cache so message-path reads pick up the new channel
     await invalidateGroupContractCache(ctx.cache, ctx.chat.id).catch(() => {});
     const msg = await ctx.reply(PROTECT_SUCCESS(channelUsername));
-    scheduleDelete(msg, AUTO_DELETE_DELAY);
+    scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
   } else {
     const msg = await ctx.reply(`❌ ${result.error}`);
-    scheduleDelete(msg, AUTO_DELETE_DELAY);
+    scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
   }
 });
 
@@ -99,29 +99,31 @@ adminComposer.command("unprotect", adminGuard(), groupOnly(), async (ctx) => {
     // S6: Invalidate contract cache so next verification reads fresh config
     await invalidateGroupContractCache(ctx.cache, ctx.chat.id).catch(() => {});
     const msg = await ctx.reply(UNPROTECT_SUCCESS(channelUsername));
-    scheduleDelete(msg, AUTO_DELETE_DELAY);
+    scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
   } else {
     const msg = await ctx.reply(result.error ?? UNPROTECT_NOT_LINKED(channelUsername));
-    scheduleDelete(msg, AUTO_DELETE_DELAY);
+    scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
   }
 });
 
-// /settings — display current group config (admin + group required)
+// /settings — show interactive settings menu (admin + group required)
+//
+// When the group is not protected, sends a plain-text guide.
+// When protected, sends the reactive settingsMenu inline keyboard so admins
+// can inspect linked channels and refresh without sending new messages.
 adminComposer.command("settings", adminGuard(), groupOnly(), async (ctx) => {
   const channels = await getGroupChannels(ctx.db, ctx.chat.id);
 
   if (channels.length === 0) {
     const msg = await ctx.reply(SETTINGS_NOT_PROTECTED);
-    scheduleDelete(msg, AUTO_DELETE_DELAY);
+    scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
     return;
   }
 
-  const channelNames = channels.map((c) =>
-    c.username ? `@${c.username}` : (c.title ?? `Channel ${c.channel_id}`)
-  );
-  const memberCount = await ctx.api.getChatMemberCount(ctx.chat.id).catch(() => 0);
-  const lastSync = "Just now";
-
-  const msg = await ctx.reply(SETTINGS_PROTECTED(channelNames, memberCount, lastSync));
-  scheduleDelete(msg, AUTO_DELETE_DELAY);
+  // Send the interactive settings menu instead of a static text reply.
+  // The menu renders linked channels dynamically and supports Refresh / Close.
+  // settingsMenu is installed on the bot via bot.use(settingsMenu) in bot-factory.ts.
+  await ctx.reply("⚙️ <b>Group Settings</b>\nYour linked channels are shown below.", {
+    reply_markup: settingsMenu,
+  });
 });

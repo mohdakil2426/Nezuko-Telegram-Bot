@@ -45,7 +45,7 @@ export class InsForgeRealtimeClient {
     return new Promise((resolve) => {
       const socket = io(this.options.baseUrl, {
         auth: { token: this.options.anonKey },
-        transports: ["websocket"],
+        transports: ["polling", "websocket"],
         reconnection: true,
         reconnectionDelay: RECONNECTION_DELAY_MS,
         reconnectionDelayMax: RECONNECTION_DELAY_MAX_MS,

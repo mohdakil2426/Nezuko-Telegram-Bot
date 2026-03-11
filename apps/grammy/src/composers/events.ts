@@ -63,7 +63,7 @@ async function sendVerificationPrompt(
     reply_markup: keyboard,
   });
 
-  scheduleDelete(msg, AUTO_DELETE_DELAY);
+  scheduleDelete(msg, AUTO_DELETE_DELAY, ctx.api);
   await setActiveVerificationPrompt(ctx.cache, groupId, userId, msg.message_id).catch(() => {});
   return msg.message_id;
 }

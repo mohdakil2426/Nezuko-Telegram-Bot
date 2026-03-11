@@ -1,4 +1,5 @@
 import type { Context } from "grammy";
+import type { ConversationFlavor } from "@grammyjs/conversations";
 import type { HydrateFlavor } from "@grammyjs/hydrate";
 import type { ChatMembersFlavor } from "@grammyjs/chat-members";
 import type { InsForgeClient } from "./core/insforge-client.js";
@@ -16,6 +17,12 @@ export interface NezukoContextFlavor {
 /**
  * Fully composed context type for all Nezuko handlers.
  *
+ * Context flavor composition order (per grammY docs):
+ *  - HydrateFlavor<>      — outermost (transformative, adds shortcuts on API results)
+ *  - ConversationFlavor<> — second (transformative, adds ctx.conversation.enter())
+ *  - ChatMembersFlavor    — additive, plain intersection
+ *  - NezukoContextFlavor  — additive, plain intersection (db, cache, botId, log)
+ *
  * Note: @grammyjs/parse-mode v2.2.1 is formatting-utilities only and no
  * longer ships a ParseModeFlavor context wrapper. The parseMode("HTML")
  * transformer is installed on bot.api.config instead (Decision #4).
@@ -24,7 +31,9 @@ export interface NezukoContextFlavor {
  * installed (we use built-in Composer.command() instead). Including the
  * flavor without the plugin middleware can cause TypeScript confusion.
  */
-export type NezukoContext = HydrateFlavor<Context & NezukoContextFlavor & ChatMembersFlavor>;
+export type NezukoContext = HydrateFlavor<
+  ConversationFlavor<Context & NezukoContextFlavor & ChatMembersFlavor>
+>;
 
 /** Dependencies required by bot factory and middleware. */
 export interface BotDeps {
