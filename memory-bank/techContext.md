@@ -21,7 +21,7 @@
 | ioredis                         | 5.10.0  | Redis client for caching                                          |
 | pino                            | 10.3.1  | Structured JSON logging                                           |
 | zod                             | 4.3.6   | Config validation (`.default()` before `.transform()`)            |
-| @sentry/node                    | 10.41.0 | Error monitoring                                                  |
+| @sentry/node                    | 10.41.0 | Error monitoring (retained but unused, candidate for removal)     |
 | socket.io-client                | 4.8.3   | InsForge Realtime WebSocket client                                |
 | **typescript**                  | 5.9.3   | Type checking (strict mode, NodeNext resolution)                  |
 | **vitest**                      | 4.0.18  | Test runner with v8 coverage                                      |
@@ -62,27 +62,12 @@
 
 ### Performance & Monitoring
 
-- **Vercel Doctor**: Used for auditing cost-heavy patterns and dead code.
-- **Turbopack**: Enabled for dev and build caching.
+- **React Compiler**: Optimized code for React Compiler compatibility (try/catch safety, state consolidation).
+- **Vercel Doctor & Knip**: Regular audits for dead code pruning (Phase 126 archived zero-unused baseline).
 - **Partial Prerendering (PPR)**: Enabled via Next.js 16 `experimental.cacheComponents`.
+- **Dynamic Imports**: Forced code-splitting for heavy library paths (Recharts).
 
 ---
-
-## Legacy: Python PTB Bot (ARCHIVED 🗄️)
-
-> **`apps/bot/` is unmaintained since Phase 96. Do NOT use for new bot work.**
-
-The original Python bot used:
-
-- python-telegram-bot v22.6 (asyncio, webhooks, callback-data, http2)
-- httpx < 0.29 (pinned) for InsForge REST
-- SQLAlchemy 2.0 (**tests only** — SQLite in-memory)
-- aiohttp 3.13+ (health server)
-- python-socketio 5.16+ (InsForge Realtime)
-- cryptography 45+ (AES-256-GCM)
-- `uv` for dependency management
-
-These are preserved in `pyproject.toml` and `uv.lock` but are no longer the active runtime.
 
 ---
 
@@ -107,6 +92,8 @@ docker compose -f docker-compose.local.yml up -d
 | ------------ | --------------------- | -------------------------- |
 | Bot (grammY) | `apps/grammy/.env`    | `apps/grammy/.env.example` |
 | Web          | `apps/web/.env.local` | `apps/web/.env.example`    |
+
+> ⚠️ **There is no Python environment.** `bun` is the only package manager used.
 
 ### Required Environment Variables
 
@@ -145,7 +132,7 @@ bun run type-check    # tsc --noEmit → 0 errors
 bun run lint          # eslint src/ --max-warnings 0 → 0 warnings
 bun run format        # prettier src/ ../../tests/grammy --write
 bun run format:check  # prettier src/ ../../tests/grammy --check
-bun run test          # vitest run → 145/145 tests passed
+bun run test          # vitest run → 163/163 passed
 bun run test:coverage # vitest run --coverage (80% thresholds)
 bun run build         # tsc -p tsconfig.build.json → dist/
 
@@ -263,4 +250,4 @@ main()
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 113 — enforcement block TTL and dashboard coordinator documented)_
+_Last Updated: 2026-03-11 (Phase 126 — PTB bot fully removed; grammY is the sole runtime; 163/163 tests passing)_

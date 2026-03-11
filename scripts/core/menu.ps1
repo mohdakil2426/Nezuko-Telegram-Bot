@@ -2,31 +2,25 @@
 
 <#
 .SYNOPSIS
-    Nezuko Interactive CLI Menu (PowerShell)
+    Nezuko Interactive CLI Menu.
 .DESCRIPTION
-    Provides an interactive menu for common development tasks.
-    This is the main entry point for Windows developers.
+    Main entry point for Windows developers. Provides an interactive
+    menu for all common development tasks.
 .EXAMPLE
     .\menu.ps1
-    Opens the interactive menu.
 #>
 
 [CmdletBinding()]
 param()
 
-# Import shared utilities
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$ScriptRoot\utils.ps1"
 
 # ============================================================
-# Menu Display Functions
+# Display Functions
 # ============================================================
 
 function Show-Banner {
-    <#
-    .SYNOPSIS
-        Displays the Nezuko CLI banner.
-    #>
     Clear-Host
     Write-Host ""
     Write-Host "  ╔══════════════════════════════════════════════════════╗" -ForegroundColor Cyan
@@ -42,50 +36,22 @@ function Show-Banner {
 }
 
 function Show-MainMenu {
-    <#
-    .SYNOPSIS
-        Displays the main menu options.
-    #>
-    Write-Host "  ┌── 📦 SETUP & CONFIGURATION ──────────────────────────┐" -ForegroundColor Magenta
-    Write-Host "  │    [1] 🏗️  First-Time Setup                          │" -ForegroundColor White
-    Write-Host "  │    [2] 🔐 Security & Keys...                         │" -ForegroundColor White
-    Write-Host "  ├── 🚀 DEVELOPMENT ────────────────────────────────────┤" -ForegroundColor Green
-    Write-Host "  │    [3] ▶️  Start Services...                          │" -ForegroundColor White
-    Write-Host "  │    [4] ⏹️  Stop All Services                          │" -ForegroundColor White
-    Write-Host "  ├── 🧹 UTILITIES ──────────────────────────────────────┤" -ForegroundColor Yellow
-    Write-Host "  │    [5] 🧼 Clean Artifacts...                         │" -ForegroundColor White
-    Write-Host "  │    [6] ♻️  Full Reset (Clean + Reinstall)             │" -ForegroundColor White
-    Write-Host "  │    [7] 🔄 Update & Sync Dependencies                 │" -ForegroundColor White
-    Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
-    Write-Host "  │    [0] ❌ Exit                                       │" -ForegroundColor White
-    Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
-    Write-Host ""
-}
-
-function Show-SecurityMenu {
-    <#
-    .SYNOPSIS
-        Displays the security tools submenu.
-    #>
-    Write-Host ""
-    Write-Host "  ┌──────────────────────────────────────────────────────┐" -ForegroundColor White
-    Write-Host "  │  " -ForegroundColor White -NoNewline
-    Write-Host "🔐 SECURITY & KEYS" -ForegroundColor Red -NoNewline
-    Write-Host "                              │" -ForegroundColor White
-    Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  │    [1] 🔑 Generate Encryption Key (AES-256-GCM)      │" -ForegroundColor White
-    Write-Host "  │    [2] 📋 Check .env Files Status                    │" -ForegroundColor White
-    Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
-    Write-Host "  │    [0] ⬅️  Back                                       │" -ForegroundColor White
-    Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
+    Write-Host "  ┌── 📦 SETUP ────────────────────────────────────────────┐" -ForegroundColor Magenta
+    Write-Host "  │    [1] 🏗️  First-Time Setup                            │" -ForegroundColor White
+    Write-Host "  ├── 🚀 DEVELOPMENT ──────────────────────────────────────┤" -ForegroundColor Green
+    Write-Host "  │    [2] ▶️  Start Services...                            │" -ForegroundColor White
+    Write-Host "  │    [3] ⏹️  Stop All Services                            │" -ForegroundColor White
+    Write-Host "  ├── 🧹 UTILITIES ────────────────────────────────────────┤" -ForegroundColor Yellow
+    Write-Host "  │    [4] 🧼 Clean Artifacts...                           │" -ForegroundColor White
+    Write-Host "  │    [5] ♻️  Full Reset (Clean + Reinstall)               │" -ForegroundColor White
+    Write-Host "  │    [6] 🔄 Update & Sync Dependencies                   │" -ForegroundColor White
+    Write-Host "  │    ────────────────────────────────────────────────    │" -ForegroundColor DarkGray
+    Write-Host "  │    [0] ❌ Exit                                         │" -ForegroundColor White
+    Write-Host "  └────────────────────────────────────────────────────────┘" -ForegroundColor White
     Write-Host ""
 }
 
 function Show-StartMenu {
-    <#
-    .SYNOPSIS
-        Displays the start services submenu.
-    #>
     Write-Host ""
     Write-Host "  ┌──────────────────────────────────────────────────────┐" -ForegroundColor White
     Write-Host "  │  " -ForegroundColor White -NoNewline
@@ -108,30 +74,26 @@ function Show-StartMenu {
 }
 
 function Show-CleanMenu {
-    <#
-    .SYNOPSIS
-        Displays the clean/delete options submenu.
-    #>
     Write-Host ""
     Write-Host "  ┌──────────────────────────────────────────────────────┐" -ForegroundColor White
     Write-Host "  │  " -ForegroundColor White -NoNewline
     Write-Host "🧼 CLEAN ARTIFACTS" -ForegroundColor Yellow -NoNewline
     Write-Host "                               │" -ForegroundColor White
     Write-Host "  │                                                      │" -ForegroundColor White
-    Write-Host "  │    [1] 🧹 Semi-Clean (Caches only)                   │" -ForegroundColor White
-    Write-Host "  │    [2] 🧹 Full-Clean (node_modules + Caches)         │" -ForegroundColor White
+    Write-Host "  │    [1] 🧹 Semi-Clean (Caches only, keep node_modules)│" -ForegroundColor White
+    Write-Host "  │    [2] 🧹 Full-Clean (node_modules + Caches + Reinstall)│" -ForegroundColor White
     Write-Host "  │    ──────────────────────────────────────────────    │" -ForegroundColor DarkGray
     Write-Host "  │    [0] ⬅️  Back                                       │" -ForegroundColor White
     Write-Host "  └──────────────────────────────────────────────────────┘" -ForegroundColor White
     Write-Host ""
     Write-Host "  " -NoNewline
     Write-Host "⚠️  WARNING:" -ForegroundColor Red -NoNewline
-    Write-Host " These actions are irreversible!" -ForegroundColor Yellow
+    Write-Host " These actions cannot be undone!" -ForegroundColor Yellow
     Write-Host ""
 }
 
 # ============================================================
-# Helper Functions
+# Helpers
 # ============================================================
 
 function Wait-ForKeyPress {
@@ -141,140 +103,59 @@ function Wait-ForKeyPress {
 }
 
 # ============================================================
-# Action Functions - Setup & Configuration
+# Action Functions
 # ============================================================
 
 function Invoke-FirstTimeSetup {
     Write-Host ""
     Write-Host "  📦 Running first-time setup..." -ForegroundColor Yellow
-    $setupScript = Join-Path $ScriptRoot "..\setup\install.ps1"
-    & $setupScript
+    & (Join-Path $ScriptRoot "..\setup\install.ps1")
 }
-
-function Invoke-SecurityMenu {
-    while ($true) {
-        Show-Banner
-        Show-SecurityMenu
-
-        $choice = Read-Host "  Enter choice"
-
-        switch ($choice) {
-            "1" {
-                Write-Host ""
-                Write-Host "  🔑 Generating encryption key..." -ForegroundColor Yellow
-                $keyScript = Join-Path $ScriptRoot "..\utils\generate-key.ps1"
-                & $keyScript
-                Wait-ForKeyPress
-            }
-            "2" {
-                Write-Host ""
-                Write-Host "  📋 Checking .env files status..." -ForegroundColor Cyan
-                Write-Host ""
-
-                $projectRoot = Get-ProjectRoot
-
-                # Check Bot .env
-                $botEnv = Join-Path $projectRoot "apps\grammy\.env"
-                $botEnvExample = Join-Path $projectRoot "apps\grammy\.env.example"
-                Write-Host "  apps/grammy/.env:  " -NoNewline
-                if (Test-Path $botEnv) {
-                    Write-Host "✅ EXISTS" -ForegroundColor Green
-                }
-                else {
-                    Write-Host "❌ MISSING" -ForegroundColor Red -NoNewline
-                    if (Test-Path $botEnvExample) {
-                        Write-Host " (copy from .env.example)" -ForegroundColor Gray
-                    }
-                    else {
-                        Write-Host ""
-                    }
-                }
-
-                # Check Web .env.local
-                $webEnv = Join-Path $projectRoot "apps\web\.env.local"
-                $webEnvExample = Join-Path $projectRoot "apps\web\.env.example"
-                Write-Host "  apps/web/.env.local: " -NoNewline
-                if (Test-Path $webEnv) {
-                    Write-Host "✅ EXISTS" -ForegroundColor Green
-                }
-                else {
-                    Write-Host "❌ MISSING" -ForegroundColor Red -NoNewline
-                    if (Test-Path $webEnvExample) {
-                        Write-Host " (copy from .env.example)" -ForegroundColor Gray
-                    }
-                    else {
-                        Write-Host ""
-                    }
-                }
-
-                Write-Host ""
-                Wait-ForKeyPress
-            }
-            "0" { return }
-            default {
-                Write-Host "  ⚠️  Invalid choice. Please try again." -ForegroundColor Yellow
-                Start-Sleep -Seconds 1
-            }
-        }
-    }
-}
-
-# ============================================================
-# Action Functions - Development
-# ============================================================
 
 function Invoke-StartMenu {
+    $startScript = Join-Path $ScriptRoot "..\dev\start.ps1"
+    $stopScript  = Join-Path $ScriptRoot "..\dev\stop.ps1"
+
     while ($true) {
         Show-Banner
         Show-StartMenu
-        
+
         $choice = Read-Host "  Enter choice"
-        $startScript = Join-Path $ScriptRoot "..\dev\start.ps1"
-        
+
         switch ($choice) {
             "1" {
-                Write-Host ""
-                Write-Host "  🚀 Starting ALL services..." -ForegroundColor Green
-                Write-Host ""
-
+                Write-Host ""; Write-Host "  🚀 Starting ALL services..." -ForegroundColor Green
                 & $startScript -Service "all"
                 Wait-ForKeyPress
             }
             "2" {
-                Write-Host ""
-                Write-Host "  🤖 Starting Bot (grammY)..." -ForegroundColor Yellow
+                Write-Host ""; Write-Host "  🤖 Starting Bot (grammY)..." -ForegroundColor Yellow
                 & $startScript -Service "bot"
                 Wait-ForKeyPress
             }
             "3" {
-                Write-Host ""
-                Write-Host "  💻 Starting Web Dashboard..." -ForegroundColor Blue
+                Write-Host ""; Write-Host "  💻 Starting Web Dashboard..." -ForegroundColor Blue
                 & $startScript -Service "web"
                 Wait-ForKeyPress
             }
             "4" {
-                Write-Host ""
-                Write-Host "  🐳 Starting Docker (Redis)..." -ForegroundColor Magenta
+                Write-Host ""; Write-Host "  🐳 Starting Docker (Redis)..." -ForegroundColor Magenta
                 & $startScript -Service "docker"
                 Wait-ForKeyPress
             }
             "5" {
-                Write-Host ""
-                Write-Host "  🐳 Stopping Docker (Redis)..." -ForegroundColor Yellow
-                $stopScript = Join-Path $ScriptRoot "..\dev\stop.ps1"
+                Write-Host ""; Write-Host "  🐳 Stopping Docker (Redis)..." -ForegroundColor Yellow
                 & $stopScript -Service "docker"
                 Wait-ForKeyPress
             }
             "6" {
-                Write-Host ""
-                Write-Host "  ⏹️  Stopping all services..." -ForegroundColor Red
-                $stopScript = Join-Path $ScriptRoot "..\dev\stop.ps1"
+                Write-Host ""; Write-Host "  ⏹️  Stopping all services..." -ForegroundColor Red
                 & $stopScript
                 Wait-ForKeyPress
             }
             "0" { return }
             default {
-                Write-Host "  ⚠️  Invalid choice. Please try again." -ForegroundColor Yellow
+                Write-Host "  ⚠️  Invalid choice." -ForegroundColor Yellow
                 Start-Sleep -Seconds 1
             }
         }
@@ -282,35 +163,27 @@ function Invoke-StartMenu {
 }
 
 function Invoke-StopServices {
-    Write-Host ""   
+    Write-Host ""
     Write-Host "  ⏹️  Stopping all services..." -ForegroundColor Red
-    $stopScript = Join-Path $ScriptRoot "..\dev\stop.ps1"
-    & $stopScript
+    & (Join-Path $ScriptRoot "..\dev\stop.ps1")
 }
-
-# ============================================================
-# Action Functions - Utilities
-# ============================================================
 
 function Invoke-CleanMenu {
     $cleanScript = Join-Path $ScriptRoot "..\utils\clean.ps1"
-    $projectRoot = Get-ProjectRoot
-    
+
     while ($true) {
         Show-Banner
         Show-CleanMenu
-        
+
         $choice = Read-Host "  Enter choice"
-        
+
         switch ($choice) {
             "1" {
-                # Clean caches only
                 Write-Host ""
-                Write-Host "  🧹 This will delete build and development caches." -ForegroundColor Yellow
+                Write-Host "  🧹 This will delete build caches only (node_modules preserved)." -ForegroundColor Yellow
                 $confirm = Read-Host "  Are you sure? (y/N)"
-                if ($confirm -eq "y" -or $confirm -eq "Y") {
-                    Write-Host ""
-                    & $cleanScript
+                if ($confirm -ieq "y") {
+                    & $cleanScript -CachesOnly
                     Write-Host "  ✅ Caches cleaned!" -ForegroundColor Green
                 }
                 else {
@@ -319,15 +192,13 @@ function Invoke-CleanMenu {
                 Wait-ForKeyPress
             }
             "2" {
-                # Full Clean
                 Write-Host ""
-                Write-Host "  🧹 This will delete ALL node_modules folders and caches." -ForegroundColor Yellow
-                Write-Host "  ⚠️  You will need to run Setup to reinstall!" -ForegroundColor Red
+                Write-Host "  🧹 This will delete ALL node_modules, caches, and reinstall." -ForegroundColor Yellow
+                Write-Host "  ⚠️  Requires internet connection for bun install." -ForegroundColor Red
                 $confirm = Read-Host "  Are you sure? (y/N)"
-                if ($confirm -eq "y" -or $confirm -eq "Y") {
-                    Write-Host ""
+                if ($confirm -ieq "y") {
                     & $cleanScript
-                    Write-Host "  ✅ Entire project cleaned!" -ForegroundColor Green
+                    Write-Host "  ✅ Full clean + reinstall done!" -ForegroundColor Green
                 }
                 else {
                     Write-Host "  ❌ Cancelled." -ForegroundColor Gray
@@ -336,7 +207,7 @@ function Invoke-CleanMenu {
             }
             "0" { return }
             default {
-                Write-Host "  ⚠️  Invalid choice. Please try again." -ForegroundColor Yellow
+                Write-Host "  ⚠️  Invalid choice." -ForegroundColor Yellow
                 Start-Sleep -Seconds 1
             }
         }
@@ -348,23 +219,22 @@ function Invoke-FullReset {
     Write-Host "  ♻️  FULL RESET" -ForegroundColor Red
     Write-Host ""
     Write-Host "  This will:" -ForegroundColor Yellow
-    Write-Host "     1. Delete all node_modules" -ForegroundColor Gray
-    Write-Host "     2. Reinstall all dependencies" -ForegroundColor Gray
+    Write-Host "     1. Stop all running services" -ForegroundColor Gray
+    Write-Host "     2. Delete all node_modules and caches" -ForegroundColor Gray
+    Write-Host "     3. Reinstall all dependencies" -ForegroundColor Gray
     Write-Host ""
     $confirm = Read-Host "  Are you sure? (y/N)"
-    
-    if ($confirm -eq "y" -or $confirm -eq "Y") {
+
+    if ($confirm -ieq "y") {
         Write-Host ""
         Write-Host "  ♻️  Performing full reset..." -ForegroundColor Red
-        
-        # Clean
-        $cleanScript = Join-Path $ScriptRoot "..\utils\clean.ps1"
-        & $cleanScript
-        
+
+        # Stop running processes before cleaning to avoid Access Denied
+        & (Join-Path $ScriptRoot "..\dev\stop.ps1")
         Start-Sleep -Seconds 1
-        
-        # Reinstall
-        Invoke-FirstTimeSetup
+
+        # Full clean + reinstall
+        & (Join-Path $ScriptRoot "..\utils\clean.ps1")
     }
     else {
         Write-Host "  ❌ Cancelled." -ForegroundColor Gray
@@ -379,20 +249,20 @@ function Start-MainMenu {
     while ($true) {
         Show-Banner
         Show-MainMenu
-        
+
         $choice = Read-Host "  Enter choice"
-        
+
         switch ($choice) {
             "1" { Invoke-FirstTimeSetup; Wait-ForKeyPress }
-            "2" { Invoke-SecurityMenu }
-            "3" { Invoke-StartMenu }
-            "4" { Invoke-StopServices; Wait-ForKeyPress }
-            "5" { Invoke-CleanMenu }
-            "6" { Invoke-FullReset; Wait-ForKeyPress }
-            "7" { 
+            "2" { Invoke-StartMenu }
+            "3" { Invoke-StopServices; Wait-ForKeyPress }
+            "4" { Invoke-CleanMenu }
+            "5" { Invoke-FullReset; Wait-ForKeyPress }
+            "6" {
                 Write-Host ""
                 Write-Host "  🔄 Pulling latest changes & syncing dependencies..." -ForegroundColor Cyan
-                if (Test-Path (Join-Path (Get-ProjectRoot) ".git")) {
+                $projectRoot = Get-ProjectRoot
+                if (Test-Path (Join-Path $projectRoot ".git")) {
                     git pull
                 }
                 Invoke-FirstTimeSetup
@@ -412,5 +282,4 @@ function Start-MainMenu {
     }
 }
 
-# Run the menu
 Start-MainMenu

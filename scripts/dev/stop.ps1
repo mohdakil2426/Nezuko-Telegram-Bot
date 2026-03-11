@@ -2,211 +2,214 @@
 
 <#
 .SYNOPSIS
-    Stops Nezuko development services by port and process name.
+    Stops all Nezuko development services.
 .DESCRIPTION
-    Terminates Nezuko-specific processes and stops the Redis Docker container:
-    - Port 3000: Web Dashboard (Next.js)
-    - Bot: grammY bot process running via Bun
-    - Redis: Docker container nezuko-redis-local (docker-compose.local.yml)
-    Does NOT kill all node/bun processes - only our services.
+    Terminates the grammY bot (bun/node) and Web Dashboard (port 3000),
+    and optionally stops the Redis Docker container.
+
+    Uses Get-Process | Stop-Process -Force (canonical PowerShell approach).
+    Uses a broad "kill all bun/node except self" strategy — not pattern matching
+    — because spawned bun workers on Windows often have no path in CommandLine.
+.PARAMETER Service
+    Which services to stop: all (default) | web | bot | docker
 .PARAMETER KeepRedis
-    If specified, keeps the Redis Docker container running.
+    When specified, skips stopping the Redis Docker container.
 .EXAMPLE
     .\stop.ps1
-    Stops all Nezuko services including Redis Docker container.
+    Stops bot, web dashboard, and Redis container.
 .EXAMPLE
     .\stop.ps1 -KeepRedis
-    Stops services but keeps Redis running.
+    Stops bot and web dashboard; keeps Redis running.
+.EXAMPLE
+    .\stop.ps1 -Service docker
+    Stops only the Redis Docker container.
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [ValidateSet("all", "web", "bot", "docker")]
     [string]$Service = "all",
+
     [switch]$KeepRedis
 )
 
-# Import utilities
+# ── Bootstrap ────────────────────────────────────────────────
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$ScriptRoot\..\core\utils.ps1"
 
-# Initialize logging
 Initialize-LogSystem
 Write-LogSection -Title "DEV SERVICES STOP"
 
 Write-Host ""
-Write-Host "  ====================================" -ForegroundColor Cyan
+Write-Host "  =====================================" -ForegroundColor Cyan
 Write-Host "   Stopping Nezuko Services" -ForegroundColor Red
-Write-Host "  ====================================" -ForegroundColor Cyan
+Write-Host "  =====================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Define our specific ports
 $WEB_PORT = 3000
 
-# Helper function to stop process by port (Windows-specific using netstat)
-function Stop-ProcessOnPort {
+# ============================================================
+# Stop a process listening on a specific TCP port
+# ============================================================
+
+function Stop-ServiceOnPort {
+    <#
+    .SYNOPSIS
+        Finds and stops the process listening on the given TCP port.
+    .OUTPUTS
+        System.Int32 — number of processes stopped.
+    #>
+    [CmdletBinding()]
+    [OutputType([int])]
     param(
-        [int]$Port,
-        [string]$ServiceName
+        [Parameter(Mandatory)][int]$Port
     )
 
     $stopped = 0
 
-    try {
-        # Use netstat to find processes listening on the port
-        $netstatResult = netstat -ano 2>$null | Select-String -Pattern ":$Port\s+.*LISTENING"
+    # netstat gives us "$IP:$PORT ... LISTENING $PID"
+    netstat -ano 2>$null |
+        Select-String -Pattern ":$Port\s+.*LISTENING" |
+        ForEach-Object {
+            $parts    = $_.ToString().Trim() -split '\s+'
+            $pidValue = $parts[-1]
 
-        if ($netstatResult) {
-            foreach ($line in $netstatResult) {
-                $lineText = $line.ToString().Trim()
-                # Split by whitespace and get the last element (PID)
-                $parts = $lineText -split '\s+'
-                $processId = $parts[-1]
-
-                if ($processId -match '^\d+$' -and [int]$processId -gt 0) {
-                    try {
-                        $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
-                        if ($process) {
-                            $processName = $process.ProcessName
-                            Stop-Process -Id $processId -Force -ErrorAction Stop
-                            Write-Host "        Stopped $processName (PID: $processId)" -ForegroundColor Green
-                            Write-Log -Message "Stopped $ServiceName - $processName (PID: $processId) on port $Port" -Level "SUCCESS" -Category "DEV"
-                            $stopped++
-                        }
-                    }
-                    catch {
-                        Write-Host "        Failed to stop PID $processId" -ForegroundColor Yellow
-                    }
+            if ($pidValue -match '^\d+$') {
+                $proc = Get-Process -Id ([int]$pidValue) -ErrorAction SilentlyContinue
+                if ($proc) {
+                    $proc | Stop-Process -Force -ErrorAction SilentlyContinue
+                    Write-Host "        Stopped $($proc.ProcessName) (PID $($proc.Id)) on port $Port" -ForegroundColor Green
+                    Write-Log "Stopped $($proc.ProcessName) PID $($proc.Id) on port $Port" -Level "SUCCESS" -Category "DEV"
+                    $stopped++
                 }
             }
         }
-    }
-    catch {
-        Write-Log -Message "Error checking port ${Port}: $_" -Level "ERROR" -Category "DEV"
-    }
 
     return $stopped
 }
 
-# Helper function to stop bot process by command line pattern
-function Stop-BotProcess {
+# ============================================================
+# Stop all bun/node processes except this shell
+# ============================================================
+
+function Stop-BotAndWebProcesses {
+    <#
+    .SYNOPSIS
+        Kills every bun, node, next, or turbo process that is not the current PID.
+    .DESCRIPTION
+        Simple broad kill — reliable on Windows because CommandLine matching for
+        spawned bun workers is unreliable (they often have no path context).
+    .OUTPUTS
+        System.Int32 — number of processes stopped.
+    #>
+    [CmdletBinding()]
+    [OutputType([int])]
+    param()
+
     $stopped = 0
 
-    try {
-        # Find Bun processes running the grammY bot
-        # We look for "bun" and "apps/grammy" or "apps\grammy" in the command line
-        $botProcesses = Get-CimInstance Win32_Process -Filter "Name = 'bun.exe' or Name = 'node.exe'" -ErrorAction SilentlyContinue |
-        Where-Object { $_.CommandLine -like "*apps/grammy*" -or $_.CommandLine -like "*apps\grammy*" }
-
-        if ($botProcesses) {
-            foreach ($proc in $botProcesses) {
-                try {
-                    $process = Get-Process -Id $proc.ProcessId -ErrorAction SilentlyContinue
-                    if ($process) {
-                        Stop-Process -Id $proc.ProcessId -Force -ErrorAction Stop
-                        Write-Host "        Stopped $($proc.Name) (PID: $($proc.ProcessId))" -ForegroundColor Green
-                        Write-Log -Message "Stopped Bot - $($proc.Name) (PID: $($proc.ProcessId))" -Level "SUCCESS" -Category "DEV"
-                        $stopped++
-                    }
-                }
-                catch {
-                    Write-Host "        Failed to stop PID $($proc.ProcessId)" -ForegroundColor Yellow
-                }
+    foreach ($name in @("bun", "node", "next", "turbo")) {
+        Get-Process -Name $name -ErrorAction SilentlyContinue |
+            Where-Object { $_.Id -ne $PID } |
+            ForEach-Object {
+                $_ | Stop-Process -Force -ErrorAction SilentlyContinue
+                Write-Host "        Stopped $($_.ProcessName) (PID $($_.Id))" -ForegroundColor Green
+                Write-Log "Stopped $($_.ProcessName) PID $($_.Id)" -Level "SUCCESS" -Category "DEV"
+                $stopped++
             }
-        }
-    }
-    catch {
-        Write-Log -Message "Error finding bot process: $_" -Level "ERROR" -Category "DEV"
     }
 
     return $stopped
 }
 
-# Track total stopped
+# ============================================================
+# Step 1 — Web Dashboard (port 3000)
+# ============================================================
+
 $totalStopped = 0
 
-# Stop Web Dashboard (Port 3000)
-Write-Host "  [1/3] Web Dashboard (Port $WEB_PORT)..." -ForegroundColor Blue
+Write-Host "  [1/3] Web Dashboard (port $WEB_PORT)..." -ForegroundColor Blue
+
 if ($Service -eq "all" -or $Service -eq "web") {
-    $webStopped = Stop-ProcessOnPort -Port $WEB_PORT -ServiceName "Web"
-    if ($webStopped -eq 0) {
-        Write-Host "        Not running" -ForegroundColor Gray
-    }
-    $totalStopped += $webStopped
-} else {
-    Write-Host "        Skipped" -ForegroundColor Gray
-}
-
-# Stop Telegram Bot
-Write-Host "  [2/3] Telegram Bot (grammY)..." -ForegroundColor Yellow
-if ($Service -eq "all" -or $Service -eq "bot") {
-    $botStopped = Stop-BotProcess
-    if ($botStopped -eq 0) {
-        Write-Host "        Not running" -ForegroundColor Gray
-    }
-    $totalStopped += $botStopped
-} else {
-    Write-Host "        Skipped" -ForegroundColor Gray
-}
-
-# Stop Redis Docker container
-Write-Host "  [3/3] Redis (Docker: nezuko-redis-local)..." -ForegroundColor Magenta
-
-if ($KeepRedis -or ($Service -ne "all" -and $Service -ne "docker")) {
-    Write-Host "        Skipped" -ForegroundColor Gray
-    Write-Log -Message "Redis container kept running/skipped" -Category "DEV"
+    $n = Stop-ServiceOnPort -Port $WEB_PORT
+    if ($n -eq 0) { Write-Host "        Not running" -ForegroundColor Gray }
+    $totalStopped += $n
 }
 else {
-    # Check if Docker is available
-    $dockerAvailable = $null
-    try {
-        $null = docker --version 2>&1
-        $dockerAvailable = $true
-    }
-    catch {
-        $dockerAvailable = $false
-    }
+    Write-Host "        Skipped" -ForegroundColor Gray
+}
 
-    if (-not $dockerAvailable) {
-        Write-Host "        Docker not available" -ForegroundColor Gray
+# ============================================================
+# Step 2 — Telegram Bot (grammY / bun / node)
+# ============================================================
+
+Write-Host "  [2/3] Telegram Bot (grammY)..." -ForegroundColor Yellow
+
+if ($Service -eq "all" -or $Service -eq "bot") {
+    $n = Stop-BotAndWebProcesses
+    if ($n -eq 0) { Write-Host "        Not running" -ForegroundColor Gray }
+    $totalStopped += $n
+}
+else {
+    Write-Host "        Skipped" -ForegroundColor Gray
+}
+
+# ============================================================
+# Step 3 — Redis Docker container
+# ============================================================
+
+Write-Host "  [3/3] Redis (Docker: nezuko-redis-local)..." -ForegroundColor Magenta
+
+$shouldStopRedis = ($Service -eq "all" -or $Service -eq "docker") -and (-not $KeepRedis)
+
+if (-not $shouldStopRedis) {
+    Write-Host "        Skipped" -ForegroundColor Gray
+    Write-Log "Redis container kept running/skipped" -Category "DEV"
+}
+else {
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        Write-Host "        Docker not available — skipping" -ForegroundColor Gray
     }
     else {
         $composeFile = Join-Path (Get-ProjectRoot) "docker-compose.local.yml"
-        if (Test-Path $composeFile) {
-            # Check if container is running
-            $containerRunning = docker ps --filter "name=nezuko-redis-local" --format "{{.Names}}" 2>$null
 
-            if ($containerRunning -eq "nezuko-redis-local") {
+        if (-not (Test-Path $composeFile)) {
+            Write-Host "        docker-compose.local.yml not found" -ForegroundColor Gray
+        }
+        else {
+            $running = docker ps --filter "name=nezuko-redis-local" --format "{{.Names}}" 2>$null
+            if ($running -eq "nezuko-redis-local") {
                 docker compose -f $composeFile stop 2>$null | Out-Null
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "        Stopped Redis container (data preserved)" -ForegroundColor Green
-                    Write-Log -Message "Stopped Redis container" -Level "SUCCESS" -Category "DEV"
+                    Write-Log "Stopped Redis container" -Level "SUCCESS" -Category "DEV"
                     $totalStopped++
                 }
                 else {
                     Write-Host "        Failed to stop Redis container" -ForegroundColor Red
+                    Write-Log "Redis compose stop failed (exit $LASTEXITCODE)" -Level "ERROR" -Category "DEV"
                 }
             }
             else {
                 Write-Host "        Not running" -ForegroundColor Gray
             }
         }
-        else {
-            Write-Host "        docker-compose.local.yml not found" -ForegroundColor Gray
-        }
     }
 }
 
+# ============================================================
 # Summary
+# ============================================================
+
 Write-LogSection -Title "DEV SERVICES STOPPED"
 
 Write-Host ""
-Write-Host "  ====================================" -ForegroundColor Cyan
+Write-Host "  =====================================" -ForegroundColor Cyan
 if ($totalStopped -gt 0) {
     Write-Host "   Stopped $totalStopped service(s)" -ForegroundColor Green
 }
 else {
     Write-Host "   No Nezuko services were running" -ForegroundColor Yellow
 }
-Write-Host "  ====================================" -ForegroundColor Cyan
+Write-Host "  =====================================" -ForegroundColor Cyan
 Write-Host ""

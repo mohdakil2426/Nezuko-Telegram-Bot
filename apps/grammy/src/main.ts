@@ -1,7 +1,7 @@
 /**
  * Nezuko grammY Bot — Entry Point
  *
- * Two operating modes (mirrors apps/bot/main.py):
+ * Two operating modes:
  *
  *   Standalone mode  (DASHBOARD_MODE=false, default)
  *     • Uses BOT_TOKEN from .env directly.
@@ -356,7 +356,7 @@ async function runDashboardMode(
     config.keepAliveIntervalMs
   );
 
-  // Keep process alive until SIGINT/SIGTERM (mirrors PTB bot's asyncio.run(bot_manager.run()))
+  // Keep process alive until SIGINT/SIGTERM
   await new Promise<void>((resolve) => {
     const doShutdown = (): void => {
       logger.info("Shutdown signal received — stopping all bots...");

@@ -257,17 +257,17 @@ This mode reads active bot instances from the backend, starts them dynamically, 
 
 ## Core Commands
 
-| Command | Context | Purpose |
-| --- | --- | --- |
-| `/start` | Private / Group | Basic entry and setup guidance |
-| `/help` | Any | Command reference |
-| `/protect @channel` | Group admin | Link a required channel |
-| `/unprotect` | Group admin | Disable protection |
-| `/status` | Group admin | Show protection status |
-| `/settings` | Group admin | View configuration |
-| `/channels` | Group | List linked channels |
-| `/verify` | Group | Manual verification helper |
-| `/stats` | Group | Group/channel stats |
+| Command             | Context         | Purpose                        |
+| ------------------- | --------------- | ------------------------------ |
+| `/start`            | Private / Group | Basic entry and setup guidance |
+| `/help`             | Any             | Command reference              |
+| `/protect @channel` | Group admin     | Link a required channel        |
+| `/unprotect`        | Group admin     | Disable protection             |
+| `/status`           | Group admin     | Show protection status         |
+| `/settings`         | Group admin     | View configuration             |
+| `/channels`         | Group           | List linked channels           |
+| `/verify`           | Group           | Manual verification helper     |
+| `/stats`            | Group           | Group/channel stats            |
 
 ## Quality Gates
 
@@ -289,8 +289,6 @@ bun run type-check
 bun run lint
 bun run build
 ```
-
-Current bot test baseline: `139/139` passing.
 
 ## Operational Notes
 

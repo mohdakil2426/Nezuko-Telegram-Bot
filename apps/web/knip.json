@@ -3,7 +3,7 @@
   "entry": ["src/app/**/*.{ts,tsx}"],
   "project": ["src/**/*.{ts,tsx}"],
   "ignore": ["src/components/ui/**"],
-  "ignoreDependencies": ["postcss", "tailwindcss"],
+  "ignoreDependencies": ["postcss", "tailwindcss", "tw-animate-css"],
   "ignoreExportsUsedInFile": {
     "interface": true,
     "type": true

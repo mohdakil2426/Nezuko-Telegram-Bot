@@ -3,7 +3,6 @@
 ## Current Phase: 126 — UI Refactoring & Quality Consolidation (React Compiler · Code Pruning · Performance Purity)
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
-> **Python PTB Bot**: 🗄️ ARCHIVED — preserved in `apps/bot/` for historical reference only. Not maintained.
 
 ---
 
@@ -119,53 +118,6 @@
 
 ---
 
-## 🗄️ Archived: Python PTB Bot Timeline
-
-> **These phases are historical reference. The work was superseded by the grammY rewrite.**
-
-| Phase       | Description                                                                                                | Runtime    |
-| ----------- | ---------------------------------------------------------------------------------------------------------- | ---------- |
-| Phase 1–80  | Initial Python PTB bot development                                                                         | Python PTB |
-| Phase 80–95 | Python bot stabilization, analytics, Redis, encryption                                                     | Python PTB |
-| Phase 96    | grammY TypeScript port begins — canonical runtime switches                                                 | **grammY** |
-| Phase 97    | grammY standalone + dashboard modes complete                                                               | grammY     |
-| Phase 98    | grammY multi-bot with BotManager                                                                           | grammY     |
-| Phase 99    | grammY encryption + Security Vault                                                                         | grammY     |
-| Phase 100   | grammY test coverage foundation                                                                            | grammY     |
-| Phase 101   | grammY PRD completion + realtime + join requests                                                           | grammY     |
-| Phase 102   | grammY command menus + /status parity                                                                      | grammY     |
-| Phase 103   | Group command reliability + 127 tests ✅                                                                   | grammY     |
-| Phase 104   | System audit — 14 bugs found, 7 P0/P1 fixed                                                                | grammY     |
-| Phase 105   | Remaining P2 bugs fixed — log transport, API logging, realtime hook, DB constraint                         | grammY     |
-| Phase 1–80  | Initial Python PTB bot development                                                                         | Python PTB |
-| Phase 80–95 | Python bot stabilization, analytics, Redis, encryption                                                     | Python PTB |
-| Phase 96    | grammY TypeScript port begins — canonical runtime switches                                                 | **grammY** |
-| Phase 97    | grammY standalone + dashboard modes complete                                                               | grammY     |
-| Phase 98    | grammY multi-bot with BotManager                                                                           | grammY     |
-| Phase 99    | grammY encryption + Security Vault                                                                         | grammY     |
-| Phase 100   | grammY test coverage foundation                                                                            | grammY     |
-| Phase 101   | grammY PRD completion + realtime + join requests                                                           | grammY     |
-| Phase 102   | grammY command menus + /status parity                                                                      | grammY     |
-| Phase 103   | Group command reliability + 127 tests ✅                                                                   | grammY     |
-| Phase 104   | System audit — 14 bugs found, 7 P0/P1 fixed                                                                | grammY     |
-| Phase 105   | Remaining P2 bugs fixed — log transport, API logging, realtime hook, DB constraint                         | grammY     |
-| Phase 106   | Group command composer mounting fixed; runtime wiring tests expanded                                       | grammY     |
-| Phase 107   | Duplicate poller guard + InsForge request timeouts to reduce command latency                               | grammY     |
-| Phase 108   | Explicit verify bypasses stale negative cache; group sequentialization narrowed                            | grammY     |
-| Phase 109   | Idempotent verify/join-request with Redis NX locks                                                         | grammY     |
-| Phase 110   | Message-path revalidation + InsForge request timeouts                                                      | grammY     |
-| Phase 111   | Delayed verification prompt on required-channel leave                                                      | grammY     |
-| Phase 112   | Burst blocked-message cleanup (lock-loser deletion)                                                        | grammY     |
-| Phase 113   | Fast block-state message path + central realtime coordinator                                               | grammY     |
-| Phase 114   | First blocked message flow restore + 2026-03-07 follow-up fixes                                            | grammY     |
-| Phase 115   | Latency V2: S1 immediate ack, S2 allSettled, S4 mod cache, S6 contract cache, S7 async logs, S11 telemetry | grammY     |
-| Phase 116   | Latency Gap Fixes + Dashboard Runner Self-Healing                                                          | grammY     |
-| Phase 117   | grammY Plugin Research & Integration Plan                                                                  | grammY     |
-| Phase 121   | grammY Plugin Integration (Throttler · Autoquote · Menu · Conversations)                                   | grammY     |
-| Phase 125   | Dashboard Performance & Cost Optimization (Next.js 16 PPR · Cache Components · Cost Pruning)               | Next.js    |
-
----
-
 ## ⚠️ Known Issues / Limitations
 
 | Issue                                                      | Severity    | Notes                                                                                                                                         |
@@ -180,6 +132,8 @@
 | Join-request-first flow still needs full live validation   | Pending     | Core verify path is now confirmed working live                                                                                                |
 | Groups/channels cross-session realtime still incomplete    | Medium      | Dashboard now has a central realtime coordinator, but true live updates for group/channel admin tables still need dedicated InsForge triggers |
 | `standalone-watchdog.ts` created but not wired             | Low         | Created as utility; standalone mode 95% unused — deferred                                                                                     |
+| Partial `node_modules` deletion / "Access Denied"          | Medium      | Script hardening with `taskkill /F /T` implemented; pending long-term verification across Windows envs                                        |
+| Stale bot processes from legacy PTB or orphaned shells     | Medium      | Improved `stop.ps1` pattern matching (src/main.ts, main.py) and tree-kill; pending monitoring for 409 token conflicts                         |
 
 ---
 
@@ -192,6 +146,7 @@
 5. **Docker build** — update `Dockerfile` to point at `apps/grammy` (`bun install` + `bun run build` + `node dist/main.js`).
 6. **S3 verdict-level L2 cache** — implement `setVerificationVerdict()` in verify.ts to skip repeat getChatMember checks on re-taps.
 7. **Wire standalone-watchdog.ts into main.ts** — complete standalone runner supervision if standalone mode gains more users.
+8. **Verify CLI script robustness** — confirm `taskkill /F /T` and `Check-Dependencies` perform reliably over multiple "Full Reset" cycles.
 
 ---
 
@@ -211,4 +166,4 @@
 
 ---
 
-_Last Updated: 2026-03-11 (Phase 126 — UI Refactoring, React Compiler compatibility, heavy library code-splitting, Suspense boundaries, dead code pruning, 163/163 tests, knip zero issues)_
+_Last Updated: 2026-03-11 (Phase 126 — PTB bot and all legacy Python tests removed; grammY is the sole runtime; 163/163 tests, knip zero issues)_

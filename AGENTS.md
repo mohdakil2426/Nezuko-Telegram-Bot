@@ -27,7 +27,7 @@ Bot Engine (grammY / TS) ───────► fetch REST ──────�
 - **No custom API server** — both bot and web talk directly to InsForge REST / SDK.
 - **Bot DB access**: `apps/grammy/src/core/insforge-client.ts` — never raw PostgreSQL.
 - **Web DB access**: `@insforge/sdk` via `import { insforge } from "@/lib/insforge"`.
-- **Legacy PTB code is not the active bot path anymore**. Treat `apps/grammy` as canonical for bot runtime work.
+- Treat `apps/grammy` as canonical for bot runtime work.
 
 ---
 
@@ -56,8 +56,7 @@ nezuko/
 │   ├── migrations/
 │   └── functions/
 ├── tests/
-│   ├── grammy/       # grammY bot tests
-│   └── bot/          # legacy PTB tests retained for historical reference only
+│   └── grammy/       # grammY bot tests
 ├── openspec/
 ├── scripts/
 ├── memory-bank/
@@ -70,16 +69,16 @@ nezuko/
 
 ### File Locations
 
-| Type | Correct Location | Wrong |
-|---|---|---|
-| grammY source | `apps/grammy/` | `apps/bot/` for new bot work |
-| grammY tests | `tests/grammy/` | `apps/grammy/tests/` |
-| Web env | `apps/web/.env.local` | Root `.env` |
-| grammY env | `apps/grammy/.env` | Root `.env` |
-| Frontend deps | `apps/web/package.json` | `npm`, `yarn` outside app rules |
-| grammY deps | `apps/grammy/package.json` | root-level JS deps for bot runtime |
-| Migrations | `insforge/migrations/*.sql` | ad hoc schema edits elsewhere |
-| Canonical DB contract | latest active InsForge migration + memory bank | outdated PTB assumptions |
+| Type                  | Correct Location                               | Wrong                              |
+| --------------------- | ---------------------------------------------- | ---------------------------------- |
+| grammY source         | `apps/grammy/`                                 | `apps/bot/` (deleted)              |
+| grammY tests          | `tests/grammy/`                                | `apps/grammy/tests/`               |
+| Web env               | `apps/web/.env.local`                          | Root `.env`                        |
+| grammY env            | `apps/grammy/.env`                             | Root `.env`                        |
+| Frontend deps         | `apps/web/package.json`                        | `npm`, `yarn` outside app rules    |
+| grammY deps           | `apps/grammy/package.json`                     | root-level JS deps for bot runtime |
+| Migrations            | `insforge/migrations/*.sql`                    | ad hoc schema edits elsewhere      |
+| Canonical DB contract | latest active InsForge migration + memory bank | any outdated assumptions           |
 
 ### Database Rules
 
@@ -117,14 +116,14 @@ nezuko/
 
 ## Tech Stack
 
-| Layer | Stack |
-|---|---|
-| **Bot** | TypeScript 5.9, grammY 1.41+, Bun, Node 22, ioredis, pino, zod, Socket.IO client |
+| Layer        | Stack                                                                                              |
+| ------------ | -------------------------------------------------------------------------------------------------- |
+| **Bot**      | TypeScript 5.9, grammY 1.41+, Bun, Node 22, ioredis, pino, zod, Socket.IO client                   |
 | **Frontend** | Next.js 16.1, React 19.2, TypeScript 5.9, Tailwind v4, shadcn/ui, Recharts, Motion, TanStack Query |
-| **BaaS** | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions |
-| **Auth** | InsForge Auth, `InsforgeMiddleware`, `insforge_session` cookie, RLS |
-| **Infra** | Docker, Vercel, Caddy |
-| **Package** | `bun` for TypeScript apps, `uv` only for retained Python legacy tooling if needed |
+| **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions                         |
+| **Auth**     | InsForge Auth, `InsforgeMiddleware`, `insforge_session` cookie, RLS                                |
+| **Infra**    | Docker, Vercel, Caddy                                                                              |
+| **Package**  | `bun` for all TypeScript apps (grammy + web)                                                       |
 
 ---
 
@@ -160,13 +159,13 @@ cd apps/web && bun run build
 
 ### Formatting & Style
 
-| Setting | Value | Enforced By |
-|---|---|---|
-| Indent | 2 spaces | `.editorconfig`, Prettier |
-| Line length | 100 chars | `.prettierrc` |
-| Semicolons | Yes | project config |
-| Quotes | Double | project config |
-| Trailing commas | ES5 | project config |
+| Setting         | Value     | Enforced By               |
+| --------------- | --------- | ------------------------- |
+| Indent          | 2 spaces  | `.editorconfig`, Prettier |
+| Line length     | 100 chars | `.prettierrc`             |
+| Semicolons      | Yes       | project config            |
+| Quotes          | Double    | project config            |
+| Trailing commas | ES5       | project config            |
 
 ### TypeScript Coding Patterns
 
@@ -216,19 +215,19 @@ commandWorker.start();
 
 ## Key Patterns
 
-| Pattern | Implementation |
-|---|---|
-| **Run Bot** | `cd apps/grammy && bun run dev` |
+| Pattern                 | Implementation                                                                   |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| **Run Bot**             | `cd apps/grammy && bun run dev`                                                  |
 | **Bot Operating Modes** | `DASHBOARD_MODE=true` → multi-bot from DB; `false` → single bot from `BOT_TOKEN` |
-| **Bot Imports** | Relative ESM imports within `apps/grammy/src`, package-root based |
-| **Web Imports** | `import { insforge } from "@/lib/insforge"` |
-| **Bot Env** | `apps/grammy/.env` |
-| **Web Env** | `apps/web/.env.local` |
-| **Query keys** | `queryKeys.*` factory in `apps/web/src/lib/query-keys.ts` |
-| **Realtime Web** | `use-realtime-insforge.ts` |
-| **Realtime Bot** | `apps/grammy/src/core/realtime-client.ts` |
-| **Auth guard** | `apps/web/src/proxy.ts` |
-| **Token storage** | `nezuko_secrets` table via server action + edge function |
+| **Bot Imports**         | Relative ESM imports within `apps/grammy/src`, package-root based                |
+| **Web Imports**         | `import { insforge } from "@/lib/insforge"`                                      |
+| **Bot Env**             | `apps/grammy/.env`                                                               |
+| **Web Env**             | `apps/web/.env.local`                                                            |
+| **Query keys**          | `queryKeys.*` factory in `apps/web/src/lib/query-keys.ts`                        |
+| **Realtime Web**        | `use-realtime-insforge.ts`                                                       |
+| **Realtime Bot**        | `apps/grammy/src/core/realtime-client.ts`                                        |
+| **Auth guard**          | `apps/web/src/proxy.ts`                                                          |
+| **Token storage**       | `nezuko_secrets` table via server action + edge function                         |
 
 ---
 
@@ -271,11 +270,11 @@ cd apps/web && bun run build
 
 ## MCP Tools
 
-| Server | Purpose |
-|---|---|
-| **context7** | Query library docs |
+| Server       | Purpose                         |
+| ------------ | ------------------------------- |
+| **context7** | Query library docs              |
 | **insforge** | DB ops, storage, edge functions |
-| **shadcn** | UI component discovery |
+| **shadcn**   | UI component discovery          |
 
 **Web Search Rule:** When searching the web or fetching URLs for documentation, best practices, or solutions, always append `2025-2026` to queries.
 
@@ -295,42 +294,42 @@ Skills are located in `.agent/skills/` or `.agents/skills/` — check the path c
 
 ### Frontend (Web Dashboard)
 
-| Skill | When to Use | Path |
-|---|---|---|
-| **next-best-practices** | Next.js patterns and boundaries | `.agents/skills/next-best-practices/` |
-| **next-cache-components** | Next.js 16 cache behavior | `.agents/skills/next-cache-components/` |
-| **shadcn-ui** | shadcn/ui work | `.agents/skills/shadcn-ui` |
-| **tanstack-query** | query/mutation/cache work | `.agents/skills/tanstack-query/` |
-| **typescript-expert** | advanced TS/JS work | `.agents/skills/typescript-expert` |
-| **typescript-advanced-types** | complex type work | `.agents/skills/typescript-advanced-types` |
-| **vercel-react-best-practices** | React/Next performance | `.agents/skills/vercel-react-best-practices` |
-| **vercel-composition-patterns** | scalable component APIs | `.agents/skills/vercel-composition-patterns` |
-| **ui-ux-pro-max** | UI/UX design work | `.agents/skills/ui-ux-pro-max` |
-| **web-design-guidelines** | accessibility/UI audits | `.agents/skills/web-design-guidelines` |
-| **motion** | Motion animations | `.agents/skills/motion` |
-| **tailwind-design-system** | design system work | `.agents/skills/tailwind-design-system` |
-| **responsiveness-check** | responsive audits | `.agents/skills/responsiveness-check` |
+| Skill                           | When to Use                     | Path                                         |
+| ------------------------------- | ------------------------------- | -------------------------------------------- |
+| **next-best-practices**         | Next.js patterns and boundaries | `.agents/skills/next-best-practices/`        |
+| **next-cache-components**       | Next.js 16 cache behavior       | `.agents/skills/next-cache-components/`      |
+| **shadcn-ui**                   | shadcn/ui work                  | `.agents/skills/shadcn-ui`                   |
+| **tanstack-query**              | query/mutation/cache work       | `.agents/skills/tanstack-query/`             |
+| **typescript-expert**           | advanced TS/JS work             | `.agents/skills/typescript-expert`           |
+| **typescript-advanced-types**   | complex type work               | `.agents/skills/typescript-advanced-types`   |
+| **vercel-react-best-practices** | React/Next performance          | `.agents/skills/vercel-react-best-practices` |
+| **vercel-composition-patterns** | scalable component APIs         | `.agents/skills/vercel-composition-patterns` |
+| **ui-ux-pro-max**               | UI/UX design work               | `.agents/skills/ui-ux-pro-max`               |
+| **web-design-guidelines**       | accessibility/UI audits         | `.agents/skills/web-design-guidelines`       |
+| **motion**                      | Motion animations               | `.agents/skills/motion`                      |
+| **tailwind-design-system**      | design system work              | `.agents/skills/tailwind-design-system`      |
+| **responsiveness-check**        | responsive audits               | `.agents/skills/responsiveness-check`        |
 
 ### Backend (Bot & BaaS)
 
-| Skill | When to Use | Path |
-|---|---|---|
-| **grammy** | Any bot work in `apps/grammy` | `.agents/skills/grammy` |
-| **insforge** | InsForge backend integration | `.agents/skills/insforge` |
-| **postgres-pro** | SQL/query/schema performance | `.agents/skills/postgres-pro` |
+| Skill            | When to Use                   | Path                          |
+| ---------------- | ----------------------------- | ----------------------------- |
+| **grammy**       | Any bot work in `apps/grammy` | `.agents/skills/grammy`       |
+| **insforge**     | InsForge backend integration  | `.agents/skills/insforge`     |
+| **postgres-pro** | SQL/query/schema performance  | `.agents/skills/postgres-pro` |
 
 ### DevOps & Tooling
 
-| Skill | When to Use | Path |
-|---|---|---|
-| **brainstorming** | Required before creative or behavior-changing work | `.agents/skills/brainstorming/` |
-| **docker-expert** | Docker/container work | `.agents/skills/docker-expert` |
-| **github-actions-templates** | CI/CD work | `.agents/skills/github-actions-templates/` |
-| **mermaid-diagrams** | diagrams/architecture visuals | `.agents/skills/mermaid-diagrams` |
-| **playwright-cli** | browser automation | `.agents/skills/playwright-cli` |
-| **powershell-expert** | PowerShell scripts | `.agents/skills/powershell-expert` |
-| **skill-creator** | skill updates | `.agents/skills/skill-creator` |
-| **write-coding-standards-from-file** | derive standards from code | `.agents/skills/write-coding-standards-from-file` |
+| Skill                                | When to Use                                        | Path                                              |
+| ------------------------------------ | -------------------------------------------------- | ------------------------------------------------- |
+| **brainstorming**                    | Required before creative or behavior-changing work | `.agents/skills/brainstorming/`                   |
+| **docker-expert**                    | Docker/container work                              | `.agents/skills/docker-expert`                    |
+| **github-actions-templates**         | CI/CD work                                         | `.agents/skills/github-actions-templates/`        |
+| **mermaid-diagrams**                 | diagrams/architecture visuals                      | `.agents/skills/mermaid-diagrams`                 |
+| **playwright-cli**                   | browser automation                                 | `.agents/skills/playwright-cli`                   |
+| **powershell-expert**                | PowerShell scripts                                 | `.agents/skills/powershell-expert`                |
+| **skill-creator**                    | skill updates                                      | `.agents/skills/skill-creator`                    |
+| **write-coding-standards-from-file** | derive standards from code                         | `.agents/skills/write-coding-standards-from-file` |
 
 ### Project Management
 
@@ -338,4 +337,4 @@ Use the relevant `openspec-*` skill in `.agent/skills/` when the task is about O
 
 ---
 
-_Last Updated: 2026-03-06_
+_Last Updated: 2026-03-11 (Phase 126 — PTB bot fully removed; grammY is the sole runtime; tests/bot deleted)_

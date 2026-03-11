@@ -1,6 +1,6 @@
 # Nezuko grammY Bot
 
-A production-ready Telegram bot built with [grammY](https://grammy.dev) v1.41.1 (TypeScript), providing automated channel membership enforcement for Telegram groups. This is a ground-up TypeScript rebuild of the original Python bot (`apps/bot/`), maintaining full dashboard compatibility.
+A production-ready Telegram bot built with [grammY](https://grammy.dev) v1.41.1 (TypeScript), providing automated channel membership enforcement for Telegram groups.
 
 ---
 
@@ -91,16 +91,16 @@ Copy `.env.example` to `.env` and fill in the values:
 cp .env.example .env
 ```
 
-| Variable              | Required | Default               | Description                                                    |
-| --------------------- | -------- | --------------------- | -------------------------------------------------------------- |
-| `BOT_TOKEN`           | Yes      | —                     | Telegram bot token from BotFather (`123456:ABC-DEF...`)        |
-| `INSFORGE_BASE_URL`   | Yes      | —                     | InsForge backend URL (`https://your-app.region.insforge.app`)  |
-| `INSFORGE_ANON_KEY`   | Yes      | —                     | InsForge anonymous JWT key                                     |
-| `REDIS_URL`           | No       | `redis://localhost:6379` | Redis connection URL                                         |
-| `LOG_LEVEL`           | No       | `info`                | Logging level: `debug`, `info`, `warn`, `error`               |
-| `HEALTH_PORT`         | No       | `8080`                | HTTP health check server port                                  |
-| `DASHBOARD_MODE`      | No       | `false`               | `true` = multi-bot from DB; `false` = single bot from token   |
-| `MASTER_KEY`          | No       | —                     | 32-byte hex AES-256 master key (required for dashboard mode)   |
+| Variable            | Required | Default                  | Description                                                   |
+| ------------------- | -------- | ------------------------ | ------------------------------------------------------------- |
+| `BOT_TOKEN`         | Yes      | —                        | Telegram bot token from BotFather (`123456:ABC-DEF...`)       |
+| `INSFORGE_BASE_URL` | Yes      | —                        | InsForge backend URL (`https://your-app.region.insforge.app`) |
+| `INSFORGE_ANON_KEY` | Yes      | —                        | InsForge anonymous JWT key                                    |
+| `REDIS_URL`         | No       | `redis://localhost:6379` | Redis connection URL                                          |
+| `LOG_LEVEL`         | No       | `info`                   | Logging level: `debug`, `info`, `warn`, `error`               |
+| `HEALTH_PORT`       | No       | `8080`                   | HTTP health check server port                                 |
+| `DASHBOARD_MODE`    | No       | `false`                  | `true` = multi-bot from DB; `false` = single bot from token   |
+| `MASTER_KEY`        | No       | —                        | 32-byte hex AES-256 master key (required for dashboard mode)  |
 
 ---
 
@@ -222,11 +222,11 @@ curl http://localhost:8080/health
 
 ### 3-Stage build overview
 
-| Stage     | Base image     | Purpose                          |
-| --------- | -------------- | -------------------------------- |
-| `deps`    | `oven/bun:1.2` | `bun install --frozen-lockfile`  |
-| `builder` | `node:22-slim` | `tsc` compile to `dist/`         |
-| `runner`  | `node:22-slim` | Production runtime (~120 MB)     |
+| Stage     | Base image     | Purpose                         |
+| --------- | -------------- | ------------------------------- |
+| `deps`    | `oven/bun:1.2` | `bun install --frozen-lockfile` |
+| `builder` | `node:22-slim` | `tsc` compile to `dist/`        |
+| `runner`  | `node:22-slim` | Production runtime (~120 MB)    |
 
 ---
 
@@ -243,28 +243,28 @@ The bot performs a 4-step shutdown on `SIGTERM` / `SIGINT` (Docker sends SIGTERM
 
 ## Plugin List
 
-| Plugin                    | Version  | Purpose                                              |
-| ------------------------- | -------- | ---------------------------------------------------- |
-| `grammy`                  | 1.41.1   | Core framework                                       |
-| `@grammyjs/runner`        | 2.0.3    | Concurrent update processing (`run()`)               |
-| `@grammyjs/auto-retry`    | 2.0.2    | Transformer: 429/500 retry with Retry-After          |
-| `@grammyjs/parse-mode`    | 2.2.1    | Transformer: default `parse_mode: "HTML"`            |
-| `@grammyjs/hydrate`       | 1.6.0    | `msg.editText()`, `msg.delete()` sugar               |
-| `@grammyjs/ratelimiter`   | 1.2.1    | Flood protection per user (Redis-backed)             |
-| `@grammyjs/commands`      | 1.3.2    | Typed command routing                                |
-| `@grammyjs/chat-members`  | 1.2.0    | L1 cache: event-driven `getChatMember` cache (Redis) |
-| `ioredis`                 | 5.10.0   | Redis client (L2 verification cache)                 |
-| `pino`                    | 10.3.1   | Structured JSON logging                              |
-| `zod`                     | 4.3.6    | Config schema validation                             |
-| `socket.io-client`        | 4.8.3    | InsForge realtime WebSocket (dashboard mode)         |
+| Plugin                   | Version | Purpose                                              |
+| ------------------------ | ------- | ---------------------------------------------------- |
+| `grammy`                 | 1.41.1  | Core framework                                       |
+| `@grammyjs/runner`       | 2.0.3   | Concurrent update processing (`run()`)               |
+| `@grammyjs/auto-retry`   | 2.0.2   | Transformer: 429/500 retry with Retry-After          |
+| `@grammyjs/parse-mode`   | 2.2.1   | Transformer: default `parse_mode: "HTML"`            |
+| `@grammyjs/hydrate`      | 1.6.0   | `msg.editText()`, `msg.delete()` sugar               |
+| `@grammyjs/ratelimiter`  | 1.2.1   | Flood protection per user (Redis-backed)             |
+| `@grammyjs/commands`     | 1.3.2   | Typed command routing                                |
+| `@grammyjs/chat-members` | 1.2.0   | L1 cache: event-driven `getChatMember` cache (Redis) |
+| `ioredis`                | 5.10.0  | Redis client (L2 verification cache)                 |
+| `pino`                   | 10.3.1  | Structured JSON logging                              |
+| `zod`                    | 4.3.6   | Config schema validation                             |
+| `socket.io-client`       | 4.8.3   | InsForge realtime WebSocket (dashboard mode)         |
 
 ---
 
 ## Key Design Decisions
 
-1. **No ORM** — Uses native `fetch()` against InsForge REST API (PostgREST). Same pattern as Python bot.
+1. **No ORM** — Uses native `fetch()` against InsForge REST API (PostgREST).
 2. **PATCH-then-POST UPSERT** — For tables with multiple UNIQUE columns (PostgREST 409 workaround).
-3. **Redis key prefix** — All keys use `nezuko:v2:` prefix to avoid conflicts with Python bot during parallel run.
+3. **Redis key prefix** — All keys use `nezuko:v2:` prefix to avoid cross-instance conflicts.
 4. **Bun dev + Node.js prod** — Bun's `--watch` for fast dev; Node.js 22 LTS for proven ioredis stability in Docker.
 5. **`emit()` not `call()`** — InsForge Realtime doesn't ACK `REALTIME_SUBSCRIBE`. Using `call()` causes 10s timeout.
 6. **`sequentialize` MUST be first** — grammY deployment checklist requirement; prevents race conditions per chat.
@@ -276,9 +276,9 @@ The bot performs a 4-step shutdown on `SIGTERM` / `SIGINT` (Docker sends SIGTERM
 
 GitHub Actions workflow at `.github/workflows/grammy-ci.yml` runs on every push/PR that touches `apps/grammy/**`:
 
-| Job            | Command              | Gate               |
-| -------------- | -------------------- | ------------------ |
-| `lint`         | `npm run lint`       | 0 ESLint warnings  |
-| `type-check`   | `npm run type-check` | 0 TypeScript errors|
-| `test`         | `npm run test`       | All tests pass     |
-| `docker-build` | `docker build`       | Build succeeds     |
+| Job            | Command              | Gate                |
+| -------------- | -------------------- | ------------------- |
+| `lint`         | `npm run lint`       | 0 ESLint warnings   |
+| `type-check`   | `npm run type-check` | 0 TypeScript errors |
+| `test`         | `npm run test`       | All tests pass      |
+| `docker-build` | `docker build`       | Build succeeds      |

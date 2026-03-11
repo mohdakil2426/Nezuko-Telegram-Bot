@@ -4,7 +4,8 @@
 .SYNOPSIS
     Shared utility functions for Nezuko CLI scripts.
 .DESCRIPTION
-    Contains common functions used across multiple scripts.
+    Common helpers used by all dev scripts: logging, path resolution,
+    prerequisite checks, and process management.
 #>
 
 # ============================================================
@@ -14,51 +15,43 @@
 function Get-ProjectRoot {
     <#
     .SYNOPSIS
-        Gets the project root directory.
+        Returns the absolute path to the project root.
     .OUTPUTS
-        System.String - Absolute path to project root.
+        System.String
     #>
     [CmdletBinding()]
     [OutputType([string])]
     param()
-    
-    $scriptPath = $PSScriptRoot
-    # Navigate from scripts/core to project root
-    return (Resolve-Path (Join-Path $scriptPath "..\..")).Path
+
+    # utils.ps1 lives in scripts/core/ — two levels up is the root
+    return (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 }
 
 # ============================================================
-# Logging System
+# Logging
 # ============================================================
 
-# Global log file path
 $script:LogsDir = $null
 $script:CurrentLogFile = $null
 
 function Initialize-LogSystem {
     <#
     .SYNOPSIS
-        Initializes the logging system and creates log directory.
-    .DESCRIPTION
-        Creates the scripts/logs directory and sets up the current log file
-        based on the current date.
+        Creates the logs directory and sets the daily log file path.
     #>
     [CmdletBinding()]
     param()
-    
+
     $projectRoot = Get-ProjectRoot
     $script:LogsDir = Join-Path $projectRoot "scripts\logs"
-    
-    # Create logs directory if it doesn't exist
+
     if (-not (Test-Path $script:LogsDir)) {
         New-Item -ItemType Directory -Path $script:LogsDir -Force | Out-Null
     }
-    
-    # Set current log file (daily rotation)
+
     $dateStr = Get-Date -Format "yyyy-MM-dd"
     $script:CurrentLogFile = Join-Path $script:LogsDir "nezuko-$dateStr.log"
-    
-    # Create .gitignore for logs
+
     $gitignorePath = Join-Path $script:LogsDir ".gitignore"
     if (-not (Test-Path $gitignorePath)) {
         "# Ignore all log files`n*.log" | Out-File -FilePath $gitignorePath -Encoding utf8
@@ -68,115 +61,67 @@ function Initialize-LogSystem {
 function Write-Log {
     <#
     .SYNOPSIS
-        Writes a timestamped message to the log file.
+        Appends a timestamped entry to the daily log file.
     .PARAMETER Message
         The message to log.
     .PARAMETER Level
-        Log level: INFO, WARN, ERROR, DEBUG, SUCCESS
+        INFO | WARN | ERROR | DEBUG | SUCCESS
     .PARAMETER Category
-        Category/source of the log: INSTALL, CLEAN, DEV, TEST, MENU, SYSTEM
+        INSTALL | CLEAN | DEV | TEST | MENU | SYSTEM | BUN | NODE
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
         [string]$Message,
-        
+
         [ValidateSet("INFO", "WARN", "ERROR", "DEBUG", "SUCCESS")]
         [string]$Level = "INFO",
-        
+
         [ValidateSet("INSTALL", "CLEAN", "DEV", "TEST", "MENU", "SYSTEM", "BUN", "NODE")]
         [string]$Category = "SYSTEM"
     )
-    
-    # Initialize if not already done
-    if (-not $script:CurrentLogFile) {
-        Initialize-LogSystem
-    }
-    
+
+    if (-not $script:CurrentLogFile) { Initialize-LogSystem }
+
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $logEntry = "[$timestamp] [$Level] [$Category] $Message"
-    
-    # Append to log file
+    $entry = "[$timestamp] [$Level] [$Category] $Message"
+
     try {
-        $logEntry | Out-File -FilePath $script:CurrentLogFile -Append -Encoding utf8
+        $entry | Out-File -FilePath $script:CurrentLogFile -Append -Encoding utf8
     }
     catch {
-        # Silently fail if we can't write to log
+        # Silently discard log write failures — never crash a script over logging
     }
 }
 
 function Write-LogSection {
     <#
     .SYNOPSIS
-        Writes a section header to the log file.
-    .PARAMETER Title
-        The section title.
+        Writes a section separator to the log file.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
         [string]$Title
     )
-    
-    Write-Log -Message "===============================================" -Level "INFO" -Category "SYSTEM"
-    Write-Log -Message $Title -Level "INFO" -Category "SYSTEM"
-    Write-Log -Message "===============================================" -Level "INFO" -Category "SYSTEM"
-}
 
-function Write-CommandLog {
-    <#
-    .SYNOPSIS
-        Logs a command execution with its output.
-    .PARAMETER Command
-        The command that was executed.
-    .PARAMETER Output
-        The command output.
-    .PARAMETER ExitCode
-        The exit code (optional).
-    .PARAMETER Category
-        The category for the log entry.
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string]$Command,
-        
-        [string]$Output = "",
-        
-        [int]$ExitCode = 0,
-        
-        [ValidateSet("INSTALL", "CLEAN", "DEV", "TEST", "MENU", "SYSTEM", "BUN", "NODE")]
-        [string]$Category = "SYSTEM"
-    )
-    
-    $level = if ($ExitCode -eq 0) { "INFO" } else { "ERROR" }
-    
-    Write-Log -Message "COMMAND: $Command" -Level $level -Category $Category
-    if ($Output) {
-        # Truncate long output
-        $truncated = if ($Output.Length -gt 500) { $Output.Substring(0, 500) + "... [truncated]" } else { $Output }
-        Write-Log -Message "OUTPUT: $truncated" -Level $level -Category $Category
-    }
-    if ($ExitCode -ne 0) {
-        Write-Log -Message "EXIT CODE: $ExitCode" -Level "ERROR" -Category $Category
-    }
+    Write-Log "==============================================="
+    Write-Log $Title
+    Write-Log "==============================================="
 }
 
 function Get-LogPath {
     <#
     .SYNOPSIS
-        Gets the path to the current log file.
+        Returns the current log file path, initialising the system if needed.
     .OUTPUTS
-        System.String - Path to current log file.
+        System.String
     #>
     [CmdletBinding()]
     [OutputType([string])]
     param()
-    
-    if (-not $script:CurrentLogFile) {
-        Initialize-LogSystem
-    }
-    
+
+    if (-not $script:CurrentLogFile) { Initialize-LogSystem }
     return $script:CurrentLogFile
 }
 
@@ -187,31 +132,24 @@ function Get-LogPath {
 function Test-Prerequisites {
     <#
     .SYNOPSIS
-        Checks if all required tools are installed.
+        Verifies that required tools (Bun, Node.js, Docker, Git) are installed.
+    .PARAMETER Quiet
+        Suppresses console output.
     .OUTPUTS
-        System.Boolean - True if all prerequisites are met.
+        System.Boolean — $true if all required tools are present.
     #>
     [CmdletBinding()]
     [OutputType([bool])]
     param(
         [switch]$Quiet
     )
-    
+
     $allGood = $true
-    
-    # Check Bun
-    $bunVersion = $null
-    try {
-        $bunVersion = (bun --version 2>&1).ToString().Trim()
-    }
-    catch {
-        $bunVersion = $null
-    }
-    
+
+    # Bun — required
+    $bunVersion = try { (bun --version 2>&1).ToString().Trim() } catch { $null }
     if ($bunVersion) {
-        if (-not $Quiet) {
-            Write-Host "  ✅ Bun: v$bunVersion" -ForegroundColor Green
-        }
+        if (-not $Quiet) { Write-Host "  ✅ Bun: v$bunVersion" -ForegroundColor Green }
     }
     else {
         if (-not $Quiet) {
@@ -220,42 +158,22 @@ function Test-Prerequisites {
         }
         $allGood = $false
     }
-    
-    # Check Docker
-    $dockerVersion = $null
-    try {
-        $dockerVersion = (docker --version 2>&1).ToString().Trim()
-    }
-    catch {
-        $dockerVersion = $null
-    }
-    
+
+    # Docker — recommended
+    $dockerVersion = try { (docker --version 2>&1).ToString().Trim() } catch { $null }
     if ($dockerVersion) {
-        if (-not $Quiet) {
-            Write-Host "  ✅ $dockerVersion" -ForegroundColor Green
-        }
+        if (-not $Quiet) { Write-Host "  ✅ $dockerVersion" -ForegroundColor Green }
     }
     else {
         if (-not $Quiet) {
-            Write-Host "  ⚠️  Docker not found" -ForegroundColor Yellow
-            Write-Host "     Required for local Redis cache." -ForegroundColor Gray
+            Write-Host "  ⚠️  Docker not found (required for Redis cache)" -ForegroundColor Yellow
         }
-        # Not strictly fatal for install, but warned
     }
-    
-    # Check Node.js
-    $nodeVersion = $null
-    try {
-        $nodeVersion = (node --version 2>&1).ToString().Trim()
-    }
-    catch {
-        $nodeVersion = $null
-    }
-    
+
+    # Node.js — required
+    $nodeVersion = try { (node --version 2>&1).ToString().Trim() } catch { $null }
     if ($nodeVersion) {
-        if (-not $Quiet) {
-            Write-Host "  ✅ Node.js: $nodeVersion" -ForegroundColor Green
-        }
+        if (-not $Quiet) { Write-Host "  ✅ Node.js: $nodeVersion" -ForegroundColor Green }
     }
     else {
         if (-not $Quiet) {
@@ -264,92 +182,104 @@ function Test-Prerequisites {
         }
         $allGood = $false
     }
-    
-    # Check Git
-    $gitVersion = $null
-    try {
-        $gitVersion = (git --version 2>&1).ToString().Trim()
-    }
-    catch {
-        $gitVersion = $null
-    }
-    
+
+    # Git — recommended
+    $gitVersion = try { (git --version 2>&1).ToString().Trim() } catch { $null }
     if ($gitVersion) {
-        if (-not $Quiet) {
-            Write-Host "  ✅ $gitVersion" -ForegroundColor Green
-        }
+        if (-not $Quiet) { Write-Host "  ✅ $gitVersion" -ForegroundColor Green }
     }
     else {
-        if (-not $Quiet) {
-            Write-Host "  ⚠️  Git not found" -ForegroundColor Yellow
-        }
+        if (-not $Quiet) { Write-Host "  ⚠️  Git not found" -ForegroundColor Yellow }
     }
-    
+
     return $allGood
 }
 
+function Check-Dependencies {
+    <#
+    .SYNOPSIS
+        Verifies that node_modules exist and critical packages are present.
+    .OUTPUTS
+        System.Boolean — $true if both apps have intact node_modules.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param()
+
+    $projectRoot = Get-ProjectRoot
+    $allGood = $true
+
+    foreach ($app in @("apps\web", "apps\grammy")) {
+        $nodeModules = Join-Path $projectRoot "$app\node_modules"
+        if (-not (Test-Path $nodeModules)) {
+            Write-Failure "Missing node_modules in $app"
+            $allGood = $false
+            continue
+        }
+
+        # Canary package check for web — caught the tw-animate-css corruption
+        if ($app -eq "apps\web") {
+            $canary = Join-Path $nodeModules "tw-animate-css"
+            if (-not (Test-Path $canary)) {
+                Write-Failure "Critical package 'tw-animate-css' missing in $app — installation may be corrupted."
+                $allGood = $false
+            }
+        }
+    }
+
+    return $allGood
+}
 
 # ============================================================
 # Process Management
 # ============================================================
 
-function Stop-ProcessByName {
+function Stop-ProjectProcesses {
     <#
     .SYNOPSIS
-        Stops all processes matching the given name.
-    .PARAMETER ProcessName
-        Name of the process to stop (without .exe).
-    .OUTPUTS
-        System.Int32 - Number of processes stopped.
+        Stops all bun/node/next development processes except the current shell.
+    .DESCRIPTION
+        Uses Get-Process piped to Stop-Process -Force, the canonical PowerShell
+        approach (Microsoft recommended). Self-excludes the current process ($PID)
+        to avoid killing the running script itself.
     #>
-    [CmdletBinding(SupportsShouldProcess)]
-    [OutputType([int])]
-    param(
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]$ProcessName
-    )
-    
-    $processes = Get-Process -Name $ProcessName -ErrorAction SilentlyContinue
-    $count = 0
-    
-    foreach ($proc in $processes) {
-        if ($PSCmdlet.ShouldProcess($proc.Name, "Stop Process")) {
-            try {
-                $proc | Stop-Process -Force -ErrorAction Stop
-                $count++
-            }
-            catch {
-                Write-Verbose "Could not stop process $($proc.Id): $_"
-            }
-        }
+    [CmdletBinding()]
+    param()
+
+    Write-Log "Stopping project processes..." -Category "SYSTEM"
+
+    $killedCount = 0
+
+    foreach ($procName in @("bun", "node", "next", "turbo")) {
+        $stopped = Get-Process -Name $procName -ErrorAction SilentlyContinue |
+                   Where-Object { $_.Id -ne $PID } |
+                   ForEach-Object {
+                       $_ | Stop-Process -Force -ErrorAction SilentlyContinue
+                       $killedCount++
+                       $_  # pass through for logging
+                   }
     }
-    
-    return $count
+
+    if ($killedCount -gt 0) {
+        Write-Log "Stopped $killedCount process(es)." -Level "SUCCESS" -Category "SYSTEM"
+        Start-Sleep -Milliseconds 600  # Let OS release file handles
+    }
 }
 
 # ============================================================
-# Output Utilities
+# Output Helpers
 # ============================================================
 
 function Write-Step {
     <#
     .SYNOPSIS
-        Writes a formatted step message.
-    .PARAMETER Step
-        Step number (e.g., "1/5").
-    .PARAMETER Message
-        Step description.
+        Prints a formatted step label (e.g. "[2/5] Installing...").
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
-        [string]$Step,
-        
-        [Parameter(Mandatory)]
-        [string]$Message
+        [Parameter(Mandatory)][string]$Step,
+        [Parameter(Mandatory)][string]$Message
     )
-    
     Write-Host ""
     Write-Host "  [$Step] $Message" -ForegroundColor Cyan
 }
@@ -357,42 +287,30 @@ function Write-Step {
 function Write-Success {
     <#
     .SYNOPSIS
-        Writes a success message.
+        Prints a green success message.
     #>
     [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string]$Message
-    )
-    
+    param([Parameter(Mandatory)][string]$Message)
     Write-Host "        ✅ $Message" -ForegroundColor Green
 }
 
 function Write-Failure {
     <#
     .SYNOPSIS
-        Writes a failure message.
+        Prints a red failure message.
     #>
     [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string]$Message
-    )
-    
+    param([Parameter(Mandatory)][string]$Message)
     Write-Host "        ❌ $Message" -ForegroundColor Red
 }
 
 function Write-Info {
     <#
     .SYNOPSIS
-        Writes an info message.
+        Prints a dim info message.
     #>
     [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string]$Message
-    )
-    
+    param([Parameter(Mandatory)][string]$Message)
     Write-Host "        ℹ️  $Message" -ForegroundColor DarkGray
 }
 
@@ -403,33 +321,31 @@ function Write-Info {
 function Copy-EnvFileIfMissing {
     <#
     .SYNOPSIS
-        Copies .env.example to .env if .env doesn't exist.
+        Copies .env.example to the target env file if the target does not exist.
     .PARAMETER TargetDir
-        Directory containing the env files.
+        Directory that contains both the example and the target file.
     .PARAMETER EnvFileName
-        Name of the target env file (default: .env).
+        Target env file name (default: .env).
     .PARAMETER ExampleFileName
-        Name of the example file (default: .env.example).
+        Source template file name (default: .env.example).
+    .OUTPUTS
+        System.Boolean — $true if the file was created.
     #>
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
-        [Parameter(Mandatory)]
-        [string]$TargetDir,
-        
+        [Parameter(Mandatory)][string]$TargetDir,
         [string]$EnvFileName = ".env",
-        
         [string]$ExampleFileName = ".env.example"
     )
-    
-    $envFile = Join-Path $TargetDir $EnvFileName
+
+    $envFile     = Join-Path $TargetDir $EnvFileName
     $exampleFile = Join-Path $TargetDir $ExampleFileName
-    
-    if (-not (Test-Path $envFile)) {
-        if (Test-Path $exampleFile) {
-            Copy-Item -Path $exampleFile -Destination $envFile
-            return $true
-        }
+
+    if (-not (Test-Path $envFile) -and (Test-Path $exampleFile)) {
+        Copy-Item -Path $exampleFile -Destination $envFile
+        return $true
     }
-    
+
     return $false
 }

@@ -8,7 +8,7 @@ loadDotenv({ quiet: true });
 /**
  * Zod schema for environment variables.
  *
- * Design principle (mirrors apps/bot/config.py):
+ * Design principle:
  *   - All fields are optional at the schema level.
  *   - Runtime validation in main.ts enforces mode-specific requirements.
  *   - Standalone mode: BOT_TOKEN required; INSFORGE creds optional (degraded).

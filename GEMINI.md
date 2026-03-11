@@ -27,7 +27,6 @@ Bot Engine (grammY / TS) ───────► fetch REST ──────�
 - **No custom API server** — both bot and web talk directly to InsForge REST / SDK.
 - **Bot DB access**: `apps/grammy/src/core/insforge-client.ts` — never raw PostgreSQL.
 - **Web DB access**: `@insforge/sdk` via `import { insforge } from "@/lib/insforge"`.
-- **Legacy PTB code is not the active bot path anymore**. Treat `apps/grammy` as canonical for bot runtime work.
 
 ---
 
@@ -56,8 +55,7 @@ nezuko/
 │   ├── migrations/
 │   └── functions/
 ├── tests/
-│   ├── grammy/       # grammY bot tests
-│   └── bot/          # legacy PTB tests retained for historical reference only
+│   └── grammy/       # grammY bot tests
 ├── openspec/
 ├── scripts/
 ├── memory-bank/
@@ -72,14 +70,14 @@ nezuko/
 
 | Type                  | Correct Location                               | Wrong                              |
 | --------------------- | ---------------------------------------------- | ---------------------------------- |
-| grammY source         | `apps/grammy/`                                 | `apps/bot/` for new bot work       |
+| grammY source         | `apps/grammy/`                                 | `apps/bot/` (deleted)              |
 | grammY tests          | `tests/grammy/`                                | `apps/grammy/tests/`               |
 | Web env               | `apps/web/.env.local`                          | Root `.env`                        |
 | grammY env            | `apps/grammy/.env`                             | Root `.env`                        |
 | Frontend deps         | `apps/web/package.json`                        | `npm`, `yarn` outside app rules    |
 | grammY deps           | `apps/grammy/package.json`                     | root-level JS deps for bot runtime |
 | Migrations            | `insforge/migrations/*.sql`                    | ad hoc schema edits elsewhere      |
-| Canonical DB contract | latest active InsForge migration + memory bank | outdated PTB assumptions           |
+| Canonical DB contract | latest active InsForge migration + memory bank | any outdated assumptions           |
 
 ### Database Rules
 
@@ -124,7 +122,7 @@ nezuko/
 | **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions                         |
 | **Auth**     | InsForge Auth, `InsforgeMiddleware`, `insforge_session` cookie, RLS                                |
 | **Infra**    | Docker, Vercel, Caddy                                                                              |
-| **Package**  | `bun` for TypeScript apps, `uv` only for retained Python legacy tooling if needed                  |
+| **Package**  | `bun` for all TypeScript apps (grammy + web)                                                       |
 
 ---
 
@@ -268,7 +266,7 @@ cd apps/grammy && bun run test
 cd apps/grammy && bun run build
 ```
 
-**Expected passing baseline:** 127/127 tests as of Phase 103.
+**Expected passing baseline:** 163/163 tests as of Phase 126.
 If your change alters this count, justify it explicitly.
 
 ---
@@ -347,8 +345,7 @@ Skills are located in `.agent/skills/` or `.agents/skills/` — check the path c
 1. **Read the ENTIRE SKILL.md** - Do NOT skip any line. Study everything thoroughly.
 2. **Follow all reference files** - If the skill mentions other files, examples, or resources, read those too.
 3. **NEVER violate rules** - Skills contain rules, principles, guidelines, and best practices that MUST be followed.
-4. **Context-aware reading** - Focus on sections relevant to your current task, but never skip critical rules.
-5. **No shortcuts** - Taking shortcuts by skipping skill content leads to errors and tech debt.
+4. **No shortcuts** - Taking shortcuts by skipping skill content leads to errors and tech debt.
 
 ### Frontend (Web Dashboard)
 
@@ -397,4 +394,4 @@ Use the relevant `openspec-*` skill in `.agent/skills/` when the task is about O
 
 ---
 
-_Last Updated: 2026-03-06 (Prettier added to grammy + tests/grammy via root .prettierrc; web gets own .prettierrc with tailwind plugin)_
+_Last Updated: 2026-03-11 (Phase 126 — PTB bot fully removed; grammY is the sole runtime; tests/bot deleted)_

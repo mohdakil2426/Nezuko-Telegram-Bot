@@ -1,8 +1,52 @@
 # System Patterns: Architecture & Implementation
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
-> **Python PTB Bot**: 🗄️ ARCHIVED — `apps/bot/` preserved for reference only. Not maintained.
-> **Last Updated**: 2026-03-11 (Phase 121)
+> **Last Updated**: 2026-03-11 (Phase 126)
+
+---
+
+### 17 — Next.js 16 Optimization Patterns (Phase 126)
+
+#### 17.1 — Heavy Library Code-Splitting
+
+All visualization components (e.g., Recharts) must be dynamically imported with `ssr: false` and a loading skeleton to reduce entry bundle size and prevent hydration mismatch.
+
+```tsx
+const BarChart = dynamic(() => import("./bar-chart"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[200px]" />,
+});
+```
+
+#### 17.2 — Navigation Suspense Boundaries
+
+Components using `useSearchParams()` or other client-side navigation hooks must be wrapped in `<Suspense>` to avoid Next.js "Bailout to client-side rendering" rules.
+
+```tsx
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoadingSkeleton />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+```
+
+#### 17.3 — React Compiler State Safety
+
+Avoid `try/finally` for state updates (e.g., `setIsLoading(false)`) as the compiler can sometimes struggle with closure tracking in complex `finally` blocks. Prefer explicit updates in `try` and `catch`.
+
+```tsx
+// ✅ Preferred
+try {
+  setIsLoading(true);
+  await action();
+  setIsLoading(false);
+} catch (err) {
+  setIsLoading(false);
+  handleError(err);
+}
+```
 
 ---
 
@@ -869,30 +913,4 @@ const { period, summary } = extractEnvelopeMetadata(data);
 
 ---
 
-## 🗄️ Archived: Python PTB Bot Patterns
-
-> **These patterns are for historical reference only. `apps/bot/` is not maintained.**
-> Do NOT use any of the patterns below for new development.
-
-### What the PTB Bot Was
-
-- Python 3.13, python-telegram-bot v22.6, asyncio
-- Used `apps/bot/core/insforge_client.py` (httpx-based REST client)
-- SQLAlchemy was **tests-only** (SQLite in-memory) — never in production
-- Ran with `uv` (`uv run python -m apps.bot.main`)
-- Had Prometheus metrics, Sentry error tracking, webhook + polling modes
-- The `fire_and_forget()` task pattern (`apps/bot/utils/tasks.py`)
-- Redis reconnect pattern with `time.monotonic()` cooldown
-- AES-256-GCM master key with TTL cache (`encryption.py`)
-- Constants in `apps/bot/core/constants.py`
-- `tests/bot/` — pytest-based test suite (archived, not run in CI)
-
-### Why It Was Replaced
-
-- Python runtime complexity (asyncio event loop management, `uv` toolchain)
-- Slower iteration vs TypeScript + Bun + Vitest
-- grammY TypeScript port gives identical functionality with better type safety and tooling
-
----
-
-_Last Updated: 2026-03-07 (Phase 113 — realtime hot-path and dashboard coordinator)_
+_Last Updated: 2026-03-11 (Phase 126 — PTB bot fully removed; grammY is the sole runtime)_

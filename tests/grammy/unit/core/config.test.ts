@@ -7,7 +7,6 @@ import { loadConfig } from "../../../../apps/grammy/src/config.js";
  * Design: loadConfig() performs Zod-level schema validation only.
  * Mode-specific required-field validation (e.g., BOT_TOKEN in standalone)
  * is the responsibility of main.ts at runtime.
- * This matches apps/bot/config.py where most fields are Optional[str].
  *
  * Note: MASTER_KEY is NO LONGER in config - it's fetched from the Security Vault
  * (nezuko_secrets table) at runtime via getMasterKey() in encryption.ts.
@@ -72,7 +71,7 @@ describe("config — loadConfig()", () => {
     expect(config.standaloneMode).toBe(true);
   });
 
-  it("treats empty string INSFORGE_BASE_URL='' as undefined (mirrors PTB .env empty value)", () => {
+  it("treats empty string INSFORGE_BASE_URL='' as undefined (blank .env value)", () => {
     process.env.BOT_TOKEN = "123456789:ABCdefGHI";
     process.env.INSFORGE_BASE_URL = ""; // blank value in .env
     process.env.INSFORGE_ANON_KEY = "";

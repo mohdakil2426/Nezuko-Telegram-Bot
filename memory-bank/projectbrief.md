@@ -18,8 +18,6 @@ Convert group participants into channel subscribers through automated verificati
 
 ## Active Tech Stack
 
-> **The canonical bot runtime is `apps/grammy/` (TypeScript + grammY). The Python PTB bot (`apps/bot/`) is archived and no longer maintained as of Phase 96.**
-
 | Layer              | Technologies                                                               |
 | ------------------ | -------------------------------------------------------------------------- |
 | **Bot (grammY)**   | TypeScript 5.9, grammY v1.41.1, Bun, Node 22, Vitest                       |
@@ -40,14 +38,12 @@ nezuko/
 ├── apps/
 │   ├── grammy/       # ✅ ACTIVE — Telegram Bot (TypeScript / grammY)
 │   │   └── src/      # Active source tree: core, composers, middleware, services, database, utils
-│   ├── bot/          # 🗄️ ARCHIVED — Python PTB bot (unmaintained since Phase 96)
 │   └── web/          # ✅ ACTIVE — Next.js Dashboard (~120 TypeScript files)
 ├── insforge/
-│   ├── migrations/   # SQL migration files (001-023; 023_fresh_grammy_schema.sql is canonical)
+│   ├── migrations/   # SQL migration files (001-025; 023_fresh_grammy_schema.sql is canonical)
 │   └── functions/    # Edge Functions (manage-bot, test-webhook)
 ├── tests/
-│   ├── grammy/       # ✅ ACTIVE — grammY bot tests (145 tests passing)
-│   └── bot/          # 🗄️ ARCHIVED — Python PTB tests (retained for historical reference only)
+│   └── grammy/       # ✅ ACTIVE — grammY bot tests (163 tests passing)
 ├── scripts/          # Development & utility scripts
 ├── memory-bank/      # Project documentation
 └── docs/             # Technical documentation
@@ -57,7 +53,7 @@ nezuko/
 
 ## Key Features
 
-### Bot Core (grammY — Active)
+### Bot Core (grammY)
 
 - Instant mute on group join until verified
 - Multi-channel enforcement (AND logic)
@@ -78,7 +74,7 @@ nezuko/
 - Security Vault (AES-256-GCM encryption key management via nezuko_secrets)
 - Member/subscriber count sync every 15min
 - Link counter maintenance (linked_channels_count / linked_groups_count)
-- Redis L1 cache (`nezuko:v2:` key prefix — avoids conflict with legacy Python keys)
+- Redis L1 cache (`nezuko:v2:` key prefix)
 - Multi-bot dashboard mode via BotManager + BotLifecycleManager + BotRegistry
 - **DB log transport** (`db-log-transport.ts`): WARN+ pino logs streamed to `admin_logs` table in real-time
 - **API call telemetry** (`apiLogTransformer`): every Telegram API call logged to `api_call_log` with latency
@@ -105,25 +101,16 @@ nezuko/
 
 ---
 
-## Legacy: Python PTB Bot (`apps/bot/`)
-
-> **Status: ARCHIVED — no longer maintained or developed.**
-> The codebase is preserved for historical reference. Do NOT use it as the basis for new bot work.
-
-The original Python bot used `python-telegram-bot v22.6` with asyncio. It was fully replaced by the grammY TypeScript bot in **Phase 96** (2026). The InsForge backend (DB schema, tables, RLS policies) is shared and has been migrated to `023_fresh_grammy_schema.sql` as the single source of truth for both bots' era.
-
----
-
 ## Quality Standards
 
-| Tool          | Target       | App          |
-| ------------- | ------------ | ------------ |
-| ESLint        | 0 warnings   | grammy + web |
-| TypeScript    | 0 errors     | grammy + web |
-| Prettier      | All clean    | grammy + web |
-| Vitest        | 147/147 pass | grammy       |
-| Next.js Build | 0 errors     | web          |
+| Tool          | Target       | App                        |
+| ------------- | ------------ | -------------------------- |
+| ESLint        | 0 warnings   | grammy + web               |
+| TypeScript    | 0 errors     | grammy + web               |
+| Prettier      | All clean    | grammy + web               |
+| Vitest        | 163/163 pass | grammy                     |
+| Next.js Build | 0 errors     | web (PPR + React Compiler) |
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 113 — realtime hot-path and dashboard coordinator improvements documented)_
+_Last Updated: 2026-03-11 (Phase 126 — PTB bot fully removed; grammY is the sole runtime)_

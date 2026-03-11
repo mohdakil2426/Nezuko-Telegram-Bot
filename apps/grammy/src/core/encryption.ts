@@ -1,5 +1,5 @@
 /**
- * AES-256-GCM token encryption/decryption — mirrors apps/bot/core/encryption.py.
+ * AES-256-GCM token encryption/decryption.
  *
  * Master key source: InsForge Security Vault (`nezuko_secrets` table, key_name = "master_key").
  * - The key is fetched automatically on first use and cached for MASTER_KEY_TTL_MS.
@@ -38,7 +38,7 @@ import type { InsForgeClient } from "./insforge-client.js";
 const IV_LENGTH = 12; // AES-GCM nonce size
 const AUTH_TAG_LENGTH = 16; // GCM tag appended after ciphertext by WebCrypto
 
-/** Re-fetch master key from vault every 5 minutes (matches PTB MASTER_KEY_TTL). */
+/** Re-fetch master key from vault every 5 minutes. */
 const MASTER_KEY_TTL_MS = 5 * 60 * 1000;
 
 // ── In-memory cache (module-level, survives across calls within the process) ───
@@ -49,9 +49,7 @@ let _cachedAt = 0;
 // ── Vault fetch ────────────────────────────────────────────────────────────────
 
 /**
- * Fetch (or return cached) master key from the Security Vault.
- *
- * Mirrors Python `encryption.get_master_key()`:
+ * Fetch (or return cached) master key from the Security Vault:
  *   1. Return cached key if still within TTL.
  *   2. Fetch from `nezuko_secrets` where key_name = 'master_key'.
  *   3. Cache and return. Return null if not found.

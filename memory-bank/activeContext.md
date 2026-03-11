@@ -2,11 +2,59 @@
 
 ### Current Status
 
-**Phase 122: grammY Bot Reliability & Security Hardening (Watchdog · Rate Limiting · CommandGroup) — COMPLETE ✅**
+**Phase 126: UI Refactoring & Quality Consolidation (React Compiler · Code Pruning · Performance Purity) — COMPLETE ✅**
 
 ---
 
-#### Phase 122 Changes (2026-03-11)
+#### 2026-03-12: Web Build Fix (tw-animate-css)
+
+Resolved a critical build blocker in the web dashboard where `tw-animate-css` failed to resolve under Next.js 16 (Turbopack) and Tailwind CSS v4.
+
+- **Issue**: `CssSyntaxError: tailwindcss: .../globals.css:1:1: Can't resolve 'tw-animate-css'`.
+- **Cause**: Attempts to use explicit paths (e.g., `@import "tw-animate-css/dist/tw-animate.css"`) violated the package's restricted `exports` field and failed the `style` condition.
+- **Fix**: Reverted to the canonical `@import "tw-animate-css";` in `src/app/globals.css`, coupled with verification of correct `node_modules` installation in the `apps/web` context.
+- **Verification**: `bun run build` and `bun run lint` now pass with zero errors in the web dashboard.
+
+- **CLI Script Hardening (Critical Fix)**:
+  - **Issue**: Running "Clean Artifacts" while services were active led to partial deletions, "Access Denied" errors, and silent `bun install` failures, resulting in corrupted `node_modules` (specifically missing `tw-animate-css`).
+  - **Fix 1: Process Management**: Added `Stop-ProjectProcesses` to `utils.ps1` using `taskkill /F /T /PID`. This kills the parent terminal shell (`pwsh.exe`) and all its children (`bun`, `node`) instantly.
+  - **Fix 2: Health Checks**: Implemented `Check-Dependencies` in `utils.ps1` which verifies `node_modules` integrity (Canary: `tw-animate-css`) before `start.ps1` launches any services.
+  - **Fix 3: Visibility**: Removed `| Out-Null` from `clean.ps1`. Dependency installation output is now fully visible to ensure developers see any accidental failures.
+  - **Fix 4: Order of Operations**: Updated `menu.ps1` (Option 6: Full Reset) to stop background processes _before_ attempting cleanup.
+
+#### 2026-03-12: CLI Robustness Verification (Pending)
+
+The scripts now handle `pwsh` terminal window closing and process tree termination. Next step is to monitor for any remaining "Access Denied" edge cases on Windows.
+
+---
+
+#### Phase 126 Changes (2026-03-11)
+
+Refactored the web dashboard to improve performance, security, and compatibility with the React Compiler. Established a "Zero-Unused" baseline.
+
+**1. Performance & Bundle Efficiency**
+
+- **Dynamic Chart Code-Splitting**: Heavy visualization libraries (Recharts) are now dynamically imported with `ssr: false` in `src/components/charts/index.tsx`.
+- **Suspense Integration**: Implemented `<Suspense>` boundaries for all components utilizing `useSearchParams` (e.g., `LoginForm`, `VerifyEmailForm`), preventing client-side rendering bailouts and ensuring optimal hydration.
+
+**2. React Compiler Compatibility**
+
+- **Eliminated `try/finally` Patterns**: Refactored critical logic (Auth handlers, realtime hooks, navigation) to use explicit state updates within `try/catch` blocks.
+- **State Consolidation**: Reduced reconciliation overhead by grouping fragmented `useState` calls and using `useReducer` for complex state machines (e.g., `ActivityFeed`).
+
+**3. Code Maintenance & Pruning**
+
+- **Zero-Unused Exports**: Achieved perfect `knip` score by removing 15+ unused exports, internal service methods, and legacy mock handlers.
+- **Strict Type Safety**: Resolved all implicit `any` lint errors and corrected `ZodError` property access in server actions to satisfy strict TypeScript requirements.
+
+**4. Security & Accessibility**
+
+- **Sanitized Style Injection**: Replaced `dangerouslySetInnerHTML` in the chart component library with standard React element props.
+- **Improved Focus Management**: Removed `autoFocus` attributes from forms and dialogs to ensure predictable behavior for assistive technologies.
+
+---
+
+#### Phase 125 Changes (2026-03-11)
 
 Hardened the bot's reliability, security, and maintainability via key grammY plugin integrations:
 
@@ -256,8 +304,6 @@ The post-audit stabilization work is now documented:
 - Live checks on 2026-03-07 confirmed Redis is healthy (`nezuko-redis-local` healthy, `redis-cli ping` => `PONG`), live InsForge still lacks RPC `get_group_verification_contract`, and the corrected enforcement flow is now confirmed working properly in real usage.
 - Latest grammY quality gates after the hardening pass: type-check ✅ lint ✅ tests 139/139 ✅ build ✅
 - Web remains green from Phase 105: type-check ✅ lint ✅ format ✅ build ✅
-
-> **Python PTB bot (`apps/bot/`) is ARCHIVED as of Phase 96 — not maintained, not developed.**
 
 ---
 
@@ -636,4 +682,4 @@ bot.catch(...)
 
 ---
 
-_Last Updated: 2026-03-07 (Phase 114 + runner self-healing / health visibility follow-up documented)_
+_Last Updated: 2026-03-11 (Phase 126 — PTB bot and tests/bot removed; grammY is the sole runtime)_

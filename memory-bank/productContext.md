@@ -101,16 +101,8 @@ Bot (grammY) ← socket.io-client          ← InsForge Realtime (Socket.IO)
 | Verification Latency (p99) | <150ms  | ✅ Achieved  |
 | Dashboard Pages            | 10      | ✅ Complete  |
 | Uptime                     | 99.9%   | ✅ On Track  |
-| grammY Tests               | 147/147 | ✅ Phase 113 |
+| grammY Tests               | 163/163 | ✅ Phase 126 |
 
 ---
 
-## Legacy: Python PTB Bot
-
-> **Status: ARCHIVED — unmaintained since Phase 96.**
-
-The platform was originally built with Python + python-telegram-bot v22.6. That runtime (`apps/bot/`) is preserved but not developed. All active bot work happens in `apps/grammy/`.
-
----
-
-_Last Updated: 2026-03-07 (Phase 113 — realtime behavior updated for bot hot path and dashboard coordinator)_
+_Last Updated: 2026-03-11 (Phase 126 — PTB bot fully removed; grammY is the sole runtime)_
