@@ -132,7 +132,7 @@ export async function linkChannel(
   await upsertOwner(db, ownerId);
 
   // Create/update group (UPSERT)
-  await createGroup(db, groupId, ownerId, groupTitle, memberCount);
+  await createGroup(db, groupId, ownerId, groupTitle, memberCount, botId);
 
   // Step 8: Create/update channel (UPSERT)
   let subscriberCount = 0;

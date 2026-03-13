@@ -10,12 +10,7 @@ import { Activity, AlertTriangle, CheckCircle, Clock, TrendingUp } from "lucide-
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  useAnalyticsOverview,
-  useApiCallsDistribution,
-  useCacheBreakdown,
-  useRealtimeAnalytics,
-} from "@/lib/hooks";
+import { useAnalyticsOverview, useApiCallsDistribution, useCacheBreakdown } from "@/lib/hooks";
 
 const nf = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 function formatNumber(num: number): string {
@@ -75,7 +70,6 @@ function OverviewSkeleton() {
 
 export function AnalyticsOverviewCards() {
   const { data, isPending, error } = useAnalyticsOverview();
-  const { events, totalEventCount } = useRealtimeAnalytics();
 
   // State management for real-time updates
   interface RealtimeState {
@@ -116,43 +110,44 @@ export function AnalyticsOverviewCards() {
   }
 
   const [realtimeState, dispatch] = useReducer(reducer, initialState);
-  const lastProcessedIndexRef = useRef(0);
+  const previousDataRef = useRef<{
+    total_verifications: number;
+    success_rate: number;
+    avg_latency_ms: number;
+  } | null>(null);
 
-  // Process SSE events for stats updates
+  // Highlight cards when the underlying query data changes.
   useEffect(() => {
-    if (totalEventCount === 0 || totalEventCount <= lastProcessedIndexRef.current) {
+    if (!data) {
       return;
     }
 
-    const newCount = totalEventCount - lastProcessedIndexRef.current;
-    const newEvents = events.slice(0, Math.min(newCount, events.length));
-    lastProcessedIndexRef.current = totalEventCount;
+    const nextStats = {
+      total_verifications: data.total_verifications ?? 0,
+      success_rate: data.success_rate ?? 0,
+      avg_latency_ms: data.avg_latency_ms ?? 0,
+    };
+    const previousStats = previousDataRef.current;
 
-    for (const event of newEvents) {
-      const eventData = event.data as Record<string, unknown>;
-      const updates: RealtimeState["stats"] = {};
-      const updatedKeys: string[] = [];
-
-      if (typeof eventData.total_verifications === "number") {
-        updates.total_verifications = eventData.total_verifications;
-        updatedKeys.push("total_verifications");
-      }
-      if (typeof eventData.success_rate === "number") {
-        updates.success_rate = eventData.success_rate;
-        updatedKeys.push("success_rate");
-      }
-      if (typeof eventData.avg_latency_ms === "number") {
-        updates.avg_latency_ms = eventData.avg_latency_ms;
-        updatedKeys.push("avg_latency_ms");
-      }
-
-      if (updatedKeys.length > 0) {
-        dispatch({ type: "UPDATE_STATS", payload: updates, keys: updatedKeys });
-        // Clear update indicators after animation
-        setTimeout(() => dispatch({ type: "CLEAR_HIGHLIGHTS" }), 500);
-      }
+    if (!previousStats) {
+      previousDataRef.current = nextStats;
+      dispatch({ type: "UPDATE_STATS", payload: nextStats, keys: [] });
+      return;
     }
-  }, [events, totalEventCount]);
+
+    const updatedKeys = Object.entries(nextStats)
+      .filter(([key, value]) => previousStats[key as keyof typeof previousStats] !== value)
+      .map(([key]) => key);
+
+    previousDataRef.current = nextStats;
+
+    if (updatedKeys.length > 0) {
+      dispatch({ type: "UPDATE_STATS", payload: nextStats, keys: updatedKeys });
+      window.setTimeout(() => dispatch({ type: "CLEAR_HIGHLIGHTS" }), 500);
+    }
+
+    dispatch({ type: "UPDATE_STATS", payload: nextStats, keys: [] });
+  }, [data]);
 
   // Note: Polling fallback is handled by TanStack Query's refetchInterval
   // in the useAnalyticsOverview hook (30s). No manual setInterval needed.

@@ -144,6 +144,7 @@ cd apps/grammy && bun run type-check
 cd apps/grammy && bun run lint
 cd apps/grammy && bun run format          # prettier --write src/ + tests/grammy/
 cd apps/grammy && bun run format:check   # prettier --check  src/ + tests/grammy/
+cd apps/grammy && bun run knip            # find dead code
 cd apps/grammy && bun run test
 cd apps/grammy && bun run build
 
@@ -259,15 +260,15 @@ cd apps/grammy && bun run lint
 cd apps/grammy && bun run format         # auto-fix
 cd apps/grammy && bun run format:check   # verify clean
 
-# 4. Tests — MUST show "X passed" with zero failures, zero skipped
+# 4. Knip — MUST show "Excellent, Knip found no issues."
+cd apps/grammy && bun run knip
+
+# 5. Tests — MUST show "X passed" with zero failures, zero skipped
 cd apps/grammy && bun run test
 
-# 5. Build — MUST produce dist/ with zero compile errors
+# 6. Build — MUST produce dist/ with zero compile errors
 cd apps/grammy && bun run build
 ```
-
-**Expected passing baseline:** 163/163 tests as of Phase 126.
-If your change alters this count, justify it explicitly.
 
 ---
 
@@ -338,7 +339,7 @@ Before closing any task, confirm ALL of the following:
 
 **⚠️ MANDATORY: Read relevant skills BEFORE generating any code.**
 
-Skills are located in `.agent/skills/` or `.agents/skills/` — check the path column. Read the **SKILL.md** file inside each skill folder.
+Skills are located in `.agents/skills/` — check the path column. Read the **SKILL.md** file inside each skill folder.
 
 **Skill Reading Rules:**
 
@@ -364,32 +365,46 @@ Skills are located in `.agent/skills/` or `.agents/skills/` — check the path c
 | **motion**                      | Motion animations               | `.agents/skills/motion`                      |
 | **tailwind-design-system**      | design system work              | `.agents/skills/tailwind-design-system`      |
 | **responsiveness-check**        | responsive audits               | `.agents/skills/responsiveness-check`        |
+| **react-doctor**                | Scan React code for issues      | `.agents/skills/react-doctor`                |
 
 ### Backend (Bot & BaaS)
 
-| Skill            | When to Use                   | Path                          |
-| ---------------- | ----------------------------- | ----------------------------- |
-| **grammy**       | Any bot work in `apps/grammy` | `.agents/skills/grammy`       |
-| **insforge**     | InsForge backend integration  | `.agents/skills/insforge`     |
-| **postgres-pro** | SQL/query/schema performance  | `.agents/skills/postgres-pro` |
+| Skill                 | When to Use                   | Path                               |
+| --------------------- | ----------------------------- | ---------------------------------- |
+| **grammy**            | Any bot work in `apps/grammy` | `.agents/skills/grammy`            |
+| **insforge**          | InsForge backend integration  | `.agents/skills/insforge`          |
+| **postgres-pro**      | SQL/query/schema performance  | `.agents/skills/postgres-pro`      |
+| **redis-development** | Redis optimization & patterns | `.agents/skills/redis-development` |
 
 ### DevOps & Tooling
 
-| Skill                                | When to Use                                        | Path                                              |
-| ------------------------------------ | -------------------------------------------------- | ------------------------------------------------- |
-| **brainstorming**                    | Required before creative or behavior-changing work | `.agents/skills/brainstorming/`                   |
-| **docker-expert**                    | Docker/container work                              | `.agents/skills/docker-expert`                    |
-| **github-actions-templates**         | CI/CD work                                         | `.agents/skills/github-actions-templates/`        |
-| **mermaid-diagrams**                 | diagrams/architecture visuals                      | `.agents/skills/mermaid-diagrams`                 |
-| **playwright-cli**                   | browser automation                                 | `.agents/skills/playwright-cli`                   |
-| **powershell-expert**                | PowerShell scripts                                 | `.agents/skills/powershell-expert`                |
-| **skill-creator**                    | skill updates                                      | `.agents/skills/skill-creator`                    |
-| **write-coding-standards-from-file** | derive standards from code                         | `.agents/skills/write-coding-standards-from-file` |
+| Skill                                | When to Use                   | Path                                              |
+| ------------------------------------ | ----------------------------- | ------------------------------------------------- |
+| **brainstorming**                    | Required before creative work | `.agents/skills/brainstorming/`                   |
+| **docker-expert**                    | Docker/container work         | `.agents/skills/docker-expert`                    |
+| **github-actions-templates**         | CI/CD work                    | `.agents/skills/github-actions-templates/`        |
+| **mermaid-diagrams**                 | diagrams/architecture visuals | `.agents/skills/mermaid-diagrams`                 |
+| **playwright-cli**                   | browser automation            | `.agents/skills/playwright-cli`                   |
+| **powershell-expert**                | PowerShell scripts            | `.agents/skills/powershell-expert`                |
+| **skill-creator**                    | skill updates                 | `.agents/skills/skill-creator`                    |
+| **write-coding-standards-from-file** | derive standards from code    | `.agents/skills/write-coding-standards-from-file` |
+| **vercel-doctor**                    | Optimize Vercel costs         | `.agents/skills/vercel-doctor`                    |
 
 ### Project Management
 
-Use the relevant `openspec-*` skill in `.agent/skills/` when the task is about OpenSpec workflows.
+| Skill                            | When to Use                                | Path                                          |
+| -------------------------------- | ------------------------------------------ | --------------------------------------------- |
+| **openspec-new-change**          | Start a new change (feature/fix)           | `.agents/skills/openspec-new-change`          |
+| **openspec-ff-change**           | Fast-forward through artifact creation     | `.agents/skills/openspec-ff-change`           |
+| **openspec-continue-change**     | Continue working on an existing change     | `.agents/skills/openspec-continue-change`     |
+| **openspec-apply-change**        | Implement tasks from a change              | `.agents/skills/openspec-apply-change`        |
+| **openspec-verify-change**       | Verify implementation matches artifacts    | `.agents/skills/openspec-verify-change`       |
+| **openspec-archive-change**      | Finalize and archive a completed change    | `.agents/skills/openspec-archive-change`      |
+| **openspec-bulk-archive-change** | Archive multiple completed changes at once | `.agents/skills/openspec-bulk-archive-change` |
+| **openspec-sync-specs**          | Sync delta specs to main specs             | `.agents/skills/openspec-sync-specs`          |
+| **openspec-explore**             | Research and clarify requirements          | `.agents/skills/openspec-explore`             |
+| **openspec-onboard**             | Guided onboarding for OpenSpec workflow    | `.agents/skills/openspec-onboard`             |
 
 ---
 
-_Last Updated: 2026-03-11 (Phase 126 — PTB bot fully removed; grammY is the sole runtime; tests/bot deleted)_
+_Last Updated: 2026-03-12 (Phase 126 — Skills updated to .agents/ folder; added new skills)_

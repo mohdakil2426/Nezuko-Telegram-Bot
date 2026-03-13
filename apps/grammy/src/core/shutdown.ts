@@ -4,6 +4,7 @@ import type { CacheClient } from "./cache.js";
 import type { Logger } from "../utils/logger.js";
 import { upsertBotStatus } from "../database/bot-status.repo.js";
 import { SHUTDOWN_TIMEOUT_MS } from "./constants.js";
+import type { MemberSyncHandle } from "../services/member-sync.js";
 
 interface ShutdownDeps {
   /**
@@ -22,7 +23,7 @@ interface ShutdownDeps {
   log: Logger;
   healthServer?: { close(): void } | null;
   statusInterval?: NodeJS.Timeout;
-  syncInterval?: NodeJS.Timeout;
+  syncInterval?: MemberSyncHandle;
   /**
    * Optional callback invoked at the very start of the shutdown sequence,
    * before the runner is stopped. Use to clean up external loops such as
@@ -72,7 +73,7 @@ export function setupShutdown(handle: RunnerHandle, deps: ShutdownDeps): void {
 
     // Step 3: Cleanup — clear intervals, update DB, quit Redis
     if (deps.statusInterval) clearInterval(deps.statusInterval);
-    if (deps.syncInterval) clearInterval(deps.syncInterval);
+    deps.syncInterval?.cancel();
     if (deps.healthServer) deps.healthServer.close();
 
     const tasks: Promise<unknown>[] = [deps.cache.quit()];

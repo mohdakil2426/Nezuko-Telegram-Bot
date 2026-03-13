@@ -2,6 +2,23 @@
 
 ### Current Status
 
+**2026-03-13: Security Hardening + Analytics Validation (In Progress / Safe subset applied)**
+
+- Web dashboard security-vault flow no longer returns the raw master key to the browser. `getVaultStatus()` now exposes metadata only, and bot onboarding/rotation stays server-side.
+- Bot onboarding/update/delete now use authenticated server actions and direct server-side InsForge REST writes; plaintext tokens and master keys no longer pass through the public edge-function path.
+- `manage-bot` edge function was updated live through InsForge MCP. `add`, `update`, and `delete` now require an authenticated bearer token and fetch the vault key server-side; `verify` remains token-validation only.
+- grammY dashboard-mode runtime now prefers `INSFORGE_SERVICE_KEY` via `config.insforgeServerKey`; `INSFORGE_ANON_KEY` is only a backward-compatibility fallback until production deployment is updated.
+- Multi-bot command claiming is now atomic (`status = pending` in the claim filter), and member-sync ownership is serialized through `protected_groups.params.controller_bot_id` to stop duplicate cross-bot sync work.
+- The Next.js 16 build blocker from `dynamic = "force-dynamic"` in `/api/auth` is fixed.
+- Web auth/provider behavior in local `DEV_LOGIN` mode now skips the InsForge browser provider entirely and uses a synthetic signed-out hook state. This removes the recurring `401 /api/auth/refresh` console noise during local analytics/dashboard verification.
+- Analytics/chart pass was re-validated against live InsForge RPCs and the local browser:
+  - all chart RPCs returned valid payloads
+  - stale chart copy mismatches were corrected (7-day vs all-time/24h wording)
+  - API Calls distribution now refreshes on an interval because realtime does not invalidate `api_call_log`
+  - tooltip zero values now render correctly
+  - dashboard verification trend label now reflects “Not Verified” semantics instead of implying only restricted users
+- Remaining high-risk backend task: migration `026_lock_down_anon_policies.sql` exists in repo but has **not** been applied live yet because production bot/web deployments may still rely on the old anon-key DB contract.
+
 **Phase 126: UI Refactoring & Quality Consolidation (React Compiler · Code Pruning · Performance Purity) — COMPLETE ✅**
 
 ---

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Loader2,
@@ -26,10 +26,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { vaultSecuritySchema, type VaultSecurityInput } from "@/lib/schemas/vault";
-import { saveMasterKey } from "@/lib/actions/vault";
+import { saveMasterKey, type VaultStatus } from "@/lib/actions/vault";
 
 interface SecurityVaultCardProps {
-  initialKey?: string | null;
+  initialStatus: VaultStatus;
 }
 
 /**
@@ -40,26 +40,29 @@ interface SecurityVaultCardProps {
  * - Persists keys to the database vault via Server Actions
  * - Provides immediate visual feedback on platform security status
  */
-export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
+export function SecurityVaultCard({ initialStatus }: SecurityVaultCardProps) {
   const [isPending, setIsPending] = useState(false);
   const [showKey, setShowKey] = useState(false);
 
   // Initialize form with Zod validation
   const {
+    control,
     register,
     handleSubmit,
     setValue,
+    reset,
     formState: { errors, isDirty },
   } = useForm<VaultSecurityInput>({
     resolver: zodResolver(vaultSecuritySchema),
     defaultValues: {
-      master_key: initialKey || "",
+      master_key: "",
       key_name: "master_key",
       description: "Main platform-wide encryption vault key",
     },
   });
 
-  const isConfigured = !!initialKey;
+  const isConfigured = initialStatus.configured;
+  const currentDraftKey = useWatch({ control, name: "master_key" });
 
   /**
    * Helper to convert Uint8Array to base64 securely
@@ -98,6 +101,15 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
 
       if (result.success) {
         toast.success(result.message);
+        reset(
+          {
+            master_key: "",
+            key_name: "master_key",
+            description: data.description,
+          },
+          { keepDirty: false }
+        );
+        setShowKey(false);
       } else {
         toast.error(result.error);
       }
@@ -135,12 +147,22 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
-          {!isConfigured && (
+          {initialStatus.unavailableReason ? (
             <div className="flex gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-600 dark:bg-amber-500/5 dark:text-amber-500">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <p>
-                <strong>Security Risk:</strong> No master encryption key detected. Bot tokens added
-                will be stored using insecure encoding. Please generate a key below to enable{" "}
+                <strong>Vault unavailable in local dev bypass:</strong>{" "}
+                {initialStatus.unavailableReason}
+              </p>
+            </div>
+          ) : null}
+
+          {!isConfigured && !initialStatus.unavailableReason && (
+            <div className="flex gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-600 dark:bg-amber-500/5 dark:text-amber-500">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <p>
+                <strong>Setup Required:</strong> No master encryption key detected. Bot onboarding is
+                blocked until the vault is configured. Generate a key below to enable{" "}
                 <strong>AES-256-GCM</strong> encryption.
               </p>
             </div>
@@ -149,20 +171,26 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="master_key">Master Encryption Key</Label>
-              <button
-                type="button"
-                onClick={() => setShowKey(!showKey)}
-                className="text-muted-foreground hover:text-primary text-xs font-bold tracking-tighter uppercase transition-colors"
-              >
-                {showKey ? "Hide Secret" : "Reveal Key"}
-              </button>
+              {currentDraftKey ? (
+                <button
+                  type="button"
+                  onClick={() => setShowKey(!showKey)}
+                  className="text-muted-foreground hover:text-primary text-xs font-bold tracking-tighter uppercase transition-colors"
+                >
+                  {showKey ? "Hide Draft" : "Reveal Draft"}
+                </button>
+              ) : null}
             </div>
             {/* Stack on mobile, side-by-side on sm+ */}
             <div className="flex flex-col gap-2 sm:flex-row">
               <Input
                 id="master_key"
                 type={showKey ? "text" : "password"}
-                placeholder="Click 'Generate' to create a secure key..."
+                placeholder={
+                  isConfigured
+                    ? "Stored securely on the server. Generate a new key to rotate it."
+                    : "Click 'Generate' to create a secure key..."
+                }
                 {...register("master_key")}
                 className={`font-mono text-xs ${errors.master_key ? "border-destructive focus-visible:ring-destructive" : ""}`}
               />
@@ -181,9 +209,14 @@ export function SecurityVaultCard({ initialKey }: SecurityVaultCardProps) {
               <p className="text-destructive text-xs italic">{errors.master_key.message}</p>
             )}
             <p className="text-muted-foreground text-xs italic">
-              This master key is used to encrypt all bot tokens in the database.
-              <strong> Keep it safe!</strong>
+              Existing vault keys stay server-side and are never returned to the browser. Generate a
+              new key here only when you need to rotate encryption for future bot onboarding.
             </p>
+            {initialStatus.updatedAt ? (
+              <p className="text-muted-foreground text-xs">
+                Last updated: {new Date(initialStatus.updatedAt).toLocaleString()}
+              </p>
+            ) : null}
           </div>
         </CardContent>
 

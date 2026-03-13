@@ -10,42 +10,87 @@ interface TelegramApi {
   getChatMemberCount(chatId: number): Promise<number>;
 }
 
+interface ControlledGroupParams extends Record<string, unknown> {
+  controller_bot_id?: number;
+}
+
+export interface MemberSyncHandle {
+  cancel(): void;
+}
+
+function getControllerBotId(group: ProtectedGroup): number | null {
+  const params = (group.params ?? {}) as ControlledGroupParams;
+  return typeof params.controller_bot_id === "number" ? params.controller_bot_id : null;
+}
+
+async function claimGroupController(
+  db: InsForgeClient,
+  group: ProtectedGroup,
+  botId: number
+): Promise<void> {
+  const currentControllerBotId = getControllerBotId(group);
+  if (currentControllerBotId === botId) {
+    return;
+  }
+
+  const mergedParams: ControlledGroupParams = {
+    ...(group.params ?? {}),
+    controller_bot_id: botId,
+  };
+
+  await db.patchRecords(
+    "protected_groups",
+    { group_id: `eq.${group.group_id}` },
+    {
+      params: mergedParams,
+      updated_at: new Date().toISOString(),
+    }
+  );
+
+  group.params = mergedParams;
+}
+
 /**
  * Start the periodic member count sync job.
  *
- * Every 15 minutes: fetches all enabled protected groups, updates member_count
- * and subscriber_count from the Telegram API. Individual group errors
- * (e.g. 403 bot removed) don't block other groups.
- *
- * NOTE: This job must never disable groups based on access errors. In
- * dashboard mode multiple bots run the same sync loop, and the schema does not
- * currently scope groups to a specific bot. A 403 here can therefore mean
- * "another bot owns this group", not "this group is dead".
+ * Every 15 minutes: fetches enabled protected groups, updates member_count
+ * and subscriber_count from the Telegram API. The first successful bot that
+ * can reach a group claims `params.controller_bot_id`, and later sync passes
+ * only process groups claimed by that bot.
  *
  * @param api - Telegram API accessor
  * @param db - InsForge REST client
  * @param botId - Telegram bot ID
  * @param log - Logger instance
- * @returns Interval handle for cleanup
+ * @returns Disposable handle for cleanup
  */
 export function startMemberSync(
   api: TelegramApi,
   db: InsForgeClient,
-  _botId: number,
+  botId: number,
   log: Logger
-): NodeJS.Timeout {
+): MemberSyncHandle {
   const sync = async (): Promise<void> => {
     try {
       const groups = await db.getRecords<ProtectedGroup>("protected_groups", {
         enabled: "eq.true",
       });
 
-      log.info({ groupCount: groups.length }, "Member sync started");
+      const ownedOrUnclaimedGroups = groups.filter((group) => {
+        const controllerBotId = getControllerBotId(group);
+        return controllerBotId === null || controllerBotId === botId;
+      });
 
-      for (const group of groups) {
+      log.info(
+        { groupCount: ownedOrUnclaimedGroups.length, botId },
+        "Member sync started"
+      );
+
+      for (const group of ownedOrUnclaimedGroups) {
         try {
-          // Update group member count
           const memberCount = await api.getChatMemberCount(group.group_id);
+          await claimGroupController(db, group, botId);
+
           await db.patchRecords(
             "protected_groups",
             { group_id: `eq.${group.group_id}` },
@@ -56,21 +101,20 @@ export function startMemberSync(
             }
           );
 
-          // Update linked channel subscriber counts
           const channels = await getGroupChannels(db, group.group_id);
           for (const channel of channels) {
             try {
               const subCount = await api.getChatMemberCount(channel.channel_id);
               await updateSubscriberCount(db, channel.channel_id, subCount);
-            } catch (chErr) {
+            } catch (channelError) {
               log.warn(
-                { err: chErr, channelId: channel.channel_id },
+                { err: channelError, channelId: channel.channel_id, botId },
                 "Failed to sync channel subscriber count"
               );
             }
           }
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
 
           if (
             message.includes("403") ||
@@ -78,28 +122,36 @@ export function startMemberSync(
             message.includes("chat not found")
           ) {
             log.warn(
-              { groupId: group.group_id },
+              { groupId: group.group_id, botId },
               "Group inaccessible during member sync — skipping count update"
             );
           } else {
-            log.warn({ err, groupId: group.group_id }, "Failed to sync group member count");
+            log.warn(
+              { err: error, groupId: group.group_id, botId },
+              "Failed to sync group member count"
+            );
           }
         }
       }
 
-      log.info("Member sync completed");
-    } catch (err) {
-      log.error({ err }, "Member sync job failed");
+      log.info({ botId }, "Member sync completed");
+    } catch (error) {
+      log.error({ err: error, botId }, "Member sync job failed");
     }
   };
 
-  // First sync after 30s delay, then every 15min
   const startTimer = setTimeout(() => void sync(), 30_000);
   startTimer.unref();
 
   const interval = setInterval(() => void sync(), INTERVALS.MEMBER_SYNC);
   interval.unref();
 
-  log.info({ intervalMs: INTERVALS.MEMBER_SYNC }, "Member sync scheduled");
-  return interval;
+  log.info({ intervalMs: INTERVALS.MEMBER_SYNC, botId }, "Member sync scheduled");
+
+  return {
+    cancel() {
+      clearTimeout(startTimer);
+      clearInterval(interval);
+    },
+  };
 }

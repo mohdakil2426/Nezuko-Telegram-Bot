@@ -32,7 +32,7 @@ const chartConfig = {
     color: "var(--chart-1)",
   },
   restricted: {
-    label: "Restricted",
+    label: "Not Verified",
     color: "var(--chart-2)",
   },
 } satisfies ChartConfig;

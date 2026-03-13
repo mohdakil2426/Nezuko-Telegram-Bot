@@ -128,7 +128,7 @@
 | Existing duplicate bot processes must be stopped once      | Medium      | Code now prevents new duplicates, but old local pollers can still conflict until restarted                                                    |
 | Standalone `/health` still lacks runner inactivity details | Low         | Standalone mode has `standalone-watchdog.ts` (file created but not wired into main.ts — deferred)                                             |
 | Live migration 024 not yet applied                         | Medium      | Bot now falls back without the RPC, but live schema should still be aligned                                                                   |
-| `get_user_growth` analytics RPC is broken live             | Medium      | Postgres logs show a `verification_log.user_id` query bug                                                                                     |
+| `026_lock_down_anon_policies.sql` not yet applied live     | High        | Repo migration exists, but applying it before production bot/web deployment picks up the service-key/authenticated write path would break runtime access |
 | Join-request-first flow still needs full live validation   | Pending     | Core verify path is now confirmed working live                                                                                                |
 | Groups/channels cross-session realtime still incomplete    | Medium      | Dashboard now has a central realtime coordinator, but true live updates for group/channel admin tables still need dedicated InsForge triggers |
 | `standalone-watchdog.ts` created but not wired             | Low         | Created as utility; standalone mode 95% unused — deferred                                                                                     |
@@ -139,14 +139,14 @@
 
 ## 🏗️ Next Steps
 
-1. **Add InsForge triggers for groups/channels/link rows** — finish true cross-session dashboard realtime for admin entity changes.
-2. **Apply migration 024 live** — add `get_group_verification_contract` and backfill `join_request_preferred` so fallback is no longer needed.
-3. **Validate join-request-first flow live** — verify request-only invite flow approves subscribed users without mute fallback.
-4. **Fix `get_user_growth` RPC** — backend analytics query currently references `verification_log` incorrectly.
-5. **Docker build** — update `Dockerfile` to point at `apps/grammy` (`bun install` + `bun run build` + `node dist/main.js`).
-6. **S3 verdict-level L2 cache** — implement `setVerificationVerdict()` in verify.ts to skip repeat getChatMember checks on re-taps.
-7. **Wire standalone-watchdog.ts into main.ts** — complete standalone runner supervision if standalone mode gains more users.
-8. **Verify CLI script robustness** — confirm `taskkill /F /T` and `Check-Dependencies` perform reliably over multiple "Full Reset" cycles.
+1. **Deploy bot/web runtime changes before locking down anon** — production must use `INSFORGE_SERVICE_KEY` (bot) and authenticated server actions (web) before migration 026 is run live.
+2. **Apply migration 026 live** — remove anon access to secrets/control-plane/runtime tables once deployment parity is confirmed.
+3. **Add InsForge triggers for groups/channels/link rows** — finish true cross-session dashboard realtime for admin entity changes.
+4. **Apply migration 024 live** — add `get_group_verification_contract` and backfill `join_request_preferred` so fallback is no longer needed.
+5. **Validate join-request-first flow live** — verify request-only invite flow approves subscribed users without mute fallback.
+6. **Docker build** — update `Dockerfile` to point at `apps/grammy` (`bun install` + `bun run build` + `node dist/main.js`).
+7. **S3 verdict-level L2 cache** — implement `setVerificationVerdict()` in verify.ts to skip repeat getChatMember checks on re-taps.
+8. **Wire standalone-watchdog.ts into main.ts** — complete standalone runner supervision if standalone mode gains more users.
 
 ---
 
@@ -157,6 +157,7 @@
 | `grammy type-check`   | ✅ 0 errors          |
 | `grammy lint`         | ✅ 0 warnings        |
 | `grammy format:check` | ✅ All files conform |
+| `grammy knip`         | ✅ 0 issues          |
 | `grammy test`         | ✅ 163/163 passed    |
 | `web type-check`      | ✅ 0 errors          |
 | `web lint`            | ✅ 0 warnings        |

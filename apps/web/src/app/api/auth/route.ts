@@ -9,9 +9,6 @@
  */
 import { createAuthRouteHandlers } from "@insforge/nextjs/api";
 
-// Auth routes are inherently per-request — disable all caching.
-export const dynamic = "force-dynamic";
-
 const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
 if (!baseUrl) {
   throw new Error(

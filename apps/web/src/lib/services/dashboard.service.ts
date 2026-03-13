@@ -44,6 +44,7 @@ export async function getChartData(days = 30): Promise<ChartDataPoint[]> {
   return series.map((item: { timestamp: string; successful: number; failed: number }) => ({
     date: item.timestamp,
     verified: item.successful,
+    // The RPC's failed bucket includes every non-verified outcome, including errors.
     restricted: item.failed,
   }));
 }

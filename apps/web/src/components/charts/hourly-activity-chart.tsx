@@ -2,7 +2,7 @@
 
 /**
  * Hourly Activity Bar Chart
- * Shows verification activity distribution across 24 hours
+ * Shows last-7-day verification activity grouped by UTC hour
  */
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -67,7 +67,7 @@ export function HourlyActivityChart() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle>Hourly Activity</CardTitle>
-            <CardDescription>Last 24 hours</CardDescription>
+            <CardDescription>Last 7 days, grouped by UTC hour</CardDescription>
           </CardHeader>
           <CardContent className="min-h-[200px]">
             <ChartEmptyState message="No hourly activity data" />
@@ -88,7 +88,7 @@ export function HourlyActivityChart() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Hourly Activity</CardTitle>
-          <CardDescription>Last 24 hours · Peak at {peakHour.label} UTC</CardDescription>
+          <CardDescription>Last 7 days · Peak at {peakHour.label} UTC</CardDescription>
         </CardHeader>
         <CardContent className="min-h-[200px]">
           <ChartContainer

@@ -108,7 +108,7 @@ async function stopRunner(instance: BotInstance): Promise<void> {
 
 function clearBotIntervals(instance: BotInstance): void {
   clearInterval(instance.statusInterval);
-  clearInterval(instance.syncInterval);
+  instance.syncInterval.cancel();
   if (instance.watchdogInterval) {
     clearInterval(instance.watchdogInterval);
   }

@@ -20,7 +20,7 @@ describe("BotLifecycleManager", () => {
     const { lifecycle, registry } = createLifecycle();
     const db = createMockDb();
     const statusInterval = setInterval(() => undefined, 60_000);
-    const syncInterval = setInterval(() => undefined, 60_000);
+    const syncInterval = { cancel: vi.fn() };
     const watchdogInterval = setInterval(() => undefined, 60_000);
     const close = vi.fn().mockResolvedValue(undefined);
     const runnerTask = vi.fn().mockRejectedValue(new Error("409 conflict"));
@@ -49,6 +49,7 @@ describe("BotLifecycleManager", () => {
 
     expect(runnerStop).toHaveBeenCalledOnce();
     expect(close).toHaveBeenCalledOnce();
+    expect(syncInterval.cancel).toHaveBeenCalledOnce();
     expect(registry.has(8716661547)).toBe(false);
     expect(db.patchRecords).toHaveBeenCalled();
   });

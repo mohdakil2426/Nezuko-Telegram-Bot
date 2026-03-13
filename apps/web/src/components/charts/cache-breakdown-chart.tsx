@@ -74,7 +74,7 @@ export function CacheBreakdownChart() {
       <Card className="flex flex-col">
         <CardHeader className="pb-2">
           <CardTitle>Cache Performance</CardTitle>
-          <CardDescription>All time</CardDescription>
+          <CardDescription>Last 7 days</CardDescription>
         </CardHeader>
         <CardContent className="flex-1">
           <ChartEmptyState message="No cache data available" />

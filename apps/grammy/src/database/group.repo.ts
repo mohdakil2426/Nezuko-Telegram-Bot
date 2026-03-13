@@ -45,12 +45,27 @@ export async function createGroup(
   groupId: number,
   ownerId: number,
   title: string,
-  memberCount: number
+  memberCount: number,
+  controllerBotId?: number
 ): Promise<void> {
+  const existing = (
+    await db.getRecords<ProtectedGroup>("protected_groups", {
+      group_id: `eq.${groupId}`,
+      limit: "1",
+    })
+  )[0];
+
+  const mergedParams = {
+    join_request_preferred: true,
+    ...(existing?.params ?? {}),
+    ...(controllerBotId ? { controller_bot_id: controllerBotId } : {}),
+  };
+
   const body: Record<string, unknown> = {
     owner_id: ownerId,
     title,
     member_count: memberCount,
+    params: mergedParams,
     updated_at: new Date().toISOString(),
   };
 
@@ -68,9 +83,7 @@ export async function createGroup(
         title,
         member_count: memberCount,
         enabled: true,
-        params: {
-          join_request_preferred: true,
-        },
+        params: mergedParams,
       },
     ]);
   }

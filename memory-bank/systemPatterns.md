@@ -48,6 +48,23 @@ try {
 }
 ```
 
+### 18 — Dev-Bypass Auth Pattern (2026-03-13)
+
+When `NEXT_PUBLIC_DEV_LOGIN=true`, the web app must not mount the InsForge browser provider in the root tree. Doing so causes client-side `/api/auth/refresh` attempts with no real session and pollutes the console during local QA.
+
+Pattern:
+
+```tsx
+// providers/insforge-provider-wrapper.tsx
+if (DEV_LOGIN) {
+  return <>{children}</>;
+}
+
+return <InsforgeProvider>{children}</InsforgeProvider>;
+```
+
+Client components that need auth state in dev mode should consume wrapper hooks from `src/lib/hooks/use-auth.ts`, which return a stable synthetic signed-out state instead of touching the SDK provider.
+
 ---
 
 ## Architecture Overview
@@ -535,7 +552,8 @@ bun run type-check    # 0 errors REQUIRED
 bun run lint          # 0 warnings REQUIRED (--max-warnings 0)
 bun run format        # prettier src/ ../../tests/grammy --write
 bun run format:check  # All matched files use Prettier code style! REQUIRED
-bun run test          # 145/145 REQUIRED — never decrease without justification
+bun run knip          # Excellent, Knip found no issues. REQUIRED
+bun run test          # 163/163 REQUIRED — never decrease without justification
 bun run build         # dist/ produced with 0 errors REQUIRED
 
 cd apps/web

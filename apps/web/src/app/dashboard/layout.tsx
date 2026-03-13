@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { DEV_LOGIN } from "@/lib/api/config";
 
 function SiteHeaderFallback() {
   return <div className="h-16 shrink-0" aria-hidden="true" />;
@@ -35,7 +36,6 @@ function SiteHeaderFallback() {
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Read env at request time — Server Component layouts re-execute per request,
   // so process.env.NEXT_PUBLIC_DEV_LOGIN is always current after a server restart.
-  const devLogin = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
   const cookieStore = await cookies();
   const sidebarState = cookieStore.get("sidebar_state")?.value;
   const defaultSidebarOpen = sidebarState === undefined ? true : sidebarState === "true";
@@ -43,7 +43,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Server-side auth guard — defense-in-depth (skipped in dev mode).
   // auth() reads insforge-session + insforge-user cookies (no server-side JWT validation).
   // We check BOTH token and userId so a partial/stale cookie state also redirects.
-  if (!devLogin) {
+  if (!DEV_LOGIN) {
     const { userId, token } = await auth();
     if (!userId || !token) {
       redirect("/login");

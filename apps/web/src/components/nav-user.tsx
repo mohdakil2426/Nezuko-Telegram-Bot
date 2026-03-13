@@ -26,8 +26,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useUser } from "@insforge/nextjs";
-import { useAuth } from "@/lib/hooks/use-auth";
+import { useAuth, useUser } from "@/lib/hooks/use-auth";
 import { insforge } from "@/lib/insforge";
 import { DEV_LOGIN } from "@/lib/api/config";
 

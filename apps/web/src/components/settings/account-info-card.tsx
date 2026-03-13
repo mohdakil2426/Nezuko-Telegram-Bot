@@ -14,8 +14,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useUser } from "@insforge/nextjs";
 import { DEV_LOGIN } from "@/lib/api/config";
+import { useUser } from "@/lib/hooks/use-auth";
 
 /** Returns up to 2 uppercase initials from a display name. */
 function getInitials(name: string): string {

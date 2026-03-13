@@ -11,7 +11,7 @@
  *   Dashboard mode   (DASHBOARD_MODE=true)
  *     • Reads active bot_instances from InsForge DB.
  *     • Decrypts tokens with MASTER_KEY and starts each bot via BotManager.
- *     • Requires INSFORGE_BASE_URL + INSFORGE_ANON_KEY + MASTER_KEY.
+ *     • Requires INSFORGE_BASE_URL + INSFORGE_SERVICE_KEY.
  *     • Keeps process alive until SIGINT/SIGTERM.
  */
 
@@ -24,6 +24,7 @@ import { createBot, createBotWithDeps } from "./core/bot-factory.js";
 import { syncBotCommands } from "./core/bot-commands.js";
 import { setupShutdown } from "./core/shutdown.js";
 import { startMemberSync } from "./services/member-sync.js";
+import type { MemberSyncHandle } from "./services/member-sync.js";
 import { CommandWorker } from "./services/command-worker.js";
 import { InsForgeRealtimeClient } from "./core/realtime-client.js";
 import { startStandaloneWatchdog } from "./utils/standalone-watchdog.js";
@@ -66,7 +67,7 @@ async function main(): Promise<void> {
       // Master key is fetched automatically from the Security Vault (nezuko_secrets) at runtime
       if (!config.dbAvailable) {
         logger.error(
-          "DASHBOARD_MODE=true but INSFORGE_BASE_URL / INSFORGE_ANON_KEY are not set.\n" +
+          "DASHBOARD_MODE=true but INSFORGE_BASE_URL / INSFORGE_SERVICE_KEY are not set.\n" +
             "Set them in apps/grammy/.env or disable dashboard mode with DASHBOARD_MODE=false."
         );
         process.exit(1);
@@ -100,7 +101,7 @@ async function runStandaloneMode(
 ): Promise<void> {
   banner([
     "  Nezuko grammY Bot — Standalone Mode (Single Bot)",
-    `  Token:   ${config.botToken.slice(0, 10)}...`,
+    "  Token:   [redacted]",
     `  Redis:   ${config.redisUrl}`,
     `  DB:      ${config.dbAvailable ? config.insforgeBaseUrl : "⚠  Disabled (INSFORGE creds not set)"}`,
     `  Health:  http://localhost:${config.healthPort}/health`,
@@ -112,7 +113,7 @@ async function runStandaloneMode(
   if (config.dbAvailable) {
     db = new InsForgeClient({
       baseUrl: config.insforgeBaseUrl!,
-      anonKey: config.insforgeAnonKey!,
+      anonKey: config.insforgeServerKey!,
       logger,
       requestTimeoutMs: config.insforgeRequestTimeoutMs,
     });
@@ -121,7 +122,7 @@ async function runStandaloneMode(
     logger.warn(
       "⚠  InsForge credentials not configured — running without DB.\n" +
         "   Status heartbeat, member sync, and verification logs are disabled.\n" +
-        "   Set INSFORGE_BASE_URL and INSFORGE_ANON_KEY in apps/grammy/.env to enable."
+        "   Set INSFORGE_BASE_URL and INSFORGE_SERVICE_KEY in apps/grammy/.env to enable."
     );
   }
 
@@ -175,7 +176,7 @@ async function runStandaloneMode(
   //     In standalone mode the grammY bot may not be registered in bot_instances yet,
   //     so we skip it to avoid 409 FK violations. Register via Dashboard → Bots first.
   //   - memberSync only needs protected_groups rows — safe to run always.
-  let syncInterval: NodeJS.Timeout | undefined;
+  let syncInterval: MemberSyncHandle | undefined;
 
   if (db) {
     syncInterval = startMemberSync(bot.api, db, botId, logger);
@@ -249,7 +250,7 @@ async function runDashboardMode(
   // InsForge REST client (required in dashboard mode — already validated above)
   const db = new InsForgeClient({
     baseUrl: config.insforgeBaseUrl!,
-    anonKey: config.insforgeAnonKey!,
+    anonKey: config.insforgeServerKey!,
     logger,
     requestTimeoutMs: config.insforgeRequestTimeoutMs,
   });
@@ -265,7 +266,7 @@ async function runDashboardMode(
 
   realtime = new InsForgeRealtimeClient({
     baseUrl: config.insforgeBaseUrl!,
-    anonKey: config.insforgeAnonKey!,
+    anonKey: config.insforgeServerKey!,
     logger: effectiveLogger,
   });
 

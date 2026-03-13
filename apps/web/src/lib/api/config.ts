@@ -11,4 +11,5 @@ export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
  * InsforgeMiddleware is disabled in proxy.ts when this is true.
  * ⚠️  Must be false in production / Vercel deployment.
  */
-export const DEV_LOGIN = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
+export const DEV_LOGIN =
+  process.env.NEXT_PUBLIC_DEV_LOGIN === "true" && process.env.NODE_ENV !== "production";

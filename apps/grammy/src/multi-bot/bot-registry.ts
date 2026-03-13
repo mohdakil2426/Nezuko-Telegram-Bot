@@ -1,6 +1,7 @@
 import type { Bot } from "grammy";
 import type { RunnerHandle } from "@grammyjs/runner";
 import type { NezukoContext } from "../types.js";
+import type { MemberSyncHandle } from "../services/member-sync.js";
 
 /**
  * Represents a running bot instance managed by the BotRegistry.
@@ -15,8 +16,8 @@ export interface BotInstance {
   startedAt: Date;
   /** NodeJS interval for the 30s status heartbeat. */
   statusInterval: NodeJS.Timeout;
-  /** NodeJS interval for the 15min member count sync. */
-  syncInterval: NodeJS.Timeout;
+  /** Disposable handle for the 15min member count sync. */
+  syncInterval: MemberSyncHandle;
   /** NodeJS interval for the runner stall watchdog. */
   watchdogInterval?: NodeJS.Timeout;
   /** grammY runner handle returned by run(). */

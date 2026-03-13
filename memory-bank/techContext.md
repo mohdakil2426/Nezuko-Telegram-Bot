@@ -103,6 +103,7 @@ DASHBOARD_MODE=true              # true = multi-bot from DB, false = use BOT_TOK
 BOT_TOKEN=<telegram-bot-token>   # Only used when DASHBOARD_MODE=false
 INSFORGE_BASE_URL=https://u4ckbciy.us-west.insforge.app
 INSFORGE_ANON_KEY=<insforge-anon-key>
+INSFORGE_SERVICE_KEY=<server-only key> # Preferred for dashboard-mode bot runtime
 INSFORGE_REQUEST_TIMEOUT_MS=5000 # Phase 107: fail fast on slow/unreachable InsForge requests
 # Master key is fetched from Security Vault (nezuko_secrets) at runtime — not in .env
 LOG_LEVEL=info
@@ -114,10 +115,11 @@ NEXT_PUBLIC_INSFORGE_BASE_URL=https://u4ckbciy.us-west.insforge.app
 NEXT_PUBLIC_INSFORGE_ANON_KEY=<insforge-anon-key>   # Must match bot key
 NEXT_PUBLIC_USE_MOCK=false
 NEXT_PUBLIC_DEV_LOGIN=false       # Set true for local dev bypass
+INSFORGE_SERVICE_KEY=<server-only key> # Optional: server actions / secure vault writes
 ```
 
-> ⚠️ **Both `INSFORGE_ANON_KEY` values must be identical** — use `get-anon-key` MCP to
-> refresh both at the same time if either expires or behaves unexpectedly.
+> ⚠️ Dashboard-mode bot runtime should migrate to `INSFORGE_SERVICE_KEY` before anon RLS lock-down is applied live.
+> The public anon key remains necessary for browser-side SDK reads and authenticated user sessions.
 
 ---
 
@@ -132,6 +134,7 @@ bun run type-check    # tsc --noEmit → 0 errors
 bun run lint          # eslint src/ --max-warnings 0 → 0 warnings
 bun run format        # prettier src/ ../../tests/grammy --write
 bun run format:check  # prettier src/ ../../tests/grammy --check
+bun run knip          # knip → 0 issues
 bun run test          # vitest run → 163/163 passed
 bun run test:coverage # vitest run --coverage (80% thresholds)
 bun run build         # tsc -p tsconfig.build.json → dist/

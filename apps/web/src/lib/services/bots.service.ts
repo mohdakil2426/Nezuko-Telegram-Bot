@@ -63,15 +63,15 @@ export async function listBots(): Promise<BotListResponse> {
 }
 
 /**
- * Add a new bot. Uses Edge Function for token verification + AES-256-GCM encryption.
+ * Add a new bot.
  *
  * IMPORTANT: Requires master key to be configured in Security Vault (nezuko_secrets).
  * Throws if no master key is found — user must set it up in Settings first.
  *
- * @param token - Bot API token (plain text; encrypted by manage-bot edge function)
+ * @param token - Bot API token (plain text; encrypted server-side before persistence)
  */
 export async function addBot(token: string): Promise<Bot> {
-  // Delegate to server action so the master key never touches the client
+  // Delegate to a server action so the master key never touches the client.
   const result = await addBotSecure(token);
 
   if (!result.success) {
@@ -82,8 +82,7 @@ export async function addBot(token: string): Promise<Bot> {
 }
 
 /**
- * Update a bot's status.
- * Uses secure server action to bypass RLS in dev bypass mode.
+ * Update a bot's status via a secure server action.
  */
 export async function updateBot(botId: number, isActive: boolean): Promise<Bot> {
   const result = await updateBotSecure(botId, isActive);
@@ -94,8 +93,7 @@ export async function updateBot(botId: number, isActive: boolean): Promise<Bot> 
 }
 
 /**
- * Soft-delete a bot.
- * Uses secure server action to bypass RLS in dev bypass mode.
+ * Soft-delete a bot via a secure server action.
  */
 export async function deleteBot(botId: number): Promise<void> {
   const result = await deleteBotSecure(botId);

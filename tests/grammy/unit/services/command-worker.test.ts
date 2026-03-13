@@ -33,6 +33,10 @@ describe("CommandWorker", () => {
     const subscribe = vi.fn();
     let handler: ((cmd: DashboardCommand) => void) | null = null;
 
+    vi.mocked(db.patchRecords)
+      .mockResolvedValueOnce([createCommand(1, "processing")])
+      .mockResolvedValueOnce([createCommand(1, "completed")]);
+
     const realtime = {
       isConnected: true,
       subscribe,
@@ -68,6 +72,9 @@ describe("CommandWorker", () => {
     const handleCommand = vi.fn().mockResolvedValue(undefined);
 
     vi.mocked(db.getRecords).mockResolvedValue([createCommand(2)]);
+    vi.mocked(db.patchRecords)
+      .mockResolvedValueOnce([createCommand(2, "processing")])
+      .mockResolvedValueOnce([createCommand(2, "completed")]);
 
     const worker = new CommandWorker({
       db,

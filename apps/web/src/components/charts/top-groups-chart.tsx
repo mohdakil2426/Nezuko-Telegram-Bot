@@ -8,7 +8,7 @@
  * use `fill="var(--color-<dataKey>)"` or dataKey="fill" on <Bar>.
  */
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -66,7 +66,7 @@ export function TopGroupsChart() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle>Top Groups by Activity</CardTitle>
-            <CardDescription>All time verification activity</CardDescription>
+            <CardDescription>Last 7 days of verification activity</CardDescription>
           </CardHeader>
           <CardContent className="min-h-[200px]">
             <ChartEmptyState message="No group data available" />
@@ -102,7 +102,7 @@ export function TopGroupsChart() {
           <CardTitle>Top Groups by Activity</CardTitle>
           <CardDescription>
             {totalVerifications.toLocaleString()} verifications across top {chartData.length} groups
-            · All time
+            {" · "}Last 7 days
           </CardDescription>
         </CardHeader>
         <CardContent className="min-h-[200px]">
@@ -143,11 +143,11 @@ export function TopGroupsChart() {
                   />
                 }
               />
-              {/*
-                shadcn pattern: set fill="fill" so Recharts reads the fill
-                value we embedded per-row in chartData above.
-              */}
-              <Bar dataKey="verifications" fill="fill" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="verifications" radius={[0, 4, 4, 0]}>
+                {chartData.map((entry) => (
+                  <Cell key={entry.group_id} fill={entry.fill} />
+                ))}
+              </Bar>
             </BarChart>
           </ChartContainer>
         </CardContent>

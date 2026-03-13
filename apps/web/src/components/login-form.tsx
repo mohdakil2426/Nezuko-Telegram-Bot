@@ -17,13 +17,14 @@ import { Suspense } from "react";
 import { ShieldCheck, LogIn, Loader2, AlertCircle } from "lucide-react";
 import { redirect, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { SignInButton, useAuth } from "@insforge/nextjs";
+import { SignInButton } from "@insforge/nextjs";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { DEV_LOGIN } from "@/lib/api/config";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 // ── Inner form that reads searchParams ─────────────────────────────────────
 function LoginFormContent() {
@@ -79,7 +80,7 @@ function LoginFormContent() {
         )}
 
         {/* ── Sign-in CTA ─────────────────────────────────────────── */}
-        {isLoaded && !isSignedIn && (
+        {isLoaded && !isSignedIn && !DEV_LOGIN && (
           <div className="flex flex-col items-center space-y-4">
             {/*
              * SignInButton wraps our custom Button child.

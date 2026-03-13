@@ -37,6 +37,11 @@ const configSchema = z.object({
     .min(1)
     .optional()
     .or(z.literal("").transform(() => undefined)),
+  INSFORGE_SERVICE_KEY: z
+    .string()
+    .min(1)
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
 
   // Optional with defaults
   REDIS_URL: z.string().default("redis://localhost:6379"),
@@ -73,6 +78,10 @@ export interface Config {
   insforgeBaseUrl: string | undefined;
   /** InsForge anonymous JWT key. Undefined when not configured. */
   insforgeAnonKey: string | undefined;
+  /** Server-only InsForge key used for bot-side DB access. Preferred over anon. */
+  insforgeServiceKey: string | undefined;
+  /** Effective server-side InsForge key. */
+  insforgeServerKey: string | undefined;
   /** Whether InsForge credentials are fully configured and DB is available. */
   dbAvailable: boolean;
 
@@ -111,14 +120,16 @@ export function loadConfig(): Config {
   // Derive botId from token when available; 0 is the sentinel for dashboard mode
   const botId = parsed.BOT_TOKEN ? Number(parsed.BOT_TOKEN.split(":")[0]) : 0;
 
-  const dbAvailable =
-    parsed.INSFORGE_BASE_URL !== undefined && parsed.INSFORGE_ANON_KEY !== undefined;
+  const insforgeServerKey = parsed.INSFORGE_SERVICE_KEY ?? parsed.INSFORGE_ANON_KEY;
+  const dbAvailable = parsed.INSFORGE_BASE_URL !== undefined && insforgeServerKey !== undefined;
 
   return {
     botToken: parsed.BOT_TOKEN,
     botId,
     insforgeBaseUrl: parsed.INSFORGE_BASE_URL,
     insforgeAnonKey: parsed.INSFORGE_ANON_KEY,
+    insforgeServiceKey: parsed.INSFORGE_SERVICE_KEY,
+    insforgeServerKey,
     dbAvailable,
     redisUrl: parsed.REDIS_URL,
     logLevel: parsed.LOG_LEVEL,

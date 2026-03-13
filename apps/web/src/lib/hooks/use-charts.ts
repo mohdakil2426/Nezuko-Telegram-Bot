@@ -9,7 +9,7 @@
 
 "use client";
 
-import { queryKeys, STALE_TIMES } from "@/lib/query-keys";
+import { queryKeys, REFETCH_INTERVALS, STALE_TIMES } from "@/lib/query-keys";
 import * as chartsService from "@/lib/services/charts.service";
 import type { TrendsParams } from "@/lib/services/types";
 import { useRealtimeChart } from "@/lib/hooks/use-realtime-insforge";
@@ -68,7 +68,7 @@ export function useApiCallsDistribution() {
     queryKey: queryKeys.charts.apiCalls(),
     queryFn: chartsService.getApiCallsDistribution,
     staleTime: STALE_TIMES.LONG,
-    refetchInterval: false,
+    refetchInterval: REFETCH_INTERVALS.STANDARD,
     channels: ["dashboard"],
     invalidateOnEvents: ["verification"],
   });

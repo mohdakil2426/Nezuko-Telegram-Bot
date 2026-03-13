@@ -181,14 +181,22 @@ export class CommandWorker {
   private async processCommand(cmd: DashboardCommand): Promise<void> {
     // Transition to "processing" first to claim the command (exactly-once semantics)
     try {
-      await this.db.patchRecords<DashboardCommand>(
+      const claimed = await this.db.patchRecords<DashboardCommand>(
         "admin_commands",
-        { id: `eq.${cmd.id}` },
+        { id: `eq.${cmd.id}`, status: `eq.${STATUS.PENDING}` },
         {
           status: STATUS.PROCESSING,
           updated_at: new Date().toISOString(),
         }
       );
+
+      if (claimed.length !== 1) {
+        this.logger.warn({
+          commandId: cmd.id,
+          msg: "Command claim lost — another worker already transitioned the row",
+        });
+        return;
+      }
     } catch (err: unknown) {
       this.logger.warn({
         commandId: cmd.id,

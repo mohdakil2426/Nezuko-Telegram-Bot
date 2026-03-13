@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getMasterKey } from "@/lib/actions/vault";
+import { getVaultStatus } from "@/lib/actions/vault";
 import { SecurityVaultCard } from "./security-vault-card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -15,8 +15,8 @@ function VaultSkeleton() {
  * Wrapped in Suspense in the parent to enable streaming.
  */
 async function VaultSectionContent() {
-  const masterKey = await getMasterKey();
-  return <SecurityVaultCard initialKey={masterKey} />;
+  const status = await getVaultStatus();
+  return <SecurityVaultCard initialStatus={status} />;
 }
 
 export function VaultSection() {
