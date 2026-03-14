@@ -1,29 +1,25 @@
 # ─────────────────────────────────────────────
-# Stage 1: Install dependencies (Bun — fast install)
+# Stage 1: Install + Build with Bun
 # ─────────────────────────────────────────────
-FROM oven/bun:1.2 AS deps
+# Bun resolves deps AND runs tsc (bun x tsc -p tsconfig.build.json).
+# This matches the canonical quality-gate build command exactly.
+FROM oven/bun:1.2 AS builder
 WORKDIR /app
 
+# Install deps first (layer cache: only re-runs when lockfile changes)
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
-# ─────────────────────────────────────────────
-# Stage 2: Build TypeScript (Node.js — tsc)
-# ─────────────────────────────────────────────
-FROM node:22-slim AS builder
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
+# Copy full source and run the TypeScript build
 COPY . .
-RUN npm run build
+RUN bun run build
 
 # ─────────────────────────────────────────────
-# Stage 3: Production runtime (Node.js 22-slim)
+# Stage 2: Production runtime (Node.js 22-slim)
 # ─────────────────────────────────────────────
 FROM node:22-slim AS runner
 
-# F-D01: Non-root user — prevents container root escalation if the bot
-# process is compromised. Per docker-expert skill best practices.
+# Non-root user — prevents root escalation if the bot process is compromised.
 RUN addgroup --system --gid 1001 botgroup && \
     adduser --system --uid 1001 --ingroup botgroup botuser
 
@@ -31,9 +27,10 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Copy only what's needed at runtime — never src or devDependencies
 COPY --from=builder /app/dist ./dist
-COPY --from=deps /app/node_modules ./node_modules
-COPY package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
 
 USER botuser
 

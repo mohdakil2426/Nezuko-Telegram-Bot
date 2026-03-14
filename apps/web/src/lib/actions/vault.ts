@@ -46,6 +46,15 @@ function getDevBypassServiceKeyMessage(): string {
   return "Set INSFORGE_SERVICE_KEY in apps/web/.env.local to use Security Vault while NEXT_PUBLIC_DEV_LOGIN=true.";
 }
 
+function resolveOwnerTelegramId(userId: string | null): number {
+  if (!userId) {
+    return 0;
+  }
+
+  const parsed = Number(userId);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function getBaseUrl(): string {
   const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
   if (!baseUrl) {
@@ -303,7 +312,7 @@ export async function addBotSecure(token: string) {
 
     const encryptedToken = encryptToken(token, masterKey);
     const payload = {
-      owner_telegram_id: userId ? Number(userId) : 0,
+      owner_telegram_id: resolveOwnerTelegramId(userId),
       bot_id: botInfo.id,
       bot_username: botInfo.username ?? `bot_${botInfo.id}`,
       bot_name: botInfo.first_name ?? null,

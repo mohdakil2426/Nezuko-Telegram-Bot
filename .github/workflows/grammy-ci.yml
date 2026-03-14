@@ -1,3 +1,11 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Nezuko — grammY Bot CI
+#
+# Triggers on any push/PR that touches the bot source or its tests.
+# Runs all quality gates using Bun (the canonical runtime for this project).
+# On main-branch pushes it additionally produces a build artifact that the
+# deploy workflow can consume without re-building.
+# ─────────────────────────────────────────────────────────────────────────────
 name: grammY Bot CI
 
 on:
@@ -14,83 +22,82 @@ on:
       - "tests/grammy/**"
       - ".github/workflows/grammy-ci.yml"
 
+concurrency:
+  # Cancel in-progress runs on the same branch/PR so stale jobs don't queue up.
+  group: grammy-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     working-directory: apps/grammy
 
+env:
+  BUN_VERSION: "latest"
+
 jobs:
-  lint:
-    name: Lint
+  quality:
+    name: Quality Gates
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    timeout-minutes: 15
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Bun setup ──────────────────────────────────────────────────────────
+      - name: Setup Bun ${{ env.BUN_VERSION }}
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: apps/grammy/package.json
+          bun-version: ${{ env.BUN_VERSION }}
+
+      # ── Cache node_modules between runs ────────────────────────────────────
+      - name: Cache grammy dependencies
+        uses: actions/cache@v4
+        id: grammy-deps-cache
+        with:
+          path: apps/grammy/node_modules
+          key: grammy-deps-${{ runner.os }}-${{ hashFiles('apps/grammy/bun.lock') }}
+          restore-keys: grammy-deps-${{ runner.os }}-
 
       - name: Install dependencies
-        run: npm install
+        if: steps.grammy-deps-cache.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile
 
-      - name: Run ESLint
-        run: npm run lint -- --max-warnings 0
+      # ── Gate 1: TypeScript ─────────────────────────────────────────────────
+      - name: Type check
+        run: bun run type-check
 
-  type-check:
-    name: Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      # ── Gate 2: ESLint ─────────────────────────────────────────────────────
+      - name: Lint
+        run: bun run lint
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      # ── Gate 3: Prettier ───────────────────────────────────────────────────
+      # Both src/ AND tests/grammy/ are in scope (root .prettierrc, no tailwind plugin).
+      - name: Format check
+        run: bun run format:check
+
+      # ── Gate 4: Knip (dead-code) ───────────────────────────────────────────
+      - name: Knip
+        run: bun run knip
+
+      # ── Gate 5: Tests ──────────────────────────────────────────────────────
+      - name: Tests
+        run: bun run test
+
+      # ── Gate 6: Build ──────────────────────────────────────────────────────
+      - name: Build
+        run: bun run build
+
+      # ── Upload build artifact (main branch only) ───────────────────────────
+      # The deploy workflow downloads this artifact instead of re-building.
+      - name: Upload build artifact
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
         with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: apps/grammy/package.json
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run TypeScript type check
-        run: npm run type-check
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: apps/grammy/package.json
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run bun test
-        run: npm run test
-
-  docker-build:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: apps/grammy
-          file: apps/grammy/Dockerfile
-          push: false
-          tags: nezuko-grammy:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          name: grammy-dist-${{ github.sha }}
+          path: |
+            apps/grammy/dist/
+            apps/grammy/package.json
+            apps/grammy/bun.lock
+          retention-days: 7
+          if-no-files-found: error

@@ -1,0 +1,111 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Nezuko — Web Dashboard CI
+#
+# Triggers on any push/PR that touches the Next.js app.
+# Runs all quality gates using Bun. Vercel deploys automatically via its
+# GitHub App — this workflow is the mandatory pre-gate that must pass first.
+#
+# If quality gates fail, Vercel will still trigger its own deploy. To block
+# Vercel on CI failure, add this workflow as a required status check in
+# GitHub → Settings → Branches → Branch protection rules → "Require status
+# checks to pass before merging".
+# ─────────────────────────────────────────────────────────────────────────────
+name: Web Dashboard CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/web-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/web-ci.yml"
+
+concurrency:
+  group: web-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apps/web
+
+env:
+  BUN_VERSION: "latest"
+  # Stub public env vars so Next.js can compile in CI without real secrets.
+  # These are build-time NEXT_PUBLIC_ variables only — no server secrets here.
+  NEXT_PUBLIC_INSFORGE_BASE_URL: "https://ci-stub.insforge.app"
+  NEXT_PUBLIC_INSFORGE_ANON_KEY: "ci-stub-anon-key"
+  NEXT_PUBLIC_USE_MOCK: "false"
+  NEXT_PUBLIC_DEV_LOGIN: "false"
+
+jobs:
+  quality:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Bun setup ──────────────────────────────────────────────────────────
+      - name: Setup Bun ${{ env.BUN_VERSION }}
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      # ── Cache node_modules between runs ────────────────────────────────────
+      - name: Cache web dependencies
+        uses: actions/cache@v4
+        id: web-deps-cache
+        with:
+          path: apps/web/node_modules
+          key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/bun.lock') }}
+          restore-keys: web-deps-${{ runner.os }}-
+
+      - name: Install dependencies
+        if: steps.web-deps-cache.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile
+
+      # ── Gate 1: TypeScript ─────────────────────────────────────────────────
+      - name: Type check
+        run: bun run type-check
+
+      # ── Gate 2: ESLint ─────────────────────────────────────────────────────
+      - name: Lint
+        run: bun run lint
+
+      # ── Gate 3: Prettier ───────────────────────────────────────────────────
+      # apps/web/.prettierrc includes prettier-plugin-tailwindcss.
+      - name: Format check
+        run: bun x prettier src --check
+
+      # ── Gate 4: Knip (dead-code) ───────────────────────────────────────────
+      - name: Knip
+        run: bun knip
+
+      # ── Gate 5: Next.js build ──────────────────────────────────────────────
+      # Validates RSC boundaries, route types, image config, and all
+      # experimental features (PPR, cacheComponents, React Compiler).
+      # Uses webpack explicitly to avoid Turbopack resource issues on CI.
+      - name: Build (webpack)
+        run: bun run build
+        env:
+          # Turbopack can hit resource limits on Linux CI runners.
+          # The webpack build is the canonical correctness check.
+          NEXT_TURBOPACK: "0"
+
+      # ── Build status annotation ────────────────────────────────────────────
+      - name: Annotate build size
+        if: success() && github.event_name == 'pull_request'
+        run: |
+          echo "### ✅ Web Build Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ -d ".next" ]; then
+            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+            du -sh .next/ 2>/dev/null || echo ".next directory found"
+            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
