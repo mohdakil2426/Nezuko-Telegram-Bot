@@ -86,6 +86,7 @@ async function fetchRecords<T>(
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
+      apikey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY || "",
     },
     cache: "no-store",
   });
@@ -112,6 +113,7 @@ async function patchRecords<T>(
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
+      apikey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY || "",
       "Content-Type": "application/json",
       Prefer: "return=representation",
     },
@@ -139,6 +141,7 @@ async function insertRecords<T>(
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
+      apikey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY || "",
       "Content-Type": "application/json",
       Prefer: "return=representation",
     },

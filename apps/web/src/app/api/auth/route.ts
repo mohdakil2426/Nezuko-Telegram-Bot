@@ -7,6 +7,7 @@
  * Explicitly force-dynamic: auth routes always read session state per-request
  * and MUST NOT be cached or statically optimised by Next.js or Vercel's CDN.
  */
+import { type NextRequest } from "next/server";
 import { createAuthRouteHandlers } from "@insforge/nextjs/api";
 
 const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
@@ -21,7 +22,7 @@ const handlers = createAuthRouteHandlers({ baseUrl });
 
 export const POST = handlers.POST;
 
-export const GET = async (req: Request) => {
+export const GET = async (req: NextRequest) => {
   const response = await handlers.GET(req);
   // Auth routes must never be cached by CDN or browser
   response.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");

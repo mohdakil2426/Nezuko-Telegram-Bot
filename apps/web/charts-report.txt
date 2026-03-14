@@ -1,2 +1,0 @@
-react-doctor v0.0.30
-
