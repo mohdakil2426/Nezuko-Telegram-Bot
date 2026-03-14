@@ -28,7 +28,13 @@ export class InsForgeClient {
     // Strip trailing slash to prevent double-slash in URL construction
     this.baseUrl = baseUrl.replace(/\/$/, "");
     this.headers = {
+      // InsForge shared gateways require both headers:
+      //   • Authorization: Bearer — carries the JWT for role resolution
+      //   • apikey             — identifies the project tenant and enables RLS bypass
+      //     when the service-role key is used (anon key alone cannot write to
+      //     protected tables such as admin_logs / api_call_log).
       Authorization: `Bearer ${anonKey}`,
+      apikey: anonKey,
       "Content-Type": "application/json",
     };
     this.logger = logger;
