@@ -34,6 +34,7 @@ defaults:
 
 env:
   BUN_VERSION: "latest"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   # Stub public env vars so Next.js can compile in CI without real secrets.
   # These are build-time NEXT_PUBLIC_ variables only — no server secrets here.
   NEXT_PUBLIC_INSFORGE_BASE_URL: "https://ci-stub.insforge.app"
