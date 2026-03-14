@@ -51,27 +51,33 @@ function ForgotPasswordForm() {
 
   const onSubmit = async ({ email }: FormData) => {
     setIsPending(true);
-    try {
-      const { data, error } = await insforge.auth.sendResetPasswordEmail({
+    const result = await insforge.auth
+      .sendResetPasswordEmail({
         email,
-      });
+      })
+      .catch(() => null);
 
-      if (error) {
-        toast.error(error.message ?? "Failed to send reset email.");
-        setIsPending(false);
-        return;
-      }
-
-      if (data?.success) {
-        toast.success("Check your email for the 6-digit reset code.");
-        router.push(`/reset-password?email=${encodeURIComponent(email)}`);
-      } else {
-        setIsPending(false);
-      }
-    } catch {
+    if (!result) {
       toast.error("An unexpected error occurred. Please try again.");
       setIsPending(false);
+      return;
     }
+
+    const { data, error } = result;
+
+    if (error) {
+      toast.error(error.message ?? "Failed to send reset email.");
+      setIsPending(false);
+      return;
+    }
+
+    if (data?.success) {
+      toast.success("Check your email for the 6-digit reset code.");
+      router.push(`/reset-password?email=${encodeURIComponent(email)}`);
+      return;
+    }
+
+    setIsPending(false);
   };
 
   return (

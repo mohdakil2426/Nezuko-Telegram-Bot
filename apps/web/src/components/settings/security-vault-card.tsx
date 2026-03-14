@@ -161,8 +161,8 @@ export function SecurityVaultCard({ initialStatus }: SecurityVaultCardProps) {
             <div className="flex gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-600 dark:bg-amber-500/5 dark:text-amber-500">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <p>
-                <strong>Setup Required:</strong> No master encryption key detected. Bot onboarding is
-                blocked until the vault is configured. Generate a key below to enable{" "}
+                <strong>Setup Required:</strong> No master encryption key detected. Bot onboarding
+                is blocked until the vault is configured. Generate a key below to enable{" "}
                 <strong>AES-256-GCM</strong> encryption.
               </p>
             </div>

@@ -1,8 +1,5 @@
 ---
-name: "OPSX: Fast Forward"
 description: Create a change and generate all artifacts needed for implementation in one go
-category: Workflow
-tags: [workflow, artifacts, experimental]
 ---
 
 Fast-forward through artifact creation - generate everything needed to start implementation.

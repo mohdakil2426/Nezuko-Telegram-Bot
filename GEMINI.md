@@ -1,11 +1,10 @@
 # Nezuko Telegram Bot Platform
 
 > **Production-ready Telegram bot platform** for automated channel membership enforcement.
-> TypeScript 5.9 | Bun | grammY v1.41+ | Async-first architecture
 
 **Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read ALL files for deep project understanding. **NEVER SKIP THIS STEP.**
 
-**RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, coding standards and best practice documented below. No exceptions, no shortcuts. no lazy, full efforts, Respect project patterns, shared contracts, and existing UI style consistency.
+**RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, coding standards and best practice. No exceptions, no shortcuts. no lazy, full efforts, Respect project patterns, shared contracts, and existing UI style patters consistency.
 
 ---
 
@@ -94,70 +93,18 @@ nezuko/
 - **Dev bypass guarded** — `NEXT_PUBLIC_DEV_LOGIN=true` only works when `NODE_ENV !== "production"`.
 - **Open redirect prevention** — validate `redirectTo` does not start with `//`.
 - **RLS on all tables** — keep InsForge security policies aligned with runtime behavior.
-
----
-
-## Universal Development Principles
-
-1. **No Hardcoding** — use env vars, config, or named constants.
-2. **DRY** — extract repeated logic.
-3. **Single Responsibility** — keep functions/modules focused.
-4. **Fail Fast** — validate inputs and surface meaningful failures.
-5. **Type Everything** — TypeScript strict mode, no `any`.
-6. **Document Intent** — comments explain why, not obvious mechanics.
-7. **Test Critical Paths** — no production behavior without coverage.
-8. **Security First** — sanitize inputs, validate auth, never leak secrets.
-9. **Performance Aware** — avoid redundant polling, N+1 patterns, and wasteful realtime churn.
-10. **Clean Commits** — atomic, passing, reviewable.
-11. **KISS** — choose simple, maintainable designs over cleverness.
-
 ---
 
 ## Tech Stack
 
 | Layer        | Stack                                                                                              |
 | ------------ | -------------------------------------------------------------------------------------------------- |
-| **Bot**      | TypeScript 5.9, grammY 1.41+, Bun, Node 22, ioredis, pino, zod, Socket.IO client                   |
-| **Frontend** | Next.js 16.1, React 19.2, TypeScript 5.9, Tailwind v4, shadcn/ui, Recharts, Motion, TanStack Query |
+| **Bot**      | TypeScript 5.9.3, grammY 1.41.1, Bun, Node 22, ioredis 5.10.0, pino 10.3.1, zod 4.3.6, Socket.IO client 4.8.3 |
+| **Frontend** | Next.js 16.1.6, React 19.2.3, TypeScript 5.9.3, Tailwind v4, shadcn/ui, Recharts 2.15.4, Motion 12+, TanStack Query v5 |
 | **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions                         |
 | **Auth**     | InsForge Auth, `InsforgeMiddleware`, `insforge_session` cookie, RLS                                |
 | **Infra**    | Docker, Vercel, Caddy                                                                              |
 | **Package**  | `bun` for all TypeScript apps (grammy + web)                                                       |
-
----
-
-## Commands
-
-### Run Services
-
-```bash
-cd apps/grammy && bun run dev      # Canonical bot runtime
-cd apps/web && bun dev             # Web dashboard
-docker compose -f docker-compose.local.yml up -d  # Redis
-```
-
-### Lint, Type-Check, Test
-
-```bash
-# grammY bot
-cd apps/grammy && bun run type-check
-cd apps/grammy && bun run lint
-cd apps/grammy && bun run format          # prettier --write src/ + tests/grammy/
-cd apps/grammy && bun run format:check   # prettier --check  src/ + tests/grammy/
-cd apps/grammy && bun run knip            # find dead code
-cd apps/grammy && bun run test
-cd apps/grammy && bun run build
-
-# web
-cd apps/web && bun run lint
-cd apps/web && bun x prettier src --write
-cd apps/web && bun x prettier src --check
-cd apps/web && bun run type-check
-cd apps/web && bun knip                    # find dead code
-cd apps/web && bun knip --fix              # auto-fix exports/files
-cd apps/web && bun run build
-```
-
 ---
 
 ## Coding Standards — TypeScript
@@ -246,6 +193,36 @@ commandWorker.start();
 
 ### grammY Bot Quality Gates
 
+### Run Services
+
+```bash
+cd apps/grammy && bun run dev      # Canonical bot runtime
+cd apps/web && bun dev             # Web dashboard
+docker compose -f docker-compose.local.yml up -d  # Redis
+```
+
+### Lint, Type-Check, Test
+
+```bash
+# grammY bot
+cd apps/grammy && bun run type-check
+cd apps/grammy && bun run lint
+cd apps/grammy && bun run format          # prettier --write src/ + tests/grammy/
+cd apps/grammy && bun run format:check   # prettier --check  src/ + tests/grammy/
+cd apps/grammy && bun run knip            # find dead code
+cd apps/grammy && bun run test
+cd apps/grammy && bun run build
+
+# web
+cd apps/web && bun run lint
+cd apps/web && bun x prettier src --write
+cd apps/web && bun x prettier src --check
+cd apps/web && bun run type-check
+cd apps/web && bun knip                    # find dead code
+cd apps/web && bun knip --fix              # auto-fix exports/files
+cd apps/web && bun run build
+```
+
 Run ALL commands, in order, every time you touch `apps/grammy/` or `tests/grammy/`:
 
 ```bash
@@ -333,20 +310,18 @@ Before closing any task, confirm ALL of the following:
 | **insforge** | DB ops, storage, edge functions |
 | **shadcn**   | UI component discovery          |
 
-**Web Search Rule:** When searching the web or fetching URLs for documentation, best practices, or solutions, always append `2025-2026` to queries.
-
 ## Skills
 
 **⚠️ MANDATORY: Read relevant skills BEFORE generating any code.**
 
-Skills are located in `.agents/skills/` — check the path column. Read the **SKILL.md** file inside each skill folder.
+Skills are located in `.agents/skills/` — check the path column. Read the **SKILL.md** file inside each skill folder and there all revent reference files thats critical.
 
 **Skill Reading Rules:**
 
 1. **Read the ENTIRE SKILL.md** - Do NOT skip any line. Study everything thoroughly.
-2. **Follow all reference files** - If the skill mentions other files, examples, or resources, read those too.
+2. **Follow all reference files** - If the skill mentions other files, examples, or resources, read those too, thats critical.
 3. **NEVER violate rules** - Skills contain rules, principles, guidelines, and best practices that MUST be followed.
-4. **No shortcuts** - Taking shortcuts by skipping skill content leads to errors and tech debt.
+4. **No shortcuts** - Taking shortcuts by skipping skill refrence content leads to errors and tech debt.
 
 ### Frontend (Web Dashboard)
 

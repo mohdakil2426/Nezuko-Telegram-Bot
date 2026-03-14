@@ -36,7 +36,6 @@ export {
   // Backward compatibility exports
 
   useRealtimeActivity,
-  useRealtimeAnalytics,
   useRealtimeLogs,
 } from "./use-realtime-insforge";
 

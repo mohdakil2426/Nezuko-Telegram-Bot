@@ -227,8 +227,7 @@ export async function getVaultStatus(): Promise<VaultStatus> {
         configured: false,
         description: null,
         updatedAt: null,
-        unavailableReason:
-          error instanceof Error ? error.message : getDevBypassServiceKeyMessage(),
+        unavailableReason: error instanceof Error ? error.message : getDevBypassServiceKeyMessage(),
       };
     }
 
@@ -279,8 +278,7 @@ export async function saveMasterKey(keyValue: string, description?: string) {
     );
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to save the encryption key.",
+      error: error instanceof Error ? error.message : "Failed to save the encryption key.",
     };
   }
 }

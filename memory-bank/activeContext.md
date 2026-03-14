@@ -2,6 +2,24 @@
 
 ### Current Status
 
+**2026-03-13: Web UI Audit + Accessibility/Navigation Hardening (Completed with one environment caveat)**
+
+- Dashboard layout no longer renders nested `main` landmarks. `SidebarInset` now owns the page landmark and the inner content wrapper is a plain `div`, fixing the accessibility issue observed in the Playwright snapshot.
+- Analytics tab routing no longer depends on `useSearchParams()` inside the client page content. The server page resolves `searchParams` and passes the initial tab to the client component, which keeps the URL in sync via `router.replace()`.
+- Login routing now uses the same server-resolved redirect sanitization pattern instead of reading `redirectTo` in the client component. This removes the extra `useSearchParams()` dependency from the login UI path.
+- Verify-email and reset-password pages were split into server wrappers plus dedicated client form components under `apps/web/src/components/auth/`. This removes the remaining Suspense/search-param audit warnings for those OTP flows.
+- Auth UI handlers (`forgot-password`, `verify-email`, `reset-password`, `nav-user` sign-out) were flattened to avoid React Compiler try/catch skips while preserving the same user-facing behavior and error messaging.
+- Realtime hook exports were pruned to remove the unused `useRealtimeAnalytics` export from the public hook barrel.
+- Web verification after the fixes:
+  - `bun run type-check` ✅
+  - `NODE_OPTIONS=--max-old-space-size=4096 bun run lint` ✅
+  - `NODE_OPTIONS=--max-old-space-size=4096 bun x prettier src --check` ✅
+  - `npx react-doctor@latest apps/web --verbose --diff` → **99/100**, with the only remaining note being TanStack Table's `useReactTable()` compiler incompatibility in `shared/data-table.tsx`
+  - `bun x next build --webpack` ✅
+- Environment caveat still present:
+  - the default `bun run build` path (`next build` with Turbopack in this repo) can panic on Windows with `os error 1450` while reading `.next/build/postcss.js`
+  - this appears to be a local Turbopack/system-resource issue rather than an application code error, since the webpack build path completed successfully
+
 **2026-03-13: Security Hardening + Analytics Validation (In Progress / Safe subset applied)**
 
 - Web dashboard security-vault flow no longer returns the raw master key to the browser. `getVaultStatus()` now exposes metadata only, and bot onboarding/rotation stays server-side.

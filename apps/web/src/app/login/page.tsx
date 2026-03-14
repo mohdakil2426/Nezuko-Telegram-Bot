@@ -3,28 +3,30 @@
  * Public login page with centered form
  */
 
-import { Suspense } from "react";
 import { LoginForm } from "@/components/login-form";
-import { Skeleton } from "@/components/ui/skeleton";
 
-function LoginFormFallback() {
-  return (
-    <div className="w-full space-y-4">
-      <Skeleton className="mx-auto h-16 w-16 rounded-full" />
-      <Skeleton className="mx-auto h-6 w-40" />
-      <Skeleton className="mx-auto h-4 w-32" />
-      <Skeleton className="h-12 w-full" />
-    </div>
-  );
+type LoginPageProps = {
+  searchParams?: Promise<{
+    redirectTo?: string;
+  }>;
+};
+
+function sanitizeRedirect(rawRedirect?: string): string {
+  if (!rawRedirect) {
+    return "/dashboard";
+  }
+
+  return rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
 }
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const redirectTo = sanitizeRedirect(resolvedSearchParams.redirectTo);
+
   return (
     <div className="bg-muted flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
-        <Suspense fallback={<LoginFormFallback />}>
-          <LoginForm />
-        </Suspense>
+        <LoginForm redirectTo={redirectTo} />
       </div>
     </div>
   );

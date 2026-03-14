@@ -53,13 +53,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <SidebarProvider defaultOpen={defaultSidebarOpen}>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset id="main-content">
         <Suspense fallback={<SiteHeaderFallback />}>
           <SiteHeader />
         </Suspense>
-        <main id="main-content" className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <ErrorBoundary>{children}</ErrorBoundary>
-        </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

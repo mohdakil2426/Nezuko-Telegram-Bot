@@ -3,10 +3,17 @@
  * Displays verification trends and growth metrics
  */
 
-import { Suspense } from "react";
 import { AnalyticsPageContent } from "@/components/analytics";
 
-export default function AnalyticsPage() {
+type AnalyticsPageProps = {
+  searchParams?: Promise<{
+    tab?: string;
+  }>;
+};
+
+export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps) {
+  const resolvedSearchParams = (await searchParams) ?? {};
+
   return (
     <div className="space-y-6">
       <div>
@@ -14,9 +21,7 @@ export default function AnalyticsPage() {
         <p className="text-muted-foreground">Track verification trends and user growth.</p>
       </div>
 
-      <Suspense fallback={<div className="bg-muted h-[400px] w-full animate-pulse rounded-xl" />}>
-        <AnalyticsPageContent />
-      </Suspense>
+      <AnalyticsPageContent initialTab={resolvedSearchParams.tab} />
     </div>
   );
 }

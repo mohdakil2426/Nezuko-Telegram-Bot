@@ -13,9 +13,8 @@
  * user authenticates on the InsForge hosted page and is redirected back.
  */
 
-import { Suspense } from "react";
 import { ShieldCheck, LogIn, Loader2, AlertCircle } from "lucide-react";
-import { redirect, useRouter, useSearchParams } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import Link from "next/link";
 import { SignInButton } from "@insforge/nextjs";
 
@@ -26,14 +25,12 @@ import { Separator } from "@/components/ui/separator";
 import { DEV_LOGIN } from "@/lib/api/config";
 import { useAuth } from "@/lib/hooks/use-auth";
 
-// ── Inner form that reads searchParams ─────────────────────────────────────
-function LoginFormContent() {
+interface LoginFormProps {
+  redirectTo?: string;
+}
+
+export function LoginForm({ redirectTo = "/dashboard" }: LoginFormProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const rawRedirect = searchParams.get("redirectTo") || "/dashboard";
-  // Validate: must start with "/" and not "//" (prevents open redirect to //evil.com)
-  const redirectTo =
-    rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
 
   const { isLoaded, isSignedIn } = useAuth();
 
@@ -140,23 +137,5 @@ function LoginFormContent() {
         )}
       </CardContent>
     </Card>
-  );
-}
-
-/**
- * Main LoginForm component wrapped in Suspense to satisfy Next.js bailout rules.
- */
-export function LoginForm() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex flex-col items-center justify-center space-y-2 py-8">
-          <Loader2 className="text-primary h-8 w-8 animate-spin" />
-          <p className="text-muted-foreground text-sm">Initializing auth…</p>
-        </div>
-      }
-    >
-      <LoginFormContent />
-    </Suspense>
   );
 }

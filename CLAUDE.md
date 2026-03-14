@@ -1,11 +1,10 @@
 # Nezuko Telegram Bot Platform
 
 > **Production-ready Telegram bot platform** for automated channel membership enforcement.
-> TypeScript 5.9 | Bun | grammY v1.41+ | Async-first architecture
 
 **Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read ALL files for deep project understanding. **NEVER SKIP THIS STEP.**
 
-**RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, coding standards and best practice documented below. No exceptions, no shortcuts. no lazy, full efforts, Respect project patterns, shared contracts, and existing UI style consistency.
+**RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, coding standards and best practice. No exceptions, no shortcuts. no lazy, full efforts, Respect project patterns, shared contracts, and existing UI style patters consistency.
 
 ---
 
@@ -94,64 +93,18 @@ nezuko/
 - **Dev bypass guarded** — `NEXT_PUBLIC_DEV_LOGIN=true` only works when `NODE_ENV !== "production"`.
 - **Open redirect prevention** — validate `redirectTo` does not start with `//`.
 - **RLS on all tables** — keep InsForge security policies aligned with runtime behavior.
-
----
-
-## Universal Development Principles
-
-1. **No Hardcoding** — use env vars, config, or named constants.
-2. **DRY** — extract repeated logic.
-3. **Single Responsibility** — keep functions/modules focused.
-4. **Fail Fast** — validate inputs and surface meaningful failures.
-5. **Type Everything** — TypeScript strict mode, no `any`.
-6. **Document Intent** — comments explain why, not obvious mechanics.
-7. **Test Critical Paths** — no production behavior without coverage.
-8. **Security First** — sanitize inputs, validate auth, never leak secrets.
-9. **Performance Aware** — avoid redundant polling, N+1 patterns, and wasteful realtime churn.
-10. **Clean Commits** — atomic, passing, reviewable.
-11. **KISS** — choose simple, maintainable designs over cleverness.
-
 ---
 
 ## Tech Stack
 
 | Layer        | Stack                                                                                              |
 | ------------ | -------------------------------------------------------------------------------------------------- |
-| **Bot**      | TypeScript 5.9, grammY 1.41+, Bun, Node 22, ioredis, pino, zod, Socket.IO client                   |
-| **Frontend** | Next.js 16.1, React 19.2, TypeScript 5.9, Tailwind v4, shadcn/ui, Recharts, Motion, TanStack Query |
+| **Bot**      | TypeScript 5.9.3, grammY 1.41.1, Bun, Node 22, ioredis 5.10.0, pino 10.3.1, zod 4.3.6, Socket.IO client 4.8.3 |
+| **Frontend** | Next.js 16.1.6, React 19.2.3, TypeScript 5.9.3, Tailwind v4, shadcn/ui, Recharts 2.15.4, Motion 12+, TanStack Query v5 |
 | **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions                         |
 | **Auth**     | InsForge Auth, `InsforgeMiddleware`, `insforge_session` cookie, RLS                                |
 | **Infra**    | Docker, Vercel, Caddy                                                                              |
 | **Package**  | `bun` for all TypeScript apps (grammy + web)                                                       |
-
----
-
-## Commands
-
-### Run Services
-
-```bash
-cd apps/grammy && bun run dev      # Canonical bot runtime
-cd apps/web && bun dev             # Web dashboard
-docker compose -f docker-compose.local.yml up -d  # Redis
-```
-
-### Lint, Type-Check, Test
-
-```bash
-# grammY bot
-cd apps/grammy && bun run type-check
-cd apps/grammy && bun run lint
-cd apps/grammy && bun run test
-cd apps/grammy && bun run build
-
-# web
-cd apps/web && bun run lint --fix
-cd apps/web && bun x prettier src --write
-cd apps/web && bun run type-check
-cd apps/web && bun run build
-```
-
 ---
 
 ## Coding Standards — TypeScript
@@ -232,38 +185,120 @@ commandWorker.start();
 
 ## Pre-Commit Checklist
 
-**MANDATORY**: Run the relevant checks before finishing work.
+> **⛔ ZERO-TOLERANCE**: Every gate below MUST pass before considering any task complete.
+> Running these checks is NOT optional. A single failure means the task is NOT done.
+> Fix the root cause — never suppress, skip, or `@ts-ignore` your way past a failure.
+
+---
 
 ### grammY Bot Quality Gates
 
+### Run Services
+
 ```bash
-cd apps/grammy && bun run type-check
-cd apps/grammy && bun run lint
-cd apps/grammy && bun run test
-cd apps/grammy && bun run build
+cd apps/grammy && bun run dev      # Canonical bot runtime
+cd apps/web && bun dev             # Web dashboard
+docker compose -f docker-compose.local.yml up -d  # Redis
 ```
 
-### Web Quality Gates
+### Lint, Type-Check, Test
 
 ```bash
+# grammY bot
+cd apps/grammy && bun run type-check
+cd apps/grammy && bun run lint
+cd apps/grammy && bun run format          # prettier --write src/ + tests/grammy/
+cd apps/grammy && bun run format:check   # prettier --check  src/ + tests/grammy/
+cd apps/grammy && bun run knip            # find dead code
+cd apps/grammy && bun run test
+cd apps/grammy && bun run build
+
+# web
+cd apps/web && bun run lint
+cd apps/web && bun x prettier src --write
+cd apps/web && bun x prettier src --check
 cd apps/web && bun run type-check
+cd apps/web && bun knip                    # find dead code
+cd apps/web && bun knip --fix              # auto-fix exports/files
 cd apps/web && bun run build
 ```
 
-### Manual Verification
+Run ALL commands, in order, every time you touch `apps/grammy/` or `tests/grammy/`:
 
-- Imports follow project patterns
-- No hardcoded values
-- No `any` types
-- Realtime changes do not break shared channel contracts
-- Memory bank updated if the change is significant
+```bash
+# 1. Type safety — MUST exit 0, zero errors
+cd apps/grammy && bun run type-check
 
-### Failure Policy
+# 2. Lint — MUST exit 0, zero warnings (--max-warnings 0 is enforced)
+cd apps/grammy && bun run lint
 
-- If lint fails, fix it. Do not suppress warnings blindly.
-- If type-check fails, add real types. Do not use `as any` or `@ts-ignore` casually.
-- If tests fail, fix the behavior or the test.
-- If build fails, fix the build. Do not hand off a broken deploy path.
+# 3. Prettier — MUST show "All matched files use Prettier code style!"
+#    Covers both src/ and ../../tests/grammy (root .prettierrc, no tailwind plugin)
+cd apps/grammy && bun run format         # auto-fix
+cd apps/grammy && bun run format:check   # verify clean
+
+# 4. Knip — MUST show "Excellent, Knip found no issues."
+cd apps/grammy && bun run knip
+
+# 5. Tests — MUST show "X passed" with zero failures, zero skipped
+cd apps/grammy && bun run test
+
+# 6. Build — MUST produce dist/ with zero compile errors
+cd apps/grammy && bun run build
+```
+
+---
+
+### Web Quality Gates
+
+Run ALL four commands, in order, every time you touch `apps/web/`:
+
+```bash
+# 1. Type safety — MUST exit 0, zero errors
+cd apps/web && bun run type-check
+
+# 2. Lint — MUST exit 0, zero warnings (--max-warnings 0 is enforced)
+cd apps/web && bun run lint
+
+# 3. Prettier — MUST show "All matched files use Prettier code style!"
+#    If it reports [warn] files, run --write first, then re-check:
+cd apps/web && bun x prettier src --write
+cd apps/web && bun x prettier src --check
+
+# 4. Knip — MUST show "Excellent, Knip found no issues."
+cd apps/web && bun knip
+
+# 5. Build — MUST complete with zero errors (validates RSC boundaries, routes, types)
+cd apps/web && bun run build
+```
+
+---
+
+### Manual Verification Checklist
+
+Before closing any task, confirm ALL of the following:
+
+- [ ] Imports follow project patterns (`@/lib/insforge` for web, relative ESM `.js` for bot)
+- [ ] No hardcoded values — env vars, constants, or config for everything
+- [ ] No `any` types — use real types or generics
+- [ ] No `@ts-ignore` or `// eslint-disable` without a written justification comment
+- [ ] No `console.log` left in production code paths — use `logger` / `pino`
+- [ ] Realtime channel names unchanged — shared contract between bot and web
+- [ ] DB column names in TypeScript interfaces match actual PostgreSQL column names exactly
+- [ ] Memory bank updated if the change affects architecture, patterns, or project state
+
+---
+
+### Hard Failure Rules
+
+| Gate                       | Rule                                                                                    |
+| -------------------------- | --------------------------------------------------------------------------------------- |
+| **type-check fails**       | Add real types. Never use `as any`, `as unknown as T`, or `@ts-ignore`.                 |
+| **lint warns/errors**      | Fix the code. Never add `eslint-disable` without a comment explaining why.              |
+| **prettier reports dirty** | Run `--write`, commit the formatted files, then verify `--check` is clean.              |
+| **any test fails**         | Fix the behavior OR fix the test — never delete or skip a test to make CI green.        |
+| **build fails**            | Fix the build. Do not hand off a broken deploy path under any circumstances.            |
+| **test count drops**       | Justify it. Removing tests requires explicit explanation of why coverage is maintained. |
 
 ---
 
@@ -275,21 +310,11 @@ cd apps/web && bun run build
 | **insforge** | DB ops, storage, edge functions |
 | **shadcn**   | UI component discovery          |
 
-**Web Search Rule:** When searching the web or fetching URLs for documentation, best practices, or solutions, always append `2025-2026` to queries.
-
 ## Skills
 
 **⚠️ MANDATORY: Read relevant skills BEFORE generating any code.**
 
-Skills are located in `.agent/skills/` or `.claude/skills/` — check the path column. Read the **SKILL.md** file inside each skill folder.
-
-**Skill Reading Rules:**
-
-1. **Read the ENTIRE SKILL.md** - Do NOT skip any line. Study everything thoroughly.
-2. **Follow all reference files** - If the skill mentions other files, examples, or resources, read those too.
-3. **NEVER violate rules** - Skills contain rules, principles, guidelines, and best practices that MUST be followed.
-4. **Context-aware reading** - Focus on sections relevant to your current task, but never skip critical rules.
-5. **No shortcuts** - Taking shortcuts by skipping skill content leads to errors and tech debt.
+Skills are located in `.agent/skills/` or `.claude/skills/` — check the path column. Read the **SKILL.md** file inside each skill folder and there all revent reference files thats critical.
 
 ### Frontend (Web Dashboard)
 
@@ -336,4 +361,4 @@ Use the relevant `openspec-*` skill in `.agent/skills/` when the task is about O
 
 ---
 
-_Last Updated: 2026-03-11 (Phase 126 — PTB bot fully removed; grammY is the sole runtime; tests/bot deleted)_
+_Last Updated: 2026-03-11_

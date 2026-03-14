@@ -13,7 +13,7 @@ const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
 if (!baseUrl) {
   throw new Error(
     "NEXT_PUBLIC_INSFORGE_BASE_URL is not set. " +
-      "Copy apps/web/.env.example to apps/web/.env.local and fill in your InsForge project URL.",
+      "Copy apps/web/.env.example to apps/web/.env.local and fill in your InsForge project URL."
   );
 }
 

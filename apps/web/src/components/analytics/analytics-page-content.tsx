@@ -6,7 +6,8 @@
  * Each chart appears exactly once across all tabs — no duplicates.
  */
 
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsOverviewCards } from "./overview-cards";
 import { VerificationTrendsChart } from "./verification-trends-chart";
@@ -30,19 +31,25 @@ import {
 const VALID_TABS = ["operations", "cache-api", "groups-members"] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
-export function AnalyticsPageContent() {
-  const searchParams = useSearchParams();
+function resolveTabValue(value?: string): TabValue {
+  return VALID_TABS.includes(value as TabValue) ? (value as TabValue) : "operations";
+}
+
+interface AnalyticsPageContentProps {
+  initialTab?: string;
+}
+
+export function AnalyticsPageContent({ initialTab }: AnalyticsPageContentProps) {
   const router = useRouter();
   const pathname = usePathname();
-
-  const tabParam = searchParams.get("tab") as TabValue | null;
-  const activeTab: TabValue = VALID_TABS.includes(tabParam as TabValue)
-    ? (tabParam as TabValue)
-    : "operations";
+  const [activeTab, setActiveTab] = useState<TabValue>(() => resolveTabValue(initialTab));
 
   const handleTabChange = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", value);
+    const nextTab = resolveTabValue(value);
+    setActiveTab(nextTab);
+
+    const params = new URLSearchParams();
+    params.set("tab", nextTab);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 

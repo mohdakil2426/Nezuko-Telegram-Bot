@@ -81,10 +81,5 @@
   "enabledMcpjsonServers": [
     "insforge"
   ],
-  "enabledPlugins": {
-    "ui-ux-pro-max@ui-ux-pro-max-skill": true,
-    "agent-teams@claude-code-workflows": true,
-    "comprehensive-review@claude-code-workflows": true,
-    "security-scanning@claude-code-workflows": true
-  }
+  "enabledPlugins": {}
 }

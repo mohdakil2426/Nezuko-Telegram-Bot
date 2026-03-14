@@ -915,17 +915,6 @@ export function useRealtimeActivity() {
 }
 
 /**
- * Hook for subscribing to analytics events only.
- * Used by overview-cards.tsx.
- */
-export function useRealtimeAnalytics() {
-  return useScopedRealtimeOrCoordinator({
-    channels: ["dashboard", "bot_status"],
-    filterTypes: ["verification", "status_changed"],
-  });
-}
-
-/**
  * Hook for subscribing to log events only.
  * Used by logs/page.tsx.
  */

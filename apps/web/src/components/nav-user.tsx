@@ -59,22 +59,19 @@ export function NavUser({ user: fallbackUser }: NavUserProps) {
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
-    try {
-      // In dev mode there is no real session, so skip the SDK call
-      // to avoid errors from trying to revoke a non-existent token.
-      if (!DEV_LOGIN) {
-        await insforge.auth.signOut();
-      }
-      toast.success(DEV_LOGIN ? "Exiting dev mode…" : "Signed out successfully");
-      // Hard redirect — NOT router.push() — so proxy.ts middleware
-      // re-evaluates auth state on the next request. This is critical
-      // when switching from dev→prod mode.
-      window.location.href = "/login";
-    } catch (err) {
+    const signOutResult = DEV_LOGIN ? { error: null } : await insforge.auth.signOut();
+
+    if (signOutResult.error) {
       toast.error("Failed to sign out. Please try again.");
-      console.error("[handleSignOut]", err);
       setIsSigningOut(false);
+      return;
     }
+
+    toast.success(DEV_LOGIN ? "Exiting dev mode…" : "Signed out successfully");
+    // Hard redirect — NOT router.push() — so proxy.ts middleware
+    // re-evaluates auth state on the next request. This is critical
+    // when switching from dev→prod mode.
+    window.location.href = "/login";
   };
 
   // Build display user from InsForge profile.

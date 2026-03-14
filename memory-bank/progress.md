@@ -115,6 +115,8 @@
 | Optimistic mutations with rollback | ✅                      |
 | Vercel Cost Optimization           | ✅ Phase 125            |
 | Partial Prerendering (PPR)         | ✅ Phase 125            |
+| Dashboard landmark semantics       | ✅ 2026-03-13 follow-up |
+| Server-driven auth/search params   | ✅ 2026-03-13 follow-up |
 
 ---
 
@@ -134,6 +136,7 @@
 | `standalone-watchdog.ts` created but not wired             | Low         | Created as utility; standalone mode 95% unused — deferred                                                                                     |
 | Partial `node_modules` deletion / "Access Denied"          | Medium      | Script hardening with `taskkill /F /T` implemented; pending long-term verification across Windows envs                                        |
 | Stale bot processes from legacy PTB or orphaned shells     | Medium      | Improved `stop.ps1` pattern matching (src/main.ts, main.py) and tree-kill; pending monitoring for 409 token conflicts                         |
+| `bun run build` Turbopack resource panic on Windows        | Medium      | `next build` can fail with Turbopack `os error 1450` while reading `.next/build/postcss.js`; webpack build path succeeds, suggesting environment/tooling instability rather than app-code breakage |
 
 ---
 
