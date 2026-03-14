@@ -35,7 +35,6 @@ defaults:
 
 env:
   BUN_VERSION: "latest"
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   quality:
@@ -45,7 +44,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # ── Bun setup ──────────────────────────────────────────────────────────
       - name: Setup Bun ${{ env.BUN_VERSION }}
@@ -55,7 +54,7 @@ jobs:
 
       # ── Cache node_modules ─────────────────────────────────────────────────
       - name: Cache grammy dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: grammy-deps-cache
         with:
           path: apps/grammy/node_modules

@@ -17,12 +17,7 @@
 export function unwrapRpc<T>(data: unknown, functionName: string): T {
   if (Array.isArray(data) && data.length > 0) {
     const first = data[0];
-    if (
-      data.length === 1 &&
-      first &&
-      typeof first === "object" &&
-      functionName in first
-    ) {
+    if (data.length === 1 && first && typeof first === "object" && functionName in first) {
       return (first as Record<string, unknown>)[functionName] as T;
     }
     return data as T;
