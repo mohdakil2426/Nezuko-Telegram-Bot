@@ -81,10 +81,7 @@ export function startMemberSync(
         return controllerBotId === null || controllerBotId === botId;
       });
 
-      log.info(
-        { groupCount: ownedOrUnclaimedGroups.length, botId },
-        "Member sync started"
-      );
+      log.info({ groupCount: ownedOrUnclaimedGroups.length, botId }, "Member sync started");
 
       for (const group of ownedOrUnclaimedGroups) {
         try {

@@ -107,7 +107,32 @@ async function tryGetGroupVerificationContractFromRpc(
   }
 
   try {
-    const row = await readGroupVerificationContractRpc(db, groupId);
+    const rawData = await readGroupVerificationContractRpc(db, groupId);
+
+    // EC-72: Robustly unwrap RPC response.
+    // InsForge RPCs returning JSON may be wrapped in a property named after the function,
+    // and potentially returned as an array containing that wrapper.
+    let row: GroupVerificationContractRow | null = null;
+    const wrapperKey = "get_group_verification_contract";
+
+    if (Array.isArray(rawData) && rawData.length > 0) {
+      const first = rawData[0];
+      if (first && typeof first === "object" && wrapperKey in first) {
+        row = (first as Record<string, unknown>)[wrapperKey] as GroupVerificationContractRow;
+      } else {
+        row = first as GroupVerificationContractRow;
+      }
+    } else if (rawData && typeof rawData === "object") {
+      if (wrapperKey in rawData) {
+        row = (rawData as Record<string, unknown>)[wrapperKey] as GroupVerificationContractRow;
+      } else {
+        row = rawData as GroupVerificationContractRow;
+      }
+    }
+
+    if (!row || typeof row !== "object" || row.group_id === undefined) {
+      return null;
+    }
 
     return {
       groupId: row.group_id,

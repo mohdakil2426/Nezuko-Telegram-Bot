@@ -19,6 +19,7 @@ import type {
   MembersChartData,
   TrendsParams,
 } from "@/lib/services/types";
+import { unwrapRpc } from "@/lib/api/rpc-utils";
 import * as mockData from "@/lib/mock";
 
 // =============================================================================
@@ -33,9 +34,9 @@ export async function getVerificationDistribution(): Promise<VerificationDistrib
     return mockData.getVerificationDistribution();
   }
 
-  const { data, error } = await insforge.database.rpc("get_verification_distribution");
+  const { data: rawData, error } = await insforge.database.rpc("get_verification_distribution");
   if (error) throw error;
-  return data as VerificationDistribution;
+  return unwrapRpc<VerificationDistribution>(rawData, "get_verification_distribution");
 }
 
 /**
@@ -46,9 +47,9 @@ export async function getCacheBreakdown(): Promise<CacheBreakdown> {
     return mockData.getCacheBreakdown();
   }
 
-  const { data, error } = await insforge.database.rpc("get_cache_breakdown");
+  const { data: rawData, error } = await insforge.database.rpc("get_cache_breakdown");
   if (error) throw error;
-  return data as CacheBreakdown;
+  return unwrapRpc<CacheBreakdown>(rawData, "get_cache_breakdown");
 }
 
 /**
@@ -59,9 +60,9 @@ export async function getGroupsStatusDistribution(): Promise<GroupsStatusDistrib
     return mockData.getGroupsStatusDistribution();
   }
 
-  const { data, error } = await insforge.database.rpc("get_groups_status");
+  const { data: rawData, error } = await insforge.database.rpc("get_groups_status");
   if (error) throw error;
-  return data as GroupsStatusDistribution;
+  return unwrapRpc<GroupsStatusDistribution>(rawData, "get_groups_status");
 }
 
 /**
@@ -72,8 +73,9 @@ export async function getApiCallsDistribution(): Promise<ApiCallsDistribution[]>
     return mockData.getApiCallsDistribution();
   }
 
-  const { data, error } = await insforge.database.rpc("get_api_calls_distribution");
+  const { data: rawData, error } = await insforge.database.rpc("get_api_calls_distribution");
   if (error) throw error;
+  const data = unwrapRpc<any>(rawData, "get_api_calls_distribution");
   return (Array.isArray(data) ? data : []) as ApiCallsDistribution[];
 }
 
@@ -89,8 +91,9 @@ export async function getHourlyActivity(): Promise<HourlyActivity[]> {
     return mockData.getHourlyActivity();
   }
 
-  const { data, error } = await insforge.database.rpc("get_hourly_activity");
+  const { data: rawData, error } = await insforge.database.rpc("get_hourly_activity");
   if (error) throw error;
+  const data = unwrapRpc<any>(rawData, "get_hourly_activity");
   return (Array.isArray(data) ? data : []) as HourlyActivity[];
 }
 
@@ -103,10 +106,11 @@ export async function getLatencyDistribution(params?: TrendsParams): Promise<Lat
   }
 
   const period = params?.period ?? "7d";
-  const { data, error } = await insforge.database.rpc("get_latency_distribution", {
+  const { data: rawData, error } = await insforge.database.rpc("get_latency_distribution", {
     p_period: period,
   });
   if (error) throw error;
+  const data = unwrapRpc<any>(rawData, "get_latency_distribution");
   return (Array.isArray(data) ? data : []) as LatencyBucket[];
 }
 
@@ -123,10 +127,11 @@ export async function getTopGroups(): Promise<TopGroupPerformance[]> {
     return mockData.getTopGroups();
   }
 
-  const { data, error } = await insforge.database.rpc("get_top_groups", {
+  const { data: rawData, error } = await insforge.database.rpc("get_top_groups", {
     p_limit: TOP_GROUPS_LIMIT,
   });
   if (error) throw error;
+  const data = unwrapRpc<any>(rawData, "get_top_groups");
   return (Array.isArray(data) ? data : []) as TopGroupPerformance[];
 }
 
@@ -144,13 +149,13 @@ export async function getCacheHitRateTrend(params?: TrendsParams): Promise<Cache
 
   const period = params?.period ?? "30d";
 
-  const { data, error } = await insforge.database.rpc("get_cache_hit_rate_trend", {
+  const { data: rawData, error } = await insforge.database.rpc("get_cache_hit_rate_trend", {
     p_period: period,
   });
   if (error) throw error;
 
-  // RPC returns { period, series: [{date, value, total_count}], current_rate, average_rate } envelope
-  const envelope = data as Record<string, unknown> | null;
+  // Robustly unwrap the envelope
+  const envelope = unwrapRpc<any>(rawData, "get_cache_hit_rate_trend");
   const series = Array.isArray(envelope?.series)
     ? (envelope.series as Array<{ date: string; value: number; total_count?: number }>)
     : [];
@@ -177,13 +182,13 @@ export async function getLatencyTrend(params?: TrendsParams): Promise<LatencyTre
 
   const period = params?.period ?? "30d";
 
-  const { data, error } = await insforge.database.rpc("get_latency_trend", {
+  const { data: rawData, error } = await insforge.database.rpc("get_latency_trend", {
     p_period: period,
   });
   if (error) throw error;
 
-  // RPC returns { period, series: [{date, avg_latency, p95_latency}], current_avg } envelope
-  const envelope = data as Record<string, unknown> | null;
+  // Robustly unwrap the envelope
+  const envelope = unwrapRpc<any>(rawData, "get_latency_trend");
   const series = Array.isArray(envelope?.series)
     ? (envelope.series as Array<{ date: string; avg_latency: number; p95_latency: number }>)
     : [];
@@ -211,9 +216,9 @@ export async function getBotHealthMetrics(): Promise<BotHealthMetrics> {
     return mockData.getBotHealthMetrics();
   }
 
-  const { data, error } = await insforge.database.rpc("get_bot_health");
+  const { data: rawData, error } = await insforge.database.rpc("get_bot_health");
   if (error) throw error;
-  return data as BotHealthMetrics;
+  return unwrapRpc<BotHealthMetrics>(rawData, "get_bot_health");
 }
 
 // =============================================================================
@@ -229,7 +234,7 @@ export async function getMembersChartData(): Promise<MembersChartData> {
     return mockData.getMembersChartData();
   }
 
-  const { data, error } = await insforge.database.rpc("get_members_chart_data");
+  const { data: rawData, error } = await insforge.database.rpc("get_members_chart_data");
   if (error) throw error;
-  return data as MembersChartData;
+  return unwrapRpc<MembersChartData>(rawData, "get_members_chart_data");
 }

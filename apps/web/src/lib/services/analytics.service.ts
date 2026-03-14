@@ -10,6 +10,7 @@ import type {
   UserGrowthResponse,
   TrendsParams,
 } from "@/lib/services/types";
+import { unwrapRpc } from "@/lib/api/rpc-utils";
 import * as mockData from "@/lib/mock";
 import type { AnalyticsOverview } from "@/lib/mock";
 
@@ -26,14 +27,14 @@ export async function getVerificationTrends(
   const period = params?.period ?? "30d";
   const granularity = params?.granularity ?? "day";
 
-  const { data, error } = await insforge.database.rpc("get_verification_trends", {
+  const { data: rawData, error } = await insforge.database.rpc("get_verification_trends", {
     p_period: period,
     p_granularity: granularity,
   });
   if (error) throw error;
 
-  // RPC returns { period, series: [...], summary } — unwrap the envelope
-  const envelope = data as Record<string, unknown> | null;
+  // Robustly unwrap the envelope
+  const envelope = unwrapRpc<any>(rawData, "get_verification_trends");
   const series = Array.isArray(envelope?.series)
     ? (envelope.series as Array<{
         timestamp: string;
@@ -72,14 +73,14 @@ export async function getUserGrowth(params?: TrendsParams): Promise<UserGrowthRe
   const period = params?.period ?? "30d";
   const granularity = params?.granularity ?? "day";
 
-  const { data, error } = await insforge.database.rpc("get_user_growth", {
+  const { data: rawData, error } = await insforge.database.rpc("get_user_growth", {
     p_period: period,
     p_granularity: granularity,
   });
   if (error) throw error;
 
-  // RPC returns { period, granularity, series: [...], summary } — unwrap the envelope
-  const envelope = data as Record<string, unknown> | null;
+  // Robustly unwrap the envelope
+  const envelope = unwrapRpc<any>(rawData, "get_user_growth");
   const series = Array.isArray(envelope?.series)
     ? (envelope.series as Array<{
         date: string;
@@ -123,12 +124,12 @@ export async function getAnalyticsOverview(period?: string): Promise<AnalyticsOv
     return mockData.getAnalyticsOverview();
   }
 
-  const { data, error } = await insforge.database.rpc(
+  const { data: rawData, error } = await insforge.database.rpc(
     "get_analytics_overview",
     period ? { p_period: period } : undefined
   );
   if (error) throw error;
-  return data as AnalyticsOverview;
+  return unwrapRpc<AnalyticsOverview>(rawData, "get_analytics_overview");
 }
 
 // Re-export the AnalyticsOverview type for consumers

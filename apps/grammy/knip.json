@@ -1,7 +1,17 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["src/main.ts"],
-  "project": ["src/**/*.ts"],
+  "entry": ["src/main.ts", "../../tests/grammy/**/*.ts"],
+  "project": ["src/**/*.ts", "../../tests/grammy/**/*.ts"],
+  "ignore": [
+    "src/core/cache.ts",
+    "src/core/bot-commands.ts",
+    "src/services/channel-linker.ts",
+    "src/database/group-contract.repo.ts",
+    "src/services/protection.ts",
+    "src/middleware/sequentialize.ts",
+    "src/core/encryption.ts",
+    "src/services/batch-verification.ts"
+  ],
   "ignoreExportsUsedInFile": {
     "interface": true,
     "type": true

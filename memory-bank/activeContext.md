@@ -2,6 +2,22 @@
 
 ### Current Status
 
+**2026-03-14: RPC Wrapping Fix + Bot Data Pipeline Recovery (Critical Fix)**
+
+- **Issue**: Web charts were stuck on March 11 and switching periods (7d/30d/90d) showed "nothings" (empty states).
+- **Root Cause**: InsForge RPC responses (e.g., `get_verification_trends`, `get_group_verification_contract`) were being returned as wrapped JSON objects (e.g., `{ get_verification_trends: { ... } }`).
+- **Secondary Root Cause**: A bug in the initial `unwrapRpc` implementation incorrectly truncated all unwrapped arrays to their first element, causing all multi-row chart data (Hourly Activity, Top Groups, API Distribution, Latency Distribution) to appear empty or broken.
+- **Impact 1 (Web)**: Chart mapping logic failed to parse data correctly. Aggregate charts were empty, and Trend charts were missing nested series data.
+- **Impact 2 (Bot)**: `getGroupVerificationContract` couldn't read the `enabled` property from the wrapped RPC response. The bot incorrectly thought groups were unprotected and skipped membership verification logic, stopping all `verification_log` writes since March 11.
+- **Resolution**:
+  - Implemented and refined `unwrapRpc` utility in `apps/web/src/lib/api/rpc-utils.ts` to robustly handle both wrapped and unwrapped array responses.
+  - Hardened the bot's `group-contract.repo.ts` to robustly unwrap RPC responses, allowing it to correctly identify protected groups and resume logging.
+- **Verification**:
+  - Confirmed RPC result structure using `run-raw-sql`.
+  - Fixed `unwrapRpc` and verified it correctly handles array results (e.g., `get_api_calls_distribution`).
+  - Bot HAS BEEN RESTARTED in production and is actively calling the Telegram API (confirmed via `api_call_log` heartbeats for `getChatMemberCount` and `getMe`).
+  - Charts should now correctly display historical data up to March 11, with new data appearing as soon as the bot processes its first new verification.
+
 **2026-03-13: Web UI Audit + Accessibility/Navigation Hardening (Completed with one environment caveat)**
 
 - Dashboard layout no longer renders nested `main` landmarks. `SidebarInset` now owns the page landmark and the inner content wrapper is a plain `div`, fixing the accessibility issue observed in the Playwright snapshot.
