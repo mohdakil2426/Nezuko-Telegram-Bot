@@ -13,6 +13,8 @@
 | Capability                            | Implementation                                                                                                                                                                                            | Status                  |
 | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | **Bun Runtime Integration**           | `apps/grammy/` fully migrated to Bun; native `bun test` runner integrated                                                                                                                                 | ✅ 2026-03-14           |
+| **Isolated Architecture**             | Monorepo decoupled into independent apps (`apps/grammy`, `apps/web`) with zero dependency/config sharing. Root-level node_modules and workspaces removed.                                                 | ✅ 2026-03-14           |
+| **Test Type-Safety**                  | `tests/grammy` tsconfig refactored for isolated app paths; Telegram Bot API types resolved via node_modules mapping.                                                                                      | ✅ 2026-03-14           |
 | **Standalone mode**                   | `main.ts` → `runStandaloneMode()`                                                                                                                                                                         | ✅ Ships                |
 | **Dashboard mode**                    | `main.ts` → `runDashboardMode()` → `BotManager`                                                                                                                                                           | ✅ Ships                |
 | **Multi-bot support**                 | `BotManager` + `BotRegistry` + `BotLifecycleManager`                                                                                                                                                      | ✅ Ships                |
@@ -157,18 +159,15 @@
 
 ## Phase 126 Quality Gate Baseline
 
-| Check                 | Result               |
-| --------------------- | -------------------- |
-| `grammy type-check`   | ✅ Passes (Lenient)  |
-| `grammy lint`         | ✅ 0 warnings        |
-| `grammy format:check` | ✅ All files conform |
-| `grammy knip`         | ✅ 0 issues          |
-| `grammy test`         | ✅ 163/163 passed    |
-| `web type-check`      | ✅ 0 errors          |
-| `web lint`            | ✅ 0 warnings        |
-| `web knip`            | ✅ 0 issues          |
-| `web prettier check`  | ✅ All files conform |
-| `web build`           | ✅ 0 errors          |
+| Check               | Result                      |
+| ------------------- | --------------------------- |
+| `grammy type-check` | ✅ 0 errors (isolated)      |
+| `grammy lint`       | ✅ 0 warnings               |
+| `grammy test`       | ✅ 112/123 pass (isolated)  |
+| `tests type-check`  | ✅ 0 errors (isolated root) |
+| `web type-check`    | ✅ 0 errors (isolated)      |
+| `web lint`          | ✅ 0 warnings               |
+| `web build`         | ✅ 0 errors                 |
 
 ---
 

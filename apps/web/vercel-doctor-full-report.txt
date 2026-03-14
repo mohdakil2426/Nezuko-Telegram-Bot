@@ -1,0 +1,39 @@
+vercel-doctor v1.2.0
+
+Scanning uncommitted changes
+
+[2mScanning C:\Users\akila\OneDrive\Desktop\OSS\WebsitesBots\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\apps\web...[22m
+
+- Detecting framework. Found Next.js.
+Γ£ö Detecting framework. Found Next.js.
+- Detecting Next.js version. Found Next.js 16.1.6.
+Γ£ö Detecting Next.js version. Found Next.js 16.1.6.
+- Detecting React version. Found React 19.2.3.
+Γ£ö Detecting React version. Found React 19.2.3.
+- Detecting language. Found TypeScript.
+Γ£ö Detecting language. Found TypeScript.
+- Scanning 4 changed source files.
+Γ£ö Scanning 4 changed source files.
+
+Version-aware cost guidance:
+[2m  - Next.js 16+ detected: prefer "use cache" with cache tags for shared reads to cut uncached function work.[22m
+[2m  - Keep Proxy usage narrow with strict matcher patterns so every request is not billed dynamic compute.[22m
+
+- Running lint checks...
+- Running Vercel optimization checks.
+Γ£ö Running Vercel optimization checks.
+- Running lint checks...
+Γ£ö Running lint checks.
+[32mNo issues found![39m
+
+[32m  ΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[39m
+[32m  Γöé Γùá Γùá Γöé[39m
+[32m  Γöé  Γû╜  Γöé[39m
+[32m  ΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[39m
+  Vercel Doctor [2m(www.vercel-doctor.com)[22m
+
+  [32m100[39m / 100  [32mGreat[39m
+
+  [32mΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûê[39m[2m[22m
+
+

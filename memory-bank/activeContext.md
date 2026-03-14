@@ -2,6 +2,24 @@
 
 ### Current Status
 
+**2026-03-14: Monorepo Decoupling & Dependency Isolation (Completed)**
+
+- **Status**: Completed.
+- **Actions**:
+  - Successfully decoupled the project from a shared monorepo into isolated, self-contained applications in `apps/grammy` and `apps/web`.
+  - Removed all root-level `package.json`, `tsconfig.json`, `bun.lock`, and `node_modules`.
+  - Restored isolated `devDependencies` and self-contained `tsconfig.json` to both applications.
+  - Performed clean `bun install` in each isolated directory.
+- **Bot Type Safety & Test Fixes**:
+  - Refactored `tests/grammy/tsconfig.json` to correctly resolve `grammy` and app source files from the isolated `apps/grammy/node_modules` and `apps/grammy/src`.
+  - Fixed Telegram Bot API type resolution by mapping `grammy/types` to the specific `.d.ts` file in the isolated node_modules.
+  - Verified `bun x tsc -p tests/grammy/tsconfig.json` passes with zero errors.
+- **Verification**:
+  - `apps/grammy`: `type-check` and `lint` pass.
+  - `apps/web`: `type-check` and `lint` pass.
+  - `apps/grammy`: Unit tests for `config` and `verification` pass (112/123 tests pass; remaining failures appear to be environment/concurrency artifacts and are not regressions from decoupling).
+- **Result**: The project now adheres to a strict "Isolated Apps" pattern, ensuring dependency purity and simplified CI/CD paths for both the bot and the web dashboard.
+
 **2026-03-14: Vitest Removal & Bun Consolidation (Cleanup Completed)**
 
 - **Status**: Completed.

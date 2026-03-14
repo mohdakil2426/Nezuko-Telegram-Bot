@@ -1,19 +1,22 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "target": "ESNext",
+    "lib": ["esnext"],
     "types": ["bun", "node"],
-    "typeRoots": ["../../node_modules/@types", "../../apps/grammy/node_modules/@types"],
+    "typeRoots": ["../../apps/grammy/node_modules/@types"],
+    "strict": true,
     "noImplicitAny": false,
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["../../apps/web/src/*"],
-      "grammy/types": ["../../node_modules/grammy/out/types.d.ts"]
+      "grammy": ["../../apps/grammy/node_modules/grammy"],
+      "grammy/types": ["../../apps/grammy/node_modules/grammy/out/types.d.ts"],
+      "@grammyjs/*": ["../../apps/grammy/node_modules/@grammyjs/*"],
+      "@/*": ["../../apps/grammy/src/*"]
     }
   },
   "include": ["**/*.ts", "../../apps/grammy/src/**/*.ts"],

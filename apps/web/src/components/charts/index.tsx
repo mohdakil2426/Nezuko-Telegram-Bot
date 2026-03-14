@@ -15,6 +15,22 @@ const ChartLoading = () => <Skeleton className="h-[350px] w-full rounded-xl" />;
 export { ChartEmptyState } from "./chart-empty-state";
 export { ChartPeriodSelector } from "./chart-period-selector";
 
+// Dashboard & Metrics
+export const VerificationChart = dynamic(
+  () => import("./verification-chart").then((m) => m.VerificationChart),
+  { ssr: false, loading: ChartLoading }
+);
+
+export const UserGrowthChart = dynamic(
+  () => import("./user-growth-chart").then((m) => m.UserGrowthChart),
+  { ssr: false, loading: ChartLoading }
+);
+
+export const VerificationTrendsChart = dynamic(
+  () => import("./verification-trends-chart").then((m) => m.VerificationTrendsChart),
+  { ssr: false, loading: ChartLoading }
+);
+
 // API & Cache Charts
 export const ApiCallsChart = dynamic(
   () => import("./api-calls-chart").then((m) => m.ApiCallsChart),

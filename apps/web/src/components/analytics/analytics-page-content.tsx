@@ -10,8 +10,6 @@ import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsOverviewCards } from "./overview-cards";
-import { VerificationTrendsChart } from "./verification-trends-chart";
-import { UserGrowthChart } from "./user-growth-chart";
 
 import {
   VerificationDistributionChart,
@@ -26,6 +24,8 @@ import {
   ApiCallsTrendChart,
   LatencyTrendChart,
   BotHealthChart,
+  VerificationTrendsChart,
+  UserGrowthChart,
 } from "@/components/charts";
 
 const VALID_TABS = ["operations", "cache-api", "groups-members"] as const;

@@ -123,7 +123,11 @@ INSFORGE_SERVICE_KEY=<server-only key> # Optional: server actions / secure vault
 
 ## Code Quality Tools
 
+Each app maintains its own quality gate toolchain. No root-level quality checks are performed across app boundaries.
+
 ### TypeScript CLI Commands
+
+Run these within their respective `apps/<name>` directories.
 
 ```bash
 # ── grammY Bot ──

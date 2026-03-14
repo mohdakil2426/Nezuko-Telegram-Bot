@@ -1,0 +1,64 @@
+react-doctor v0.0.30
+
+[32mΓ£ö[39m Select projects to scan [2mΓÇ║[22m @nezuko/web
+[2mScanning C:\Users\akila\OneDrive\Desktop\OSS\WebsitesBots\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\apps\web...[22m
+
+- Detecting framework. Found Next.js.
+Γ£ö Detecting framework. Found Next.js.
+- Detecting React version. Found React 19.2.3.
+Γ£ö Detecting React version. Found React 19.2.3.
+- Detecting language. Found TypeScript.
+Γ£ö Detecting language. Found TypeScript.
+- Detecting React Compiler. Found React Compiler.
+Γ£ö Detecting React Compiler. Found React Compiler.
+- Found 147 source files.
+Γ£ö Found 147 source files.
+
+- Running lint checks...
+- Detecting dead code.
+Γ£ö Detecting dead code.
+- Running lint checks...
+Γ£ö Running lint checks.
+  [31mΓ£ù[39m React Compiler can't optimize this code
+[2m    Compilation Skipped: Use of incompatible library
+    
+    This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.[22m
+[2m    src/components/shared/data-table.tsx: 87[22m
+
+  [33mΓÜá[39m "recharts" is a heavy library ΓÇö use React.lazy() or next/dynamic for code splitting[33m (16)[39m
+[2m    Use `const Component = dynamic(() => import('library'), { ssr: false })` from next/dynamic or React.lazy()[22m
+[2m    src/components/charts/groups-status-chart.tsx: 8[22m
+[2m    src/components/charts/api-calls-chart.tsx: 9[22m
+[2m    src/components/charts/hourly-activity-chart.tsx: 8[22m
+[2m    src/components/charts/latency-distribution-chart.tsx: 9[22m
+[2m    src/components/charts/cache-hit-rate-trend-chart.tsx: 10[22m
+[2m    src/components/charts/cache-breakdown-chart.tsx: 8[22m
+[2m    src/components/charts/api-calls-trend-chart.tsx: 15[22m
+[2m    src/components/analytics/user-growth-chart.tsx: 9[22m
+[2m    src/components/charts/verification-distribution-chart.tsx: 9[22m
+[2m    src/components/charts/top-groups-chart.tsx: 11[22m
+[2m    src/components/ui/chart.tsx: 4[22m
+[2m    src/components/dashboard/verification-chart.tsx: 9[22m
+[2m    src/components/analytics/verification-trends-chart.tsx: 9[22m
+[2m    src/components/charts/members-chart.tsx: 11[22m
+[2m    src/components/charts/latency-trend-chart.tsx: 9[22m
+[2m    src/components/charts/bot-health-chart.tsx: 9[22m
+
+  [2mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[22m
+  [2mΓöé[22m [32mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[39m                                                 [2mΓöé[22m
+  [2mΓöé[22m [32mΓöé Γùá Γùá Γöé[39m                                                 [2mΓöé[22m
+  [2mΓöé[22m [32mΓöé  Γû╜  Γöé[39m                                                 [2mΓöé[22m
+  [2mΓöé[22m [32mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[39m                                                 [2mΓöé[22m
+  [2mΓöé[22m React Doctor [2m(www.react.doctor)[22m                         [2mΓöé[22m
+  [2mΓöé[22m                                                         [2mΓöé[22m
+  [2mΓöé[22m [32m98[39m / 100  [32mGreat[39m                                         [2mΓöé[22m
+  [2mΓöé[22m                                                         [2mΓöé[22m
+  [2mΓöé[22m [32mΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûê[39m[2mΓûæ[22m      [2mΓöé[22m
+  [2mΓöé[22m                                                         [2mΓöé[22m
+  [2mΓöé[22m [31mΓ£ù 1 error[39m  [33mΓÜá 16 warnings[39m  [2macross 17/147 files[22m  [2min 13.3s[22m [2mΓöé[22m
+  [2mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[22m
+
+[2m  Full diagnostics written to C:\Users\akila\AppData\Local\Temp\react-doctor-38b75d95-8820-49a2-97b4-6e80a9908335[22m
+
+[2m  Share your results: [36mhttps://www.react.doctor/share?p=%40nezuko%2Fweb&s=98&e=1&w=16&f=17[39m[22m
+

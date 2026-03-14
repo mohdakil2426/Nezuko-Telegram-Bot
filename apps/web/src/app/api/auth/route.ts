@@ -20,5 +20,12 @@ if (!baseUrl) {
 const handlers = createAuthRouteHandlers({ baseUrl });
 
 export const POST = handlers.POST;
-export const GET = handlers.GET;
+
+export const GET = async (req: Request) => {
+  const response = await handlers.GET(req);
+  // Auth routes must never be cached by CDN or browser
+  response.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
+  return response;
+};
+
 export const DELETE = handlers.DELETE;

@@ -3,5 +3,5 @@
  */
 
 export { StatCards } from "./stat-cards";
-export { VerificationChart } from "./verification-chart";
+export { VerificationChart } from "@/components/charts";
 export { ActivityFeed } from "./activity-feed";

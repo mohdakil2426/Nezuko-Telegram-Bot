@@ -33,17 +33,18 @@ Convert group participants into channel subscribers through automated verificati
 
 ## Workspace Structure
 
-```
+The project is organized as isolated, self-contained applications with zero dependency sharing or root-level `node_modules`.
+
+```text
 nezuko/
 ├── apps/
-│   ├── grammy/       # ✅ ACTIVE — Telegram Bot (TypeScript / grammY)
-│   │   └── src/      # Active source tree: core, composers, middleware, services, database, utils
-│   └── web/          # ✅ ACTIVE — Next.js Dashboard (~120 TypeScript files)
-├── insforge/
-│   ├── migrations/   # SQL migration files (001-025; 023_fresh_grammy_schema.sql is canonical)
-│   └── functions/    # Edge Functions (manage-bot, test-webhook)
+│   ├── grammy/       # Isolated Telegram Bot (TypeScript / grammY)
+│   │   └── package.json (self-contained deps + lockfile)
+│   └── web/          # Isolated Next.js Dashboard
+│       └── package.json (self-contained deps + lockfile)
+├── insforge/         # Shared backend resources (migrations, functions)
 ├── tests/
-│   └── grammy/       # ✅ ACTIVE — grammY bot tests (163 tests passing)
+│   └── grammy/       # grammY bot tests (executed within apps/grammy context)
 ├── scripts/          # Development & utility scripts
 ├── memory-bank/      # Project documentation
 └── docs/             # Technical documentation

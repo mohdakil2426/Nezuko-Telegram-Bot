@@ -1,0 +1,56 @@
+Resolving dependencies
+Resolved, downloaded and extracted [2]
+Saved lockfile
+vercel-doctor v1.2.0
+
+[2mScanning C:\Users\akila\OneDrive\Desktop\OSS\WebsitesBots\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\apps\web...[22m
+
+- Detecting framework. Found Next.js.
+Γ£ö Detecting framework. Found Next.js.
+- Detecting Next.js version. Found Next.js 16.1.6.
+Γ£ö Detecting Next.js version. Found Next.js 16.1.6.
+- Detecting React version. Found React 19.2.3.
+Γ£ö Detecting React version. Found React 19.2.3.
+- Detecting language. Found TypeScript.
+Γ£ö Detecting language. Found TypeScript.
+- Found 147 source files.
+Γ£ö Found 147 source files.
+
+Version-aware cost guidance:
+[2m  - Next.js 16+ detected: prefer "use cache" with cache tags for shared reads to cut uncached function work.[22m
+[2m  - Keep Proxy usage narrow with strict matcher patterns so every request is not billed dynamic compute.[22m
+
+- Running lint checks...
+- Running Vercel optimization checks.
+Γ£ö Running Vercel optimization checks.
+- Running lint checks...
+- Detecting dead code.
+Γ£ö Detecting dead code.
+- Running lint checks...
+Γ£ö Running lint checks.
+  [33mΓÜá[39m Large static asset (25.32KB) is served from the app repository ΓÇö this can consume Vercel bandwidth quickly
+[2m    Move large static assets to a CDN/object storage provider (Cloudflare R2, S3, or media CDN) and serve optimized variants.[22m
+[2m    src/app/favicon.ico[22m
+
+  [33mΓÜá[39m GET route handler has no explicit cache policy ΓÇö responses may miss CDN caching opportunities
+[2m    For cacheable GET routes on Next.js 16+, add `Cache-Control` headers or adopt `"use cache"` + cache tags to avoid repeated origin work.[22m
+[2m    src/app/api/auth/route.ts: 23[22m
+
+  [2mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[22m
+  [2mΓöé[22m [32mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[39m                                            [2mΓöé[22m
+  [2mΓöé[22m [32mΓöé Γùá Γùá Γöé[39m                                            [2mΓöé[22m
+  [2mΓöé[22m [32mΓöé  Γû╜  Γöé[39m                                            [2mΓöé[22m
+  [2mΓöé[22m [32mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[39m                                            [2mΓöé[22m
+  [2mΓöé[22m Vercel Doctor [2m(www.vercel-doctor.com)[22m              [2mΓöé[22m
+  [2mΓöé[22m                                                    [2mΓöé[22m
+  [2mΓöé[22m [32m99[39m / 100  [32mGreat[39m                                    [2mΓöé[22m
+  [2mΓöé[22m                                                    [2mΓöé[22m
+  [2mΓöé[22m [32mΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûê[39m[2m[22m [2mΓöé[22m
+  [2mΓöé[22m                                                    [2mΓöé[22m
+  [2mΓöé[22m [33mΓÜá 2 warnings[39m  [2macross 2/147 files[22m  [2min 5.8s[22m          [2mΓöé[22m
+  [2mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[22m
+
+[2m  Full diagnostics written to C:\Users\akila\AppData\Local\Temp\vercel-doctor-73e06af6-a22b-47f2-9528-13744a944d76[22m
+
+[2m  Share your results: [36mhttps://www.vercel-doctor.com/share?p=%40nezuko%2Fweb&s=99&w=2&f=2[39m[22m
+

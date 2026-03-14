@@ -1,0 +1,8 @@
+react-doctor v0.0.30
+
+[32mΓ£ö[39m Select projects to scan [2mΓÇ║[22m @nezuko/web
+[?25l[2K[1G[36m?[39m [1mFound 4 uncommitted changed files. Only scan current changes?[22m [90m┬╗[39m [90m(Y/n)[39m[2K[1G[2K[1G[31m├ù[39m [1mFound 4 uncommitted changed files. Only scan current changes?[22m [90m...[39m yes
+[?25h
+Cancelled.
+[2mRun `npx react-doctor@latest --fix` to fix issues.[22m
+
