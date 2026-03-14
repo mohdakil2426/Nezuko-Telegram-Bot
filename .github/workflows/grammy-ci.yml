@@ -1,10 +1,13 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Nezuko — grammY Bot CI
 #
-# Triggers on any push/PR that touches the bot source or its tests.
-# Runs all quality gates using Bun (the canonical runtime for this project).
-# On main-branch pushes it additionally produces a build artifact that the
-# deploy workflow can consume without re-building.
+# Runs all quality gates on every push/PR that touches the bot.
+# App Platform deploys automatically from GitHub on push to main —
+# this workflow is the mandatory pre-gate that must pass first.
+#
+# To gate App Platform deploys on CI:
+#   GitHub → Settings → Branches → Add rule → main
+#   → "Require status checks to pass" → add "grammY Bot CI / quality"
 # ─────────────────────────────────────────────────────────────────────────────
 name: grammY Bot CI
 
@@ -23,7 +26,6 @@ on:
       - ".github/workflows/grammy-ci.yml"
 
 concurrency:
-  # Cancel in-progress runs on the same branch/PR so stale jobs don't queue up.
   group: grammy-ci-${{ github.ref }}
   cancel-in-progress: true
 
@@ -38,7 +40,7 @@ jobs:
   quality:
     name: Quality Gates
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -50,7 +52,7 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
-      # ── Cache node_modules between runs ────────────────────────────────────
+      # ── Cache node_modules ─────────────────────────────────────────────────
       - name: Cache grammy dependencies
         uses: actions/cache@v4
         id: grammy-deps-cache
@@ -72,7 +74,6 @@ jobs:
         run: bun run lint
 
       # ── Gate 3: Prettier ───────────────────────────────────────────────────
-      # Both src/ AND tests/grammy/ are in scope (root .prettierrc, no tailwind plugin).
       - name: Format check
         run: bun run format:check
 
@@ -80,24 +81,42 @@ jobs:
       - name: Knip
         run: bun run knip
 
-      # ── Gate 5: Tests ──────────────────────────────────────────────────────
-      - name: Tests
+      # ── Gate 5: Tests ─────────────────────────────────────────────────────
+      - name: Test
         run: bun run test
 
-      # ── Gate 6: Build ──────────────────────────────────────────────────────
+      # ── Gate 6: Build ─────────────────────────────────────────────────────
+      # Validates the TypeScript compiles to dist/ with zero errors.
+      # App Platform will run this same build inside the Docker image.
       - name: Build
         run: bun run build
 
-      # ── Upload build artifact (main branch only) ───────────────────────────
-      # The deploy workflow downloads this artifact instead of re-building.
-      - name: Upload build artifact
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: actions/upload-artifact@v4
-        with:
-          name: grammy-dist-${{ github.sha }}
-          path: |
-            apps/grammy/dist/
-            apps/grammy/package.json
-            apps/grammy/bun.lock
-          retention-days: 7
-          if-no-files-found: error
+      # ── Docker build validation ────────────────────────────────────────────
+      # Build the Dockerfile locally to catch container build failures before
+      # they reach App Platform (saves ~3min of wasted deploy time).
+      - name: Validate Dockerfile builds
+        working-directory: .
+        run: |
+          docker build \
+            -f apps/grammy/Dockerfile \
+            -t nezuko-grammy-ci:${{ github.sha }} \
+            apps/grammy/
+          echo "Docker build succeeded ✓"
+
+      # ── Summary ───────────────────────────────────────────────────────────
+      - name: Print CI summary
+        if: success()
+        run: |
+          echo "### ✅ grammY Bot CI — All Gates Passed" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Gate | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| type-check | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| lint | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| format | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| knip | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| test | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| build | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| docker | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "App Platform will auto-deploy from this commit." >> "$GITHUB_STEP_SUMMARY"

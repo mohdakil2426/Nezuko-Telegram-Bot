@@ -52,13 +52,41 @@
 
 ### Infrastructure
 
-| Tool              | Purpose                                                         |
-| ----------------- | --------------------------------------------------------------- |
-| **InsForge BaaS** | Managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions |
-| **Vercel**        | Web hosting (Next.js)                                           |
-| **Docker**        | Bot containerisation                                            |
-| **Caddy**         | Reverse proxy                                                   |
-| **Bun**           | Package manager (grammy + web)                                  |
+| Tool                     | Purpose                                                         | Status                                    |
+| ------------------------ | --------------------------------------------------------------- | ----------------------------------------- |
+| **InsForge BaaS**        | Managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions | ✅ Live                                   |
+| **Vercel**               | Web hosting (`apps/web` — Next.js 16 App Router)                | ✅ Live — `https://nezuko-web.vercel.app` |
+| **DigitalOcean Droplet** | Bot runtime (grammY long-polling + Redis)                       | ⏳ Setup in progress                      |
+| **Redis**                | L1 cache, idempotency locks, moderation state (on same Droplet) | ⏳ Awaits Droplet                         |
+| **Docker**               | Bot containerisation (`apps/grammy/Dockerfile`)                 | ✅ Fixed (Bun build)                      |
+| **systemd**              | Bot process management on Droplet (`nezuko-grammy.service`)     | ✅ Service file ready                     |
+| **GitHub Actions**       | CI/CD for both apps                                             | ✅ Three workflows active                 |
+
+### CI/CD Workflows
+
+| Workflow      | File                                  | Trigger                                          |
+| ------------- | ------------------------------------- | ------------------------------------------------ |
+| grammY CI     | `.github/workflows/grammy-ci.yml`     | Push/PR to `apps/grammy/**` or `tests/grammy/**` |
+| grammY Deploy | `.github/workflows/grammy-deploy.yml` | After grammy-ci passes on `main` (or manual)     |
+| Web CI        | `.github/workflows/web-ci.yml`        | Push/PR to `apps/web/**`                         |
+| Vercel Deploy | Vercel GitHub App (native)            | Any push to any branch (auto)                    |
+
+**grammY deploy flow**: CI artifact → rsync to Droplet → `bun install --production` → `systemctl restart nezuko-grammy` → 60s health poll → auto-rollback on failure.
+
+**Required GitHub Secrets** (for bot deploy):
+
+```
+DO_HOST            Droplet IP/hostname
+DO_PORT            SSH port (22)
+DO_USER            Service user (nezuko)
+DO_SSH_PRIVATE_KEY Ed25519 private key
+DO_KNOWN_HOSTS     ssh-keyscan -H <droplet-ip> output
+GRAMMY_REMOTE_DIR  /opt/nezuko/grammy
+GRAMMY_SERVICE     nezuko-grammy
+GRAMMY_HEALTH_URL  http://127.0.0.1:8080/health
+```
+
+| **Bun** | Package manager (grammy + web) |
 
 ### Performance & Monitoring
 

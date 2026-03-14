@@ -1,225 +1,31 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Nezuko — grammY Bot Deploy → DigitalOcean Droplet
+# NOTE: This workflow is ARCHIVED — no longer used.
 #
-# Prerequisite: the grammy-ci.yml job must have succeeded and uploaded the
-# build artifact for the same commit SHA.
+# The grammY bot now deploys via DigitalOcean App Platform.
+# App Platform deploys automatically on every push to main.
+# See .do/app.yaml for the App Platform spec.
 #
-# GitHub repository secrets required:
-#   DO_HOST           — Droplet public IP or hostname
-#   DO_PORT           — SSH port (usually 22)
-#   DO_USER           — SSH user on the Droplet (non-root, e.g. "nezuko")
-#   DO_SSH_PRIVATE_KEY— Private key whose public key is in authorized_keys
-#   DO_KNOWN_HOSTS    — Output of: ssh-keyscan -H <droplet-ip>
-#   GRAMMY_REMOTE_DIR — Absolute path on Droplet (e.g. /opt/nezuko/grammy)
-#   GRAMMY_SERVICE    — systemd service name (e.g. nezuko-grammy)
-#   GRAMMY_HEALTH_URL — Health endpoint (e.g. http://127.0.0.1:8080/health)
+# This file is kept for reference only (Droplet-style SSH deploy pattern).
+# It can be deleted if you never plan to switch back to a Droplet.
 # ─────────────────────────────────────────────────────────────────────────────
-name: grammY Bot Deploy
+name: grammY Bot Deploy (Archived - App Platform Used Instead)
 
 on:
-  # Only runs automatically after grammy-ci passes on main.
-  workflow_run:
-    workflows: ["grammY Bot CI"]
-    branches: [main]
-    types: [completed]
-
-  # Allow manual re-deploy for hotfix / rollback scenarios.
   workflow_dispatch:
     inputs:
-      sha:
-        description: "Commit SHA to deploy (leave blank = latest main)"
-        required: false
-        default: ""
+      confirm:
+        description: "This workflow is archived. Type 'yes' to run anyway (Droplet fallback only)"
+        required: true
+        default: "no"
 
 jobs:
-  deploy:
-    name: Deploy to DigitalOcean
+  archived:
+    name: Archived
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    # Only run if the triggering CI workflow succeeded.
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
-
-    # GitHub environment — add a protection rule in Settings > Environments
-    # to require manual approval before production deploys.
-    environment:
-      name: production
-      url: https://${{ secrets.DO_HOST }}
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          # If manual dispatch with a specific SHA, check that out; else HEAD.
-          ref: ${{ inputs.sha || github.sha }}
-
-      # ── Resolve the exact SHA we're deploying ──────────────────────────────
-      - name: Resolve deploy SHA
-        id: sha
+      - name: Remind about App Platform
         run: |
-          DEPLOY_SHA="${{ inputs.sha || github.event.workflow_run.head_sha || github.sha }}"
-          echo "sha=${DEPLOY_SHA}" >> "$GITHUB_OUTPUT"
-          echo "Deploying SHA: ${DEPLOY_SHA}"
-
-      # ── Download the build artifact produced by grammy-ci ─────────────────
-      # For workflow_run triggers, the artifact lives on the CI run (not this run).
-      - name: Download build artifact
-        uses: dawidd6/action-download-artifact@v9
-        with:
-          name: grammy-dist-${{ steps.sha.outputs.sha }}
-          # Point at the triggering CI run when available, else this run.
-          run_id: ${{ github.event.workflow_run.id || github.run_id }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          path: dist-artifact
-
-      - name: Verify artifact contents
-        run: |
-          echo "── Artifact contents ──────────────────────────"
-          ls -lah dist-artifact/
-          ls -lah dist-artifact/dist/ || true
-          echo "── package.json version ───────────────────────"
-          cat dist-artifact/package.json | grep '"version"'
-
-      # ── Configure SSH ──────────────────────────────────────────────────────
-      - name: Configure SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
-
-      - name: Add Droplet to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DO_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-
-      # ── Smoke-check SSH connectivity before touching the server ───────────
-      - name: Verify SSH connectivity
-        run: |
-          ssh -p "${{ secrets.DO_PORT }}" \
-              -o ConnectTimeout=10 \
-              "${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}" \
-              "echo 'SSH OK — host:' \$(hostname)"
-
-      # ── Snapshot current dist for rollback ────────────────────────────────
-      # We keep the last known-good release as dist.bak on the server.
-      - name: Snapshot previous release for rollback
-        run: |
-          ssh -p "${{ secrets.DO_PORT }}" \
-              "${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}" \
-          'REMOTE_DIR="${{ secrets.GRAMMY_REMOTE_DIR }}"
-           if [ -d "${REMOTE_DIR}/dist" ]; then
-             rm -rf "${REMOTE_DIR}/dist.bak"
-             cp -a "${REMOTE_DIR}/dist" "${REMOTE_DIR}/dist.bak"
-             cp -f "${REMOTE_DIR}/package.json" "${REMOTE_DIR}/package.json.bak" 2>/dev/null || true
-             cp -f "${REMOTE_DIR}/bun.lock" "${REMOTE_DIR}/bun.lock.bak" 2>/dev/null || true
-             echo "Snapshot created at ${REMOTE_DIR}/dist.bak"
-           else
-             echo "No previous dist — first deploy, skipping snapshot"
-           fi'
-
-      # ── Ship the new release files ─────────────────────────────────────────
-      # rsync: only ship dist/ + package.json + bun.lock.
-      # Never ship .env, tests, docs, memory-bank.
-      - name: Upload release files
-        run: |
-          rsync -az --delete \
-            -e "ssh -p ${{ secrets.DO_PORT }}" \
-            dist-artifact/dist/ \
-            "${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:${{ secrets.GRAMMY_REMOTE_DIR }}/dist/"
-
-          scp -P "${{ secrets.DO_PORT }}" \
-            dist-artifact/package.json \
-            dist-artifact/bun.lock \
-            "${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:${{ secrets.GRAMMY_REMOTE_DIR }}/"
-
-      # ── Install production dependencies on the Droplet ────────────────────
-      # bun install --production skips devDependencies.
-      # If bun is not on the Droplet, falls back to node --production install.
-      - name: Install production dependencies
-        run: |
-          ssh -p "${{ secrets.DO_PORT }}" \
-              "${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}" \
-          'cd "${{ secrets.GRAMMY_REMOTE_DIR }}" || exit 1
-           if command -v bun &>/dev/null; then
-             echo "Using bun install --production"
-             bun install --production --frozen-lockfile
-           else
-             echo "Bun not found — falling back to npm install --production"
-             npm install --production --ignore-scripts
-           fi'
-
-      # ── Graceful service restart ───────────────────────────────────────────
-      # systemctl restart is NOT atomic. We stop → wait → start to give the
-      # old process time to release the polling lock and close connections.
-      - name: Restart systemd service
-        run: |
-          ssh -p "${{ secrets.DO_PORT }}" \
-              "${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}" \
-          'SERVICE="${{ secrets.GRAMMY_SERVICE }}"
-           echo "Stopping ${SERVICE}..."
-           sudo systemctl stop "${SERVICE}"
-           # Wait for the old process to fully exit (release process-lock.ts file)
-           sleep 3
-           echo "Starting ${SERVICE}..."
-           sudo systemctl start "${SERVICE}"
-           echo "Service restarted."'
-
-      # ── Health-check polling ───────────────────────────────────────────────
-      # Poll /health for up to 60 seconds. The bot needs a moment to:
-      #   1. Connect to InsForge
-      #   2. Fetch bot_instances from DB
-      #   3. Start polling / status-writer / command-worker
-      - name: Verify health endpoint
-        run: |
-          ssh -p "${{ secrets.DO_PORT }}" \
-              "${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}" \
-          'HEALTH="${{ secrets.GRAMMY_HEALTH_URL }}"
-           echo "Polling ${HEALTH} for up to 60s..."
-           for i in $(seq 1 12); do
-             STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${HEALTH}" 2>/dev/null || echo "000")
-             echo "  Attempt ${i}/12 — HTTP ${STATUS}"
-             if [ "${STATUS}" = "200" ]; then
-               echo "Health check PASSED"
-               exit 0
-             fi
-             sleep 5
-           done
-           echo "Health check FAILED after 60s"
-           exit 1'
-
-      # ── Automatic rollback on health-check failure ─────────────────────────
-      - name: Rollback on failure
-        if: failure()
-        run: |
-          ssh -p "${{ secrets.DO_PORT }}" \
-              "${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}" \
-          'REMOTE_DIR="${{ secrets.GRAMMY_REMOTE_DIR }}"
-           SERVICE="${{ secrets.GRAMMY_SERVICE }}"
-
-           if [ ! -d "${REMOTE_DIR}/dist.bak" ]; then
-             echo "No rollback snapshot available — manual intervention required"
-             exit 1
-           fi
-
-           echo "Rolling back to previous release..."
-           sudo systemctl stop "${SERVICE}" || true
-           rm -rf "${REMOTE_DIR}/dist"
-           cp -a "${REMOTE_DIR}/dist.bak" "${REMOTE_DIR}/dist"
-           cp -f "${REMOTE_DIR}/package.json.bak" "${REMOTE_DIR}/package.json" 2>/dev/null || true
-           cp -f "${REMOTE_DIR}/bun.lock.bak" "${REMOTE_DIR}/bun.lock" 2>/dev/null || true
-           sudo systemctl start "${SERVICE}"
-           echo "Rollback complete — previous release restored"'
-
-      # ── Deployment summary ─────────────────────────────────────────────────
-      - name: Print deployment summary
-        if: success()
-        run: |
-          echo "╔══════════════════════════════════════════════╗"
-          echo "║   Nezuko grammY Bot — Deployment Complete    ║"
-          echo "╠══════════════════════════════════════════════╣"
-          echo "║  SHA : ${{ steps.sha.outputs.sha }}"
-          echo "║  Host: ${{ secrets.DO_HOST }}"
-          echo "║  Dir : ${{ secrets.GRAMMY_REMOTE_DIR }}"
-          echo "╚══════════════════════════════════════════════╝"
+          echo "⚠️  This workflow is archived."
+          echo "The bot deploys automatically via DigitalOcean App Platform."
+          echo "See .do/app.yaml for the current deploy spec."
+          exit 1

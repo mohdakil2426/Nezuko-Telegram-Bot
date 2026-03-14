@@ -1,6 +1,6 @@
 # Progress: What Works, What's Left
 
-## Current Phase: 126 — UI Refactoring & Quality Consolidation (React Compiler · Code Pruning · Performance Purity)
+## Current Phase: 127 — CI/CD Setup & Production Deployment (Vercel Live · DigitalOcean Pending)
 
 > **Active Runtime**: `apps/grammy/` (Bun + grammY v1.41.1)
 
@@ -146,29 +146,37 @@
 
 ## 🏗️ Next Steps
 
-1. **Deploy bot/web runtime changes before locking down anon** — production must use `INSFORGE_SERVICE_KEY` (bot) and authenticated server actions (web) before migration 026 is run live.
-2. **Apply migration 026 live** — remove anon access to secrets/control-plane/runtime tables once deployment parity is confirmed.
-3. **Add InsForge triggers for groups/channels/link rows** — finish true cross-session dashboard realtime for admin entity changes.
-4. **Apply migration 024 live** — add `get_group_verification_contract` and backfill `join_request_preferred` so fallback is no longer needed.
-5. **Validate join-request-first flow live** — verify request-only invite flow approves subscribed users without mute fallback.
-6. **Docker build** — update `Dockerfile` to point at `apps/grammy` (`bun install` + `bun run build` + `node dist/main.js`).
-7. **S3 verdict-level L2 cache** — implement `setVerificationVerdict()` in verify.ts to skip repeat getChatMember checks on re-taps.
-8. **Wire standalone-watchdog.ts into main.ts** — complete standalone runner supervision if standalone mode gains more users.
+1. **Deploy bot to DigitalOcean Droplet** ← Active now
+   - Create Droplet (Ubuntu 24.04 LTS, 1–2 GB RAM)
+   - Run `docs/deploy/bootstrap-droplet.sh`
+   - Add GitHub Secrets (`DO_HOST`, `DO_PORT`, `DO_USER`, `DO_SSH_PRIVATE_KEY`, `DO_KNOWN_HOSTS`, etc.)
+   - Install `docs/deploy/nezuko-grammy.service` to Droplet
+   - Trigger `grammy-deploy.yml` for first bot deploy
+   - Verify `/health` endpoint responds with 200
+2. **Apply migration 026 live** — remove anon access to secrets/control-plane/runtime tables once bot is on Droplet and using `INSFORGE_SERVICE_KEY`.
+3. **Apply migration 024 live** — add `get_group_verification_contract` and backfill `join_request_preferred` so fallback is no longer needed.
+4. **Validate join-request-first flow live** — verify request-only invite flow approves subscribed users without mute fallback.
+5. **Add InsForge triggers for groups/channels/link rows** — finish true cross-session dashboard realtime for admin entity changes.
+6. **S3 verdict-level L2 cache** — implement `setVerificationVerdict()` in verify.ts to skip repeat getChatMember checks on re-taps.
+7. **Wire standalone-watchdog.ts into main.ts** — complete standalone runner supervision if standalone mode gains more users.
 
 ---
 
-## Phase 126 Quality Gate Baseline
+## Phase 127 Quality Gate Baseline
 
-| Check               | Result                      |
-| ------------------- | --------------------------- |
-| `grammy type-check` | ✅ 0 errors (isolated)      |
-| `grammy lint`       | ✅ 0 warnings               |
-| `grammy test`       | ✅ 112/123 pass (isolated)  |
-| `tests type-check`  | ✅ 0 errors (isolated root) |
-| `web type-check`    | ✅ 0 errors (isolated)      |
-| `web lint`          | ✅ 0 warnings               |
-| `web build`         | ✅ 0 errors                 |
+| Check               | Result                                   |
+| ------------------- | ---------------------------------------- |
+| `grammy type-check` | ✅ 0 errors (isolated)                   |
+| `grammy lint`       | ✅ 0 warnings                            |
+| `grammy test`       | ✅ 163/163 pass (isolated)               |
+| `tests type-check`  | ✅ 0 errors (isolated root)              |
+| `web type-check`    | ✅ 0 errors (isolated)                   |
+| `web lint`          | ✅ 0 warnings                            |
+| `web build`         | ✅ 0 errors                              |
+| `web production`    | ✅ Live at https://nezuko-web.vercel.app |
+| `grammy CI`         | ✅ Bun-based, artifact upload on main    |
+| `grammy deploy`     | ⏳ Awaiting DigitalOcean Droplet         |
 
 ---
 
-_Last Updated: 2026-03-14 (Bun migration verified; 163/163 pass; lint/format/build confirmed)_
+_Last Updated: 2026-03-15 (Vercel live; CI/CD workflows done; DigitalOcean setup pending)_

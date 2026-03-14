@@ -2,6 +2,44 @@
 
 ### Current Status
 
+**2026-03-15: CI/CD Setup + Vercel Deployment Live (Phase 127 — Completed)**
+
+- **Status**: Completed. Web dashboard is live in production.
+- **Production URL**: `https://nezuko-web.vercel.app`
+- **Auth**: InsForge hosted auth active (`NEXT_PUBLIC_DEV_LOGIN=false`). Redirect URL configured in InsForge dashboard → `https://nezuko-web.vercel.app/dashboard`. Auth code verified against `@insforge/nextjs` docs — all correct.
+
+#### CI/CD Workflows Created
+
+| File                                  | Purpose                                                                                                                                                              |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.github/workflows/grammy-ci.yml`     | **Rewrote** old npm-based workflow → Bun. Single job: type-check → lint → format:check → knip → test → build → upload artifact                                       |
+| `.github/workflows/grammy-deploy.yml` | **New** SSH deploy to DigitalOcean: downloads CI artifact → rsync → bun install --production → graceful systemd restart → 60s health poll → auto-rollback on failure |
+| `.github/workflows/web-ci.yml`        | **New** Bun-based web quality gates (type-check, lint, prettier, knip, Next.js build). Stubs NEXT*PUBLIC*\* env vars for CI                                          |
+
+#### Deployment Assets Created
+
+| File                                | Purpose                                                                                            |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `docs/deploy/DEPLOYMENT_GUIDE.md`   | Comprehensive step-by-step production guide (Vercel + DigitalOcean)                                |
+| `docs/deploy/bootstrap-droplet.sh`  | One-shot Ubuntu 24.04 Droplet setup script (Node 22, Bun, Redis, UFW, nezuko user)                 |
+| `docs/deploy/nezuko-grammy.service` | systemd service unit (30s graceful stop, MemoryLimit=512M, EnvironmentFile=/etc/nezuko/grammy.env) |
+
+#### Other Fixes
+
+- **`apps/grammy/Dockerfile`**: Fixed — was calling `npm run build` (wrong, npm not installed). Now uses Bun for both install and build. Reduced from 3-stage to 2-stage.
+- **`apps/web/vercel.json`**: Created — pins Bun build/install commands, security headers, clean URLs.
+- **`apps/web/.env.local`**: Updated with latest anon key and proper structure. Dev mode ready.
+- **`apps/web/.env.production`**: Created — Vercel import file with production values.
+- **`.gitignore`**: Added `apps/web/.env.production` and `apps/grammy/.env`.
+
+#### Remaining DigitalOcean Steps (Not Yet Done)
+
+- Acquire DigitalOcean Droplet
+- Run `docs/deploy/bootstrap-droplet.sh`
+- Add GitHub deploy secrets (`DO_HOST`, `DO_PORT`, `DO_USER`, etc.)
+- Install `docs/deploy/nezuko-grammy.service`
+- Trigger `grammy-deploy.yml` for first bot deploy
+
 **2026-03-14: Monorepo Decoupling & Dependency Isolation (Completed)**
 
 - **Status**: Completed.

@@ -1,0 +1,100 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# DigitalOcean App Platform — Nezuko grammY Bot
+#
+# Docs: https://docs.digitalocean.com/products/app-platform/reference/app-spec/
+#
+# Deploy via CLI:
+#   doctl apps create --spec .do/app.yaml
+#
+# Or connect via the DigitalOcean dashboard (recommended for first deploy):
+#   cloud.digitalocean.com → App Platform → Create App → GitHub → select this repo
+#   It will auto-detect this file.
+#
+# Environment variables marked type: SECRET must be set in the dashboard or
+# via `doctl` — they are NOT stored in this file.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: nezuko-grammy
+
+# Region: choose the one closest to your InsForge backend (us-west → sfo)
+# Available: nyc, sfo, ams, sgp, lon, fra, tor, blr, syd
+region: sfo
+
+workers:
+  - name: grammy-bot
+
+    # ── Source ────────────────────────────────────────────────────────────────
+    github:
+      repo: mohdakil2426/Nezuko-Telegram-Bot # ← update if your repo name differs
+      branch: main
+      deploy_on_push: true # auto-deploy on every push to main
+
+    # Build from apps/grammy using its Dockerfile
+    source_dir: apps/grammy
+    dockerfile_path: apps/grammy/Dockerfile
+
+    # ── Instance ──────────────────────────────────────────────────────────────
+    # basic-xxs = 512MB RAM / 1 shared vCPU / $5/month
+    # Upgrade to basic-xs (1GB/$10) if the bot runs >1 instance or OOMs
+    instance_size_slug: basic-xxs
+    instance_count: 1
+
+    # ── Environment Variables ─────────────────────────────────────────────────
+    # RULE: Never store SECRET values here. Set them in the dashboard.
+    #       Only non-sensitive values live in this file.
+    envs:
+      # InsForge backend
+      - key: INSFORGE_BASE_URL
+        value: "https://u4ckbciy.us-west.insforge.app"
+        scope: RUN_TIME
+
+      - key: INSFORGE_ANON_KEY
+        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1MjA1MDJ9.8cj-A0Rrx-q9Pci4ha4g1tonyBiYSix2fFftgXyynAY"
+        scope: RUN_TIME
+
+      # Set via dashboard — never put actual value here
+      - key: INSFORGE_SERVICE_KEY
+        scope: RUN_TIME
+        type: SECRET
+
+      - key: INSFORGE_REQUEST_TIMEOUT_MS
+        value: "5000"
+        scope: RUN_TIME
+
+      # Redis — set via dashboard with your Upstash URL
+      # Format: rediss://default:<password>@<host>:<port>
+      - key: REDIS_URL
+        scope: RUN_TIME
+        type: SECRET
+
+      # Bot mode
+      - key: DASHBOARD_MODE
+        value: "true"
+        scope: RUN_TIME
+
+      # Logging
+      - key: LOG_LEVEL
+        value: "info"
+        scope: RUN_TIME
+
+      # Health endpoint port (App Platform probes this for health checks)
+      - key: HEALTH_PORT
+        value: "8080"
+        scope: RUN_TIME
+
+      # Node.js ESM: disable experimental warnings in production
+      - key: NODE_ENV
+        value: "production"
+        scope: RUN_TIME
+
+    # ── Health check ──────────────────────────────────────────────────────────
+    # App Platform checks HTTP /health on port 8080.
+    # The bot's health.ts server listens on HEALTH_PORT.
+    health_check:
+      http_path: /health
+      port: 8080
+      initial_delay_seconds: 15
+      period_seconds: 30
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
