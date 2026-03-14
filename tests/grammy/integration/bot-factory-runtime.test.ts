@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { createBotWithDeps } from "../../../apps/grammy/src/core/bot-factory.js";
 import { createMockDb, createMockCache, createMockLogger } from "../helpers/mock-deps.js";
 import {
@@ -8,7 +8,7 @@ import {
   createCallbackUpdate,
 } from "../helpers/mock-update.js";
 import { createConfiguredTestBot } from "../helpers/test-bot.js";
-import type { BotDeps } from "../../../apps/grammy/src/types.js";
+import type { NezukoContext, BotDeps } from "../../../apps/grammy/src/types.js";
 
 function makeDeps(): BotDeps {
   return {
@@ -46,7 +46,7 @@ describe("bot-factory runtime wiring", () => {
     const { bot, apiCalls } = createConfiguredTestBot();
     const deps = makeDeps();
 
-    vi.mocked(deps.db.getRecords)
+    (deps.db.getRecords as any)
       .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: -1005555555555 }])
       .mockResolvedValueOnce([
         {
@@ -86,7 +86,7 @@ describe("bot-factory runtime wiring", () => {
     });
     const deps = makeDeps();
 
-    vi.mocked(deps.db.getRecords)
+    (deps.db.getRecords as any)
       .mockResolvedValueOnce([{ id: 1, group_id: -1001234567890, channel_id: -1005555555555 }])
       .mockResolvedValueOnce([
         {
@@ -115,7 +115,7 @@ describe("bot-factory runtime wiring", () => {
     const { bot, apiCalls } = createConfiguredTestBot();
     const deps = makeDeps();
 
-    vi.mocked(deps.db.rpc).mockResolvedValueOnce({
+    (deps.db.rpc as any).mockResolvedValueOnce({
       group_id: -1001234567890,
       enabled: true,
       join_request_preferred: true,
@@ -152,7 +152,7 @@ describe("bot-factory runtime wiring", () => {
     });
     const deps = makeDeps();
 
-    vi.mocked(deps.db.rpc).mockResolvedValueOnce({
+    (deps.db.rpc as any).mockResolvedValueOnce({
       group_id: -1001234567890,
       enabled: true,
       join_request_preferred: true,
@@ -186,7 +186,7 @@ describe("bot-factory runtime wiring", () => {
     const { bot, apiCalls } = createConfiguredTestBot();
     const deps = makeDeps();
 
-    vi.mocked(deps.db.getRecords).mockResolvedValueOnce([
+    (deps.db.getRecords as any).mockResolvedValueOnce([
       {
         group_id: -1001234567890,
         channel_id: -1001111111111,
@@ -241,7 +241,7 @@ describe("bot-factory runtime wiring", () => {
     });
     const deps = makeDeps();
 
-    vi.mocked(deps.db.rpc).mockResolvedValueOnce({
+    (deps.db.rpc as any).mockResolvedValueOnce({
       group_id: -1001234567890,
       enabled: true,
       join_request_preferred: true,

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "bun:test";
 import { buildChatMembersAdapter } from "../../../../apps/grammy/src/core/cache.js";
 import { CHAT_MEMBER_CACHE_TTL } from "../../../../apps/grammy/src/core/constants.js";
 import type { Logger } from "../../../../apps/grammy/src/utils/logger.js";

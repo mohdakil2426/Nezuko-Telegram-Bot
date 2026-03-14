@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { verifyMembership } from "../../../../apps/grammy/src/services/verification.js";
 import { createMockDb, createMockCache, createMockLogger } from "../../helpers/mock-deps.js";
 import type { InsForgeClient } from "../../../../apps/grammy/src/core/insforge-client.js";
@@ -36,7 +36,7 @@ describe("verifyMembership", () => {
     db = createMockDb();
     cache = createMockCache();
     vi.clearAllMocks();
-    vi.mocked(db.rpc).mockResolvedValue({
+    (db.rpc as any).mockResolvedValue({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
@@ -46,14 +46,14 @@ describe("verifyMembership", () => {
 
   it("cache hit returns success without calling the Telegram API", async () => {
     // Arrange: one channel linked, Redis returns "1" (member)
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(100, "testchan")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue("1");
+    (cache.get as any).mockResolvedValue("1");
 
     const api = createMockApi();
     const result = await verifyMembership(api as never, db, cache, 1, 999);
@@ -64,14 +64,14 @@ describe("verifyMembership", () => {
   });
 
   it("API fallback on cache miss confirms membership and caches result", async () => {
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(100, "testchan")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue(null); // cache miss
+    (cache.get as any).mockResolvedValue(null); // cache miss
 
     const getChatMember = vi.fn().mockResolvedValue({ status: "member" });
     const api = createMockApi({ getChatMember });
@@ -79,7 +79,7 @@ describe("verifyMembership", () => {
     const result = await verifyMembership(api as never, db, cache, 1, 999);
 
     expect(result.success).toBe(true);
-    expect(getChatMember).toHaveBeenCalledOnce();
+    expect(getChatMember).toHaveBeenCalledTimes(1);
     expect(cache.set).toHaveBeenCalledWith(
       expect.stringContaining("member:100:999"),
       "1",
@@ -89,14 +89,14 @@ describe("verifyMembership", () => {
   });
 
   it("missing one channel returns failure with channel name", async () => {
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(200, "channel2")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue(null);
+    (cache.get as any).mockResolvedValue(null);
     const getChatMember = vi.fn().mockResolvedValue({ status: "left" });
     const api = createMockApi({ getChatMember });
 
@@ -113,14 +113,14 @@ describe("verifyMembership", () => {
   });
 
   it("multiple missing channels are all listed", async () => {
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(101, "chan1"), makeChannel(102, "chan2")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue(null);
+    (cache.get as any).mockResolvedValue(null);
     const getChatMember = vi.fn().mockResolvedValue({ status: "left" });
     const api = createMockApi({ getChatMember });
 
@@ -133,14 +133,14 @@ describe("verifyMembership", () => {
   });
 
   it("403 channel unreachable — channel treated as not a member (EC-15/EC-16)", async () => {
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(300, "private")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue(null);
+    (cache.get as any).mockResolvedValue(null);
     const getChatMember = vi.fn().mockRejectedValue(new Error("403: Forbidden"));
     const api = createMockApi({ getChatMember });
 
@@ -151,14 +151,14 @@ describe("verifyMembership", () => {
   });
 
   it("400 USER_ID_INVALID — user treated as not a member (EC-42)", async () => {
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(400, "somechan")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue(null);
+    (cache.get as any).mockResolvedValue(null);
     const getChatMember = vi.fn().mockRejectedValue(new Error("400: Bad Request: USER_ID_INVALID"));
     const api = createMockApi({ getChatMember });
 
@@ -169,14 +169,14 @@ describe("verifyMembership", () => {
   });
 
   it("restricted status is considered a valid member (EC-43)", async () => {
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(500, "restricted_chan")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue(null);
+    (cache.get as any).mockResolvedValue(null);
     const getChatMember = vi.fn().mockResolvedValue({ status: "restricted" });
     const api = createMockApi({ getChatMember });
 
@@ -187,14 +187,14 @@ describe("verifyMembership", () => {
   });
 
   it("explicit verify bypasses stale negative cache and rechecks Telegram", async () => {
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(800, "freshjoin")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue("0");
+    (cache.get as any).mockResolvedValue("0");
     const getChatMember = vi.fn().mockResolvedValue({ status: "member" });
     const api = createMockApi({ getChatMember });
 
@@ -203,7 +203,7 @@ describe("verifyMembership", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(getChatMember).toHaveBeenCalledOnce();
+    expect(getChatMember).toHaveBeenCalledTimes(1);
     expect(cache.set).toHaveBeenCalledWith(
       expect.stringContaining("member:800:999"),
       "1",
@@ -213,14 +213,14 @@ describe("verifyMembership", () => {
   });
 
   it("explicit verify retries a fresh negative Telegram result and succeeds on the same click", async () => {
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(810, "propagation")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue(null);
+    (cache.get as any).mockResolvedValue(null);
     const getChatMember = vi
       .fn()
       .mockResolvedValueOnce({ status: "left" })
@@ -244,14 +244,14 @@ describe("verifyMembership", () => {
   });
 
   it("group message checks still honor negative cache without hitting Telegram", async () => {
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(900, "cachedmiss")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue("0");
+    (cache.get as any).mockResolvedValue("0");
     const api = createMockApi();
 
     const result = await verifyMembership(api as never, db, cache, 1, 999);
@@ -263,7 +263,7 @@ describe("verifyMembership", () => {
 
   it("uses preloaded channels without refetching the group contract", async () => {
     const channels = [makeChannel(901, "preloaded")];
-    vi.mocked(cache.get).mockResolvedValue("1");
+    (cache.get as any).mockResolvedValue("1");
     const api = createMockApi();
 
     const result = await verifyMembership(api as never, db, cache, 1, 999, undefined, {
@@ -271,12 +271,12 @@ describe("verifyMembership", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.checkedChannelIds).toEqual([901]);
+    expect(result.checkedChannelIds).toEqual([901] as any);
     expect(db.rpc).not.toHaveBeenCalled();
   });
 
   it("Redis down — graceful degradation: falls back to API (EC-59)", async () => {
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
@@ -284,7 +284,7 @@ describe("verifyMembership", () => {
     });
 
     // Simulate Redis failure on get
-    vi.mocked(cache.get).mockRejectedValue(new Error("Redis connection error"));
+    (cache.get as any).mockRejectedValue(new Error("Redis connection error"));
 
     const getChatMember = vi.fn().mockResolvedValue({ status: "member" });
     const api = createMockApi({ getChatMember });
@@ -293,18 +293,18 @@ describe("verifyMembership", () => {
 
     // Should still succeed by falling back to API
     expect(result.success).toBe(true);
-    expect(getChatMember).toHaveBeenCalledOnce();
+    expect(getChatMember).toHaveBeenCalledTimes(1);
   });
 
   it("latency is measured and returned", async () => {
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(700, "latency")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue("1"); // cache hit for speed
+    (cache.get as any).mockResolvedValue("1"); // cache hit for speed
     const api = createMockApi();
 
     const result = await verifyMembership(api as never, db, cache, 1, 999);
@@ -317,14 +317,14 @@ describe("verifyMembership", () => {
 
   it("S2: a network error on one channel does not abort checks on other channels", async () => {
     // Two channels — channel A throws, channel B returns "member"
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(1001, "chanA"), makeChannel(1002, "chanB")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue(null); // no cache
+    (cache.get as any).mockResolvedValue(null); // no cache
 
     const getChatMember = vi
       .fn()
@@ -345,14 +345,14 @@ describe("verifyMembership", () => {
   });
 
   it("S2: a rejected channel settlement is treated as not a member (fail-closed)", async () => {
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(1003, "errorChan")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue(null);
+    (cache.get as any).mockResolvedValue(null);
     // The checkChannelMembership catch block returns { isMember: false, cached: false }
     // for most errors, so getChatMember throwing should still produce a "not a member" result
     const getChatMember = vi.fn().mockRejectedValue(new Error("Unexpected error"));

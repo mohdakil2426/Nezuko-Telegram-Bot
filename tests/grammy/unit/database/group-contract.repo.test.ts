@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "bun:test";
 import {
   getGroupVerificationContract,
   getGroupVerificationContractCached,
@@ -14,7 +14,7 @@ describe("getGroupVerificationContract", () => {
 
   it("returns RPC result when the RPC exists", async () => {
     const db = createMockDb();
-    db.rpc.mockResolvedValue({
+    (db.rpc as any).mockResolvedValue({
       group_id: 123,
       enabled: true,
       join_request_preferred: true,
@@ -28,19 +28,19 @@ describe("getGroupVerificationContract", () => {
       enabled: true,
       joinRequestPreferred: true,
       channels: [{ channel_id: 456, title: "Required", username: "required_channel" }],
-    });
+    } as any);
     expect(db.getRecords).not.toHaveBeenCalled();
   });
 
   it("falls back after a missing RPC and only warns once", async () => {
     const logger = createMockLogger();
     const db = createMockDb();
-    db.logger = logger;
+    (db as any).logger = logger;
 
-    db.rpc.mockRejectedValue(
+    (db.rpc as any).mockRejectedValue(
       new Error("InsForge RPC get_group_verification_contract: 404 Not Found")
     );
-    db.getRecords.mockImplementation(async (_table, params) => {
+    (db.getRecords as any).mockImplementation(async (_table: any, params: any) => {
       if (params?.select === "group_id,enabled,params") {
         return [
           {
@@ -78,9 +78,9 @@ describe("getGroupVerificationContract", () => {
   it("rethrows non-404 RPC errors", async () => {
     const logger = createMockLogger();
     const db = createMockDb();
-    db.logger = logger;
+    (db as any).logger = logger;
 
-    db.rpc.mockRejectedValue(
+    (db.rpc as any).mockRejectedValue(
       new Error("InsForge RPC get_group_verification_contract: 500 Internal Server Error")
     );
 
@@ -111,11 +111,11 @@ describe("getGroupVerificationContractCached", () => {
     const cache = createMockCache();
 
     // Simulate Redis cache hit
-    vi.mocked(cache.get).mockResolvedValueOnce(JSON.stringify(MOCK_CONTRACT));
+    (cache.get as any).mockResolvedValueOnce(JSON.stringify(MOCK_CONTRACT));
 
     const contract = await getGroupVerificationContractCached(db, cache, 42);
 
-    expect(contract).toEqual(MOCK_CONTRACT);
+    expect(contract).toEqual(MOCK_CONTRACT as any);
     // DB should never be called when cache has the data
     expect(db.rpc).not.toHaveBeenCalled();
     expect(db.getRecords).not.toHaveBeenCalled();
@@ -126,9 +126,9 @@ describe("getGroupVerificationContractCached", () => {
     const cache = createMockCache();
 
     // Cache miss
-    vi.mocked(cache.get).mockResolvedValueOnce(null);
+    (cache.get as any).mockResolvedValueOnce(null);
     // DB returns the contract
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 42,
       enabled: true,
       join_request_preferred: false,
@@ -153,8 +153,8 @@ describe("getGroupVerificationContractCached", () => {
     const cache = createMockCache();
 
     // Simulate Redis failure
-    vi.mocked(cache.get).mockRejectedValueOnce(new Error("Redis down"));
-    vi.mocked(db.rpc).mockResolvedValueOnce({
+    (cache.get as any).mockRejectedValueOnce(new Error("Redis down"));
+    (db.rpc as any).mockResolvedValueOnce({
       group_id: 42,
       enabled: true,
       join_request_preferred: false,
@@ -164,7 +164,7 @@ describe("getGroupVerificationContractCached", () => {
     const contract = await getGroupVerificationContractCached(db, cache, 42);
 
     expect(contract.groupId).toBe(42);
-    expect(db.rpc).toHaveBeenCalledOnce();
+    expect(db.rpc).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -179,7 +179,7 @@ describe("invalidateGroupContractCache", () => {
 
   it("S6: silently ignores Redis errors on invalidation", async () => {
     const cache = createMockCache();
-    vi.mocked(cache.del).mockRejectedValueOnce(new Error("Redis error"));
+    (cache.del as any).mockRejectedValueOnce(new Error("Redis error"));
 
     // Should not throw
     await expect(invalidateGroupContractCache(cache, 888)).resolves.toBeUndefined();

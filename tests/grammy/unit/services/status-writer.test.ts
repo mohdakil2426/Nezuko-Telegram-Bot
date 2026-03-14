@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "bun:test";
 import { startStatusWriter } from "../../../../apps/grammy/src/services/status-writer.js";
 import { createMockDb, createMockLogger } from "../../helpers/mock-deps.js";
 import type { InsForgeClient } from "../../../../apps/grammy/src/core/insforge-client.js";
@@ -8,7 +8,7 @@ const BOT_INSTANCE_ID = 1;
 
 describe("startStatusWriter", () => {
   let db: InsForgeClient;
-  let interval: NodeJS.Timeout;
+  let interval: any;
 
   beforeEach(() => {
     db = createMockDb();
@@ -22,12 +22,14 @@ describe("startStatusWriter", () => {
   });
 
   it("heartbeat writes correct fields: bot_id, status=online, uptime_seconds, last_heartbeat", async () => {
-    vi.mocked(db.patchRecords).mockResolvedValue([{ id: 1 } as never]);
+    (db.patchRecords as any).mockResolvedValue([{ id: 1 } as never]);
 
     interval = startStatusWriter(db, BOT_ID, BOT_INSTANCE_ID, createMockLogger());
 
     // Flush only the immediate (non-interval) write — advance by 0ms to let promises resolve
-    await vi.advanceTimersByTimeAsync(0);
+    vi.advanceTimersByTime(0);
+    await Promise.resolve();
+    await Promise.resolve();
 
     expect(db.patchRecords).toHaveBeenCalledWith(
       "bot_status",
@@ -42,11 +44,13 @@ describe("startStatusWriter", () => {
 
   it("uses PATCH-then-POST UPSERT pattern: POST when PATCH returns empty array", async () => {
     // PATCH returns [] (no existing row) → triggers POST
-    vi.mocked(db.patchRecords).mockResolvedValue([]);
-    vi.mocked(db.postRecords).mockResolvedValue([{ id: 1 } as never]);
+    (db.patchRecords as any).mockResolvedValue([]);
+    (db.postRecords as any).mockResolvedValue([{ id: 1 } as never]);
 
     interval = startStatusWriter(db, BOT_ID, BOT_INSTANCE_ID, createMockLogger());
-    await vi.advanceTimersByTimeAsync(0);
+    vi.advanceTimersByTime(0);
+    await Promise.resolve();
+    await Promise.resolve();
 
     expect(db.patchRecords).toHaveBeenCalled();
     expect(db.postRecords).toHaveBeenCalledWith(
@@ -62,31 +66,35 @@ describe("startStatusWriter", () => {
   });
 
   it("DB error during heartbeat is caught and does not crash the service", async () => {
-    vi.mocked(db.patchRecords).mockRejectedValue(new Error("DB connection lost"));
+    (db.patchRecords as any).mockRejectedValue(new Error("DB connection lost"));
 
     const log = createMockLogger();
     // Should not throw
     interval = startStatusWriter(db, BOT_ID, BOT_INSTANCE_ID, log);
-    await vi.advanceTimersByTimeAsync(0);
+    vi.advanceTimersByTime(0);
+    await Promise.resolve();
+    await Promise.resolve();
 
     // Error is logged as warning, not thrown
     expect(log.warn).toHaveBeenCalled();
   });
 
   it("uptime_seconds increases over time", async () => {
-    vi.mocked(db.patchRecords).mockResolvedValue([{ id: 1 } as never]);
+    (db.patchRecords as any).mockResolvedValue([{ id: 1 } as never]);
 
     interval = startStatusWriter(db, BOT_ID, BOT_INSTANCE_ID, createMockLogger());
 
     // First immediate heartbeat
-    await vi.advanceTimersByTimeAsync(0);
-    const firstCall = vi.mocked(db.patchRecords).mock.calls[0];
+    vi.advanceTimersByTime(0);
+    await Promise.resolve();
+    await Promise.resolve();
+    const firstCall = (db.patchRecords as any).mock.calls[0];
     const firstUptime = (firstCall[2] as Record<string, number>)["uptime_seconds"];
 
     // Advance 30s and trigger second heartbeat
-    await vi.advanceTimersByTimeAsync(30_000);
+    await vi.advanceTimersByTime(30_000);
 
-    const secondCall = vi.mocked(db.patchRecords).mock.calls[1];
+    const secondCall = (db.patchRecords as any).mock.calls[1];
     const secondUptime = (secondCall?.[2] as Record<string, number>)?.["uptime_seconds"];
 
     expect(secondUptime).toBeGreaterThanOrEqual(firstUptime);

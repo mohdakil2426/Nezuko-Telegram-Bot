@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { adminGuard } from "../../../../apps/grammy/src/middleware/admin-guard.js";
 import { Composer } from "grammy";
 import { createConfiguredTestBot, createTestBot } from "../../helpers/test-bot.js";
@@ -6,7 +6,7 @@ import { createMessageUpdate } from "../../helpers/mock-update.js";
 import type { ApiCall } from "../../helpers/test-bot.js";
 import { contextEnricher } from "../../../../apps/grammy/src/middleware/context-enricher.js";
 import { createMockDb, createMockCache, createMockLogger } from "../../helpers/mock-deps.js";
-import type { BotDeps, NezukoContext } from "../../../../apps/grammy/src/types.js";
+import type { NezukoContext, BotDeps } from "../../../../apps/grammy/src/types.js";
 
 function makeDeps(): BotDeps {
   return {
@@ -42,7 +42,7 @@ describe("adminGuard middleware", () => {
 
     await bot.handleUpdate(createMessageUpdate());
 
-    expect(nextMiddleware).toHaveBeenCalledOnce();
+    expect(nextMiddleware).toHaveBeenCalledTimes(1);
   });
 
   it("allows creator through and calls next()", async () => {
@@ -61,7 +61,7 @@ describe("adminGuard middleware", () => {
 
     await bot.handleUpdate(createMessageUpdate());
 
-    expect(nextMiddleware).toHaveBeenCalledOnce();
+    expect(nextMiddleware).toHaveBeenCalledTimes(1);
   });
 
   it("blocks non-admin and sends reply message", async () => {
@@ -110,7 +110,7 @@ describe("adminGuard middleware", () => {
     );
 
     // next() is called for private chats
-    expect(nextMiddleware).toHaveBeenCalledOnce();
+    expect(nextMiddleware).toHaveBeenCalledTimes(1);
     // getChatMember must NOT be called in private chats
     expect(getChatMember).not.toHaveBeenCalled();
   });

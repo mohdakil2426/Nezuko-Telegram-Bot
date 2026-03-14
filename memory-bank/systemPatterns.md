@@ -540,7 +540,8 @@ vi.mocked(deps.db.getRecords).mockResolvedValue([...]);
 // ✅ Commands auto-get bot_command entity when text starts with /
 const update = createMessageUpdate({ text: "/protect @channel" });
 
-// ✅ vitest.config.ts — testTimeout (not timeout) in Vitest v4
+// ✅ bun test — native runner integrated
+
 test: { testTimeout: 10_000, include: [...] }
 ```
 

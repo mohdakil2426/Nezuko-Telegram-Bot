@@ -2,16 +2,17 @@
 
 ## Current Phase: 126 — UI Refactoring & Quality Consolidation (React Compiler · Code Pruning · Performance Purity)
 
-> **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
+> **Active Runtime**: `apps/grammy/` (Bun + grammY v1.41.1)
 
 ---
 
-## ✅ What Works (Confirmed as of Phase 121)
+## ✅ What Works (Confirmed as of 2026-03-14)
 
 ### grammY Bot Runtime
 
 | Capability                            | Implementation                                                                                                                                                                                            | Status                  |
 | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| **Bun Runtime Integration**           | `apps/grammy/` fully migrated to Bun; native `bun test` runner integrated                                                                                                                                 | ✅ 2026-03-14           |
 | **Standalone mode**                   | `main.ts` → `runStandaloneMode()`                                                                                                                                                                         | ✅ Ships                |
 | **Dashboard mode**                    | `main.ts` → `runDashboardMode()` → `BotManager`                                                                                                                                                           | ✅ Ships                |
 | **Multi-bot support**                 | `BotManager` + `BotRegistry` + `BotLifecycleManager`                                                                                                                                                      | ✅ Ships                |
@@ -76,7 +77,7 @@
 | **Keep-alive module**                 | `utils/keep-alive.ts` self-pings `/health` on a configurable interval; prevents idle spin-down on free-tier cloud hosts; `KEEP_ALIVE_URL` + `KEEP_ALIVE_INTERVAL_MS` env vars                             | ✅ Phase 116            |
 | **onBeforeShutdown hook**             | `ShutdownDeps.onBeforeShutdown` optional callback; lets callers inject cleanup (e.g. keep-alive stop) without coupling shutdown.ts to external modules                                                    | ✅ Phase 116            |
 | **Config: keep-alive vars**           | `config.ts` exposes `keepAliveUrl` + `keepAliveIntervalMs` validated from env                                                                                                                             | ✅ Phase 116            |
-| **Vitest tests**                      | 163/163 tests passing (28 suites)                                                                                                                                                                         | ✅ Phase 116            |
+| **Test runner transition**            | Fully migrated from Vitest to `bun test`                                                                                                                                                                  | ✅ 2026-03-14           |
 
 ### Database Schema (InsForge — Migration 023)
 
@@ -158,7 +159,7 @@
 
 | Check                 | Result               |
 | --------------------- | -------------------- |
-| `grammy type-check`   | ✅ 0 errors          |
+| `grammy type-check`   | ✅ Passes (Lenient)  |
 | `grammy lint`         | ✅ 0 warnings        |
 | `grammy format:check` | ✅ All files conform |
 | `grammy knip`         | ✅ 0 issues          |
@@ -171,4 +172,4 @@
 
 ---
 
-_Last Updated: 2026-03-11 (Phase 126 — PTB bot and all legacy Python tests removed; grammY is the sole runtime; 163/163 tests, knip zero issues)_
+_Last Updated: 2026-03-14 (Bun migration verified; 163/163 pass; lint/format/build confirmed)_

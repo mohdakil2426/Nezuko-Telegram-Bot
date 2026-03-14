@@ -6,16 +6,16 @@
   "main": "dist/main.js",
   "scripts": {
     "dev": "bun run --watch src/main.ts",
-    "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/main.js",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint src/ --max-warnings 0",
-    "format": "prettier src/ ../../tests/grammy --write",
-    "format:check": "prettier src/ ../../tests/grammy --check",
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage",
-    "knip": "knip"
+    "build": "bun x tsc -p tsconfig.build.json",
+    "start": "bun run dist/main.js",
+    "type-check": "bun x tsc --noEmit",
+    "lint": "bun x eslint src/ --max-warnings 0",
+    "format": "bun x prettier src/ ../../tests/grammy --write",
+    "format:check": "bun x prettier src/ ../../tests/grammy --check",
+    "test": "bun test ../../tests/grammy",
+    "test:watch": "bun test ../../tests/grammy --watch",
+    "test:coverage": "bun test ../../tests/grammy --coverage",
+    "knip": "bun x knip"
   },
   "dependencies": {
     "@grammyjs/auto-retry": "2.0.2",
@@ -37,17 +37,16 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",
+    "@types/bun": "latest",
     "@types/node": "22.15.0",
     "@typescript-eslint/eslint-plugin": "8",
     "@typescript-eslint/parser": "8",
-    "@vitest/coverage-v8": "4.0.18",
     "eslint": "9.28.0",
     "knip": "^5.86.0",
     "prettier": "^3.8.1",
-    "typescript": "5.9.3",
-    "vitest": "4.0.18"
+    "typescript": "5.9.3"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "bun": ">=1.0.0"
   }
 }

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "bun:test";
 import { BotLifecycleManager } from "../../../../apps/grammy/src/multi-bot/bot-lifecycle.js";
 import { BotRegistry } from "../../../../apps/grammy/src/multi-bot/bot-registry.js";
 import { createMockDb, createMockLogger } from "../../helpers/mock-deps.js";
@@ -47,9 +47,9 @@ describe("BotLifecycleManager", () => {
 
     await expect(lifecycle.stopBot(8716661547, db, 1)).resolves.toBeUndefined();
 
-    expect(runnerStop).toHaveBeenCalledOnce();
-    expect(close).toHaveBeenCalledOnce();
-    expect(syncInterval.cancel).toHaveBeenCalledOnce();
+    expect(runnerStop).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(syncInterval.cancel).toHaveBeenCalledTimes(1);
     expect(registry.has(8716661547)).toBe(false);
     expect(db.patchRecords).toHaveBeenCalled();
   });
@@ -71,14 +71,14 @@ describe("BotLifecycleManager", () => {
     let inFlight = 0;
     let maxInFlight = 0;
 
-    vi.spyOn(lifecycle as never, "stopBotUnlocked").mockImplementation(async () => {
+    vi.spyOn(lifecycle as any, "stopBotUnlocked").mockImplementation(async () => {
       inFlight += 1;
       maxInFlight = Math.max(maxInFlight, inFlight);
       await new Promise((resolve) => setTimeout(resolve, 20));
       inFlight -= 1;
     });
 
-    vi.spyOn(lifecycle as never, "startBotUnlocked").mockImplementation(async () => {
+    vi.spyOn(lifecycle as any, "startBotUnlocked").mockImplementation(async () => {
       inFlight += 1;
       maxInFlight = Math.max(maxInFlight, inFlight);
       await new Promise((resolve) => setTimeout(resolve, 20));

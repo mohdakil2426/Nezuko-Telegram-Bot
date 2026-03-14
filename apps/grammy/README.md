@@ -140,7 +140,7 @@ bun run lint
 
 ## Testing
 
-Tests use [vitest](https://vitest.dev) with grammY transformer mocking — no real Telegram API calls are made.
+Tests use [bun test](https://bun.sh/docs/test/runner) with grammY transformer mocking — no real Telegram API calls are made.
 
 ### Run all tests
 

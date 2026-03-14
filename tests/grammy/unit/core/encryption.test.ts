@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "bun:test";
 import {
   decryptToken,
   getMasterKey,
@@ -83,7 +83,7 @@ describe("encryption — decryptToken()", () => {
     try {
       await decryptToken(encrypted, mockDb);
       // Should not reach here
-      expect.fail("Expected decryptToken to throw");
+      throw new Error("Expected decryptToken to throw");
     } catch (err) {
       const errorMessage = (err as Error).message;
       // The plaintext token must never appear in an error message (EC-55)

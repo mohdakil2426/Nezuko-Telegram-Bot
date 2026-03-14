@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "bun:test";
 import { startMemberSync } from "../../../../apps/grammy/src/services/member-sync.js";
 import { createMockDb, createMockLogger } from "../../helpers/mock-deps.js";
 import type { InsForgeClient } from "../../../../apps/grammy/src/core/insforge-client.js";
@@ -35,7 +35,7 @@ function makeChannel(id: number, username: string) {
 
 describe("startMemberSync", () => {
   let db: InsForgeClient;
-  let interval: NodeJS.Timeout;
+  let interval: any;
 
   beforeEach(() => {
     db = createMockDb();
@@ -50,20 +50,20 @@ describe("startMemberSync", () => {
 
   it("member_count and subscriber_count are updated for all groups and channels", async () => {
     // Two groups in DB
-    vi.mocked(db.getRecords)
+    (db.getRecords as any)
       .mockResolvedValueOnce([makeGroup(-100111), makeGroup(-100222)]) // protected_groups query
       .mockResolvedValueOnce([{ group_id: -100111, channel_id: 500 }]) // links for group 1
       .mockResolvedValueOnce([makeChannel(500, "chan")]) // channels for group 1
       .mockResolvedValueOnce([]) // links for group 2
       .mockResolvedValueOnce([]); // channels for group 2
 
-    vi.mocked(db.patchRecords).mockResolvedValue([]);
+    (db.patchRecords as any).mockResolvedValue([]);
 
     const api = { getChatMemberCount: vi.fn().mockResolvedValue(250) };
     interval = startMemberSync(api as never, db, BOT_ID, createMockLogger());
 
     // Advance past the 30s initial delay to trigger first sync
-    await vi.advanceTimersByTimeAsync(30_000);
+    await vi.advanceTimersByTime(30_000);
 
     // Should update member_count for each group
     expect(db.patchRecords).toHaveBeenCalledWith(
@@ -79,17 +79,17 @@ describe("startMemberSync", () => {
   });
 
   it("subscriber_count is updated for linked channels", async () => {
-    vi.mocked(db.getRecords)
+    (db.getRecords as any)
       .mockResolvedValueOnce([makeGroup(-100111)])
       .mockResolvedValueOnce([{ group_id: -100111, channel_id: 500 }])
       .mockResolvedValueOnce([makeChannel(500, "chan")]);
 
-    vi.mocked(db.patchRecords).mockResolvedValue([]);
+    (db.patchRecords as any).mockResolvedValue([]);
 
     const api = { getChatMemberCount: vi.fn().mockResolvedValue(5000) };
     interval = startMemberSync(api as never, db, BOT_ID, createMockLogger());
 
-    await vi.advanceTimersByTimeAsync(30_000);
+    await vi.advanceTimersByTime(30_000);
 
     // Subscriber count update for channel 500
     expect(db.patchRecords).toHaveBeenCalledWith(
@@ -100,9 +100,9 @@ describe("startMemberSync", () => {
   });
 
   it("403 from getChatMemberCount skips the group without disabling it", async () => {
-    vi.mocked(db.getRecords).mockResolvedValueOnce([makeGroup(-100333)]);
+    (db.getRecords as any).mockResolvedValueOnce([makeGroup(-100333)]);
 
-    vi.mocked(db.patchRecords).mockResolvedValue([]);
+    (db.patchRecords as any).mockResolvedValue([]);
 
     const api = {
       getChatMemberCount: vi.fn().mockRejectedValue(new Error("403: Forbidden: bot was kicked")),
@@ -110,7 +110,7 @@ describe("startMemberSync", () => {
     const log = createMockLogger();
     interval = startMemberSync(api as never, db, BOT_ID, log);
 
-    await vi.advanceTimersByTimeAsync(30_000);
+    await vi.advanceTimersByTime(30_000);
 
     expect(db.patchRecords).not.toHaveBeenCalled();
     expect(log.warn).toHaveBeenCalledWith(
@@ -120,14 +120,14 @@ describe("startMemberSync", () => {
   });
 
   it("error in one group does not block sync for other groups", async () => {
-    vi.mocked(db.getRecords)
+    (db.getRecords as any)
       .mockResolvedValueOnce([makeGroup(-100444), makeGroup(-100555)])
       .mockResolvedValueOnce([]) // links for group 444
       .mockResolvedValueOnce([]) // channels for group 444
       .mockResolvedValueOnce([]) // links for group 555
       .mockResolvedValueOnce([]); // channels for group 555
 
-    vi.mocked(db.patchRecords).mockResolvedValue([]);
+    (db.patchRecords as any).mockResolvedValue([]);
 
     // First group fails, second succeeds
     const api = {
@@ -139,7 +139,7 @@ describe("startMemberSync", () => {
     const log = createMockLogger();
     interval = startMemberSync(api as never, db, BOT_ID, log);
 
-    await vi.advanceTimersByTimeAsync(30_000);
+    await vi.advanceTimersByTime(30_000);
 
     // Second group should still be updated despite first group failure
     expect(db.patchRecords).toHaveBeenCalledWith(

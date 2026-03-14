@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { groupOnly } from "../../../../apps/grammy/src/middleware/group-only.js";
 import { createTestBot } from "../../helpers/test-bot.js";
 import { createMessageUpdate } from "../../helpers/mock-update.js";
@@ -19,7 +19,7 @@ describe("groupOnly middleware", () => {
     // Default createMessageUpdate uses a supergroup
     await bot.handleUpdate(createMessageUpdate());
 
-    expect(nextMiddleware).toHaveBeenCalledOnce();
+    expect(nextMiddleware).toHaveBeenCalledTimes(1);
   });
 
   it("allows basic group updates through and calls next()", async () => {
@@ -33,7 +33,7 @@ describe("groupOnly middleware", () => {
       createMessageUpdate({ chat: { id: -100222, type: "group", title: "Basic Group" } })
     );
 
-    expect(nextMiddleware).toHaveBeenCalledOnce();
+    expect(nextMiddleware).toHaveBeenCalledTimes(1);
   });
 
   it("blocks private chat and sends a redirect reply", async () => {

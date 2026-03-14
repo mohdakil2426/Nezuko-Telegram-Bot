@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { Composer } from "grammy";
 import { createTestBot } from "../../helpers/test-bot.js";
 import { createMockDb, createMockCache, createMockLogger } from "../../helpers/mock-deps.js";
 import { createCallbackUpdate } from "../../helpers/mock-update.js";
 import { contextEnricher } from "../../../../apps/grammy/src/middleware/context-enricher.js";
-import type { NezukoContext } from "../../../../apps/grammy/src/types.js";
-import type { BotDeps } from "../../../../apps/grammy/src/types.js";
+import type { NezukoContext, BotDeps } from "../../../../apps/grammy/src/types.js";
+
 import type { EnforcedChannel } from "../../../../apps/grammy/src/database/types.js";
 
 const MOCK_CHANNEL: EnforcedChannel = {
@@ -39,9 +39,9 @@ describe("verify composer integration", () => {
     const deps = makeDeps();
 
     // No debounce (cache miss), user is a member of channel
-    vi.mocked(deps.cache.get).mockResolvedValue(null);
+    (deps.cache.get as any).mockResolvedValue(null);
     // DB returns links then channels
-    vi.mocked(deps.db.getRecords)
+    (deps.db.getRecords as any)
       .mockResolvedValueOnce([
         {
           id: 1,
@@ -60,7 +60,7 @@ describe("verify composer integration", () => {
       const data = ctx.callbackQuery.data ?? "";
       const match = /^verify:(-?\d+)$/.exec(data);
       if (!match) {
-        await ctx.answerCallbackQuery();
+        await (ctx as any).answerCallbackQuery();
         return;
       }
 
@@ -71,7 +71,7 @@ describe("verify composer integration", () => {
       const debounceKey = `verify_debounce:${userId}`;
       const debounced = await ctx.cache.get(debounceKey);
       if (debounced) {
-        await ctx.answerCallbackQuery("Please wait before trying again.");
+        await (ctx as any).answerCallbackQuery("Please wait before trying again.");
         return;
       }
 
@@ -79,10 +79,10 @@ describe("verify composer integration", () => {
       await ctx.cache.set(debounceKey, "1", "EX", 3);
 
       // Simulate all channels verified
-      await ctx.answerCallbackQuery("✅ Verified! You can send messages now.");
+      await (ctx as any).answerCallbackQuery("✅ Verified! You can send messages now.");
       await ctx.api.restrictChatMember(groupId, userId, {
         can_send_messages: true,
-        can_send_media_messages: true,
+        can_send_other_messages: true,
       });
       await ctx.deleteMessage();
     });
@@ -109,7 +109,7 @@ describe("verify composer integration", () => {
     const { bot, apiCalls } = createTestBot();
     const deps = makeDeps();
 
-    vi.mocked(deps.cache.get).mockResolvedValue(null);
+    (deps.cache.get as any).mockResolvedValue(null);
 
     bot.use(contextEnricher(deps));
 
@@ -118,13 +118,13 @@ describe("verify composer integration", () => {
       const data = ctx.callbackQuery.data ?? "";
       const match = /^verify:(-?\d+)$/.exec(data);
       if (!match) {
-        await ctx.answerCallbackQuery();
+        await (ctx as any).answerCallbackQuery();
         return;
       }
 
       // Simulate missing channels
       const missingChannels = ["@channel1", "@channel2"];
-      await ctx.answerCallbackQuery(`❌ Please join: ${missingChannels.join(", ")}`, {
+      await (ctx as any).answerCallbackQuery(`❌ Please join: ${missingChannels.join(", ")}`, {
         show_alert: true,
       });
     });
@@ -144,7 +144,7 @@ describe("verify composer integration", () => {
     const deps = makeDeps();
 
     // Cache returns "1" = debounce active
-    vi.mocked(deps.cache.get).mockResolvedValue("1");
+    (deps.cache.get as any).mockResolvedValue("1");
 
     bot.use(contextEnricher(deps));
 
@@ -152,7 +152,7 @@ describe("verify composer integration", () => {
     verifyComposer.on("callback_query:data", async (ctx) => {
       const data = ctx.callbackQuery.data ?? "";
       if (!/^verify:(-?\d+)$/.test(data)) {
-        await ctx.answerCallbackQuery();
+        await (ctx as any).answerCallbackQuery();
         return;
       }
 
@@ -160,11 +160,11 @@ describe("verify composer integration", () => {
       const debounceKey = `verify_debounce:${userId}`;
       const debounced = await ctx.cache.get(debounceKey);
       if (debounced) {
-        await ctx.answerCallbackQuery("Please wait before trying again.");
+        await (ctx as any).answerCallbackQuery("Please wait before trying again.");
         return;
       }
 
-      await ctx.answerCallbackQuery("✅ Verified!");
+      await (ctx as any).answerCallbackQuery("✅ Verified!");
     });
     bot.use(verifyComposer);
 
@@ -188,7 +188,7 @@ describe("verify composer integration", () => {
     const fallbackComposer = new Composer<NezukoContext>();
     fallbackComposer.on("callback_query", async (ctx) => {
       if (!/^verify:/.test(ctx.callbackQuery.data ?? "")) {
-        await ctx.answerCallbackQuery(); // Clear loading spinner
+        await (ctx as any).answerCallbackQuery(); // Clear loading spinner
       }
     });
     bot.use(fallbackComposer);

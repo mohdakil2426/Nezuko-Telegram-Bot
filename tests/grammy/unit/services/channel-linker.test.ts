@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import {
   linkChannel,
   unlinkChannel,
@@ -58,14 +58,14 @@ describe("linkChannel", () => {
     const api = createMockApi();
 
     // No existing channels: not linked, under max limit
-    vi.mocked(db.getRecords)
+    (db.getRecords as any)
       .mockResolvedValueOnce([]) // getGroupChannels → links
       .mockResolvedValueOnce([]) // getGroupChannels → channels
       .mockResolvedValueOnce([]) // getGroupChannelCount
       .mockResolvedValueOnce([]); // getChannelGroupCount
 
-    vi.mocked(db.patchRecords).mockResolvedValue([]);
-    vi.mocked(db.postRecords).mockResolvedValue([]);
+    (db.patchRecords as any).mockResolvedValue([]);
+    (db.postRecords as any).mockResolvedValue([]);
 
     const result = await linkChannel(
       api as never,
@@ -133,7 +133,7 @@ describe("linkChannel", () => {
   it("already linked channel returns ALREADY_LINKED error", async () => {
     const api = createMockApi();
 
-    vi.mocked(db.getRecords)
+    (db.getRecords as any)
       .mockResolvedValueOnce([{ group_id: GROUP_ID, channel_id: CHANNEL_ID }])
       .mockResolvedValueOnce([makeChannelRow(CHANNEL_ID, CHANNEL_USERNAME)]);
 
@@ -164,7 +164,7 @@ describe("linkChannel", () => {
       makeChannelRow(100 + i, `chan${i}`)
     );
 
-    vi.mocked(db.getRecords)
+    (db.getRecords as any)
       .mockResolvedValueOnce(existingLinks)
       .mockResolvedValueOnce(existingChannels);
 
@@ -190,8 +190,8 @@ describe("linkChannel", () => {
     // Default mock returns [] for all getRecords calls — that means counts are 0 (from real DB rows)
     // The key assertion: patchRecords MUST be called with linked_channels_count and linked_groups_count
     // keys (proving recalculate path ran), not with an increment operation.
-    vi.mocked(db.patchRecords).mockResolvedValue([]);
-    vi.mocked(db.postRecords).mockResolvedValue([]);
+    (db.patchRecords as any).mockResolvedValue([]);
+    (db.postRecords as any).mockResolvedValue([]);
 
     const result = await linkChannel(
       api as never,
@@ -209,25 +209,21 @@ describe("linkChannel", () => {
 
     // Verify recalculate logic ran: patchRecords must have been called with the
     // linked_channels_count key (count from DB rows), not an increment/decrement
-    const groupCounterCall = vi
-      .mocked(db.patchRecords)
-      .mock.calls.find(
-        ([table, , body]) =>
-          table === "protected_groups" &&
-          Object.prototype.hasOwnProperty.call(body, "linked_channels_count")
-      );
+    const groupCounterCall = (db.patchRecords as any).mock.calls.find(
+      ([table, , body]: any) =>
+        table === "protected_groups" &&
+        Object.prototype.hasOwnProperty.call(body, "linked_channels_count")
+    );
     expect(groupCounterCall).toBeDefined();
     expect(typeof (groupCounterCall![2] as Record<string, unknown>)["linked_channels_count"]).toBe(
       "number"
     );
 
-    const channelCounterCall = vi
-      .mocked(db.patchRecords)
-      .mock.calls.find(
-        ([table, , body]) =>
-          table === "enforced_channels" &&
-          Object.prototype.hasOwnProperty.call(body, "linked_groups_count")
-      );
+    const channelCounterCall = (db.patchRecords as any).mock.calls.find(
+      ([table, , body]: any) =>
+        table === "enforced_channels" &&
+        Object.prototype.hasOwnProperty.call(body, "linked_groups_count")
+    );
     expect(channelCounterCall).toBeDefined();
     expect(typeof (channelCounterCall![2] as Record<string, unknown>)["linked_groups_count"]).toBe(
       "number"
@@ -246,13 +242,13 @@ describe("unlinkChannel", () => {
   it("successful unlink removes link and recalculates counters", async () => {
     const api = createMockApi();
 
-    vi.mocked(db.getRecords)
+    (db.getRecords as any)
       .mockResolvedValueOnce([{ group_id: GROUP_ID, channel_id: CHANNEL_ID }])
       .mockResolvedValueOnce([makeChannelRow(CHANNEL_ID, CHANNEL_USERNAME)])
       .mockResolvedValueOnce([]) // getGroupChannelCount after removal
       .mockResolvedValueOnce([]); // getChannelGroupCount after removal
 
-    vi.mocked(db.patchRecords).mockResolvedValue([]);
+    (db.patchRecords as any).mockResolvedValue([]);
 
     const result = await unlinkChannel(
       api as never,
@@ -273,12 +269,12 @@ describe("unlinkChannel", () => {
   });
 
   it("unlinkAllChannels resets group counter to 0 and recalculates per-channel counters", async () => {
-    vi.mocked(db.getRecords)
+    (db.getRecords as any)
       .mockResolvedValueOnce([{ group_id: GROUP_ID, channel_id: CHANNEL_ID }])
       .mockResolvedValueOnce([makeChannelRow(CHANNEL_ID, CHANNEL_USERNAME)])
       .mockResolvedValueOnce([]); // getChannelGroupCount → 0 after removal
 
-    vi.mocked(db.patchRecords).mockResolvedValue([]);
+    (db.patchRecords as any).mockResolvedValue([]);
 
     await unlinkAllChannels(db, createMockLogger(), GROUP_ID);
 

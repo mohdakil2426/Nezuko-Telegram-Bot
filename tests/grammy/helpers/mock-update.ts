@@ -1,4 +1,4 @@
-import type { Update, User, Chat, Message } from "grammy/types";
+import type { Update, User, Chat } from "grammy/types";
 
 let updateIdCounter = 1;
 let messageIdCounter = 1000;
@@ -12,9 +12,11 @@ const DEFAULT_USER: User = {
   language_code: "en",
 };
 
-const DEFAULT_BOT_USER: User = {
+const DEFAULT_BOT_USER: any = {
   id: 12345678,
   is_bot: true,
+  has_topics_enabled: false,
+  allows_users_to_create_topics: false,
   first_name: "Nezuko Test",
   username: "nezuko_test_bot",
 };
@@ -36,8 +38,8 @@ export function createMessageUpdate(overrides?: {
   chat?: Partial<Chat>;
   message_id?: number;
 }): Update {
-  const from: User = { ...DEFAULT_USER, ...(overrides?.from as User) };
-  const chat: Chat = { ...DEFAULT_SUPERGROUP, ...(overrides?.chat as Chat) };
+  const from = { ...DEFAULT_USER, ...overrides?.from } as User;
+  const chat = { ...DEFAULT_SUPERGROUP, ...overrides?.chat } as Chat;
   const text = overrides?.text ?? "/start";
 
   // grammY's .command() handler requires bot_command entities for detection
@@ -47,32 +49,32 @@ export function createMessageUpdate(overrides?: {
     entities.push({ type: "bot_command", offset: 0, length: commandPart.length });
   }
 
-  const message: Message = {
+  const message = {
     message_id: overrides?.message_id ?? messageIdCounter++,
     date: Math.floor(Date.now() / 1000),
     chat,
     from,
     text,
     ...(entities.length > 0 ? { entities } : {}),
-  };
+  } as any;
 
   return {
     update_id: updateIdCounter++,
     message,
-  };
+  } as any;
 }
 
 /**
  * Create a callback_query update with specified callback data.
  */
 export function createCallbackUpdate(data: string): Update {
-  const message: Message = {
+  const message = {
     message_id: messageIdCounter++,
     date: Math.floor(Date.now() / 1000),
     chat: DEFAULT_SUPERGROUP,
     from: DEFAULT_USER,
     text: "Verification message",
-  };
+  } as any;
 
   return {
     update_id: updateIdCounter++,
@@ -83,7 +85,7 @@ export function createCallbackUpdate(data: string): Update {
       chat_instance: "test_chat_instance",
       data,
     },
-  };
+  } as any;
 }
 
 /**
@@ -105,8 +107,8 @@ export function createNewMemberUpdate(members: Partial<User>[]): Update {
       chat: DEFAULT_SUPERGROUP,
       from: DEFAULT_USER,
       new_chat_members: newMembers,
-    },
-  };
+    } as any,
+  } as any;
 }
 
 /**
@@ -128,8 +130,8 @@ export function createLeftMemberUpdate(member: Partial<User>): Update {
       chat: DEFAULT_SUPERGROUP,
       from: DEFAULT_USER,
       left_chat_member: leftMember,
-    },
-  };
+    } as any,
+  } as any;
 }
 
 /**
@@ -164,9 +166,9 @@ export function createMyChatMemberUpdate(oldStatus: string, newStatus: string): 
         can_post_stories: false,
         can_edit_stories: false,
         can_delete_stories: false,
-      },
+      } as any,
     },
-  };
+  } as any;
 }
 
 /**
@@ -176,20 +178,20 @@ export function createJoinRequestUpdate(overrides?: {
   user?: Partial<User>;
   chat?: Partial<Chat>;
 }): Update {
-  const from: User = { ...DEFAULT_USER, ...(overrides?.user as User) };
-  const chat: Chat = { ...DEFAULT_SUPERGROUP, ...(overrides?.chat as Chat) };
+  const from = { ...DEFAULT_USER, ...overrides?.user } as User;
+  const chat = { ...DEFAULT_SUPERGROUP, ...overrides?.chat } as Chat;
 
   return {
     update_id: updateIdCounter++,
     chat_join_request: {
-      chat,
+      chat: chat as any,
       from,
       user_chat_id: from.id,
       date: Math.floor(Date.now() / 1000),
       bio: undefined,
       invite_link: undefined,
-    },
-  };
+    } as any,
+  } as any;
 }
 
 /**
@@ -201,14 +203,14 @@ export function createChannelChatMemberUpdate(overrides?: {
   oldStatus?: string;
   newStatus?: string;
 }): Update {
-  const user: User = { ...DEFAULT_USER, ...(overrides?.user as User) };
-  const chat: Chat = {
+  const user = { ...DEFAULT_USER, ...overrides?.user } as User;
+  const chat = {
     id: -1001111111111,
     type: "channel",
     title: "Required Channel",
     username: "requiredchannel",
-    ...(overrides?.chat as Chat),
-  };
+    ...overrides?.chat,
+  } as any;
 
   return {
     update_id: updateIdCounter++,
@@ -219,11 +221,11 @@ export function createChannelChatMemberUpdate(overrides?: {
       old_chat_member: {
         user,
         status: (overrides?.oldStatus ?? "member") as "member",
-      },
+      } as any,
       new_chat_member: {
         user,
         status: (overrides?.newStatus ?? "left") as "left",
-      },
+      } as any,
     },
-  };
+  } as any;
 }

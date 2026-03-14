@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import {
   getGroupChannels,
   createGroup,
@@ -49,13 +49,13 @@ describe("group.repo", () => {
         },
       ];
 
-      vi.mocked(db.getRecords)
+      (db.getRecords as any)
         .mockResolvedValueOnce(links as GroupChannelLink[])
         .mockResolvedValueOnce(channels as EnforcedChannel[]);
 
       const result = await getGroupChannels(db, 123);
 
-      expect(result).toEqual(channels);
+      expect(result).toEqual(channels as any);
       // Step 1: query group_channel_links
       expect(db.getRecords).toHaveBeenNthCalledWith(1, "group_channel_links", {
         group_id: "eq.123",
@@ -68,11 +68,11 @@ describe("group.repo", () => {
 
     it("returns empty array if no links exist", async () => {
       const db = createMockDb();
-      vi.mocked(db.getRecords).mockResolvedValueOnce([]);
+      (db.getRecords as any).mockResolvedValueOnce([]);
 
       const result = await getGroupChannels(db, 999);
 
-      expect(result).toEqual([]);
+      expect(result).toEqual([] as any);
       // Second query should NOT be made when no links exist
       expect(db.getRecords).toHaveBeenCalledTimes(1);
     });
@@ -90,11 +90,12 @@ describe("group.repo", () => {
           params: {},
           member_count: 10,
           last_sync_at: null,
+          linked_channels_count: 0,
           created_at: "",
           updated_at: "",
         },
       ];
-      vi.mocked(db.patchRecords).mockResolvedValueOnce(existingRow);
+      (db.patchRecords as any).mockResolvedValueOnce(existingRow);
 
       await createGroup(db, 123, 456, "New Title", 20);
 
@@ -108,7 +109,7 @@ describe("group.repo", () => {
 
     it("falls back to POST when PATCH returns empty array (new group)", async () => {
       const db = createMockDb();
-      vi.mocked(db.patchRecords).mockResolvedValueOnce([]);
+      (db.patchRecords as any).mockResolvedValueOnce([]);
 
       await createGroup(db, 999, 111, "New Group", 5);
 
@@ -131,7 +132,7 @@ describe("group.repo", () => {
   describe("setGroupActive", () => {
     it("patches the enabled flag on the group", async () => {
       const db = createMockDb();
-      vi.mocked(db.patchRecords).mockResolvedValueOnce([]);
+      (db.patchRecords as any).mockResolvedValueOnce([]);
 
       await setGroupActive(db, 123, false);
 
@@ -144,7 +145,7 @@ describe("group.repo", () => {
 
     it("enables protection by setting enabled: true", async () => {
       const db = createMockDb();
-      vi.mocked(db.patchRecords).mockResolvedValueOnce([]);
+      (db.patchRecords as any).mockResolvedValueOnce([]);
 
       await setGroupActive(db, 123, true);
 
@@ -159,7 +160,7 @@ describe("group.repo", () => {
   describe("migrateGroupId", () => {
     it("updates group_id in both tables when supergroup migration occurs", async () => {
       const db = createMockDb();
-      vi.mocked(db.patchRecords).mockResolvedValue([]);
+      (db.patchRecords as any).mockResolvedValue([]);
 
       await migrateGroupId(db, 111, 222);
 

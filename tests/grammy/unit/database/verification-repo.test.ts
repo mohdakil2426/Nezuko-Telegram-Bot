@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { getLatestVerificationState } from "../../../../apps/grammy/src/database/verification.repo.js";
 import { createMockDb } from "../../helpers/mock-deps.js";
 
@@ -9,7 +9,7 @@ describe("verification.repo", () => {
 
   it("fetches the latest verification state correctly", async () => {
     const db = createMockDb();
-    vi.mocked(db.getRecords).mockResolvedValueOnce([
+    (db.getRecords as any).mockResolvedValueOnce([
       {
         status: "restricted",
         timestamp: "2026-03-01T12:00:00Z",

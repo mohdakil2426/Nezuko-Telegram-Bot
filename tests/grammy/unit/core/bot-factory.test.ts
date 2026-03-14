@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "bun:test";
 import type { Bot } from "grammy";
 import { createBotWithDeps } from "../../../../apps/grammy/src/core/bot-factory.js";
-import type { NezukoContext } from "../../../../apps/grammy/src/types.js";
+import type { NezukoContext, BotDeps } from "../../../../apps/grammy/src/types.js";
 import { createMockCache, createMockDb, createMockLogger } from "../../helpers/mock-deps.js";
 import { createMessageUpdate } from "../../helpers/mock-update.js";
 import { createConfiguredTestBot } from "../../helpers/test-bot.js";
@@ -28,7 +28,7 @@ describe("bot activity tracking", () => {
     const trackedBot = bot as ActivityTrackedBot;
     const initialPollAt = trackedBot.__nezukoGetLastPollAt?.();
 
-    expect(initialPollAt).toEqual(expect.any(Number));
+    expect(initialPollAt).toEqual(expect.any(Number as any));
     expect(trackedBot.__nezukoGetLastUpdateAt?.()).toBeNull();
 
     await bot.api.getUpdates();
@@ -52,6 +52,6 @@ describe("bot activity tracking", () => {
 
     await bot.handleUpdate(createMessageUpdate({ text: "ping" }));
 
-    expect(trackedBot.__nezukoGetLastUpdateAt?.()).toEqual(expect.any(Number));
+    expect(trackedBot.__nezukoGetLastUpdateAt?.()).toEqual(expect.any(Number as any));
   });
 });

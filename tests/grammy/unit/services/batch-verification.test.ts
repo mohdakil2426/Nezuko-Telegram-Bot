@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { batchVerify } from "../../../../apps/grammy/src/services/batch-verification.js";
 import { createMockDb, createMockCache, createMockLogger } from "../../helpers/mock-deps.js";
 import type { InsForgeClient } from "../../../../apps/grammy/src/core/insforge-client.js";
@@ -29,14 +29,14 @@ describe("batchVerify", () => {
   });
 
   it("returns verification results for every unique user id", async () => {
-    vi.mocked(db.rpc).mockResolvedValue({
+    (db.rpc as any).mockResolvedValue({
       group_id: 1,
       enabled: true,
       join_request_preferred: true,
       channels: [makeChannel(100, "required")],
     });
 
-    vi.mocked(cache.get).mockResolvedValue(null);
+    (cache.get as any).mockResolvedValue(null);
 
     const getChatMember = vi
       .fn()

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "bun:test";
 import { contextEnricher } from "../../../../apps/grammy/src/middleware/context-enricher.js";
 import { eventsComposer } from "../../../../apps/grammy/src/composers/events.js";
 import { verifyComposer } from "../../../../apps/grammy/src/composers/verify.js";
@@ -42,17 +42,17 @@ function makeDepsWithPromptState(initialState: Record<string, string> = {}) {
   };
 
   const state = new Map(Object.entries(initialState));
-  vi.mocked(deps.cache.get).mockImplementation(async (key: string) => state.get(key) ?? null);
-  vi.mocked(deps.cache.mget).mockImplementation(async (keys: string[]) =>
+  (deps.cache.get as any).mockImplementation(async (key: string) => state.get(key) ?? null);
+  (deps.cache.mget as any).mockImplementation(async (keys: string[]) =>
     keys.map((key) => state.get(key) ?? null)
   );
-  vi.mocked(deps.cache.set).mockImplementation(async (key: string, value: string) => {
+  (deps.cache.set as any).mockImplementation(async (key: string, value: string) => {
     state.set(key, value);
   });
-  vi.mocked(deps.cache.del).mockImplementation(async (key: string) => {
+  (deps.cache.del as any).mockImplementation(async (key: string) => {
     state.delete(key);
   });
-  vi.mocked(deps.cache.delMany).mockImplementation(async (keys: string[]) => {
+  (deps.cache.delMany as any).mockImplementation(async (keys: string[]) => {
     let deleted = 0;
     for (const key of keys) {
       if (state.delete(key)) {
@@ -75,7 +75,7 @@ describe("delayed verification prompt flow", () => {
     const { bot, apiCalls } = createConfiguredTestBot();
     const { deps, state } = makeDepsWithPromptState();
 
-    vi.mocked(deps.db.getRecords).mockResolvedValueOnce([
+    (deps.db.getRecords as any).mockResolvedValueOnce([
       { group_id: GROUP_ID, channel_id: CHANNEL_ID },
     ]);
 
@@ -99,7 +99,7 @@ describe("delayed verification prompt flow", () => {
   it("deletes the first blocked message, restricts the user, and sends one prompt after channel leave", async () => {
     const { bot, apiCalls } = createConfiguredTestBot({
       methodResults: {
-        getChatMember: (payload) => {
+        getChatMember: (payload: any) => {
           const chatId = payload.chat_id as number;
           if (chatId === CHANNEL_ID) {
             return { status: "left", user: { id: USER_ID, is_bot: false, first_name: "User" } };
@@ -111,8 +111,8 @@ describe("delayed verification prompt flow", () => {
     });
     const { deps, state } = makeDepsWithPromptState();
 
-    vi.mocked(deps.db.rpc).mockResolvedValue(CONTRACT);
-    vi.mocked(deps.db.getRecords).mockResolvedValue([]);
+    (deps.db.rpc as any).mockResolvedValue(CONTRACT);
+    (deps.db.getRecords as any).mockResolvedValue([]);
 
     bot.use(contextEnricher(deps));
     bot.use(eventsComposer);
@@ -151,7 +151,7 @@ describe("delayed verification prompt flow", () => {
       [`member:${CHANNEL_ID}:${USER_ID}`]: "1",
     });
 
-    vi.mocked(deps.db.rpc).mockResolvedValue(CONTRACT);
+    (deps.db.rpc as any).mockResolvedValue(CONTRACT);
 
     bot.use(contextEnricher(deps));
     bot.use(eventsComposer);
@@ -173,7 +173,7 @@ describe("delayed verification prompt flow", () => {
   it("does not resend the prompt while one is already active", async () => {
     const { bot, apiCalls } = createConfiguredTestBot({
       methodResults: {
-        getChatMember: (payload) => {
+        getChatMember: (payload: any) => {
           const chatId = payload.chat_id as number;
           if (chatId === CHANNEL_ID) {
             return { status: "left", user: { id: USER_ID, is_bot: false, first_name: "User" } };
@@ -187,8 +187,8 @@ describe("delayed verification prompt flow", () => {
       [`verification_prompt:${GROUP_ID}:${USER_ID}`]: "5001",
     });
 
-    vi.mocked(deps.db.rpc).mockResolvedValue(CONTRACT);
-    vi.mocked(deps.db.getRecords).mockResolvedValue([]);
+    (deps.db.rpc as any).mockResolvedValue(CONTRACT);
+    (deps.db.getRecords as any).mockResolvedValue([]);
 
     bot.use(contextEnricher(deps));
     bot.use(eventsComposer);
@@ -209,7 +209,7 @@ describe("delayed verification prompt flow", () => {
   it("deletes blocked messages even when another enforcement update already holds the lock", async () => {
     const { bot, apiCalls } = createConfiguredTestBot({
       methodResults: {
-        getChatMember: (payload) => {
+        getChatMember: (payload: any) => {
           const chatId = payload.chat_id as number;
           if (chatId === CHANNEL_ID) {
             return { status: "left", user: { id: USER_ID, is_bot: false, first_name: "User" } };
@@ -221,9 +221,9 @@ describe("delayed verification prompt flow", () => {
     });
     const { deps } = makeDepsWithPromptState();
 
-    vi.mocked(deps.db.rpc).mockResolvedValue(CONTRACT);
-    vi.mocked(deps.db.getRecords).mockResolvedValue([]);
-    vi.mocked(deps.cache.setIfAbsent).mockResolvedValue(false);
+    (deps.db.rpc as any).mockResolvedValue(CONTRACT);
+    (deps.db.getRecords as any).mockResolvedValue([]);
+    (deps.cache.setIfAbsent as any).mockResolvedValue(false);
 
     bot.use(contextEnricher(deps));
     bot.use(eventsComposer);
@@ -254,7 +254,7 @@ describe("delayed verification prompt flow", () => {
       [`verification_prompt:${GROUP_ID}:${USER_ID}`]: "7000",
     });
 
-    vi.mocked(deps.db.rpc).mockResolvedValue(CONTRACT);
+    (deps.db.rpc as any).mockResolvedValue(CONTRACT);
 
     bot.use(contextEnricher(deps));
     bot.use(verifyComposer);

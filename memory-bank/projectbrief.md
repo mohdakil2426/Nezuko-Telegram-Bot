@@ -20,7 +20,7 @@ Convert group participants into channel subscribers through automated verificati
 
 | Layer              | Technologies                                                               |
 | ------------------ | -------------------------------------------------------------------------- |
-| **Bot (grammY)**   | TypeScript 5.9, grammY v1.41.1, Bun, Node 22, Vitest                       |
+| **Bot (grammY)**   | TypeScript 5.9, grammY v1.41.1, Bun, Node 22, bun test                     |
 | **Web**            | Next.js 16, React 19, TypeScript, Tailwind v4, shadcn/ui                   |
 | **Backend (BaaS)** | InsForge (managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions) |
 | **Database**       | InsForge Managed PostgreSQL (cloud)                                        |
@@ -108,7 +108,7 @@ nezuko/
 | ESLint        | 0 warnings   | grammy + web               |
 | TypeScript    | 0 errors     | grammy + web               |
 | Prettier      | All clean    | grammy + web               |
-| Vitest        | 163/163 pass | grammy                     |
+| bun test      | 163/163 pass | grammy                     |
 | Next.js Build | 0 errors     | web (PPR + React Compiler) |
 
 ---

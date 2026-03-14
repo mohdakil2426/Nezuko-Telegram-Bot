@@ -73,7 +73,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run vitest
+      - name: Run bun test
         run: npm run test
 
   docker-build:

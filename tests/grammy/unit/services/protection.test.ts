@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { muteUser, unmuteUser, kickUser } from "../../../../apps/grammy/src/services/protection.js";
 
 /** Minimal Telegram API mock matching protection.ts TelegramApi interface. */
@@ -26,7 +26,8 @@ describe("muteUser", () => {
     expect(result.success).toBe(true);
     expect(api.restrictChatMember).toHaveBeenCalledWith(-100111, 999, {
       can_send_messages: false,
-      can_send_media_messages: false,
+      can_send_photos: false,
+      can_send_videos: false,
       can_send_other_messages: false,
       can_add_web_page_previews: false,
     });
@@ -63,7 +64,8 @@ describe("unmuteUser", () => {
     expect(result.success).toBe(true);
     expect(api.restrictChatMember).toHaveBeenCalledWith(-100111, 999, {
       can_send_messages: true,
-      can_send_media_messages: true,
+      can_send_photos: true,
+      can_send_videos: true,
       can_send_other_messages: true,
       can_add_web_page_previews: true,
     });

@@ -1,0 +1,10 @@
+{
+  "name": "nezuko-telegram-bot",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "devDependencies": {
+    "grammy": "1.41.1"
+  }
+}

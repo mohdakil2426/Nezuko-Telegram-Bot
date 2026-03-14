@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { Composer } from "grammy";
 import { permissionCheck } from "../../../../apps/grammy/src/middleware/permission-check.js";
 import { contextEnricher } from "../../../../apps/grammy/src/middleware/context-enricher.js";
 import { createConfiguredTestBot } from "../../helpers/test-bot.js";
 import { createMockDb, createMockCache, createMockLogger } from "../../helpers/mock-deps.js";
 import { createMessageUpdate } from "../../helpers/mock-update.js";
-import type { BotDeps, NezukoContext } from "../../../../apps/grammy/src/types.js";
+import type { NezukoContext, BotDeps } from "../../../../apps/grammy/src/types.js";
 
 function makeDeps(): BotDeps {
   return {
@@ -24,7 +24,7 @@ describe("permissionCheck middleware", () => {
   it("allows command flow when bot has required permissions", async () => {
     const { bot, apiCalls } = createConfiguredTestBot({
       methodResults: {
-        getChatMember: (payload) => {
+        getChatMember: (payload: any) => {
           if (payload.user_id === 12345678) {
             return {
               status: "administrator",
@@ -45,14 +45,14 @@ describe("permissionCheck middleware", () => {
 
     await bot.handleUpdate(createMessageUpdate({ text: "/protect @testchannel" }));
 
-    expect(nextMiddleware).toHaveBeenCalledOnce();
+    expect(nextMiddleware).toHaveBeenCalledTimes(1);
     expect(apiCalls.find((call) => call.method === "sendMessage")).toBeUndefined();
   });
 
   it("replies when bot is not an admin in the group", async () => {
     const { bot, apiCalls } = createConfiguredTestBot({
       methodResults: {
-        getChatMember: (payload) => {
+        getChatMember: (payload: any) => {
           if (payload.user_id === 12345678) {
             return { status: "member" };
           }

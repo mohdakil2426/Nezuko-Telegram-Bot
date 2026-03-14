@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { contextEnricher } from "../../../../apps/grammy/src/middleware/context-enricher.js";
 import { createMockDb, createMockCache, createMockLogger } from "../../helpers/mock-deps.js";
 import { createTestBot } from "../../helpers/test-bot.js";
 import { createMessageUpdate } from "../../helpers/mock-update.js";
-import type { BotDeps } from "../../../../apps/grammy/src/types.js";
+import type { NezukoContext as any } from "../../../../apps/grammy/src/types.js";
 
 describe("contextEnricher middleware", () => {
-  let deps: BotDeps;
+  let deps: any;
 
   beforeEach(() => {
     deps = {
@@ -66,6 +66,6 @@ describe("contextEnricher middleware", () => {
 
     await bot.handleUpdate(createMessageUpdate());
 
-    expect(nextMiddleware).toHaveBeenCalledOnce();
+    expect(nextMiddleware).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,10 +1,21 @@
 {
-  "extends": "../../apps/grammy/tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "../..",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ESNext",
+    "types": ["bun", "node"],
+    "typeRoots": ["../../node_modules/@types", "../../apps/grammy/node_modules/@types"],
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
     "noEmit": true,
-    "typeRoots": ["../../apps/grammy/node_modules/@types", "../../apps/grammy/node_modules"],
-    "types": ["node", "vitest/globals"]
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../../apps/web/src/*"],
+      "grammy/types": ["../../node_modules/grammy/out/types.d.ts"]
+    }
   },
-  "include": ["**/*.ts", "../../apps/grammy/src/**/*.ts"]
+  "include": ["**/*.ts", "../../apps/grammy/src/**/*.ts"],
+  "exclude": ["node_modules"]
 }

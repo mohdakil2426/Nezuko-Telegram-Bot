@@ -6,7 +6,11 @@ import {
   getGroupVerificationContractCached,
   invalidateGroupContractCache,
 } from "../database/group-contract.repo.js";
-import { getLatestVerificationState, logVerification } from "../database/verification.repo.js";
+import {
+  getLatestVerificationState,
+  logVerification,
+  type LatestVerificationState,
+} from "../database/verification.repo.js";
 import { muteUser } from "../services/protection.js";
 import { verifyMembership } from "../services/verification.js";
 import { acquireIdempotencyLock } from "../services/idempotency.js";
@@ -470,7 +474,7 @@ eventsComposer.on("message", async (ctx, next) => {
     // If we can't check, fall through to deletion (fail closed for non-verified users)
   }
 
-  let latestVerification = null;
+  let latestVerification: LatestVerificationState | null = null;
   if (!hasEnforcementBlock) {
     latestVerification = await getLatestVerificationState(ctx.db, ctx.chat.id, ctx.from.id);
     const latestVerifiedAt = latestVerification

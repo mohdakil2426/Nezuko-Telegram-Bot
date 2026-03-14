@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { Composer } from "grammy";
 import { createTestBot } from "../../helpers/test-bot.js";
 import { createMockDb, createMockCache, createMockLogger } from "../../helpers/mock-deps.js";
@@ -6,8 +6,8 @@ import { createMessageUpdate } from "../../helpers/mock-update.js";
 import { contextEnricher } from "../../../../apps/grammy/src/middleware/context-enricher.js";
 import { adminGuard } from "../../../../apps/grammy/src/middleware/admin-guard.js";
 import { groupOnly } from "../../../../apps/grammy/src/middleware/group-only.js";
-import type { NezukoContext } from "../../../../apps/grammy/src/types.js";
-import type { BotDeps } from "../../../../apps/grammy/src/types.js";
+import type { NezukoContext, BotDeps } from "../../../../apps/grammy/src/types.js";
+
 import {
   WELCOME_PRIVATE,
   WELCOME_GROUP,
@@ -169,8 +169,8 @@ describe("admin composer integration", () => {
       const deps = makeDeps();
 
       // DB operations succeed
-      vi.mocked(deps.db.getRecords).mockResolvedValue([]);
-      vi.mocked(deps.db.postRecords).mockResolvedValue([{ id: 1 }]);
+      (deps.db.getRecords as any).mockResolvedValue([]);
+      (deps.db.postRecords as any).mockResolvedValue([{ id: 1 }]);
 
       bot.use(contextEnricher(deps));
 
@@ -306,7 +306,7 @@ describe("admin composer integration", () => {
       const { bot, apiCalls } = createTestBot();
       const deps = makeDeps();
 
-      vi.mocked(deps.db.deleteRecords).mockResolvedValue(undefined);
+      (deps.db.deleteRecords as any).mockResolvedValue(undefined);
 
       bot.use(contextEnricher(deps));
 
@@ -395,7 +395,7 @@ describe("admin composer integration", () => {
       const { bot, apiCalls } = createTestBot();
       const deps = makeDeps();
 
-      vi.mocked(deps.db.getRecords).mockResolvedValue([]);
+      (deps.db.getRecords as any).mockResolvedValue([]);
 
       bot.use(contextEnricher(deps));
 

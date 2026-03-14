@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { CommandWorker } from "../../../../apps/grammy/src/services/command-worker.js";
 import { createMockDb, createMockLogger } from "../../helpers/mock-deps.js";
 import type { DashboardCommand } from "../../../../apps/grammy/src/types.js";
@@ -33,7 +33,7 @@ describe("CommandWorker", () => {
     const subscribe = vi.fn();
     let handler: ((cmd: DashboardCommand) => void) | null = null;
 
-    vi.mocked(db.patchRecords)
+    (db.patchRecords as any)
       .mockResolvedValueOnce([createCommand(1, "processing")])
       .mockResolvedValueOnce([createCommand(1, "completed")]);
 
@@ -57,7 +57,7 @@ describe("CommandWorker", () => {
     expect(subscribe).toHaveBeenCalledWith("commands");
     expect(handler).not.toBeNull();
 
-    handler?.(createCommand(1));
+    (handler as any)(createCommand(1));
     await Promise.resolve();
     await Promise.resolve();
 
@@ -71,8 +71,8 @@ describe("CommandWorker", () => {
     const db = createMockDb();
     const handleCommand = vi.fn().mockResolvedValue(undefined);
 
-    vi.mocked(db.getRecords).mockResolvedValue([createCommand(2)]);
-    vi.mocked(db.patchRecords)
+    (db.getRecords as any).mockResolvedValue([createCommand(2)]);
+    (db.patchRecords as any)
       .mockResolvedValueOnce([createCommand(2, "processing")])
       .mockResolvedValueOnce([createCommand(2, "completed")]);
 
@@ -85,7 +85,7 @@ describe("CommandWorker", () => {
     });
 
     worker.start();
-    await vi.advanceTimersByTimeAsync(30_000);
+    await vi.advanceTimersByTime(30_000);
 
     expect(db.getRecords).toHaveBeenCalled();
     expect(handleCommand).toHaveBeenCalledWith(expect.objectContaining({ id: 2 }));

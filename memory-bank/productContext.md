@@ -96,12 +96,12 @@ Bot (grammY) ← socket.io-client          ← InsForge Realtime (Socket.IO)
 
 ## Key Metrics
 
-| Metric                     | Target  | Status       |
-| -------------------------- | ------- | ------------ |
-| Verification Latency (p99) | <150ms  | ✅ Achieved  |
-| Dashboard Pages            | 10      | ✅ Complete  |
-| Uptime                     | 99.9%   | ✅ On Track  |
-| grammY Tests               | 163/163 | ✅ Phase 126 |
+| Metric                     | Target  | Status                  |
+| -------------------------- | ------- | ----------------------- |
+| Verification Latency (p99) | <150ms  | ✅ Achieved             |
+| Dashboard Pages            | 10      | ✅ Complete             |
+| Uptime                     | 99.9%   | ✅ On Track             |
+| grammY Tests               | 163/163 | ✅ Phase 126 (bun test) |
 
 ---
 

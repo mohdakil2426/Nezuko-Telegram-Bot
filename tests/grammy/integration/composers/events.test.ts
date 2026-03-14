@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { Composer } from "grammy";
 import { createTestBot } from "../../helpers/test-bot.js";
 import { createMockDb, createMockCache, createMockLogger } from "../../helpers/mock-deps.js";
@@ -9,8 +9,8 @@ import {
   createChannelChatMemberUpdate,
 } from "../../helpers/mock-update.js";
 import { contextEnricher } from "../../../../apps/grammy/src/middleware/context-enricher.js";
-import type { NezukoContext } from "../../../../apps/grammy/src/types.js";
-import type { BotDeps } from "../../../../apps/grammy/src/types.js";
+import type { NezukoContext, BotDeps } from "../../../../apps/grammy/src/types.js";
+
 import type { EnforcedChannel } from "../../../../apps/grammy/src/database/types.js";
 
 /** Shared channel fixture used across tests */
@@ -46,7 +46,7 @@ describe("events composer integration", () => {
       const deps = makeDeps();
 
       // DB returns one linked channel
-      vi.mocked(deps.db.getRecords)
+      (deps.db.getRecords as any)
         .mockResolvedValueOnce([
           {
             id: 1,
@@ -114,7 +114,13 @@ describe("events composer integration", () => {
       bot.use(eventsComposer);
 
       // Bot user joining
-      const update = createNewMemberUpdate([{ id: 12345678, is_bot: true, first_name: "BotUser" }]);
+      const update = createNewMemberUpdate([
+        {
+          id: 12345678,
+          is_bot: true,
+          first_name: "BotUser",
+        },
+      ]);
       await bot.handleUpdate(update);
 
       // No restrict call for bots
@@ -169,7 +175,7 @@ describe("events composer integration", () => {
       const { bot, apiCalls } = createTestBot();
       const deps = makeDeps();
 
-      vi.mocked(deps.db.deleteRecords).mockResolvedValue(undefined);
+      (deps.db.deleteRecords as any).mockResolvedValue(undefined);
 
       bot.use(contextEnricher(deps));
 
@@ -200,7 +206,7 @@ describe("events composer integration", () => {
       const deps = makeDeps();
 
       // Cache returns "1" = verified
-      vi.mocked(deps.cache.get).mockResolvedValue("1");
+      (deps.cache.get as any).mockResolvedValue("1");
 
       bot.use(contextEnricher(deps));
 
@@ -235,9 +241,9 @@ describe("events composer integration", () => {
       const deps = makeDeps();
 
       // Cache returns null = not verified
-      vi.mocked(deps.cache.get).mockResolvedValue(null);
+      (deps.cache.get as any).mockResolvedValue(null);
       // DB also returns no verified record
-      vi.mocked(deps.db.getRecords).mockResolvedValue([]);
+      (deps.db.getRecords as any).mockResolvedValue([]);
 
       bot.use(contextEnricher(deps));
 
@@ -267,13 +273,13 @@ describe("events composer integration", () => {
       const { bot, apiCalls } = createTestBot();
       const deps = makeDeps();
 
-      vi.mocked(deps.db.getRecords).mockResolvedValueOnce([
+      (deps.db.getRecords as any).mockResolvedValueOnce([
         {
           group_id: -1001234567890,
           channel_id: -1001111111111,
         },
       ]);
-      vi.mocked(deps.db.rpc).mockResolvedValueOnce({
+      (deps.db.rpc as any).mockResolvedValueOnce({
         group_id: -1001234567890,
         enabled: true,
         join_request_preferred: true,

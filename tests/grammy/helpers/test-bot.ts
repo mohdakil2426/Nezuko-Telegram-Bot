@@ -1,5 +1,5 @@
 import { Bot } from "grammy";
-import type { NezukoContext } from "../../../apps/grammy/src/types.js";
+import type { NezukoContext, BotDeps } from "../../../apps/grammy/src/types.js";
 
 /** Recorded outgoing API call intercepted by the test transformer. */
 export interface ApiCall {
@@ -14,9 +14,11 @@ export interface TestBotOptions {
 }
 
 /** Static bot info returned instead of calling getMe() in tests. */
-const TEST_BOT_INFO = {
+const TEST_BOT_INFO: any = {
   id: 12345678,
   is_bot: true,
+  has_topics_enabled: false,
+  allows_users_to_create_topics: false,
   first_name: "Nezuko Test",
   username: "nezuko_test_bot",
   can_join_groups: true,
@@ -48,7 +50,7 @@ export function createConfiguredTestBot(options?: TestBotOptions): {
   const apiCalls: ApiCall[] = [];
 
   const bot = new Bot<NezukoContext>("TEST_TOKEN", {
-    botInfo: TEST_BOT_INFO,
+    botInfo: TEST_BOT_INFO as any,
   });
 
   // Install a transformer that intercepts ALL outgoing API calls

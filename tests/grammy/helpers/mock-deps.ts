@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi } from "bun:test";
 import type { InsForgeClient } from "../../../apps/grammy/src/core/insforge-client.js";
 import type { CacheClient } from "../../../apps/grammy/src/core/cache.js";
 import type { Logger } from "../../../apps/grammy/src/utils/logger.js";

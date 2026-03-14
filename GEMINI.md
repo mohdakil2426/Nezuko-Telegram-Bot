@@ -26,6 +26,7 @@ Bot Engine (grammY / TS) ───────► fetch REST ──────�
 - **No custom API server** — both bot and web talk directly to InsForge REST / SDK.
 - **Bot DB access**: `apps/grammy/src/core/insforge-client.ts` — never raw PostgreSQL.
 - **Web DB access**: `@insforge/sdk` via `import { insforge } from "@/lib/insforge"`.
+
 ---
 
 ## Project Structure
@@ -92,18 +93,20 @@ nezuko/
 - **Dev bypass guarded** — `NEXT_PUBLIC_DEV_LOGIN=true` only works when `NODE_ENV !== "production"`.
 - **Open redirect prevention** — validate `redirectTo` does not start with `//`.
 - **RLS on all tables** — keep InsForge security policies aligned with runtime behavior.
+
 ---
 
 ## Tech Stack
 
-| Layer        | Stack                                                                                              |
-| ------------ | -------------------------------------------------------------------------------------------------- |
-| **Bot**      | TypeScript 5.9.3, grammY 1.41.1, Bun, Node 22, ioredis 5.10.0, pino 10.3.1, zod 4.3.6, Socket.IO client 4.8.3 |
+| Layer        | Stack                                                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| **Bot**      | TypeScript 5.9.3, grammY 1.41.1, Bun, Node 22, ioredis 5.10.0, pino 10.3.1, zod 4.3.6, Socket.IO client 4.8.3          |
 | **Frontend** | Next.js 16.1.6, React 19.2.3, TypeScript 5.9.3, Tailwind v4, shadcn/ui, Recharts 2.15.4, Motion 12+, TanStack Query v5 |
-| **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions                         |
-| **Auth**     | InsForge Auth, `InsforgeMiddleware`, `insforge_session` cookie, RLS                                |
-| **Infra**    | Docker, Vercel, Caddy                                                                              |
-| **Package**  | `bun` for all TypeScript apps (grammy + web)                                                       |
+| **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions                                             |
+| **Auth**     | InsForge Auth, `InsforgeMiddleware`, `insforge_session` cookie, RLS                                                    |
+| **Infra**    | Docker, Vercel, Caddy                                                                                                  |
+| **Package**  | `bun` for all TypeScript apps (grammy + web)                                                                           |
+
 ---
 
 ## Coding Standards — TypeScript
@@ -324,55 +327,55 @@ Skills are located in `.agents/skills/` — check the path column. Read the **SK
 
 ### Frontend (Web Dashboard)
 
-| Skill                           | When to Use                             | Path                                         |
-| ------------------------------- | --------------------------------------- | -------------------------------------------- |
-| **next-best-practices**         | Next.js patterns and boundaries         | `.agents/skills/next-best-practices/`        |
-| **next-cache-components**       | Next.js 16 cache behavior               | `.agents/skills/next-cache-components/`      |
-| **next-upgrade**                | Upgrade Next.js to latest version       | `.agents/skills/next-upgrade/`               |
-| **shadcn-ui**                   | shadcn/ui work                          | `.agents/skills/shadcn-ui`                   |
-| **tanstack-query**              | query/mutation/cache work               | `.agents/skills/tanstack-query/`             |
-| **typescript-expert**           | advanced TS/JS work                     | `.agents/skills/typescript-expert`           |
-| **vercel-react-best-practices** | React/Next performance                  | `.agents/skills/vercel-react-best-practices` |
-| **vercel-composition-patterns** | scalable component APIs                 | `.agents/skills/vercel-composition-patterns` |
-| **ui-ux-pro-max**               | UI/UX design work                       | `.agents/skills/ui-ux-pro-max`               |
-| **web-design-guidelines**       | accessibility/UI audits                 | `.agents/skills/web-design-guidelines`       |
-| **motion**                      | Motion animations                       | `.agents/skills/motion`                      |
-| **tailwind-design-system**      | Tailwind v4 design system work          | `.agents/skills/tailwind-design-system`      |
-| **react-doctor**                | Scan React code for issues              | `.agents/skills/react-doctor`                |
+| Skill                           | When to Use                       | Path                                         |
+| ------------------------------- | --------------------------------- | -------------------------------------------- |
+| **next-best-practices**         | Next.js patterns and boundaries   | `.agents/skills/next-best-practices/`        |
+| **next-cache-components**       | Next.js 16 cache behavior         | `.agents/skills/next-cache-components/`      |
+| **next-upgrade**                | Upgrade Next.js to latest version | `.agents/skills/next-upgrade/`               |
+| **shadcn-ui**                   | shadcn/ui work                    | `.agents/skills/shadcn-ui`                   |
+| **tanstack-query**              | query/mutation/cache work         | `.agents/skills/tanstack-query/`             |
+| **typescript-expert**           | advanced TS/JS work               | `.agents/skills/typescript-expert`           |
+| **vercel-react-best-practices** | React/Next performance            | `.agents/skills/vercel-react-best-practices` |
+| **vercel-composition-patterns** | scalable component APIs           | `.agents/skills/vercel-composition-patterns` |
+| **ui-ux-pro-max**               | UI/UX design work                 | `.agents/skills/ui-ux-pro-max`               |
+| **web-design-guidelines**       | accessibility/UI audits           | `.agents/skills/web-design-guidelines`       |
+| **motion**                      | Motion animations                 | `.agents/skills/motion`                      |
+| **tailwind-design-system**      | Tailwind v4 design system work    | `.agents/skills/tailwind-design-system`      |
+| **react-doctor**                | Scan React code for issues        | `.agents/skills/react-doctor`                |
 
 ### Backend (Bot & BaaS)
 
 | Skill                 | When to Use                        | Path                               |
 | --------------------- | ---------------------------------- | ---------------------------------- |
 | **grammy**            | Any bot work in `apps/grammy`      | `.agents/skills/grammy`            |
-| **insforge**         | Frontend SDK integration            | `.agents/skills/insforge`          |
-| **insforge-cli**     | Backend CLI, DB, functions, deploy  | `.agents/skills/insforge-cli`      |
+| **insforge**          | Frontend SDK integration           | `.agents/skills/insforge`          |
+| **insforge-cli**      | Backend CLI, DB, functions, deploy | `.agents/skills/insforge-cli`      |
 | **redis-development** | Redis optimization & patterns      | `.agents/skills/redis-development` |
 
 ### DevOps & Tooling
 
-| Skill                           | When to Use                       | Path                                       |
-| ------------------------------- | --------------------------------- | ------------------------------------------ |
-| **brainstorming**               | Required before creative work     | `.agents/skills/brainstorming/`            |
-| **code-review-expert**          | Code review with senior lens      | `.agents/skills/code-review-expert/`       |
-| **docker-expert**              | Docker/container work              | `.agents/skills/docker-expert`             |
-| **github-actions-templates**    | CI/CD work                        | `.agents/skills/github-actions-templates/` |
-| **mermaid-diagrams**            | diagrams/architecture visuals     | `.agents/skills/mermaid-diagrams`          |
-| **playwright-cli**              | browser automation                | `.agents/skills/playwright-cli`            |
-| **powershell-expert**           | PowerShell scripts                | `.agents/skills/powershell-expert`         |
-| **skill-creator**              | skill updates                      | `.agents/skills/skill-creator`             |
-| **vitest**                     | Unit testing with Vitest           | `.agents/skills/vitest`                    |
-| **vercel-doctor**              | Optimize Vercel costs              | `.agents/skills/vercel-doctor`             |
+| Skill                        | When to Use                   | Path                                       |
+| ---------------------------- | ----------------------------- | ------------------------------------------ |
+| **brainstorming**            | Required before creative work | `.agents/skills/brainstorming/`            |
+| **code-review-expert**       | Code review with senior lens  | `.agents/skills/code-review-expert/`       |
+| **docker-expert**            | Docker/container work         | `.agents/skills/docker-expert`             |
+| **github-actions-templates** | CI/CD work                    | `.agents/skills/github-actions-templates/` |
+| **mermaid-diagrams**         | diagrams/architecture visuals | `.agents/skills/mermaid-diagrams`          |
+| **playwright-cli**           | browser automation            | `.agents/skills/playwright-cli`            |
+| **powershell-expert**        | PowerShell scripts            | `.agents/skills/powershell-expert`         |
+| **skill-creator**            | skill updates                 | `.agents/skills/skill-creator`             |
+| **vitest**                   | Unit testing with Vitest      | `.agents/skills/vitest`                    |
+| **vercel-doctor**            | Optimize Vercel costs         | `.agents/skills/vercel-doctor`             |
 
 ### Project Management
 
-| Skill                      | When to Use                              | Path                                     |
-| -------------------------- | ---------------------------------------- | ---------------------------------------- |
-| **openspec-propose**       | Propose new change with artifacts        | `.agents/skills/openspec-propose`        |
-| **openspec-explore**       | Research and clarify requirements        | `.agents/skills/openspec-explore`        |
-| **openspec-apply-change**  | Implement tasks from a change            | `.agents/skills/openspec-apply-change`   |
-| **openspec-archive-change**| Finalize and archive a completed change  | `.agents/skills/openspec-archive-change` |
+| Skill                       | When to Use                             | Path                                     |
+| --------------------------- | --------------------------------------- | ---------------------------------------- |
+| **openspec-propose**        | Propose new change with artifacts       | `.agents/skills/openspec-propose`        |
+| **openspec-explore**        | Research and clarify requirements       | `.agents/skills/openspec-explore`        |
+| **openspec-apply-change**   | Implement tasks from a change           | `.agents/skills/openspec-apply-change`   |
+| **openspec-archive-change** | Finalize and archive a completed change | `.agents/skills/openspec-archive-change` |
 
 ---
 
-_Last Updated: 2026-03-14 (Skills updated to match .agents/skills/ folder; removed obsolete skills, added code-review-expert, insforge-cli, next-upgrade, openspec-propose, vitest)_
+_Last Updated: 2026-03-14 (Skills updated; Vitest migrated to bun test; removed obsolete references)_

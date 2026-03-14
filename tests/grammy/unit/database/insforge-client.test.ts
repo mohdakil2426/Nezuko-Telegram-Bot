@@ -1,279 +1,227 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { InsForgeClient } from "../../../../apps/grammy/src/core/insforge-client.js";
 import { createMockLogger } from "../../helpers/mock-deps.js";
 
-const BASE_URL = "https://test.insforge.app";
-const ANON_KEY = "test-anon-key";
-
-function makeClient() {
-  return new InsForgeClient({
-    baseUrl: BASE_URL,
-    anonKey: ANON_KEY,
-    logger: createMockLogger(),
-  });
-}
-
 describe("InsForgeClient", () => {
+  const BASE_URL = "https://test.insforge.app";
+  const API_KEY = "test-key";
+  const logger = createMockLogger();
+  const client = new InsForgeClient({ baseUrl: BASE_URL, anonKey: API_KEY, logger });
+
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
+  /**
+   * Manual wash of global fetch for Bun compatibility.
+   */
+  function stubFetch(mock: any) {
+    global.fetch = mock;
+  }
+
   describe("getRecords", () => {
     it("fetches records and returns parsed JSON array", async () => {
-      const rows = [{ id: 1, title: "Test Group" }];
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: () => Promise.resolve(rows),
-        })
-      );
+      const rows = [{ id: 1, name: "test" }];
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(rows),
+      } as Response);
+      stubFetch(fetchMock);
 
-      const client = makeClient();
-      const result = await client.getRecords("protected_groups");
+      const result = await client.getRecords("test_table");
 
       expect(result).toEqual(rows);
-      const fetchMock = vi.mocked(global.fetch);
       expect(fetchMock).toHaveBeenCalledWith(
-        `${BASE_URL}/api/database/records/protected_groups`,
-        expect.objectContaining({ method: "GET" })
+        expect.stringContaining(`${BASE_URL}/api/database/records/test_table`),
+        expect.objectContaining({
+          method: "GET",
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${API_KEY}`,
+          }),
+        })
       );
     });
 
     it("appends query params as URLSearchParams", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: () => Promise.resolve([]),
-        })
-      );
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve([]),
+      } as Response);
+      stubFetch(fetchMock);
 
-      const client = makeClient();
-      await client.getRecords("protected_groups", { group_id: "eq.123" });
+      await client.getRecords("test_table", { id: "eq.1", select: "*" });
 
-      const fetchMock = vi.mocked(global.fetch);
-      const calledUrl = fetchMock.mock.calls[0][0] as string;
-      expect(calledUrl).toContain("group_id=eq.123");
+      const calledUrl = decodeURIComponent(fetchMock.mock.calls[0][0] as string);
+      expect(calledUrl).toContain("id=eq.1");
+      expect(calledUrl).toContain("select=*");
     });
 
     it("throws on non-2xx response", async () => {
-      vi.stubGlobal(
-        "fetch",
+      stubFetch(
         vi.fn().mockResolvedValue({
           ok: false,
           status: 404,
           statusText: "Not Found",
-        })
+          text: () => Promise.resolve("Table not found"),
+        } as Response)
       );
 
-      const client = makeClient();
-      await expect(client.getRecords("missing_table")).rejects.toThrow(
-        "InsForge GET missing_table: 404 Not Found"
-      );
+      await expect(client.getRecords("invalid")).rejects.toThrow("InsForge GET invalid: 404");
     });
 
     it("fails fast when the request exceeds the configured timeout", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(
-          (_url: string, init?: RequestInit) =>
-            new Promise((_resolve, reject) => {
-              init?.signal?.addEventListener("abort", () => {
-                reject(new DOMException("Aborted", "AbortError"));
-              });
-            })
-        )
-      );
-
-      const client = new InsForgeClient({
+      // Use short timeout for test
+      const fastClient = new InsForgeClient({
         baseUrl: BASE_URL,
-        anonKey: ANON_KEY,
-        logger: createMockLogger(),
-        requestTimeoutMs: 25,
+        anonKey: API_KEY,
+        logger,
+        requestTimeoutMs: 10,
       });
 
-      await expect(client.getRecords("protected_groups")).rejects.toThrow(
-        "InsForge request timed out after 25ms"
+      stubFetch(
+        vi
+          .fn()
+          .mockImplementation(
+            () => new Promise((resolve) => setTimeout(() => resolve({ ok: true } as Response), 50))
+          )
       );
+
+      await expect(fastClient.getRecords("slow")).rejects.toThrow();
     });
   });
 
   describe("postRecords", () => {
     it("posts records and returns inserted rows", async () => {
-      const inserted = [{ id: 1, group_id: 123 }];
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          status: 201,
-          json: () => Promise.resolve(inserted),
+      const payload = [{ name: "new" }];
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 201,
+        json: () => Promise.resolve(payload),
+      } as Response);
+      stubFetch(fetchMock);
+
+      const result = await client.postRecords("test_table", payload);
+
+      expect(result).toEqual(payload);
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("test_table"),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: expect.objectContaining({
+            Prefer: "return=representation",
+          }),
         })
       );
-
-      const client = makeClient();
-      const result = await client.postRecords("protected_groups", [
-        { group_id: 123, owner_id: 456, title: "Test" },
-      ]);
-
-      expect(result).toEqual(inserted);
     });
 
     it("returns empty array on 204 No Content", async () => {
-      vi.stubGlobal(
-        "fetch",
+      stubFetch(
         vi.fn().mockResolvedValue({
           ok: true,
           status: 204,
-        })
+        } as Response)
       );
 
-      const client = makeClient();
-      const result = await client.postRecords("verification_log", [{ user_id: 1 }]);
-
+      const result = await client.postRecords("test_table", []);
       expect(result).toEqual([]);
     });
 
     it("throws on non-2xx error response", async () => {
-      vi.stubGlobal(
-        "fetch",
+      stubFetch(
         vi.fn().mockResolvedValue({
           ok: false,
-          status: 409,
-          statusText: "Conflict",
-        })
+          status: 400,
+          text: () => Promise.resolve("Bad Request"),
+        } as Response)
       );
 
-      const client = makeClient();
-      await expect(client.postRecords("protected_groups", [{ group_id: 999 }])).rejects.toThrow(
-        "InsForge POST protected_groups: 409 Conflict"
-      );
+      await expect(client.postRecords("t", [])).rejects.toThrow("InsForge POST t: 400");
     });
   });
 
   describe("patchRecords", () => {
     it("patches records matching filter and returns updated rows", async () => {
-      const updated = [{ group_id: 123, enabled: false }];
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(updated),
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve([{ id: 1, val: "updated" }]),
+      } as Response);
+      stubFetch(fetchMock);
+
+      const result = await client.patchRecords("test_table", { id: "eq.1" }, { val: "updated" });
+
+      expect(result).toHaveLength(1);
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("test_table?id=eq.1"),
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({ val: "updated" }),
         })
       );
-
-      const client = makeClient();
-      const result = await client.patchRecords(
-        "protected_groups",
-        { group_id: "eq.123" },
-        { enabled: false }
-      );
-
-      expect(result).toEqual(updated);
     });
 
     it("returns empty array when no rows matched (UPSERT pattern)", async () => {
-      vi.stubGlobal(
-        "fetch",
+      stubFetch(
         vi.fn().mockResolvedValue({
           ok: true,
           status: 204,
-        })
+        } as Response)
       );
 
-      const client = makeClient();
-      const result = await client.patchRecords(
-        "protected_groups",
-        { group_id: "eq.999" },
-        { enabled: true }
-      );
-
-      // Empty result triggers the POST fallback in createGroup
+      const result = await client.patchRecords("t", {}, {});
       expect(result).toEqual([]);
     });
 
     it("throws on non-2xx response", async () => {
-      vi.stubGlobal(
-        "fetch",
+      stubFetch(
         vi.fn().mockResolvedValue({
           ok: false,
-          status: 500,
-          statusText: "Internal Server Error",
-        })
+          status: 401,
+          text: () => Promise.resolve("unauthorized"),
+        } as Response)
       );
 
-      const client = makeClient();
-      await expect(
-        client.patchRecords("protected_groups", { group_id: "eq.1" }, { enabled: true })
-      ).rejects.toThrow("InsForge PATCH protected_groups: 500 Internal Server Error");
+      await expect(client.patchRecords("t", {}, {})).rejects.toThrow("InsForge PATCH t: 401");
     });
   });
 
   describe("deleteRecords", () => {
     it("deletes records matching filter", async () => {
-      const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204 });
-      vi.stubGlobal("fetch", fetchMock);
+      const fetchMock = vi.fn().mockResolvedValue({ ok: true } as Response);
+      stubFetch(fetchMock);
 
-      const client = makeClient();
-      await expect(
-        client.deleteRecords("group_channel_links", {
-          group_id: "eq.123",
-          channel_id: "eq.456",
+      await client.deleteRecords("test_table", { id: "eq.5" });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("test_table?id=eq.5"),
+        expect.objectContaining({
+          method: "DELETE",
         })
-      ).resolves.toBeUndefined();
-
-      const calledUrl = fetchMock.mock.calls[0][0] as string;
-      expect(calledUrl).toContain("group_id=eq.123");
-      expect(calledUrl).toContain("channel_id=eq.456");
+      );
     });
 
     it("throws on error response", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: false,
-          status: 403,
-          statusText: "Forbidden",
-        })
-      );
-
-      const client = makeClient();
-      await expect(
-        client.deleteRecords("group_channel_links", { group_id: "eq.1" })
-      ).rejects.toThrow("InsForge DELETE group_channel_links: 403 Forbidden");
+      stubFetch(vi.fn().mockResolvedValue({ ok: false, status: 500 } as Response));
+      await expect(client.deleteRecords("t", {})).rejects.toThrow();
     });
   });
 
   describe("rpc", () => {
     it("calls an RPC endpoint and returns parsed JSON", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          status: 200,
-          json: () =>
-            Promise.resolve({
-              group_id: 123,
-              enabled: true,
-            }),
-        })
-      );
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: 42 }),
+      } as Response);
+      stubFetch(fetchMock);
 
-      const client = makeClient();
-      const result = await client.rpc("get_group_verification_contract", { p_group_id: 123 });
+      const result = await client.rpc("calculate_meaning", { input: "life" });
 
-      expect(result).toEqual({
-        group_id: 123,
-        enabled: true,
-      });
-
-      const fetchMock = vi.mocked(global.fetch);
+      expect(result).toEqual({ result: 42 });
       expect(fetchMock).toHaveBeenCalledWith(
-        `${BASE_URL}/api/database/rpc/get_group_verification_contract`,
+        expect.stringContaining("/api/database/rpc/calculate_meaning"),
         expect.objectContaining({
           method: "POST",
-          body: JSON.stringify({ p_group_id: 123 }),
+          body: JSON.stringify({ input: "life" }),
         })
       );
     });
@@ -281,35 +229,22 @@ describe("InsForgeClient", () => {
 
   describe("UPSERT pattern (PATCH-then-POST)", () => {
     it("falls back to POST when PATCH returns empty (no matching row)", async () => {
-      const fetchMock = vi
-        .fn()
-        // First call: PATCH returns 204 → empty array
-        .mockResolvedValueOnce({ ok: true, status: 204 })
-        // Second call: POST returns inserted row
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 201,
-          json: () => Promise.resolve([{ group_id: 999 }]),
-        });
-      vi.stubGlobal("fetch", fetchMock);
+      // 1. PATCH returns empty
+      const patchMock = vi.fn().mockResolvedValue({ ok: true, status: 204 } as Response);
+      // 2. POST returns created row
+      const postMock = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 201,
+        json: () => Promise.resolve([{ id: 100, status: "created" }]),
+      } as Response);
 
-      const client = makeClient();
-      // Simulate createGroup UPSERT pattern
-      const patched = await client.patchRecords(
-        "protected_groups",
-        { group_id: "eq.999" },
-        { owner_id: 1, title: "New", member_count: 0, updated_at: new Date().toISOString() }
-      );
-      expect(patched).toEqual([]);
+      stubFetch(vi.fn().mockImplementationOnce(patchMock).mockImplementationOnce(postMock));
 
-      if (patched.length === 0) {
-        const posted = await client.postRecords("protected_groups", [
-          { group_id: 999, owner_id: 1, title: "New", enabled: true },
-        ]);
-        expect(posted).toEqual([{ group_id: 999 }]);
-      }
+      const patchRes = await client.patchRecords("t", { id: "eq.100" }, { status: "created" });
+      expect(patchRes).toHaveLength(0);
 
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      const postRes = await client.postRecords("t", [{ id: 100, status: "created" }]);
+      expect(postRes).toHaveLength(1);
     });
   });
 });

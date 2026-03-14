@@ -24,7 +24,7 @@
 | @sentry/node                    | 10.41.0 | Error monitoring (retained but unused, candidate for removal)     |
 | socket.io-client                | 4.8.3   | InsForge Realtime WebSocket client                                |
 | **typescript**                  | 5.9.3   | Type checking (strict mode, NodeNext resolution)                  |
-| **vitest**                      | 4.0.18  | Test runner with v8 coverage                                      |
+| **bun test**                    | Latest  | Native Bun test runner                                            |
 | **prettier**                    | 3.8.1   | Code formatting (root `.prettierrc`, no tailwind plugin)          |
 | **eslint**                      | 9.28.0  | Linting (flat config with TypeScript ESLint)                      |
 | **bun**                         | Latest  | Package manager + dev server                                      |
@@ -66,8 +66,6 @@
 - **Vercel Doctor & Knip**: Regular audits for dead code pruning (Phase 126 archived zero-unused baseline).
 - **Partial Prerendering (PPR)**: Enabled via Next.js 16 `experimental.cacheComponents`.
 - **Dynamic Imports**: Forced code-splitting for heavy library paths (Recharts).
-
----
 
 ---
 
@@ -135,9 +133,9 @@ bun run lint          # eslint src/ --max-warnings 0 → 0 warnings
 bun run format        # prettier src/ ../../tests/grammy --write
 bun run format:check  # prettier src/ ../../tests/grammy --check
 bun run knip          # knip → 0 issues
-bun run test          # vitest run → 163/163 passed
-bun run test:coverage # vitest run --coverage (80% thresholds)
-bun run build         # tsc -p tsconfig.build.json → dist/
+bun run test          # bun test → 163/163 passed
+bun run test:coverage # bun test --coverage (80% thresholds)
+bun run build         # bun x tsc -p tsconfig.build.json → dist/
 
 # ── Web (Next.js) ──
 cd apps/web
@@ -175,22 +173,21 @@ bun run build         # next build → 0 errors
 
 ### InsForge Tables Written by Bot (all via REST fetch)
 
-| Table               | Written By             | Method                            | Notes                                                    |
-| ------------------- | ---------------------- | --------------------------------- | -------------------------------------------------------- |
-| `verification_log`  | `verification.repo.ts` | `postRecords()`                   | status: 'verified'\|'restricted'\|'error' (NOT 'failed') |
-| `protected_groups`  | `member-sync.ts`       | `patchRecords()` count update     | `member_count`, `last_sync_at`                           |
-| `enforced_channels` | `member-sync.ts`       | `patchRecords()` count update     | `subscriber_count`, `last_sync_at`                       |
-| `bot_status`        | `status-writer.ts`     | PATCH-then-POST                   | `status='online'`, heartbeat every 30s                   |
-| `admin_commands`    | `command-worker.ts`    | `getRecords()` + `patchRecords()` | polls every 30s; realtime INSERT trigger active          |
-| `bot_instances`     | `bot-manager.ts`       | `getRecords()` load active bots   | reads `is_active=true, is_deleted=false`                 |
-| `admin_logs`        | `db-log-transport.ts`  | `postRecords()` fire-and-forget   | WARN+ pino lines; web Logs page realtime stream          |
-| `api_call_log`      | `apiLogTransformer`    | `postRecords()` fire-and-forget   | all Telegram API calls (excl. getUpdates); latency_ms    |
-| `owners`            | `owner.repo.ts`        | GET + `postRecords()` upsert      | Must exist before any `protected_groups` INSERT          |
+| Table               | Written By             | Method                            | Notes                                                 |
+| ------------------- | ---------------------- | --------------------------------- | ----------------------------------------------------- | ------------ | ---------------------- |
+| `verification_log`  | `verification.repo.ts` | `postRecords()`                   | status: 'verified'                                    | 'restricted' | 'error' (NOT 'failed') |
+| `protected_groups`  | `member-sync.ts`       | `patchRecords()` count update     | `member_count`, `last_sync_at`                        |
+| `enforced_channels` | `member-sync.ts`       | `patchRecords()` count update     | `subscriber_count`, `last_sync_at`                    |
+| `bot_status`        | `status-writer.ts`     | PATCH-then-POST                   | `status='online'`, heartbeat every 30s                |
+| `admin_commands`    | `command-worker.ts`    | `getRecords()` + `patchRecords()` | polls every 30s; realtime INSERT trigger active       |
+| `bot_instances`     | `bot-manager.ts`       | `getRecords()` load active bots   | reads `is_active=true, is_deleted=false`              |
+| `admin_logs`        | `db-log-transport.ts`  | `postRecords()` fire-and-forget   | WARN+ pino lines; web Logs page realtime stream       |
+| `api_call_log`      | `apiLogTransformer`    | `postRecords()` fire-and-forget   | all Telegram API calls (excl. getUpdates); latency_ms |
+| `owners`            | `owner.repo.ts`        | GET + `postRecords()` upsert      | Must exist before any `protected_groups` INSERT       |
 
-> **⚠️ Phase 66 lesson**: All INSERT operations require `GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon`.
-> Without this, every INSERT returns **401 Unauthorized** from PostgREST.
+---
 
-### Verification Cache Tuning (Phase 108)
+## Verification Cache Tuning (Phase 108)
 
 - Positive membership cache: `MEMBER_CACHE_TTL=300` seconds
 - Negative membership cache: `MEMBER_NEGATIVE_CACHE_TTL=30` seconds
@@ -227,11 +224,11 @@ bun run build         # next build → 0 errors
 ### Mode Detection Flow
 
 ```
-loadConfig()        → Zod schema (soft — no required fields; empty strings → undefined)
-  ↓
+loadConfig() → Zod schema (soft — no required fields; empty strings → undefined)
+↓
 main()
-  ├─ dashboardMode=true  → validate INSFORGE_* → runDashboardMode()
-  └─ dashboardMode=false → validate BOT_TOKEN  → runStandaloneMode()
+├─ dashboardMode=true → validate INSFORGE_* → runDashboardMode()
+└─ dashboardMode=false → validate BOT_TOKEN → runStandaloneMode()
 ```
 
 ### Graceful Degradation (standalone mode)
@@ -253,4 +250,4 @@ main()
 
 ---
 
-_Last Updated: 2026-03-11 (Phase 126 — PTB bot fully removed; grammY is the sole runtime; 163/163 tests passing)_
+_Last Updated: 2026-03-14 (Phase 126 — Bun migration complete; native `bun test` runner integrated; 163/163 tests passing)_

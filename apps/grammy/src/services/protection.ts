@@ -32,7 +32,8 @@ export async function muteUser(
   try {
     await api.restrictChatMember(chatId, userId, {
       can_send_messages: false,
-      can_send_media_messages: false,
+      can_send_photos: false,
+      can_send_videos: false,
       can_send_other_messages: false,
       can_add_web_page_previews: false,
     });
@@ -62,7 +63,8 @@ export async function unmuteUser(
   try {
     await api.restrictChatMember(chatId, userId, {
       can_send_messages: true,
-      can_send_media_messages: true,
+      can_send_photos: true,
+      can_send_videos: true,
       can_send_other_messages: true,
       can_add_web_page_previews: true,
     });
