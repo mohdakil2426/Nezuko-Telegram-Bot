@@ -101,7 +101,7 @@ async function getAllowedSyncUser(req: NextRequest): Promise<SessionUser | null>
   if (!isAllowedDashboardEmail(email)) {
     return null;
   }
- 
+
   return resolvedUser;
 }
 
