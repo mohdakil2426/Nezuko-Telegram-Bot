@@ -73,22 +73,43 @@ jobs:
         if: steps.grammy-deps-cache.outputs.cache-hit != 'true'
         run: bun install --frozen-lockfile
 
-      # ── Auto-format: Prettier --write → commit if dirty ────────────────────
-      # Root .prettierrc covers grammy src + tests/grammy (no tailwind plugin).
-      # Only runs on direct pushes to main (not PRs).
-      - name: Auto-format (Prettier)
+      # ── Auto-fix: Prettier + ESLint → single commit if dirty ───────────────
+      # What gets auto-fixed:
+      #   ✅ Prettier  → bun run format (src/ + tests/grammy/)
+      #   ✅ ESLint    → eslint src --fix (fixable rule violations)
+      # What is NOT auto-fixed (requires manual fix + re-push):
+      #   ❌ TypeScript errors  → type-check gate will fail
+      #   ❌ Unfixable lint     → lint gate will fail after --fix
+      #   ❌ Build / test errors → build/test gates will fail
+      # Only runs on direct pushes to main (PRs should fix locally).
+      - name: Auto-fix (Prettier + ESLint)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
+          FIXED_TOOLS=""
+
+          # 1. Prettier (root .prettierrc, covers src/ + ../../tests/grammy/)
           bun run format
           if ! git diff --quiet; then
+            FIXED_TOOLS="prettier"
+          fi
+
+          # 2. ESLint --fix (ignore exit code — unfixable issues handled by lint gate)
+          bun x eslint src --fix --max-warnings 9999 || true
+          if ! git diff --quiet && [[ "$FIXED_TOOLS" != *"eslint"* ]]; then
+            FIXED_TOOLS="${FIXED_TOOLS:+$FIXED_TOOLS, }eslint"
+          fi
+
+          # Commit all auto-fixes in one go
+          if ! git diff --quiet || ! git diff --cached --quiet; then
             git config user.name  "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add -A
-            git commit -m "style: auto-format via prettier [skip ci]"
+            git commit -m "fix(ci): auto-fix code quality [${FIXED_TOOLS}] [skip ci]"
             git push
-            echo "FORMATTED=true" >> "$GITHUB_ENV"
+            echo "AUTO_FIXED=true" >> "$GITHUB_ENV"
+            echo "FIXED_TOOLS=$FIXED_TOOLS" >> "$GITHUB_ENV"
           else
-            echo "FORMATTED=false" >> "$GITHUB_ENV"
+            echo "AUTO_FIXED=false" >> "$GITHUB_ENV"
           fi
 
       # ── Gate 1: TypeScript ─────────────────────────────────────────────────
