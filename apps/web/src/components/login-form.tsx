@@ -120,7 +120,7 @@ export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginForm
     }
 
     async function checkClientSession() {
-      if (cancelled) return;
+      if (cancelled || authError) return;
 
       const { data } = await insforge.auth.getCurrentSession().catch((err) => ({
         data: null,
@@ -130,6 +130,12 @@ export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginForm
       if (cancelled) return;
 
       if (data?.session?.accessToken && data.session.user) {
+        // Clear fragments/auth params from URL to prevent re-detection on reload
+        if (window.location.hash || window.location.search.includes("insforge_code")) {
+          const newUrl = window.location.pathname + window.location.search;
+          window.history.replaceState({}, document.title, newUrl);
+        }
+
         // If we are signed in on the client but land on the login page,
         // it means we likely need to sync to the server cookie (e.g., after OAuth).
         setIsSigningIn(true);
@@ -142,9 +148,13 @@ export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginForm
           }
         } catch (syncError) {
           if (!cancelled) {
-            setAuthError(
-              syncError instanceof Error ? syncError.message : "Authentication sync failed."
-            );
+            const message = syncError instanceof Error ? syncError.message : "Sync failed";
+            setAuthError(message);
+
+            // CRITICAL: Clear client session if sync failed (e.g., unauthorized)
+            // This prevents the effect from looping on the same local session.
+            await insforge.auth.signOut().catch(() => null);
+
             setIsSigningIn(false);
             setIsCheckingServerSession(false);
           }
@@ -161,7 +171,7 @@ export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginForm
     return () => {
       cancelled = true;
     };
-  }, [redirectTo, router, isSigningIn]);
+  }, [redirectTo, router, isSigningIn, authError]);
 
   return (
     <Card className="bg-card/80 w-full border-0 shadow-xl backdrop-blur-sm">

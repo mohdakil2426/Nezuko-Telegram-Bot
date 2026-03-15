@@ -106,23 +106,31 @@ async function getAllowedSyncUser(req: NextRequest): Promise<SessionUser | null>
 }
 
 export const POST = async (req: NextRequest) => {
-  const allowedUser = await getAllowedSyncUser(req);
-  const body = (await req
-    .clone()
-    .json()
-    .catch(() => null)) as { action?: string } | null;
+  try {
+    const allowedUser = await getAllowedSyncUser(req);
+    const body = (await req
+      .clone()
+      .json()
+      .catch(() => null)) as { action?: string } | null;
 
-  if (body?.action === "sync-token" && !allowedUser) {
-    return NextResponse.json({ error: "Unauthorized owner account" }, { status: 403 });
+    if (body?.action === "sync-token" && !allowedUser) {
+      return NextResponse.json({ error: "Unauthorized owner account" }, { status: 403 });
+    }
+
+    if (allowedUser) {
+      await upsertDashboardAdmin(allowedUser);
+    }
+
+    const response = await handlers.POST(req);
+    response.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
+    return response;
+  } catch (err: any) {
+    console.error("[AUTH_API_ERROR]", err);
+    return NextResponse.json(
+      { error: err.message || "Failed to finalize authentication session" },
+      { status: 500 }
+    );
   }
-
-  if (allowedUser) {
-    await upsertDashboardAdmin(allowedUser);
-  }
-
-  const response = await handlers.POST(req);
-  response.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
-  return response;
 };
 
 export const GET = async (req: NextRequest) => {
