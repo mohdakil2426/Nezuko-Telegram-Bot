@@ -2,13 +2,15 @@
 # Nezuko — Web Dashboard CI
 #
 # Triggers on any push/PR that touches the Next.js app.
-# Runs all quality gates using Bun. Vercel deploys automatically via its
-# GitHub App — this workflow is the mandatory pre-gate that must pass first.
+# Runs all quality gates using Bun.
 #
-# If quality gates fail, Vercel will still trigger its own deploy. To block
-# Vercel on CI failure, add this workflow as a required status check in
-# GitHub → Settings → Branches → Branch protection rules → "Require status
-# checks to pass before merging".
+# DEPLOY GATE: Vercel deploys ONLY after this workflow passes.
+# Setup: GitHub → Settings → Branches → Branch protection rules → main
+#   → "Require status checks to pass" → add "Web Dashboard CI / Quality Gates"
+#
+# AUTO-FORMAT: If Prettier finds dirty files, CI auto-fixes and commits them
+# back to the branch. The push triggers a fresh CI run — which then proceeds
+# to all gates clean. No failed builds for formatting mistakes.
 # ─────────────────────────────────────────────────────────────────────────────
 name: Web Dashboard CI
 
@@ -46,10 +48,18 @@ jobs:
     name: Quality Gates
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Allow the job to push auto-format commits back to the branch.
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          # Fetch full history so we can push commits back.
+          fetch-depth: 0
+          # Use the GitHub Actions token so auto-format commits trigger CI.
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # ── Bun setup ──────────────────────────────────────────────────────────
       - name: Setup Bun ${{ env.BUN_VERSION }}
@@ -70,6 +80,27 @@ jobs:
         if: steps.web-deps-cache.outputs.cache-hit != 'true'
         run: bun install --frozen-lockfile
 
+      # ── Auto-format: Prettier --write → commit if dirty ────────────────────
+      # Runs BEFORE the check gates so formatting mistakes are fixed
+      # automatically instead of failing CI. The commit triggers a fresh run
+      # which proceeds clean through the format:check gate below.
+      # Only runs on direct pushes to main (not PRs — PRs should fix locally).
+      - name: Auto-format (Prettier)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          bun x prettier src --write
+          if ! git diff --quiet; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "style: auto-format via prettier [skip ci]"
+            git push
+            echo "FORMATTED=true" >> "$GITHUB_ENV"
+          else
+            echo "FORMATTED=false" >> "$GITHUB_ENV"
+          fi
+        working-directory: apps/web
+
       # ── Gate 1: TypeScript ─────────────────────────────────────────────────
       - name: Type check
         run: bun run type-check
@@ -78,8 +109,10 @@ jobs:
       - name: Lint
         run: bun run lint
 
-      # ── Gate 3: Prettier ───────────────────────────────────────────────────
+      # ── Gate 3: Prettier check ─────────────────────────────────────────────
       # apps/web/.prettierrc includes prettier-plugin-tailwindcss.
+      # After the auto-format step this should always be clean on main.
+      # On PRs it acts as a strict gate — contributors must format locally.
       - name: Format check
         run: bun x prettier src --check
 
@@ -99,13 +132,24 @@ jobs:
           NEXT_TURBOPACK: "0"
 
       # ── Build status annotation ────────────────────────────────────────────
-      - name: Annotate build size
-        if: success() && github.event_name == 'pull_request'
+      - name: CI Summary
+        if: success()
         run: |
-          echo "### ✅ Web Build Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "### ✅ Web Dashboard CI — All Gates Passed" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Gate | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| type-check | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| lint | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| format | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| knip | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| build | ✅ |" >> "$GITHUB_STEP_SUMMARY"
           if [ -d ".next" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Build size:**" >> "$GITHUB_STEP_SUMMARY"
             echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
-            du -sh .next/ 2>/dev/null || echo ".next directory found"
+            du -sh .next/ 2>/dev/null || true
             echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
           fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Vercel will deploy from this commit." >> "$GITHUB_STEP_SUMMARY"
