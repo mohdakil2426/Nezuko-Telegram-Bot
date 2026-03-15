@@ -86,6 +86,7 @@
 | Settings page (vault actions)                | ✅                                            |
 | InsForge auth middleware (`proxy.ts`)        | ✅                                            |
 | Google OAuth flow (InsForge built-in auth)   | ⚠️ Callback fix is live; `/login` proxy-routing fix still awaiting Vercel |
+| Local Google/GitHub OAuth buttons            | ✅ `signInWithOAuth()` now used on `/login`; hosted page retained for email/password |
 | Server-side `initialState` for auth provider | ✅ Secondary hardening applied |
 
 ---

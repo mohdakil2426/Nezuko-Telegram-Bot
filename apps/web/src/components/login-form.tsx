@@ -25,6 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { DEV_LOGIN } from "@/lib/api/config";
 import { buildHostedSignInUrl } from "@/lib/auth/shared";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { insforge } from "@/lib/insforge";
 
 interface LoginFormProps {
   errorMessage?: string | null;
@@ -34,6 +35,7 @@ interface LoginFormProps {
 export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginFormProps) {
   const router = useRouter();
   const [isRedirectingToAuth, setIsRedirectingToAuth] = useState(false);
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
   const { isLoaded, isSignedIn } = useAuth();
 
@@ -54,8 +56,27 @@ export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginForm
       return;
     }
 
+    setOauthError(null);
     setIsRedirectingToAuth(true);
     window.location.href = buildHostedSignInUrl(baseUrl, window.location.origin, redirectTo);
+  }
+
+  async function handleOAuthSignIn(provider: "google" | "github") {
+    setOauthError(null);
+    setIsRedirectingToAuth(true);
+
+    const callbackUrl = new URL("/login", window.location.origin);
+    callbackUrl.searchParams.set("redirect", redirectTo);
+
+    const { error } = await insforge.auth.signInWithOAuth({
+      provider,
+      redirectTo: callbackUrl.toString(),
+    });
+
+    if (error) {
+      setOauthError(error.message ?? `Failed to start ${provider} sign-in.`);
+      setIsRedirectingToAuth(false);
+    }
   }
 
   return (
@@ -82,6 +103,14 @@ export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginForm
           </Alert>
         )}
 
+        {oauthError && (
+          <Alert className="border-destructive/40 bg-destructive/10">
+            <AlertCircle className="text-destructive h-4 w-4" />
+            <AlertTitle>OAuth failed</AlertTitle>
+            <AlertDescription>{oauthError}</AlertDescription>
+          </Alert>
+        )}
+
         {/* ── Loading ─────────────────────────────────────────────── */}
         {!isLoaded && (
           <div className="flex flex-col items-center justify-center space-y-2 py-4">
@@ -102,7 +131,38 @@ export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginForm
         {isLoaded && !isSignedIn && !DEV_LOGIN && (
           <div className="flex flex-col items-center space-y-4">
             <Button
+              type="button"
+              id="google-sign-in-btn"
+              size="lg"
+              variant="outline"
+              className="w-full"
+              onClick={() => void handleOAuthSignIn("google")}
+              disabled={isRedirectingToAuth}
+            >
+              {isRedirectingToAuth ? "Redirecting…" : "Continue with Google"}
+            </Button>
+
+            <Button
+              type="button"
+              id="github-sign-in-btn"
+              size="lg"
+              variant="outline"
+              className="w-full"
+              onClick={() => void handleOAuthSignIn("github")}
+              disabled={isRedirectingToAuth}
+            >
+              {isRedirectingToAuth ? "Redirecting…" : "Continue with GitHub"}
+            </Button>
+
+            <div className="flex w-full items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-muted-foreground text-xs">or</span>
+              <Separator className="flex-1" />
+            </div>
+
+            <Button
               id="sign-in-btn"
+              type="button"
               size="lg"
               className="w-full gap-2"
               onClick={handleHostedSignIn}
@@ -113,12 +173,12 @@ export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginForm
               ) : (
                 <LogIn className="h-5 w-5" />
               )}
-              {isRedirectingToAuth ? "Redirecting to Sign-In…" : "Sign In with InsForge"}
+              {isRedirectingToAuth ? "Redirecting to Sign-In…" : "Sign In with Email"}
             </Button>
 
             <p className="text-muted-foreground max-w-xs text-center text-xs">
-              You&apos;ll be redirected to a secure sign-in page. Only the project owner can access
-              this dashboard.
+              Google and GitHub sign-in stay on this app. Email/password uses the secure hosted
+              InsForge sign-in page. Only approved owner accounts can access this dashboard.
             </p>
 
             <Link

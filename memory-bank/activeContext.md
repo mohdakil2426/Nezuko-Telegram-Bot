@@ -91,6 +91,16 @@ That makes the local login page effectively unreachable in production and keeps 
 - Move `signUpUrl` off `"/login"` to `"/sign-up"` to remove the route collision
 - Keep `/login` in `publicRoutes` so the page remains accessible
 
+**Cause 4 — OAuth provider flow path was incompatible with the app callback**
+The repo's local login page sent everyone to the hosted InsForge sign-in page. Email/password worked there, but provider login could fail because the app-side flow only had a server callback route that expects the legacy `access_token` redirect shape. InsForge's official SDK auth supports provider login through `signInWithOAuth()`, with the browser provider handling OAuth callback detection and PKCE/session exchange on the client.
+
+**Fix applied locally now** (`apps/web/src/components/login-form.tsx`):
+
+- Added first-party **Google** and **GitHub** buttons on `/login`
+- Wired those buttons to official `insforge.auth.signInWithOAuth(...)`
+- Set OAuth redirect back to local `/login?redirect=...` so the InsForge browser provider can process the callback in-app
+- Kept the hosted InsForge page only for **email/password**
+
 ### Live Verification Findings
 
 - `curl` against production `/dashboard?access_token=...` returns `307 /dashboard`
