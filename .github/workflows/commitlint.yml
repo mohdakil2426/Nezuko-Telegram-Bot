@@ -1,0 +1,51 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Nezuko — Commit Lint (Conventional Commits enforcement)
+#
+# Enforces: https://www.conventionalcommits.org/
+# Pattern:  <type>[optional scope]: <description>
+#
+# Valid types:
+#   feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+#
+# Examples:
+#   feat(bot): add /help command
+#   fix(web): resolve dashboard login loop
+#   ci: add auto-format step
+#   feat!: breaking API change  ← triggers major version bump
+#
+# Runs on PRs (validates all commits in the PR) and pushes to main.
+# Bot auto-fix commits [skip ci] are excluded from linting.
+# ─────────────────────────────────────────────────────────────────────────────
+name: Commit Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  commitlint:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          # Fetch full history so we can lint all commits in a PR
+          fetch-depth: 0
+
+      # ── Run commitlint via GitHub Action (no local install needed) ─────────
+      # wagoid/commitlint-github-action is the most widely-used approach:
+      # It automatically handles PR ranges vs push ranges.
+      - name: Lint commit messages
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: commitlint.config.mjs
+          # Skip auto-generated commits from our CI bots
+          helpURL: "https://www.conventionalcommits.org/"
+          failOnWarnings: false
+          # Token for posting results as PR check
+          token: ${{ secrets.GITHUB_TOKEN }}

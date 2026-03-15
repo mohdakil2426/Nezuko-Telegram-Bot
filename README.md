@@ -1,5 +1,10 @@
 # Nezuko
 
+[![Web CI](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/actions/workflows/web-ci.yml/badge.svg)](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/actions/workflows/web-ci.yml)
+[![Bot CI](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/actions/workflows/grammy-ci.yml/badge.svg)](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/actions/workflows/grammy-ci.yml)
+[![CodeQL](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/actions/workflows/codeql.yml/badge.svg)](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Production-ready Telegram membership enforcement platform built with `grammY`, `Next.js`, and `InsForge`.
 
 Nezuko turns Telegram groups into controlled entry points for channel growth. It verifies required channel membership, restricts unverified users, supports join-request-first onboarding, and gives operators a real-time dashboard for bots, groups, channels, logs, and analytics.

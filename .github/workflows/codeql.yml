@@ -1,0 +1,80 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Nezuko — CodeQL Security Scanning
+#
+# Runs free GitHub CodeQL static analysis on JS/TS code.
+# Detects: XSS, injection, path traversal, hardcoded credentials,
+#          insecure random, prototype pollution, and more.
+#
+# Runs:
+#   - Every push to main
+#   - Every PR targeting main
+#   - Weekly scheduled scan (catches new CVE rules even without code changes)
+# ─────────────────────────────────────────────────────────────────────────────
+name: CodeQL Security Scan
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - ".github/workflows/codeql.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/**"
+  schedule:
+    # Every Monday at 2:30am UTC (8:00am IST) — catches new CVE query updates
+    - cron: "30 2 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write  # Required to upload SARIF results
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - javascript-typescript  # Covers both JS and TS in one pass
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # ── Initialize CodeQL ─────────────────────────────────────────────────
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          # Use the latest security-extended query suite:
+          # standard security queries + additional CWE coverage
+          queries: security-extended
+          # Focus on the app source — skip node_modules, dist, migrations
+          config: |
+            paths:
+              - apps/grammy/src
+              - apps/web/src
+            paths-ignore:
+              - "**/*.test.ts"
+              - "**/*.spec.ts"
+              - "**/node_modules/**"
+              - "**/dist/**"
+              - "insforge/migrations/**"
+
+      # ── Auto-build (CodeQL needs this for compiled languages; JS/TS is auto)
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v4
+
+      # ── Run analysis and upload results to GitHub Security tab ───────────
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
+          # Upload SARIF to GitHub Security tab (visible under repo Security tab)
+          upload: always

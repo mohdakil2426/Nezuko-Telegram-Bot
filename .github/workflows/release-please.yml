@@ -1,0 +1,39 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Nezuko — Release Please
+#
+# Automatically:
+#   1. Parses conventional commits on main
+#   2. Opens/updates a "Release PR" with CHANGELOG.md and version bumps
+#   3. When you merge the Release PR → creates a GitHub Release + git tag
+#
+# Conventional commits that trigger releases:
+#   feat:     → minor version bump (0.x.0)
+#   fix:      → patch version bump (0.0.x)
+#   feat!:    → major version bump (x.0.0) [breaking change]
+#   chore,ci,docs,style,refactor,test → no version bump (appear in changelog)
+#
+# Monorepo: grammy (apps/grammy) and web (apps/web) are versioned independently.
+# ─────────────────────────────────────────────────────────────────────────────
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write       # Create releases and tags
+  pull-requests: write  # Open and update release PRs
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # Token with write permissions for releases + PRs
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Config files defined below (release-please-config.json)
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

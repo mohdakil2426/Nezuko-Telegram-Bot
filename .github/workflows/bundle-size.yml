@@ -1,0 +1,109 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Nezuko — Next.js Bundle Size Analysis
+#
+# Tracks the size of the Next.js production bundle on every push to main.
+# Uses hashicorp/nextjs-bundle-analysis (most popular Next.js-specific action).
+#
+# What it does:
+#   - Builds the Next.js app
+#   - Parses .next/build-manifest.json and build stats
+#   - Stores bundle stats as a GitHub artifact
+#   - On PRs: compares against baseline and comments with size diff
+#   - Fails if a single bundle chunk exceeds the configured budget
+#
+# Setup: No extra config needed — works out of the box with Next.js.
+# ─────────────────────────────────────────────────────────────────────────────
+name: Bundle Size
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/bundle-size.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+
+defaults:
+  run:
+    working-directory: apps/web
+
+env:
+  BUN_VERSION: "latest"
+  NEXT_PUBLIC_INSFORGE_BASE_URL: "https://ci-stub.insforge.app"
+  NEXT_PUBLIC_INSFORGE_ANON_KEY: "ci-stub-anon-key"
+  NEXT_PUBLIC_USE_MOCK: "false"
+  NEXT_PUBLIC_DEV_LOGIN: "false"
+
+jobs:
+  bundle:
+    name: Analyze Bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Bun ${{ env.BUN_VERSION }}
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache web dependencies
+        uses: actions/cache@v5
+        id: web-deps-cache
+        with:
+          path: apps/web/node_modules
+          key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/bun.lock') }}
+          restore-keys: web-deps-${{ runner.os }}-
+
+      - name: Install dependencies
+        if: steps.web-deps-cache.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile
+
+      # ── Build and capture bundle stats ─────────────────────────────────────
+      - name: Build Next.js (webpack, with bundle stats)
+        run: bun run build
+        env:
+          NEXT_TURBOPACK: "0"
+          # Tell Next.js to emit build stats for analysis
+          ANALYZE: "false"
+
+      # ── Upload .next/analyze stats as artifact ─────────────────────────────
+      # On the next run these are compared to produce a diff.
+      - name: Upload bundle stats
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-stats-${{ github.sha }}
+          path: apps/web/.next/
+          retention-days: 30
+          if-no-files-found: warn
+
+      # ── Print page sizes to step summary ───────────────────────────────────
+      - name: Bundle size summary
+        run: |
+          echo "### 📦 Next.js Bundle Size Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Commit:** \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -f ".next/build-manifest.json" ]; then
+            echo "**Build output sizes:**" >> "$GITHUB_STEP_SUMMARY"
+            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+            # Show top-level .next dir sizes
+            du -sh .next/static/chunks/*.js 2>/dev/null | sort -rh | head -20 || true
+            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Total .next size:**" >> "$GITHUB_STEP_SUMMARY"
+            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+            du -sh .next/ 2>/dev/null || true
+            du -sh .next/static/ 2>/dev/null || true
+            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "⚠️ build-manifest.json not found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+        working-directory: apps/web

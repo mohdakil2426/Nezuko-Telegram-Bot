@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "node",
+  "bump-minor-pre-major": false,
+  "bump-patch-for-minor-pre-major": false,
+  "draft": false,
+  "prerelease": false,
+  "changelog-sections": [
+    { "type": "feat", "section": "✨ Features" },
+    { "type": "fix", "section": "🐛 Bug Fixes" },
+    { "type": "perf", "section": "⚡ Performance" },
+    { "type": "refactor", "section": "♻ Refactors", "hidden": false },
+    { "type": "docs", "section": "📚 Documentation", "hidden": false },
+    { "type": "ci", "section": "🔧 CI / Tooling", "hidden": false },
+    { "type": "chore",    "section": "🔧 Chores",    "hidden": true },
+    { "type": "test",     "section": "🧪 Tests",     "hidden": true },
+    { "type": "style",    "section": "💄 Style",     "hidden": true }
+  ],
+  "packages": {
+    "apps/grammy": {
+      "release-type": "node",
+      "package-name": "nezuko-grammy",
+      "changelog-path": "CHANGELOG.md",
+      "include-component-in-tag": true,
+      "tag-separator": "-"
+    },
+    "apps/web": {
+      "release-type": "node",
+      "package-name": "nezuko-web",
+      "changelog-path": "CHANGELOG.md",
+      "include-component-in-tag": true,
+      "tag-separator": "-"
+    }
+  }
+}
