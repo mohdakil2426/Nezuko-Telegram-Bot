@@ -64,6 +64,28 @@ async function requireAuthenticatedUser(req, corsHeaders) {
   return { response: null, user: data.user, client };
 }
 
+async function requireDashboardAdmin(client, user, corsHeaders) {
+  const userId = typeof user?.id === "string" ? user.id : null;
+  const userEmail = typeof user?.email === "string" ? user.email.toLowerCase() : null;
+
+  if (!userId || !userEmail) {
+    return json({ error: "Unauthorized" }, 401, corsHeaders);
+  }
+
+  const { data, error } = await client.database
+    .from("dashboard_admins")
+    .select("auth_user_id,email")
+    .or(`auth_user_id.eq.${userId},email.eq.${userEmail}`)
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return json({ error: "Unauthorized owner account" }, 403, corsHeaders);
+  }
+
+  return null;
+}
+
 async function verifyBotToken(token) {
   if (!TOKEN_REGEX.test(token)) {
     throw new Error("Invalid token format");
@@ -151,7 +173,7 @@ async function handleAdd(body, client, user, corsHeaders) {
     const encryptedToken = await encryptWithAES(token, masterKey);
 
     const payload = {
-      owner_telegram_id: Number(user.id) || 0,
+      owner_telegram_id: 0,
       bot_id: botInfo.id,
       bot_username: botInfo.username ?? `bot_${botInfo.id}`,
       bot_name: botInfo.first_name ?? null,
@@ -174,6 +196,7 @@ async function handleAdd(body, client, user, corsHeaders) {
 
     return json(data, 200, corsHeaders);
   } catch (error) {
+    console.error("[manage-bot] add error:", error instanceof Error ? error.message : error);
     return json(
       { error: error instanceof Error ? error.message : "Failed to add bot" },
       400,
@@ -265,6 +288,11 @@ export default async function manageBot(req) {
     const authResult = await requireAuthenticatedUser(req, corsHeaders);
     if (authResult.response) {
       return authResult.response;
+    }
+
+    const adminResponse = await requireDashboardAdmin(authResult.client, authResult.user, corsHeaders);
+    if (adminResponse) {
+      return adminResponse;
     }
 
     if (action === "add") {

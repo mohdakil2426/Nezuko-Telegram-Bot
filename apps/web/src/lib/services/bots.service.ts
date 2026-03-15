@@ -1,6 +1,5 @@
 import { USE_MOCK } from "@/lib/api/config";
 import { insforge } from "@/lib/insforge";
-import { addBotSecure, updateBotSecure, deleteBotSecure } from "@/lib/actions/vault";
 
 /**
  * Bot instance response
@@ -73,33 +72,51 @@ export async function listBots(): Promise<BotListResponse> {
  * @param token - Bot API token (plain text; encrypted server-side before persistence)
  */
 export async function addBot(token: string): Promise<Bot> {
-  // Delegate to a server action so the master key never touches the client.
-  const result = await addBotSecure(token);
+  const { data, error } = await insforge.functions.invoke("manage-bot", {
+    body: {
+      action: "add",
+      token,
+    },
+  });
 
-  if (!result.success) {
-    throw new Error(result.error || "Failed to add bot");
+  if (error) {
+    throw error;
   }
 
-  return result.data as Bot;
+  return data as Bot;
 }
 
 /**
  * Update a bot's status via a secure server action.
  */
 export async function updateBot(botId: number, isActive: boolean): Promise<Bot> {
-  const result = await updateBotSecure(botId, isActive);
-  if (!result.success) {
-    throw new Error(result.error || "Failed to update bot");
+  const { data, error } = await insforge.functions.invoke("manage-bot", {
+    body: {
+      action: "update",
+      id: botId,
+      is_active: isActive,
+    },
+  });
+
+  if (error) {
+    throw error;
   }
-  return result.data as Bot;
+
+  return data as Bot;
 }
 
 /**
  * Soft-delete a bot via a secure server action.
  */
 export async function deleteBot(botId: number): Promise<void> {
-  const result = await deleteBotSecure(botId);
-  if (!result.success) {
-    throw new Error(result.error || "Failed to delete bot");
+  const { error } = await insforge.functions.invoke("manage-bot", {
+    body: {
+      action: "delete",
+      id: botId,
+    },
+  });
+
+  if (error) {
+    throw error;
   }
 }

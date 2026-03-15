@@ -3,8 +3,12 @@
  * Public login page with centered form
  */
 
+import { auth } from "@insforge/nextjs/server";
+import { redirect } from "next/navigation";
+
 import { LoginForm } from "@/components/login-form";
-import { getLoginErrorMessage, sanitizeRedirect } from "@/lib/auth/shared";
+import { isAllowedDashboardEmail } from "@/lib/auth/server";
+import { DEFAULT_AUTH_REDIRECT, getLoginErrorMessage, sanitizeRedirect } from "@/lib/auth/shared";
 
 type LoginPageProps = {
   searchParams?: Promise<{
@@ -20,6 +24,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     resolvedSearchParams.redirect ?? resolvedSearchParams.redirectTo
   );
   const errorMessage = getLoginErrorMessage(resolvedSearchParams.error);
+  const session = await auth();
+
+  if (session.userId && session.token && isAllowedDashboardEmail(session.user?.email)) {
+    redirect(redirectTo || DEFAULT_AUTH_REDIRECT);
+  }
 
   return (
     <div className="bg-muted flex min-h-svh w-full items-center justify-center p-6 md:p-10">

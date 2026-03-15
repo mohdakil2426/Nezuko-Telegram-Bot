@@ -15,8 +15,21 @@ export async function syncSessionToAuthCookie(
   });
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || "Failed to sync session cookie");
+    const text = await response.text();
+    let message = "Failed to sync session cookie";
+
+    try {
+      const parsed = JSON.parse(text) as { error?: string };
+      if (parsed.error) {
+        message = parsed.error;
+      }
+    } catch {
+      if (text) {
+        message = text;
+      }
+    }
+
+    throw new Error(message);
   }
 
   return response;

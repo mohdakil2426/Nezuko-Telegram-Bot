@@ -10,7 +10,6 @@
  */
 import { InsforgeBrowserProvider, type InitialAuthState } from "@insforge/nextjs";
 
-import { AUTH_CALLBACK_PATH, DEFAULT_AUTH_REDIRECT } from "@/lib/auth/shared";
 import { insforge } from "@/lib/insforge";
 
 interface InsforgeProviderProps {
@@ -22,7 +21,7 @@ export function InsforgeProvider({ children, initialState }: InsforgeProviderPro
   return (
     <InsforgeBrowserProvider
       client={insforge}
-      afterSignInUrl={`${AUTH_CALLBACK_PATH}?redirect=${DEFAULT_AUTH_REDIRECT}`}
+      afterSignInUrl="/dashboard"
       initialState={initialState}
     >
       {children}

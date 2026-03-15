@@ -18,8 +18,6 @@
 import { InsforgeMiddleware } from "@insforge/nextjs/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { AUTH_CALLBACK_PATH } from "@/lib/auth/shared";
-
 const BASE_URL = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
 if (!BASE_URL) {
   throw new Error("NEXT_PUBLIC_INSFORGE_BASE_URL environment variable is required");
@@ -34,10 +32,7 @@ const insforgeMiddleware = InsforgeMiddleware({
   signInUrl: "/login",
   signUpUrl: "/sign-up",
   forgotPasswordUrl: "/forgot-password",
-
-  // Where InsForge redirects users after successful authentication
-  // MUST match InsforgeBrowserProvider afterSignInUrl in insforge-provider.tsx
-  afterSignInUrl: `${AUTH_CALLBACK_PATH}?redirect=/dashboard`,
+  afterSignInUrl: "/dashboard",
 
   // We use a local /login page with SignInButton.
   // Let protected routes redirect there first instead of short-circuiting to hosted auth.
@@ -45,15 +40,7 @@ const insforgeMiddleware = InsforgeMiddleware({
 
   // Public routes — always accessible without authentication.
   // Note: /login is listed so the middleware itself doesn't redirect on that route.
-  publicRoutes: [
-    "/",
-    "/login",
-    "/sign-up",
-    AUTH_CALLBACK_PATH,
-    "/verify-email",
-    "/forgot-password",
-    "/reset-password",
-  ],
+  publicRoutes: ["/", "/login", "/sign-up", "/verify-email", "/forgot-password", "/reset-password"],
 });
 
 export async function proxy(request: NextRequest) {

@@ -1,7 +1,66 @@
 # System Patterns: Architecture & Implementation
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
-> **Last Updated**: 2026-03-11 (Phase 126)
+> **Last Updated**: 2026-03-15 (Phase 134)
+
+---
+
+### 19 — Canonical InsForge Auth + Admin Bootstrap Pattern (Phase 134)
+
+The dashboard now uses one consistent auth model:
+
+1. `proxy.ts` uses `InsforgeMiddleware` for route protection.
+2. `/login` uses official SDK auth methods:
+   - `signInWithPassword`
+   - `signInWithOAuth`
+3. `/api/auth` uses official `createAuthRouteHandlers`.
+4. The app adds one thin server-side bridge for owner-only bootstrap:
+   - verify the authenticated email is in `INSFORGE_ALLOWED_EMAILS`
+   - upsert `{ auth_user_id, email }` into `dashboard_admins` using `INSFORGE_SERVICE_KEY`
+5. DB RLS then uses `dashboard_admins` as the real authorization boundary for dashboard data.
+
+Critical implication:
+
+- A clean backend no longer needs a manual SQL seed for the first owner row.
+- The first successful allowlisted login creates the `dashboard_admins` record automatically.
+- This bootstrap path must stay server-side only; never allow authenticated users to self-insert into `dashboard_admins` through RLS.
+
+### 20 — Canonical Secure Bot Management Pattern (Phase 134)
+
+Bot token persistence is now strictly function-backed:
+
+- Web code must not write encrypted bot tokens directly to `bot_instances`.
+- `apps/web/src/lib/services/bots.service.ts` must use `insforge.functions.invoke("manage-bot")`.
+- `insforge/functions/manage-bot.js` is responsible for:
+  - validating the caller is an authenticated dashboard admin
+  - reading `master_key` from `nezuko_secrets`
+  - encrypting bot tokens server-side
+  - adding/updating/deleting `bot_instances`
+
+Dashboard reads should continue to use `bot_instances_safe`, not raw `bot_instances`.
+
+### 21 — Canonical Fresh Backend Contract (Phase 134)
+
+The active InsForge schema is now defined by `insforge/migrations/028_fresh_insforge_rebuild.sql`.
+
+Only these live app tables are canonical:
+
+- `dashboard_admins`
+- `owners`
+- `bot_instances`
+- `bot_status`
+- `protected_groups`
+- `enforced_channels`
+- `group_channel_links`
+- `verification_log`
+- `api_call_log`
+- `admin_logs`
+- `admin_commands`
+- `nezuko_secrets`
+
+`admin_config` is no longer part of the active contract and should not be reintroduced unless a concrete runtime dependency returns.
+
+The dashboard RPC contract is also canonicalized in migration 028; dashboard service-layer types should be treated as the source the SQL must satisfy.
 
 ---
 
