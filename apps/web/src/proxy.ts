@@ -57,22 +57,23 @@ function getCleanRedirectUrl(request: NextRequest): URL {
 const insforgeMiddleware = InsforgeMiddleware({
   baseUrl: BASE_URL,
 
-  // Match our app's custom route names to InsForge defaults
-  signInUrl: "/login", // Our login page (InsForge default: /sign-in)
-  signUpUrl: "/login", // We use the same login page for both
+  // Match our app's custom route names to local pages.
+  // Built-in auth redirect handling is disabled below so /login stays a real page.
+  signInUrl: "/login",
+  signUpUrl: "/sign-up",
   forgotPasswordUrl: "/forgot-password",
 
   // Where InsForge redirects users after successful authentication
   // MUST match InsforgeBrowserProvider afterSignInUrl in insforge-provider.tsx
   afterSignInUrl: "/dashboard",
 
-  // useBuiltInAuth: true (default) → InsForge hosted sign-in page handles auth UI
-  // When false, middleware redirects to local signInUrl instead of InsForge backend
-  useBuiltInAuth: true,
+  // We use a local /login page with SignInButton.
+  // Let protected routes redirect there first instead of short-circuiting to hosted auth.
+  useBuiltInAuth: false,
 
   // Public routes — always accessible without authentication.
   // Note: /login is listed so the middleware itself doesn't redirect on that route.
-  publicRoutes: ["/", "/login", "/verify-email", "/forgot-password", "/reset-password"],
+  publicRoutes: ["/", "/login", "/sign-up", "/verify-email", "/forgot-password", "/reset-password"],
 });
 
 export async function proxy(request: NextRequest) {
