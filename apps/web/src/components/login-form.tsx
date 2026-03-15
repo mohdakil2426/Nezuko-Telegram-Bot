@@ -183,7 +183,7 @@ export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginForm
         <CardTitle className="text-foreground text-2xl font-bold">Nezuko Dashboard</CardTitle>
 
         <CardDescription className="text-muted-foreground">
-          Owner-only access via InsForge Auth
+          Dashboard access via InsForge Auth
         </CardDescription>
       </CardHeader>
 
@@ -279,7 +279,7 @@ export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginForm
             </Button>
 
             <p className="text-muted-foreground max-w-xs text-center text-xs">
-              Sign-in uses the official InsForge SDK flow. Only approved owner accounts can access
+              Sign-in uses the official InsForge SDK flow. Any registered user account can access
               this dashboard.
             </p>
 

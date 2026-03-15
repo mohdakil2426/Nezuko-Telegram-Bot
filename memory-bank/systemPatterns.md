@@ -1,7 +1,7 @@
 # System Patterns: Architecture & Implementation
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
-> **Last Updated**: 2026-03-15 (Phase 134)
+> **Last Updated**: 2026-03-15 (Phase 135)
 
 ---
 
@@ -14,15 +14,14 @@ The dashboard now uses one consistent auth model:
    - `signInWithPassword`
    - `signInWithOAuth`
 3. `/api/auth` uses official `createAuthRouteHandlers`.
-4. The app adds one thin server-side bridge for owner-only bootstrap:
-   - verify the authenticated email is in `INSFORGE_ALLOWED_EMAILS`
-   - upsert `{ auth_user_id, email }` into `dashboard_admins` using `INSFORGE_SERVICE_KEY`
-5. DB RLS then uses `dashboard_admins` as the real authorization boundary for dashboard data.
+4. The app syncs every authenticated user to the server-side session:
+   - successful sync automatically upserts the user into `dashboard_admins` through `INSFORGE_SERVICE_KEY`.
+5. Dashboard/table access is then enforced by DB RLS using `dashboard_admins`.
 
 Critical implication:
 
 - A clean backend no longer needs a manual SQL seed for the first owner row.
-- The first successful allowlisted login creates the `dashboard_admins` record automatically.
+- The first successful login for any user creates the `dashboard_admins` record automatically.
 - This bootstrap path must stay server-side only; never allow authenticated users to self-insert into `dashboard_admins` through RLS.
 
 ### 20 — Canonical Secure Bot Management Pattern (Phase 134)

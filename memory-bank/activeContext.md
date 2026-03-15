@@ -1,7 +1,7 @@
 # Active Context: Current State
 
-> **Last Updated**: 2026-03-15 22:40 IST
-> **Phase**: 134 — InsForge fresh rebuild completed live; auth/schema/function flow unified
+> **Last Updated**: 2026-03-15 23:55 IST
+> **Phase**: 135 — Auth-sync whitelist removed; open registration enabled
 
 ---
 
@@ -56,10 +56,9 @@ Current pattern:
    - `signInWithPassword`
    - `signInWithOAuth`
 3. After client auth succeeds, `/api/auth` uses official `createAuthRouteHandlers`.
-4. The app adds one thin server-side authorization layer in `/api/auth`:
-   - only allowlisted emails (`INSFORGE_ALLOWED_EMAILS`) can sync a cookie session
-   - successful sync also upserts `dashboard_admins` through `INSFORGE_SERVICE_KEY`
-5. Dashboard/table access is then enforced by DB RLS using `dashboard_admins`, not only by client routing.
+4. The app syncs every authenticated user to the server-side session:
+   - successful sync automatically upserts the user into `dashboard_admins` through `INSFORGE_SERVICE_KEY`.
+5. Dashboard/table access is then enforced by DB RLS using `dashboard_admins`.
 
 This thin `/api/auth` admin-sync layer is the intended bridge for clean-backend bootstrap on first login.
 
@@ -80,7 +79,7 @@ This thin `/api/auth` admin-sync layer is the intended bridge for clean-backend 
 ### Clean backend starts with zero data by design
 
 - All live tables were reset to empty.
-- First dashboard login must be from an allowlisted owner email so `/api/auth` can seed `dashboard_admins`.
+- First dashboard login for any registered user automatically seeds their record in `dashboard_admins`.
 - Security vault is also empty; `master_key` must be configured again before adding bots.
 
 ## Verification Completed In This Phase
