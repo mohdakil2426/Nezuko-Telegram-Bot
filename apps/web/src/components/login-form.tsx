@@ -87,6 +87,9 @@ export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginForm
     let cancelled = false;
 
     async function checkServerSession() {
+      // Avoid checking server session if we are already in the middle of an OAuth sync/redirect
+      if (isSigningIn) return;
+
       const response = await fetch("/api/auth", {
         method: "GET",
         cache: "no-store",
@@ -116,12 +119,49 @@ export function LoginForm({ redirectTo = "/dashboard", errorMessage }: LoginForm
       setIsCheckingServerSession(false);
     }
 
-    void checkServerSession();
+    async function checkClientSession() {
+      if (cancelled) return;
+
+      const { data } = await insforge.auth.getCurrentSession().catch((err) => ({
+        data: null,
+        error: err,
+      }));
+
+      if (cancelled) return;
+
+      if (data?.session?.accessToken && data.session.user) {
+        // If we are signed in on the client but land on the login page,
+        // it means we likely need to sync to the server cookie (e.g., after OAuth).
+        setIsSigningIn(true);
+        setIsCheckingServerSession(true);
+
+        try {
+          await syncSessionToAuthCookie(data.session.accessToken, data.session.user as any);
+          if (!cancelled) {
+            router.replace(redirectTo);
+          }
+        } catch (syncError) {
+          if (!cancelled) {
+            setAuthError(
+              syncError instanceof Error ? syncError.message : "Authentication sync failed."
+            );
+            setIsSigningIn(false);
+            setIsCheckingServerSession(false);
+          }
+        }
+      }
+    }
+
+    void checkServerSession().then(() => {
+      if (!cancelled) {
+        void checkClientSession();
+      }
+    });
 
     return () => {
       cancelled = true;
     };
-  }, [redirectTo, router]);
+  }, [redirectTo, router, isSigningIn]);
 
   return (
     <Card className="bg-card/80 w-full border-0 shadow-xl backdrop-blur-sm">
