@@ -23,6 +23,36 @@ if (!BASE_URL) {
   throw new Error("NEXT_PUBLIC_INSFORGE_BASE_URL environment variable is required");
 }
 
+const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+const AUTH_QUERY_PARAMS = [
+  "access_token",
+  "user_id",
+  "email",
+  "name",
+  "csrf_token",
+  "error",
+] as const;
+
+function serializeAuthUserCookie(userId: string, email: string, name?: string | null): string {
+  return JSON.stringify({
+    id: userId,
+    email,
+    profile: name ? { name } : null,
+  });
+}
+
+function shouldUseSecureCookies(request: NextRequest): boolean {
+  return request.nextUrl.protocol === "https:";
+}
+
+function getCleanRedirectUrl(request: NextRequest): URL {
+  const redirectUrl = request.nextUrl.clone();
+  for (const param of AUTH_QUERY_PARAMS) {
+    redirectUrl.searchParams.delete(param);
+  }
+  return redirectUrl;
+}
+
 // InsforgeMiddleware is created once — the returned function handles each request.
 const insforgeMiddleware = InsforgeMiddleware({
   baseUrl: BASE_URL,
@@ -53,6 +83,33 @@ export async function proxy(request: NextRequest) {
   if ((devLogin || useMock) && process.env.NODE_ENV !== "production") {
     // Dev/mock mode: skip all auth checks (never in production).
     return NextResponse.next();
+  }
+
+  const accessToken = request.nextUrl.searchParams.get("access_token");
+  const userId = request.nextUrl.searchParams.get("user_id");
+  const email = request.nextUrl.searchParams.get("email");
+  const name = request.nextUrl.searchParams.get("name");
+
+  if (accessToken && userId && email) {
+    const response = NextResponse.redirect(getCleanRedirectUrl(request));
+    const secure = shouldUseSecureCookies(request);
+
+    response.cookies.set("insforge-session", accessToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure,
+      path: "/",
+      maxAge: AUTH_COOKIE_MAX_AGE,
+    });
+    response.cookies.set("insforge-user", serializeAuthUserCookie(userId, email, name), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure,
+      path: "/",
+      maxAge: AUTH_COOKIE_MAX_AGE,
+    });
+
+    return response;
   }
 
   // Primary: InsForge middleware check
