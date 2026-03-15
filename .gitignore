@@ -142,3 +142,4 @@ apps/*/*.db
 
 # InsForge & AI agent skills
 .insforge
+.akiltest
