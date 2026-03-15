@@ -1,7 +1,7 @@
 # Active Context: Current State
 
-> **Last Updated**: 2026-03-15 09:05 IST
-> **Phase**: 131 — Web auth callback loop fixed in proxy; redeploy pending
+> **Last Updated**: 2026-03-15 19:55 IST
+> **Phase**: 133 — Web auth hardening implemented in repo; callback route + owner allowlist + admin RLS migration added
 
 ---
 
@@ -9,9 +9,42 @@
 
 ### Status
 
+- Repo now uses a dedicated public callback route: `apps/web/src/app/auth/callback/route.ts`
+- Proxy no longer trusts auth query params to mint cookies
+- Local login uses hosted auth redirect → callback validation → cookie set → sanitized local redirect
+- Owner-only access is now enforced by `INSFORGE_ALLOWED_EMAILS`
+- DB-side follow-through is prepared in `insforge/migrations/027_dashboard_admin_rls.sql`
+- Production rollout still requires env + migration apply + redeploy
+
+### New Auth Pattern (Phase 133)
+
+1. `/login` builds a hosted InsForge sign-in URL with a redirect to `/auth/callback?redirect=<safe-local-path>`
+2. `/auth/callback` validates `access_token` against InsForge `/api/auth/sessions/current`
+3. If email is not allowlisted, auth cookies are never created
+4. If allowed, callback optionally syncs `dashboard_admins` via `INSFORGE_SERVICE_KEY`
+5. Callback sets `insforge-session` / `insforge-user` cookies server-side and redirects to the sanitized local path
+6. Dashboard SSR uses `auth()` plus owner allowlist for defense in depth
+
+### New Web Security State
+
+- Bots list now reads `bot_instances_safe`, not the raw `bot_instances` table
+- Query auth redirects only trigger on structured auth failures, not broad string matching
+- Groups/channels pages now use real server pagination
+- `vercel.json` now includes a CSP
+
+### Production Prerequisites
+
+1. Set `INSFORGE_ALLOWED_EMAILS`
+2. Ensure `INSFORGE_SERVICE_KEY` is available to the web app
+3. Apply `027_dashboard_admin_rls.sql`
+4. Redeploy web and test login in incognito
+
+### Status
+
 - Previous provider-side fix (`8f088f1`) was **insufficient on its own**
 - Actual root cause identified from installed `@insforge/nextjs` middleware source
-- New fix is local in `apps/web/src/proxy.ts`; redeploy is still required before production login works
+- Production already has the callback-cookie redirect fix live
+- Remaining blocker is a second proxy config bug in `apps/web/src/proxy.ts`; redeploy is still required before production login works
 
 ### Root Cause (Corrected)
 
@@ -39,6 +72,32 @@ redirect("/login")                               ← loop restarts
 - The follow-up request reaches `/dashboard` with real request cookies, so `auth()` succeeds
 
 The earlier provider `initialState` fix is still valid as a secondary hardening measure, but it was not the loop's primary blocker.
+
+**Cause 3 — `/login` route is trapped by InsForge middleware config (current live blocker)**
+The app configured both `signInUrl` and `signUpUrl` as `"/login"` while leaving `useBuiltInAuth: true`. In the installed `@insforge/nextjs` middleware, the internal route map uses object keys, so the `signUpUrl` entry wins and `/login` redirects to the hosted auth route instead of serving the local login page.
+
+Observed on live site:
+
+```text
+GET https://nezuko-web.vercel.app/login
+→ 307 Location: https://u4ckbciy.us-west.insforge.app/auth/sign-up?redirect=https://nezuko-web.vercel.app/dashboard
+```
+
+That makes the local login page effectively unreachable in production and keeps auth flow behavior inconsistent.
+
+**Fix applied locally now** (`apps/web/src/proxy.ts`):
+
+- Set `useBuiltInAuth: false` so protected routes redirect to the app's local `/login` page first
+- Move `signUpUrl` off `"/login"` to `"/sign-up"` to remove the route collision
+- Keep `/login` in `publicRoutes` so the page remains accessible
+
+### Live Verification Findings
+
+- `curl` against production `/dashboard?access_token=...` returns `307 /dashboard`
+- Live response sets both `insforge-session` and `insforge-user` cookies
+- This confirms the callback-cookie handoff patch is already deployed
+- `curl` against production `/login` still returns a redirect to InsForge hosted sign-up
+- Therefore the remaining production failure is the `/login` proxy trap, not the callback cookie race
 
 ### After Deploy — What to Check
 
@@ -86,9 +145,10 @@ The earlier provider `initialState` fix is still valid as a secondary hardening 
 
 ### 🔴 Web Login Still Looping
 
-- Fix is in code, awaiting Vercel deploy completion
+- Callback-cookie fix is already live
+- Remaining `/login` proxy-routing fix is local only and awaiting Vercel deploy
 - After deploy: test in incognito
-- If it still fails after deploy → escalate to investigating `@insforge/react` `InsforgeProviderCore` source (the `refresh()` call that originates the CSRF request)
+- If it still fails after deploy, inspect live request chain `/login` → OAuth → `/dashboard` and compare cookies on the second `/dashboard` request
 
 ### 🟠 Realtime `connect_error: Invalid token` (Bot App Platform)
 

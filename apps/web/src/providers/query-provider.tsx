@@ -9,6 +9,8 @@ import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-qu
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
+
+import { buildLoginUrl, sanitizeRedirect } from "@/lib/auth/shared";
 import { RealtimeQueryCoordinatorProvider } from "@/lib/hooks/use-realtime-insforge";
 
 interface QueryProviderProps {
@@ -29,25 +31,38 @@ const DEFAULT_STALE_TIME = IS_MOCK
  * Create QueryClient with default options
  */
 function makeQueryClient() {
+  const isAuthError = (error: unknown): boolean => {
+    if (!error || typeof error !== "object") {
+      return false;
+    }
+
+    const maybeError = error as {
+      statusCode?: number;
+      status?: number;
+      error?: string;
+      message?: string;
+    };
+    const normalizedCode = maybeError.error?.toUpperCase();
+
+    return (
+      maybeError.statusCode === 401 ||
+      maybeError.status === 401 ||
+      normalizedCode === "UNAUTHORIZED" ||
+      normalizedCode === "INVALID_TOKEN" ||
+      normalizedCode === "SESSION_EXPIRED"
+    );
+  };
+
   return new QueryClient({
     queryCache: new QueryCache({
       onError: (error, query) => {
-        // Global error handler: catch 401 Unauthorized errors (session expired or mode change)
-        const isUnauthorized =
-          error instanceof Error &&
-          (error.message.includes("401") ||
-            error.message.includes("403") ||
-            error.message.includes("Unauthorized") ||
-            error.message.toLowerCase().includes("jwt"));
-
-        if (isUnauthorized && !query.meta?.skipAuthError) {
+        if (isAuthError(error) && !query.meta?.skipAuthError) {
           console.warn("[QueryProvider] Unauthorized error detected. Forcing redirect to logout.");
           toast.error("Session expired. Redirecting to login...");
 
           // Force redirect via window location to ensure full reload & middleware triggers
           setTimeout(() => {
-            window.location.href =
-              "/login?redirectTo=" + encodeURIComponent(window.location.pathname);
+            window.location.href = buildLoginUrl(sanitizeRedirect(window.location.pathname));
           }, 1500);
         }
       },
@@ -57,9 +72,9 @@ function makeQueryClient() {
         // Don't refetch on window focus in development
         refetchOnWindowFocus: process.env.NODE_ENV === "production",
         // Retry failed requests once
-        retry: (failureCount, error: any) => {
+        retry: (failureCount, error: unknown) => {
           // Don't retry on unauthorized errors
-          if (error?.message?.includes("401") || error?.message?.includes("Unauthorized")) {
+          if (isAuthError(error)) {
             return false;
           }
           return failureCount < 1;

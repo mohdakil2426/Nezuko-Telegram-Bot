@@ -33,8 +33,10 @@ export async function listBots(): Promise<BotListResponse> {
   }
 
   const { data, error, count } = await insforge.database
-    .from("bot_instances")
-    .select("*", { count: "exact" })
+    .from("bot_instances_safe")
+    .select("id, bot_id, bot_username, bot_name, is_active, created_at, updated_at", {
+      count: "exact",
+    })
     .eq("is_deleted", false)
     .order("created_at", { ascending: false });
   if (error) throw error;

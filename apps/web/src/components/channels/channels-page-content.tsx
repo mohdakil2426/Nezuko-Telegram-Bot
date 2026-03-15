@@ -12,7 +12,9 @@ import { toast } from "sonner";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 
 export function ChannelsPageContent() {
-  const { data, isPending, error } = useChannels();
+  const [page, setPage] = useState(1);
+  const perPage = 10;
+  const { data, isPending, error } = useChannels({ page, per_page: perPage });
   const deleteChannel = useDeleteChannel();
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
@@ -47,7 +49,15 @@ export function ChannelsPageContent() {
 
   return (
     <>
-      <ChannelsDataTable data={data?.data ?? []} isPending={isPending} onDelete={handleDelete} />
+      <ChannelsDataTable
+        data={data?.data ?? []}
+        isPending={isPending}
+        pageIndex={page - 1}
+        pageCount={data?.meta.total_pages ?? 0}
+        totalItems={data?.meta.total_items ?? 0}
+        onPageChange={(nextPageIndex) => setPage(nextPageIndex + 1)}
+        onDelete={handleDelete}
+      />
       <DeleteConfirmDialog
         open={deleteTargetId !== null}
         onOpenChange={(open) => {

@@ -14,12 +14,20 @@ interface ChannelsDataTableProps extends ChannelsColumnsProps {
   data: Channel[];
   isPending?: boolean;
   pageSize?: number;
+  pageIndex?: number;
+  pageCount?: number;
+  totalItems?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export function ChannelsDataTable({
   data,
   isPending = false,
   pageSize = 10,
+  pageIndex,
+  pageCount,
+  totalItems,
+  onPageChange,
   onDelete,
   onViewDetails,
 }: ChannelsDataTableProps) {
@@ -42,6 +50,10 @@ export function ChannelsDataTable({
       isPending={isPending}
       pageSize={pageSize}
       ariaLabel="Enforced channels"
+      pageIndex={pageIndex}
+      pageCount={pageCount}
+      totalItems={totalItems}
+      onPageChange={onPageChange}
     />
   );
 }

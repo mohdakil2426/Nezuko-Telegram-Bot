@@ -1,6 +1,7 @@
 import { InsforgeProvider } from "./insforge-provider";
 import { auth } from "@insforge/nextjs/server";
 import { DEV_LOGIN } from "@/lib/api/config";
+import { isAllowedDashboardEmail } from "@/lib/auth/server";
 
 interface InsforgeProviderWrapperProps {
   children: React.ReactNode;
@@ -23,10 +24,11 @@ export async function InsforgeProviderWrapper({ children }: InsforgeProviderWrap
   // Read session server-side — gives InsforgeProvider the initial auth state
   // so the client skips the CSRF-triggering refresh call on boot.
   const session = await auth();
+  const isAuthorized = isAllowedDashboardEmail(session.user?.email);
 
   const initialState = {
-    user: session.user ?? null,
-    userId: session.userId ?? null,
+    user: isAuthorized ? (session.user ?? null) : null,
+    userId: isAuthorized ? (session.userId ?? null) : null,
   };
 
   return <InsforgeProvider initialState={initialState}>{children}</InsforgeProvider>;

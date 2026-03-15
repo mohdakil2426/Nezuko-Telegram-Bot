@@ -14,12 +14,20 @@ interface GroupsDataTableProps extends GroupsColumnsProps {
   data: Group[];
   isPending?: boolean;
   pageSize?: number;
+  pageIndex?: number;
+  pageCount?: number;
+  totalItems?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export function GroupsDataTable({
   data,
   isPending = false,
   pageSize = 10,
+  pageIndex,
+  pageCount,
+  totalItems,
+  onPageChange,
   onToggleProtection,
   onDelete,
   onViewDetails,
@@ -44,6 +52,10 @@ export function GroupsDataTable({
       isPending={isPending}
       pageSize={pageSize}
       ariaLabel="Protected groups"
+      pageIndex={pageIndex}
+      pageCount={pageCount}
+      totalItems={totalItems}
+      onPageChange={onPageChange}
     />
   );
 }

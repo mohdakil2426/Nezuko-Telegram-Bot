@@ -17,7 +17,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 
 const schema = z
   .object({
-    newPassword: z.string().min(8, "Password must be at least 8 characters"),
+    newPassword: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string(),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
@@ -206,7 +206,7 @@ export function ResetPasswordForm({ email }: ResetPasswordFormProps) {
                   id="newPassword"
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  placeholder="At least 8 characters"
+                  placeholder="At least 6 characters"
                   className={`pr-10 ${
                     errors.newPassword ? "border-destructive focus-visible:ring-destructive" : ""
                   }`}

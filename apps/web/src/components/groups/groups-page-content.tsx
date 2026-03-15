@@ -12,7 +12,9 @@ import { toast } from "sonner";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 
 export function GroupsPageContent() {
-  const { data, isPending, error } = useGroups();
+  const [page, setPage] = useState(1);
+  const perPage = 10;
+  const { data, isPending, error } = useGroups({ page, per_page: perPage });
   const toggleProtection = useToggleGroupProtection();
   const deleteGroup = useDeleteGroup();
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
@@ -66,6 +68,10 @@ export function GroupsPageContent() {
       <GroupsDataTable
         data={data?.data ?? []}
         isPending={isPending}
+        pageIndex={page - 1}
+        pageCount={data?.meta.total_pages ?? 0}
+        totalItems={data?.meta.total_items ?? 0}
+        onPageChange={(nextPageIndex) => setPage(nextPageIndex + 1)}
         onToggleProtection={handleToggleProtection}
         onDelete={handleDelete}
       />

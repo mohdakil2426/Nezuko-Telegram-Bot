@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@insforge/nextjs/server";
 
+import { buildLoginUrl } from "@/lib/auth/shared";
+import { isAllowedDashboardEmail } from "@/lib/auth/server";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -44,9 +46,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // auth() reads insforge-session + insforge-user cookies (no server-side JWT validation).
   // We check BOTH token and userId so a partial/stale cookie state also redirects.
   if (!DEV_LOGIN) {
-    const { userId, token } = await auth();
+    const { user, userId, token } = await auth();
     if (!userId || !token) {
-      redirect("/login");
+      redirect(buildLoginUrl());
+    }
+
+    if (!isAllowedDashboardEmail(user?.email)) {
+      redirect(buildLoginUrl(undefined, "unauthorized_owner"));
     }
   }
 

@@ -47,6 +47,10 @@ interface DataTableProps<T> {
   isPending?: boolean;
   pageSize?: number;
   ariaLabel?: string;
+  pageIndex?: number;
+  pageCount?: number;
+  totalItems?: number;
+  onPageChange?: (page: number) => void;
 }
 
 function TableSkeleton({ rows = 5 }: { rows?: number }) {
@@ -77,11 +81,20 @@ export function DataTable<T>({
   isPending = false,
   pageSize = 10,
   ariaLabel,
+  pageIndex,
+  pageCount,
+  totalItems,
+  onPageChange,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+
+  const isServerPaginated =
+    typeof pageIndex === "number" &&
+    typeof pageCount === "number" &&
+    typeof onPageChange === "function";
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table owns memoization internally; this wrapper does not pass the returned API into memoized hooks/components.
   const table = useReactTable({
@@ -90,13 +103,16 @@ export function DataTable<T>({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: isServerPaginated ? undefined : getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    manualPagination: isServerPaginated,
+    pageCount: isServerPaginated ? pageCount : undefined,
     initialState: {
       pagination: {
+        pageIndex: isServerPaginated ? pageIndex : 0,
         pageSize,
       },
     },
@@ -105,6 +121,12 @@ export function DataTable<T>({
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination: isServerPaginated
+        ? {
+            pageIndex,
+            pageSize,
+          }
+        : undefined,
     },
   });
 
@@ -214,27 +236,43 @@ export function DataTable<T>({
       <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-muted-foreground text-sm">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {isServerPaginated
+            ? (totalItems ?? data.length)
+            : table.getFilteredRowModel().rows.length}{" "}
+          row(s) selected.
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="text-muted-foreground text-sm">
-            Page {table.getPageCount() > 0 ? table.getState().pagination.pageIndex + 1 : 0} of{" "}
-            {table.getPageCount()}
+            Page{" "}
+            {isServerPaginated
+              ? pageCount > 0
+                ? pageIndex + 1
+                : 0
+              : table.getPageCount() > 0
+                ? table.getState().pagination.pageIndex + 1
+                : 0}{" "}
+            of {isServerPaginated ? pageCount : table.getPageCount()}
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
+              onClick={() =>
+                isServerPaginated ? onPageChange(Math.max(0, pageIndex - 1)) : table.previousPage()
+              }
+              disabled={isServerPaginated ? pageIndex <= 0 : !table.getCanPreviousPage()}
             >
               Previous
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
+              onClick={() =>
+                isServerPaginated
+                  ? onPageChange(Math.min(pageCount - 1, pageIndex + 1))
+                  : table.nextPage()
+              }
+              disabled={isServerPaginated ? pageIndex + 1 >= pageCount : !table.getCanNextPage()}
             >
               Next
             </Button>

@@ -6,6 +6,7 @@ import { ShieldCheck, Mail, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import { insforge } from "@/lib/insforge";
+import { syncSessionToAuthCookie } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,9 +20,10 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 
 interface VerifyEmailFormProps {
   email: string;
+  redirectTo?: string;
 }
 
-export function VerifyEmailForm({ email }: VerifyEmailFormProps) {
+export function VerifyEmailForm({ email, redirectTo = "/dashboard" }: VerifyEmailFormProps) {
   const router = useRouter();
   const [otp, setOtp] = useState("");
   const [isPending, setIsPending] = useState(false);
@@ -48,8 +50,9 @@ export function VerifyEmailForm({ email }: VerifyEmailFormProps) {
     }
 
     if (data?.accessToken) {
+      await syncSessionToAuthCookie(data.accessToken, data.user);
       toast.success("Email verified! Redirecting to dashboard…");
-      router.push("/dashboard");
+      router.push(redirectTo);
       return;
     }
 

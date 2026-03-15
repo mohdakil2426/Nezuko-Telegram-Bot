@@ -5,6 +5,7 @@ import { createCipheriv, randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { vaultSecuritySchema } from "../schemas/vault";
 import { DEV_LOGIN } from "@/lib/api/config";
+import { isAllowedDashboardEmail } from "@/lib/auth/server";
 
 const VAULT_CACHE_PATH = "/dashboard/settings";
 const MASTER_KEY_NAME = "master_key";
@@ -35,6 +36,10 @@ interface TelegramBotInfo {
   first_name?: string;
 }
 
+interface OwnerRow {
+  user_id: number;
+}
+
 export interface VaultStatus {
   configured: boolean;
   description: string | null;
@@ -46,15 +51,6 @@ function getDevBypassServiceKeyMessage(): string {
   return "Set INSFORGE_SERVICE_KEY in apps/web/.env.local to use Security Vault while NEXT_PUBLIC_DEV_LOGIN=true.";
 }
 
-function resolveOwnerTelegramId(userId: string | null): number {
-  if (!userId) {
-    return 0;
-  }
-
-  const parsed = Number(userId);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 function getBaseUrl(): string {
   const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
   if (!baseUrl) {
@@ -63,11 +59,37 @@ function getBaseUrl(): string {
   return baseUrl.replace(/\/$/, "");
 }
 
-async function getServerBearerToken(): Promise<{ token: string; userId: string | null }> {
-  const { token, userId } = await auth();
+async function resolveOwnerTelegramId(token: string, userId: string | null): Promise<number> {
+  const existingOwners = await fetchRecords<OwnerRow>("owners", token, {
+    select: "user_id",
+    limit: "2",
+  });
+
+  if (existingOwners.length === 1) {
+    return existingOwners[0].user_id;
+  }
+
+  if (!userId) {
+    return 0;
+  }
+
+  const parsed = Number(userId);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+async function getServerBearerToken(): Promise<{
+  token: string;
+  userId: string | null;
+  userEmail: string | null;
+}> {
+  const { token, user, userId } = await auth();
+
+  if (user?.email && !isAllowedDashboardEmail(user.email)) {
+    throw new Error("Unauthorized");
+  }
 
   if (token) {
-    return { token, userId };
+    return { token, userId, userEmail: user?.email ?? null };
   }
 
   if (DEV_LOGIN) {
@@ -75,7 +97,7 @@ async function getServerBearerToken(): Promise<{ token: string; userId: string |
     if (!serviceKey) {
       throw new Error(getDevBypassServiceKeyMessage());
     }
-    return { token: serviceKey, userId: null };
+    return { token: serviceKey, userId: null, userEmail: null };
   }
 
   throw new Error("Unauthorized");
@@ -311,8 +333,9 @@ export async function addBotSecure(token: string) {
     }
 
     const encryptedToken = encryptToken(token, masterKey);
+    const ownerTelegramId = await resolveOwnerTelegramId(bearerToken, userId);
     const payload = {
-      owner_telegram_id: resolveOwnerTelegramId(userId),
+      owner_telegram_id: ownerTelegramId,
       bot_id: botInfo.id,
       bot_username: botInfo.username ?? `bot_${botInfo.id}`,
       bot_name: botInfo.first_name ?? null,

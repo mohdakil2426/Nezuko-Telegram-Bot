@@ -1,6 +1,6 @@
 # Progress: What Works, What's Left
 
-## Current Phase: 131 — Proxy Auth Callback Fix Applied (Pending Vercel)
+## Current Phase: 133 — Repo Auth Hardening Complete; Production Rollout Pending
 
 > **Active Runtime**: `apps/grammy/` (Bun + grammY v1.41.1)
 > **Last Updated**: 2026-03-15
@@ -55,7 +55,7 @@
 | Upstash Redis (`rediss://` TLS)         | ✅ Connected                         |
 | InsForge BaaS (PostgreSQL + Realtime)   | ✅ Healthy                           |
 | GitHub Actions CI (grammy + web)        | ✅ `actions/checkout@v5`             |
-| Vercel (web hosting)                    | ✅ Deployed — newest login fix pending |
+| Vercel (web hosting)                    | ✅ Deployed — latest `/login` proxy fix still pending |
 
 ### Database (Live — InsForge / Migration 023+)
 
@@ -85,8 +85,8 @@
 | Analytics charts (verification, API calls)   | ✅                                            |
 | Settings page (vault actions)                | ✅                                            |
 | InsForge auth middleware (`proxy.ts`)        | ✅                                            |
-| Google OAuth flow (InsForge built-in auth)   | ⚠️ Login loop — proxy callback fix awaiting Vercel |
-| Server-side `initialState` for auth provider | ✅ Secondary hardening applied                  |
+| Google OAuth flow (InsForge built-in auth)   | ⚠️ Callback fix is live; `/login` proxy-routing fix still awaiting Vercel |
+| Server-side `initialState` for auth provider | ✅ Secondary hardening applied |
 
 ---
 
@@ -94,7 +94,7 @@
 
 | Issue                                                             | Severity     | Status                                                                                                                                         |
 | ----------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Web dashboard login loop** (OAuth callback cookie race)         | **Critical** | Root cause corrected in `apps/web/src/proxy.ts`: auth params now set cookies and redirect once before dashboard SSR runs. Awaiting Vercel deploy. |
+| **Web auth rollout pending**                                      | **Critical** | Repo fixes are complete, but production still needs `INSFORGE_ALLOWED_EMAILS`, `INSFORGE_SERVICE_KEY`, migration `027_dashboard_admin_rls.sql`, and a redeploy. |
 | **Realtime `connect_error: Invalid token`** on App Platform       | High         | InsForge Socket.IO rejects service key for realtime auth. Bot falls back to 30s polling — degraded but functional.                             |
 | `get_user_growth` RPC broken (analytics chart blank)              | Medium       | Function not returning correct data. Needs investigation.                                                                                      |
 | Runner crash storm — 409 Conflict on App Platform redeploy        | Medium       | Happens when 2 replicas briefly run simultaneously. Self-heals via `restartRunnerOnly`. Mitigate: confirm instance_count=1 after every deploy. |
@@ -117,15 +117,15 @@
 
 ## 🔲 Next Steps (Priority Order)
 
-1. **Verify Vercel deploy** (proxy callback fix) — test login in incognito → should land on `/dashboard`
-2. **Fix realtime Socket.IO auth** — investigate InsForge realtime token requirements for server-side connections
-3. **Fix `get_user_growth` RPC** — analytics User Growth chart is blank
-4. **Validate join-request-first live** — end-to-end test with a real user
-5. **Add InsForge triggers for groups/channels** — finish cross-session dashboard realtime
+1. **Apply migration 027** — enable `dashboard_admins` + admin-scoped authenticated RLS
+2. **Set web env vars** — `INSFORGE_ALLOWED_EMAILS`, confirm `INSFORGE_SERVICE_KEY`
+3. **Redeploy web and test login in incognito** — hosted auth should land on `/dashboard`
+4. **Fix realtime Socket.IO auth** — investigate InsForge realtime token requirements for server-side connections
+5. **Fix `get_user_growth` RPC** — analytics User Growth chart is blank
 
 ---
 
-## 📊 Quality Gate Baseline (Phase 130)
+## 📊 Quality Gate Baseline (Phase 132)
 
 | Check                 | Result                                  |
 | --------------------- | --------------------------------------- |
@@ -137,6 +137,8 @@
 | `web type-check`      | ✅ 0 errors                             |
 | `web lint`            | ✅ 0 warnings                           |
 | `web build`           | ✅ 0 errors                             |
+| Live `/dashboard?access_token=...` | ✅ Sets auth cookies + redirects cleanly |
+| Live `/login` route   | ⚠️ Still redirects to hosted sign-up until newest deploy |
 | Bot live heartbeat    | ✅ `8716661547` online                  |
 | Migration 024         | ✅ RPC active                           |
 | Migration 026         | ✅ Policies locked + bot INSERT rescued |
