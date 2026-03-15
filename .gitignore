@@ -139,3 +139,6 @@ apps/*/*.db
 
 # Playwright
 .playwright-cli/
+
+# InsForge & AI agent skills
+.insforge

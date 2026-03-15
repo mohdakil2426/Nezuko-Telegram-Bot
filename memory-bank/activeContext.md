@@ -2,6 +2,139 @@
 
 ### Current Status
 
+**2026-03-15: Web Dashboard Login Loop + Migrations Applied (Phase 130 — Login Fix Pending Vercel Redeploy)**
+
+- **Migrations 024 + 026 applied live** ✅ (completed 2026-03-15 Phase 130)
+- **Login loop**: TWO root causes identified — stale env vars AND CSRF token failure.
+- **Problem**: After updating Vercel environment variables (`NEXT_PUBLIC_INSFORGE_BASE_URL`, `NEXT_PUBLIC_INSFORGE_ANON_KEY`), users cannot log back in. Every Google OAuth attempt loops back to the InsForge hosted sign-in page.
+
+#### Phase 130 Changes (2026-03-15)
+
+| Change                        | Detail                                                                                                                  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Migration 024 applied live    | `get_group_verification_contract` RPC created; `join_request_preferred=true` backfilled                                 |
+| Migration 026 applied live    | 27 legacy `anon` RLS policies removed from privileged tables                                                            |
+| CSRF token failure identified | Second root cause of login loop — `warn - [Auth:Refresh] CSRF token validation failed` (403) fires after OAuth redirect |
+
+#### Root Cause 1: Stale Vercel Build with Old Baked-In Env Vars
+
+`NEXT_PUBLIC_*` variables in Next.js are **embedded at build time** — they are statically baked into the JavaScript bundle during `next build`. Updating them in the Vercel dashboard does **not** update the live bundle unless a new build runs.
+
+Timeline of failure:
+
+1. Vercel build ran for commit `ebf24b1` (with OLD/missing `NEXT_PUBLIC_*` values baked in)
+2. User updated Vercel env vars AFTER that build deployed
+3. The live Vercel deployment still serves the old bundle with the stale baked-in values
+
+#### Root Cause 2: CSRF Token Validation Failure (NEW — from live log analysis)
+
+Live InsForge logs at `2026-03-15T00:57:08` show:
+
+```
+warn  - [Auth:Refresh] CSRF token validation failed
+error - AppError: Invalid CSRF token
+POST /api/auth/refresh 403  ← CSRF failure gets 403 first
+POST /api/auth/refresh 401  ← then loop continues with 401
+```
+
+The CSRF cookie set by InsForge during the sign-in page visit **is scoped to the InsForge domain** and is NOT forwarded to the Vercel domain after the OAuth redirect. If this persists after redeploy, `createAuthRouteHandlers` may need CSRF bypass for OAuth callbacks.
+
+#### Exact Failure Sequence (from InsForge live logs)
+
+```
+GET  /auth/sign-in 200          ← User lands on InsForge hosted auth
+POST /api/auth/refresh 401       ← normal session check
+GET  /google 200                 ← User clicks Google OAuth (153ms)
+     OAuth PKCE code created     ← InsForge generates code
+GET  /shared/callback/... 302    ← InsForge redirects → Vercel /dashboard
+warn - [Auth:Refresh] CSRF token validation failed  ← 🚨 NEW ROOT CAUSE
+error - AppError: Invalid CSRF token
+POST /api/auth/refresh 403       ← CSRF failure
+POST /api/auth/refresh 401       ← no session, loop begins
+GET  /auth/sign-in 200           ← Middleware redirects back → loop
+POST /api/auth/refresh 401       ← repeat
+```
+
+#### Key SDK Findings (from reading `@insforge/nextjs` source)
+
+| Component                                | Behaviour                                                                                                  |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `InsforgeMiddleware`                     | Sets `insforge_session` cookie **directly** from `access_token` URL param — does NOT call InsForge server  |
+| `InsforgeBrowserProvider.syncToCookie()` | `POST /api/auth { action: "sync-token" }` — calls `${baseUrl}/api/auth/sessions/current` to validate token |
+| `createAuthRouteHandlers`                | Uses `baseUrl` from `process.env.NEXT_PUBLIC_INSFORGE_BASE_URL` baked at build time                        |
+| Result                                   | If baked `baseUrl` is wrong, `sessions/current` returns 401 → cookie not confirmed → auth loop             |
+
+#### Fix Required
+
+**Trigger a fresh Vercel redeploy** so the new correct env vars are baked into the Next.js bundle:
+
+1. Vercel Dashboard → `nezuko-web` → Deployments → Redeploy latest
+2. **CRITICAL**: Uncheck "Use existing build cache" — otherwise Vercel may serve the old cached bundle
+3. After new build is live, test login in incognito window (clean cookies)
+
+#### Important Rule Learned
+
+> **Always set Vercel `NEXT_PUBLIC_*` env vars BEFORE triggering a build.** The value in the live bundle is the one present at build time — not the current dashboard value. Changing the var without redeploying has zero effect on the live bundle.
+
+---
+
+**2026-03-15: App Platform Deployment Hardening (Phase 128 — Completed)**
+
+- **Status**: Completed. Bot is now running cleanly on DigitalOcean App Platform (single instance, 1 bot active, Redis stable).
+- **Deployment target**: DigitalOcean App Platform (not a Droplet — App Platform worker selected instead). Repo: `mohdakil2426/Nezuko-Telegram-Bot`, component `grammy-bot`.
+- **App Platform `.do/app.yaml`**: Created — declares `grammy-bot` worker, single instance (`instance_count: 1`), health check on `/health:8080`, all env vars declared with sensitive ones as `type: SECRET`.
+
+#### Three root causes identified and resolved
+
+**Issue 1 — Redis TLS (fixed in App Platform dashboard)**
+
+- `REDIS_URL` was set to `redis://...` (no TLS) — Upstash always requires TLS.
+- Fix: changed `redis://` → `rediss://` (double-s). ioredis then completes the TLS handshake and `"Redis ready"` appears for the first time.
+- Evidence: log showed `"Redis connected"` then immediate close before fix; now shows `"Redis connected"` → `"Redis ready"` stably.
+
+**Issue 2 — InsForge 403 on `admin_logs` / `api_call_log` (fixed in code — Phase 128)**
+
+- Root cause: InsForge shared gateways require BOTH `Authorization: Bearer <key>` AND `apikey: <key>` headers for correct tenant routing and RLS bypass.
+- `insforge-client.ts` was only sending `Authorization: Bearer` — the gateway couldn't identify the project tenant, so even a valid service-key JWT got 403 on protected tables.
+- Fix: Added `apikey: anonKey` alongside `.Authorization` in `InsForgeClient` constructor headers.
+- File changed: `apps/grammy/src/core/insforge-client.ts` — 1 line added.
+- This mirrors the exact fix applied to `vault.ts` in the web app in a previous session.
+- Quality gates after fix: `type-check ✅ lint ✅ format:check ✅ build ✅`.
+- Committed and pushed → App Platform auto-deployed.
+
+**Issue 3 — 409 Conflict: two container replicas (fixed in App Platform dashboard)**
+
+- App Platform deployed 2 replicas (`rdgvv` + `9gns7`) instead of 1.
+- Both replicas tried to call `getUpdates` → Telegram 409 Conflict loop.
+- Fix: Scale `grammy-bot` instance count to exactly **1** in the App Platform dashboard.
+
+**Issue 4 — `INSFORGE_SERVICE_KEY` value (fixed in App Platform dashboard)**
+
+- The env var was declared in `.do/app.yaml` as `type: SECRET` but had never been given a value in the dashboard.
+- The bot fell back to `INSFORGE_ANON_KEY` (which lacks write access to `admin_logs` under RLS).
+- Fix: Set `INSFORGE_SERVICE_KEY` in the App Platform → grammy-bot → Environment Variables to the **API Key** from the InsForge dashboard (the key labeled "full access control"). Mark encrypted.
+
+#### CI/CD workflow upgrades (done during this session)
+
+| File                              | Change                                                                                                         |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `.github/workflows/grammy-ci.yml` | Upgraded `actions/checkout@v4` → `v5`, `actions/cache@v4` → `v5`; removed `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` |
+| `.github/workflows/web-ci.yml`    | Same upgrades                                                                                                  |
+| `apps/web/src/`                   | Fixed CRLF → LF line endings (`prettier --write src`) to unblock CI prettier gate                              |
+
+#### Key pattern learned
+
+InsForge PostgREST API requires two headers for any write that needs to bypass RLS:
+
+```typescript
+Authorization: `Bearer ${serviceKey}`,  // JWT for role resolution
+apikey: serviceKey,                       // Tenant identification (RLS bypass gate)
+```
+
+Without `apikey`, even a service-role JWT gets 403 on tables with RLS write policies.
+
+---
+
 **2026-03-15: CI/CD Setup + Vercel Deployment Live (Phase 127 — Completed)**
 
 - **Status**: Completed. Web dashboard is live in production.
