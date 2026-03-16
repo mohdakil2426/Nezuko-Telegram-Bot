@@ -3,7 +3,7 @@
 # ─────────────────────────────────────────────
 # Bun resolves deps AND runs tsc (bun x tsc -p tsconfig.build.json).
 # This matches the canonical quality-gate build command exactly.
-FROM oven/bun:1.2 AS builder
+FROM oven/bun:latest AS builder
 WORKDIR /app
 
 # Install deps first (layer cache: only re-runs when lockfile changes)
