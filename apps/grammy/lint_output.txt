@@ -1,0 +1,18 @@
+$ bun x eslint src/ --max-warnings 0
+
+C:\Users\akila\OneDrive\Desktop\OSS\WebsitesBots\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\apps\grammy\src\core\encryption.ts
+  150:5  error  There is no `cause` attached to the symptom error being thrown  preserve-caught-error
+
+C:\Users\akila\OneDrive\Desktop\OSS\WebsitesBots\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\apps\grammy\src\core\insforge-client.ts
+  57:9  error  There is no `cause` attached to the symptom error being thrown  preserve-caught-error
+
+C:\Users\akila\OneDrive\Desktop\OSS\WebsitesBots\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\apps\grammy\src\main.ts
+  191:7  error  'statusInterval' is always 'undefined' because it's never assigned  no-unassigned-vars
+
+C:\Users\akila\OneDrive\Desktop\OSS\WebsitesBots\Telegram\GroupManagerBot\Nezuko-Telegram-Bot\apps\grammy\src\utils\process-lock.ts
+  77:11  error  The value assigned to 'existingPid' is not used in subsequent statements  no-useless-assignment
+  93:7   error  There is no `cause` attached to the symptom error being thrown            preserve-caught-error
+
+Γ£û 5 problems (5 errors, 0 warnings)
+
+error: script "lint" exited with code 1

@@ -188,7 +188,7 @@ async function runStandaloneMode(
     logger.warn("⚠  Background services disabled (no InsForge connection)");
   }
 
-  let statusInterval: NodeJS.Timeout | undefined; // unused in standalone mode
+  // No status interval in standalone mode
 
   // Health server
   const healthServer = await startHealthServer(config.healthPort, effectiveLogger, () => ({
@@ -222,7 +222,7 @@ async function runStandaloneMode(
     botInstanceId: 0, // standalone sentinel — no bot_instances row
     log: logger,
     healthServer,
-    statusInterval,
+    statusInterval: undefined,
     syncInterval,
     onBeforeShutdown: () => {
       stopWatchdog();

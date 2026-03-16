@@ -54,7 +54,7 @@ export class InsForgeClient {
       if (err instanceof Error && err.name === "AbortError") {
         const message = `InsForge request timed out after ${this.requestTimeoutMs}ms`;
         this.logger.warn({ url, timeoutMs: this.requestTimeoutMs }, message);
-        throw new Error(message);
+        throw new Error(message, { cause: err });
       }
       throw err;
     } finally {

@@ -74,7 +74,7 @@ export async function acquireProcessLock(
         throw err;
       }
 
-      let existingPid: number | null = null;
+      let existingPid: number | null;
       try {
         const raw = await readFile(lockPath, "utf8");
         const parsed = JSON.parse(raw) as { pid?: unknown };
@@ -92,7 +92,8 @@ export async function acquireProcessLock(
 
       throw new Error(
         `Another Nezuko bot process is already running for "${name}"` +
-          (existingPid ? ` (pid ${existingPid})` : "")
+          (existingPid ? ` (pid ${existingPid})` : ""),
+        { cause: err }
       );
     }
   }

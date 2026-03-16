@@ -147,6 +147,6 @@ export async function decryptToken(encryptedToken: string, db: InsForgeClient): 
       message.includes("auth") || message.includes("state")
         ? " Key mismatch — re-add the bot via dashboard to re-encrypt with the current vault key."
         : "";
-    throw new Error(`AES-GCM decryption failed: ${message}.${hint}`);
+    throw new Error(`AES-GCM decryption failed: ${message}.${hint}`, { cause: err });
   }
 }
