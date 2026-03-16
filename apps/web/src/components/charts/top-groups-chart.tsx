@@ -8,7 +8,7 @@
  * use `fill="var(--color-<dataKey>)"` or dataKey="fill" on <Bar>.
  */
 
-import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -143,11 +143,7 @@ export function TopGroupsChart() {
                   />
                 }
               />
-              <Bar dataKey="verifications" radius={[0, 4, 4, 0]}>
-                {chartData.map((entry) => (
-                  <Cell key={entry.group_id} fill={entry.fill} />
-                ))}
-              </Bar>
+              <Bar dataKey="verifications" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ChartContainer>
         </CardContent>

@@ -5,7 +5,7 @@
  * Shows breakdown of cache hits vs API calls
  */
 
-import { Pie, PieChart, Cell, Label } from "recharts";
+import { Pie, PieChart, Label } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -106,9 +106,6 @@ export function CacheBreakdownChart() {
                 strokeWidth={2}
                 stroke="var(--background)"
               >
-                {chartData.map((entry) => (
-                  <Cell key={entry.name} fill={entry.fill} />
-                ))}
                 <Label
                   content={({ viewBox }) => {
                     if (viewBox && "cx" in viewBox && "cy" in viewBox) {

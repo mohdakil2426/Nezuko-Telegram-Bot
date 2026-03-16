@@ -1,0 +1,22 @@
+src/components/charts/api-calls-chart.tsx(115,27): error TS2741: Property 'payload' is missing in type '{ nameKey: string; }' but required in type 'Pick<Props, "payload" | "verticalAlign">'.
+src/components/charts/cache-breakdown-chart.tsx(141,27): error TS2741: Property 'payload' is missing in type '{ nameKey: string; }' but required in type 'Pick<Props, "payload" | "verticalAlign">'.
+src/components/charts/groups-status-chart.tsx(140,27): error TS2741: Property 'payload' is missing in type '{ nameKey: string; }' but required in type 'Pick<Props, "payload" | "verticalAlign">'.
+src/components/charts/hourly-activity-chart.tsx(116,38): error TS2741: Property 'payload' is missing in type '{}' but required in type 'Pick<Props, "payload" | "verticalAlign">'.
+src/components/charts/latency-distribution-chart.tsx(115,29): error TS2741: Property 'payload' is missing in type '{}' but required in type 'Pick<Props, "payload" | "verticalAlign">'.
+src/components/charts/latency-trend-chart.tsx(131,42): error TS2741: Property 'payload' is missing in type '{}' but required in type 'Pick<Props, "payload" | "verticalAlign">'.
+src/components/charts/verification-chart.tsx(127,42): error TS2741: Property 'payload' is missing in type '{}' but required in type 'Pick<Props, "payload" | "verticalAlign">'.
+src/components/charts/verification-distribution-chart.tsx(147,27): error TS2741: Property 'payload' is missing in type '{ nameKey: string; }' but required in type 'Pick<Props, "payload" | "verticalAlign">'.
+src/components/charts/verification-trends-chart.tsx(143,42): error TS2741: Property 'payload' is missing in type '{}' but required in type 'Pick<Props, "payload" | "verticalAlign">'.
+src/components/ui/chart.tsx(99,3): error TS2339: Property 'payload' does not exist on type 'Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; allowEscapeViewBox?: AllowInDimension | undefined; ... 24 more ...; wrapperStyle?: CSSProperties | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }'.
+src/components/ui/chart.tsx(104,3): error TS2339: Property 'label' does not exist on type 'Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; allowEscapeViewBox?: AllowInDimension | undefined; ... 24 more ...; wrapperStyle?: CSSProperties | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }'.
+src/components/ui/chart.tsx(163,20): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/ui/chart.tsx(164,17): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/ui/chart.tsx(164,23): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/ui/chart.tsx(242,39): error TS2344: Type '"payload" | "verticalAlign"' does not satisfy the constraint '"string" | "method" | "filter" | "fill" | "values" | "slot" | "style" | "clipPath" | "mask" | "path" | "key" | "suppressHydrationWarning" | "className" | "id" | "lang" | "nonce" | ... 434 more ... | "portal"'.
+  Type '"payload"' is not assignable to type '"string" | "method" | "filter" | "fill" | "values" | "slot" | "style" | "clipPath" | "mask" | "path" | "key" | "suppressHydrationWarning" | "className" | "id" | "lang" | "nonce" | ... 434 more ... | "portal"'.
+src/components/ui/chart.tsx(248,17): error TS2339: Property 'length' does not exist on type '{}'.
+src/components/ui/chart.tsx(261,10): error TS2339: Property 'filter' does not exist on type '{}'.
+src/components/ui/chart.tsx(261,18): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/ui/chart.tsx(262,15): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/providers/insforge-provider.tsx(23,7): error TS2322: Type 'import("C:/Users/akila/OneDrive/Desktop/OSS/WebsitesBots/Telegram/GroupManagerBot/Nezuko-Telegram-Bot/apps/web/node_modules/@insforge/sdk/dist/index").InsForgeClient' is not assignable to type 'import("C:/Users/akila/OneDrive/Desktop/OSS/WebsitesBots/Telegram/GroupManagerBot/Nezuko-Telegram-Bot/apps/web/node_modules/@insforge/react/node_modules/@insforge/sdk/dist/index").InsForgeClient'.
+  Types have separate declarations of a private property 'http'.

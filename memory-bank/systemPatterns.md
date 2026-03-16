@@ -1,7 +1,7 @@
 # System Patterns: Architecture & Implementation
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
-> **Last Updated**: 2026-03-16 (Phase 136)
+> **Last Updated**: 2026-03-16 (Phase 137)
 
 ---
 

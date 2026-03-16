@@ -1,9 +1,9 @@
 # Progress: What Works, What's Left
 
-## Current Phase: 137 — Test Isolation Migration Complete
+## Current Phase: 140 — Dependency Update & Recharts 3 Migration ✅
 
 > **Active Runtime**: `apps/grammy/` (Bun + grammY v1.41.1)
-> **Last Updated**: 2026-03-16
+> **Last Updated**: 2026-03-16 09:12 IST
 
 ---
 
@@ -137,36 +137,48 @@
 
 ---
 
-## 📊 Quality Gate Baseline (Phase 134)
+## 📊 Quality Gate Baseline (Phase 139 — 2026-03-16)
 
-| Check                      | Result                                                      |
-| -------------------------- | ----------------------------------------------------------- |
-| `grammy type-check`        | ✅ 0 errors                                                 |
-| `grammy lint`              | ✅ 0 warnings                                               |
-| `grammy format:check`      | ✅ clean                                                    |
-| `grammy test`              | ✅ 163/163 pass (in local `apps/grammy/tests/`)             |
-| `grammy build`             | ✅ 0 errors                                                 |
-| `web type-check`           | ✅ 0 errors                                                 |
-| `web lint`                 | ✅ 0 warnings                                               |
-| `web knip`                 | ✅ clean                                                    |
-| `web prettier --check`     | ✅ clean                                                    |
-| `web build`                | ✅ 0 errors                                                 |
-| Live migration 028 apply   | ✅ successful through InsForge MCP                          |
-| Live `manage-bot` redeploy | ✅ successful through InsForge MCP                          |
-| Live RPC smoke test        | ✅ dashboard + chart RPCs return correct empty-state shapes |
+> ⚠️ Web gates below are from Phase 137. After `recharts@3.8.0` bump, web build gate status is **unknown** until CI run after lockfile refresh completes.
 
-## 📊 CI/CD Baseline (Phase 136)
+| Check                      | Result                                                        |
+| -------------------------- | ------------------------------------------------------------- |
+| `grammy type-check`        | ✅ 0 errors                                                   |
+| `grammy lint`              | ✅ 0 warnings                                                 |
+| `grammy format:check`      | ✅ clean                                                      |
+| `grammy test`              | ✅ 163/163 pass (in local `apps/grammy/tests/`)               |
+| `grammy build`             | ✅ 0 errors                                                   |
+| `grammy docker build`      | ✅ fixed (`oven/bun:latest` in Dockerfile)                    |
+| `web type-check`           | ✅ 0 errors (recharts 3.x + eslint 10)                        |
+| `web lint`                 | ✅ 0 warnings                                                 |
+| `web knip`                 | ✅ 0 errors                                                   |
+| `web prettier --check`     | ✅ clean                                                      |
+| `web build`                | ✅ successful                                                 |
+| Live migration 028 apply   | ✅ successful through InsForge MCP                            |
+| Live `manage-bot` redeploy | ✅ successful through InsForge MCP                            |
+| Live RPC smoke test        | ✅ dashboard + chart RPCs return correct empty-state shapes   |
+| Vercel deploy              | ✅ lockfile fix pushed — next deploy should install correctly |
 
-| Check                | Result                                                                    |
-| -------------------- | ------------------------------------------------------------------------- |
-| `codeql.yml`         | ✅ Workflow live, weekly + push triggered                                 |
-| `commitlint.yml`     | ✅ Conventional commits enforced via `wagoid/commitlint-github-action@v6` |
-| `release-please.yml` | ✅ Monorepo config active, v0.0.0 start                                   |
-| `bundle-size.yml`    | ✅ Tracks Next.js chunk sizes per commit                                  |
-| `dependabot.yml`     | ✅ Weekly grouped updates configured                                      |
-| Auto-fix CI          | ✅ Prettier + ESLint auto-commit on dirty push                            |
-| Vercel deploy gate   | ✅ Hook-only deploy, native auto-deploy disabled                          |
-| Branch protection    | ✅ `Quality Gates` required status check on `main`                        |
-| README badges        | ✅ Web CI, Bot CI, CodeQL, License badges live                            |
-| `GEMINI.md`          | ✅ Refactored — compact CI/CD rules, no duplication                       |
-| Test Isolation       | ✅ `tests/grammy/**` removed from CI triggers — now package-local         |
+## 📊 CI/CD Baseline (Phase 138+139 — 2026-03-16)
+
+| Check                | Result                                                                             |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| `codeql.yml`         | ✅ Workflow live, weekly + push triggered                                          |
+| `commitlint.yml`     | ✅ Passing (new commits lowercase-compliant)                                       |
+| `release-please.yml` | ✅ `v4.4.0` pinned, node.js 24 opt-in at step scope, PR permission enabled in repo |
+| `bundle-size.yml`    | ✅ Tracks Next.js chunk sizes per commit                                           |
+| `dependabot.yml`     | ✅ Weekly grouped updates configured                                               |
+| Auto-fix CI          | ✅ Prettier + ESLint auto-commit on dirty push                                     |
+| Vercel deploy gate   | ✅ Hook-only deploy, native auto-deploy disabled; lockfile fixed                   |
+| Branch protection    | ✅ `Quality Gates` required status check on `main`                                 |
+| README badges        | ✅ Web CI, Bot CI, CodeQL, License badges live                                     |
+
+## 📦 Dependency Versions (Phase 139 — Dependabot bumps applied 2026-03-16)
+
+| Package               | Old       | New       | Risk                                         |
+| --------------------- | --------- | --------- | -------------------------------------------- |
+| `recharts`            | `2.15.4`  | `3.8.0`   | 🔴 Major — breaking API changes expected     |
+| `react` / `react-dom` | `19.2.3`  | `19.2.4`  | 🟢 Patch — safe                              |
+| `lucide-react`        | `0.563.0` | `0.577.0` | 🟢 Minor — safe                              |
+| `eslint` (web)        | `9.28.0`  | `10.0.3`  | 🟡 Major — flat config API unchanged, verify |
+| `@types/node` (web)   | `22.15.0` | `25.5.0`  | 🟡 Major — type shapes may change            |

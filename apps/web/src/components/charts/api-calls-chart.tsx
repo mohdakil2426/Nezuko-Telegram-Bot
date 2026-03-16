@@ -6,7 +6,7 @@
  * Fully responsive — adapts to any card/column width.
  */
 
-import { Pie, PieChart, Cell } from "recharts";
+import { Pie, PieChart } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -110,11 +110,7 @@ export function ApiCallsChart() {
                 outerRadius={100}
                 strokeWidth={2}
                 stroke="var(--background)"
-              >
-                {chartData.map((entry) => (
-                  <Cell key={entry.name} fill={entry.fill} />
-                ))}
-              </Pie>
+              />
               <ChartLegend
                 content={<ChartLegendContent nameKey="name" />}
                 className="flex-wrap gap-2 pt-2 [&>*]:basis-auto [&>*]:justify-center"

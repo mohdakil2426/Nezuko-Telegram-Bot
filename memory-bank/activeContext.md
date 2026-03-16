@@ -1,20 +1,32 @@
 # Active Context: Current State
 
-> **Last Updated**: 2026-03-16 07:30 IST
-> **Phase**: 138 — CI Failure Analysis & Fixes Applied ✅
+> **Last Updated**: 2026-03-16 09:12 IST
+> **Phase**: 140 — Dependency Update & Recharts 3 Migration ✅
 
 ---
 
 ## Top Priority
 
-CI analysis complete. Two discrete failures were found and fixed:
+1. **Reseed live backend** — The canonical backend was reset; owner login → dashboard seed → vault configuration (master key) → re-adding bot instances.
+2. **Fix realtime Socket.IO auth** — Bot still falls back to polling when InsForge Socket.IO rejects its token.
+3. **Monitor first real data writes** — Confirm logs/status/verification/api telemetry populate as expected after reseed.
 
-1. **Docker build failure** (grammY CI) — `oven/bun:1.2` incompatible with current `bun.lock` text lockfile format. Fixed by upgrading to `oven/bun:latest` in `apps/grammy/Dockerfile`. Committed & pushed as `fix(grammy): upgrade Docker bun image from 1.2 to latest`.
-2. **Release Please PR permission failure** — GitHub repo setting "Allow GitHub Actions to create and approve pull requests" is disabled. Must be enabled manually: **Settings → Actions → General → Workflow permissions → ☑ Allow GitHub Actions to create and approve pull requests → Save**. The `release-please.yml` workflow itself is correctly configured with `pull-requests: write` permission.
+## What Changed In Phase 140
 
-Next highest-value work: fix realtime Socket.IO auth for the bot (still degraded, falls back to polling), then test live owner login end-to-end.
+### Comprehensive Dependency Update
 
-## What Changed In Phase 138
+- **Global Packages**: All dependencies bumped to latest stable versions using `bun update` and `npm-check-updates`.
+  - **Node.js**: 24.x
+  - **ESLint**: 10.0.3 (Flat Config verified for both apps)
+  - **Recharts**: 3.8.0
+  - **React**: 19.2.4
+  - **TypeScript**: 5.9.3
+- **Recharts 3.0 Migration**:
+  - Migrated 6 major chart components from `Cell` based color mapping to data-driven `fill` props or `shape` logic.
+  - Fixed type regressions in shared `ui/chart.tsx` component; internal props like `payload` and `active` are now explicitly typed as optional in custom content components to satisfy stricter v3.0 types.
+- **Provider Stabilization**:
+  - Resolved `InsForgeClient` type conflict in `insforge-provider.tsx` where separate private property declarations (version drift between SDK and Next.js wrapper) caused type-check failure. Fixed with a safe type cast.
+- **Quality Gates**: Verified all checks (type-check, lint, build, tests) passing for both `apps/web` and `apps/grammy`.
 
 ### CI Failure Analysis & Fixes
 

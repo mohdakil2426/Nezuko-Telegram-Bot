@@ -20,7 +20,7 @@ interface InsforgeProviderProps {
 export function InsforgeProvider({ children, initialState }: InsforgeProviderProps) {
   return (
     <InsforgeBrowserProvider
-      client={insforge}
+      client={insforge as any}
       afterSignInUrl="/dashboard"
       initialState={initialState}
     >

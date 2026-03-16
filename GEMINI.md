@@ -97,14 +97,14 @@ nezuko/
 
 ## Tech Stack
 
-| Layer        | Stack                                                                                                                  |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| **Bot**      | TypeScript 5.9.3, grammY 1.41.1, Bun, Node 22, ioredis 5.10.0, pino 10.3.1, zod 4.3.6, Socket.IO client 4.8.3          |
-| **Frontend** | Next.js 16.1.6, React 19.2.3, TypeScript 5.9.3, Tailwind v4, shadcn/ui, Recharts 2.15.4, Motion 12+, TanStack Query v5 |
-| **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions                                             |
-| **Auth**     | InsForge Auth, `InsforgeMiddleware`, `insforge_session` cookie, RLS                                                    |
-| **Infra**    | Docker, Vercel, Caddy                                                                                                  |
-| **Package**  | `bun` for all TypeScript apps (grammy + web)                                                                           |
+| Layer        | Stack                                                                                                                 |
+| ------------ | --------------------------------------------------------------------------------------------------------------------- |
+| **Bot**      | TypeScript 5.9.3, grammY 1.41.1, Bun, Node 24, ioredis 5.10.0, pino 10.3.1, zod 4.3.6, Socket.IO client 4.8.3         |
+| **Frontend** | Next.js 16.1.6, React 19.2.4, TypeScript 5.9.3, Tailwind v4, shadcn/ui, Recharts 3.8.0, Motion 12+, TanStack Query v5 |
+| **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions                                            |
+| **Auth**     | InsForge Auth, `InsforgeMiddleware`, `insforge_session` cookie, RLS                                                   |
+| **Infra**    | Docker, Vercel, Caddy                                                                                                 |
+| **Package**  | `bun` for all TypeScript apps (grammy + web)                                                                          |
 
 ---
 

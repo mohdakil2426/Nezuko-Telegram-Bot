@@ -6,7 +6,7 @@
  */
 
 import * as React from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -89,7 +89,15 @@ export function LatencyDistributionChart() {
               config={chartConfig}
               className="aspect-auto h-[250px] w-full md:h-[300px]"
             >
-              <BarChart accessibilityLayer data={data} layout="vertical" margin={{ left: 20 }}>
+                <BarChart
+                  accessibilityLayer
+                  data={data.map((entry, index) => ({
+                    ...entry,
+                    fill: LATENCY_COLORS[index % LATENCY_COLORS.length],
+                  }))}
+                  layout="vertical"
+                  margin={{ left: 20 }}
+                >
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
                 <YAxis
@@ -102,11 +110,7 @@ export function LatencyDistributionChart() {
                   tick={{ fontSize: 12 }}
                 />
                 <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                  {data.map((entry, index) => (
-                    <Cell key={entry.bucket} fill={LATENCY_COLORS[index % LATENCY_COLORS.length]} />
-                  ))}
-                </Bar>
+                <Bar dataKey="count" radius={[0, 4, 4, 0]} />
                 <ChartLegend
                   content={<ChartLegendContent />}
                   className="flex-wrap gap-2 pt-2 [&>*]:basis-auto [&>*]:justify-center"

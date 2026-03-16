@@ -1,5 +1,8 @@
 # Technical Context: Stack & Development
 
+> **Last Updated**: 2026-03-16 09:12 IST
+> **Phase**: 140 — Dependency Update & Recharts 3 Migration ✅
+
 ## Active Technology Stack
 
 ### Bot (grammY — TypeScript, ACTIVE ✅)
@@ -26,10 +29,10 @@
 | **typescript**                  | 5.9.3   | Type checking (strict mode, NodeNext resolution)                  |
 | **bun test**                    | Latest  | Native Bun test runner                                            |
 | **prettier**                    | 3.8.1   | Code formatting (root `.prettierrc`, no tailwind plugin)          |
-| **eslint**                      | 9.28.0  | Linting (flat config with TypeScript ESLint)                      |
+| **eslint**                      | 10.0.3  | Linting (flat config with TypeScript ESLint)                      |
 | **bun**                         | Latest  | Package manager + dev server                                      |
 
-> **⚠️ Runtime**: Bun for development, Node.js 22 for production (Dockerfile).
+> **⚠️ Runtime**: Bun for development, Node.js 24 for production (Dockerfile).
 > **⚠️ ESM only**: `"type": "module"` in package.json, `NodeNext` module resolution.
 
 ### Frontend (TypeScript, ACTIVE ✅)
@@ -37,18 +40,19 @@
 | Package          | Version | Purpose                                                         |
 | ---------------- | ------- | --------------------------------------------------------------- |
 | Next.js          | 16.1+   | React framework (App Router) + Cache Components                 |
-| React            | 19.2+   | UI library                                                      |
-| TypeScript       | 5.9+    | Type safety                                                     |
-| Tailwind CSS     | 4.1+    | Styling                                                         |
-| TanStack Query   | 5.90+   | Server state / data fetching                                    |
+| React            | 19.2.4  | UI library                                                      |
+| TypeScript       | 5.9.3   | Type safety                                                     |
+| Tailwind CSS     | 4.2.1   | Styling                                                         |
+| TanStack Query   | 5.91.x  | Server state / data fetching                                    |
 | shadcn/ui        | Latest  | Accessible UI components                                        |
-| Recharts         | 2.15+   | Dashboard charts (via shadcn/ui ChartContainer)                 |
-| @insforge/sdk    | Latest  | InsForge BaaS client (DB, Realtime, Storage, Functions)         |
-| @insforge/nextjs | 1.1.7+  | InsForge auth for Next.js                                       |
-| motion           | 12.27+  | React micro-animations (LazyMotion optimized)                   |
-| zod              | 3.24+   | Schema validation                                               |
-| react-hook-form  | 7.54+   | Form management                                                 |
+| Recharts         | 3.8.0   | Dashboard charts (via shadcn/ui ChartContainer)                 |
+| @insforge/sdk    | 1.1.6   | InsForge BaaS client (DB, Realtime, Storage, Functions)         |
+| @insforge/nextjs | 1.1.7   | InsForge auth for Next.js                                       |
+| motion           | 12.36.0 | React micro-animations (LazyMotion optimized)                   |
+| zod              | 4.3.6   | Schema validation                                               |
+| react-hook-form  | 7.71.x  | Form management                                                 |
 | prettier         | 3.8.1   | Code formatting (`apps/web/.prettierrc` — adds tailwind plugin) |
+| eslint           | 10.0.3  | Linting (flat config)                                           |
 
 ### Infrastructure
 
@@ -297,4 +301,4 @@ main()
 
 ---
 
-_Last Updated: 2026-03-14 (Phase 126 — Bun migration complete; native `bun test` runner integrated; 163/163 tests passing)_
+_Last Updated: 2026-03-16 (Phase 137 — Test Isolation migration finalized; full quality gates passing)_
