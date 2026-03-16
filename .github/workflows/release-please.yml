@@ -25,14 +25,8 @@ on:
     branches: [main]
 
 permissions:
-  contents: write # Create releases and tags
+  contents: write      # Create releases and tags
   pull-requests: write # Open and update release PRs
-
-env:
-  # googleapis/release-please-action@v4 runs on Node.js 20 (deprecated Jun 2026).
-  # This opts into Node.js 24 now, silencing the deprecation warning.
-  # Remove this line once a Node.js 24-native release-please-action is published.
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   release-please:
@@ -41,6 +35,12 @@ jobs:
 
     steps:
       - uses: googleapis/release-please-action@v4.4.0
+        # Opt into node.js 24 runtime now to silence the node.js 20 deprecation
+        # warning. v4.x hardcodes node20 internally; this env var tells the runner
+        # to use node.js 24 instead. Remove once release-please-action ships native
+        # node.js 24 support (expected in a future v4.x or v5 release).
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
         with:
           # Token with write permissions for releases + PRs
           token: ${{ secrets.GITHUB_TOKEN }}
