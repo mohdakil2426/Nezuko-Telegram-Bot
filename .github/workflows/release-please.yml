@@ -13,6 +13,10 @@
 #   chore,ci,docs,style,refactor,test → no version bump (appear in changelog)
 #
 # Monorepo: grammy (apps/grammy) and web (apps/web) are versioned independently.
+#
+# PREREQUISITE: Repo must have "Allow GitHub Actions to create and approve
+# pull requests" enabled:
+#   Settings → Actions → General → Workflow permissions → ☑ enable → Save
 # ─────────────────────────────────────────────────────────────────────────────
 name: Release Please
 
@@ -21,8 +25,14 @@ on:
     branches: [main]
 
 permissions:
-  contents: write       # Create releases and tags
-  pull-requests: write  # Open and update release PRs
+  contents: write # Create releases and tags
+  pull-requests: write # Open and update release PRs
+
+env:
+  # googleapis/release-please-action@v4 runs on Node.js 20 (deprecated Jun 2026).
+  # This opts into Node.js 24 now, silencing the deprecation warning.
+  # Remove this line once a Node.js 24-native release-please-action is published.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   release-please:
@@ -30,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v4.4.0
         with:
           # Token with write permissions for releases + PRs
           token: ${{ secrets.GITHUB_TOKEN }}
