@@ -1,7 +1,7 @@
 # Technical Context: Stack & Development
 
-> **Last Updated**: 2026-03-16 09:12 IST
-> **Phase**: 140 — Dependency Update & Recharts 3 Migration ✅
+> **Last Updated**: 2026-03-16 18:40 IST
+> **Phase**: 141 — GitHub Actions Hardening ✅
 
 ## Active Technology Stack
 
@@ -64,28 +64,30 @@
 | **Redis**                | L1 cache, idempotency locks, moderation state (on same Droplet) | ⏳ Awaits Droplet                         |
 | **Docker**               | Bot containerisation (`apps/grammy/Dockerfile`)                 | ✅ Fixed (Bun build)                      |
 | **systemd**              | Bot process management on Droplet (`nezuko-grammy.service`)     | ✅ Service file ready                     |
-| **GitHub Actions**       | CI/CD for both apps                                             | ✅ 7 workflows active                     |
+| **GitHub Actions**       | CI/CD for both apps                                             | ✅ Hardened workflows active              |
 
 ### CI/CD Workflows
 
 | Workflow        | File                                   | Trigger                                      | Purpose                                   |
 | --------------- | -------------------------------------- | -------------------------------------------- | ----------------------------------------- |
-| grammY CI       | `.github/workflows/grammy-ci.yml`      | Push/PR → `apps/grammy/**`                   | Auto-fix + quality gates                  |
-| grammY Deploy   | `.github/workflows/grammy-deploy.yml`  | After grammy-ci passes on `main` (or manual) | rsync → Droplet → systemctl restart       |
-| Web CI          | `.github/workflows/web-ci.yml`         | Push/PR → `apps/web/**`                      | Auto-fix + quality gates + Vercel deploy  |
+| grammY CI       | `.github/workflows/grammy-ci.yml`      | Push/PR → `apps/grammy/**`                   | Quality gates + Docker build validation   |
+| Web CI          | `.github/workflows/web-ci.yml`         | Push/PR → `apps/web/**`                      | Quality gates + Vercel deploy hook        |
 | CodeQL Security | `.github/workflows/codeql.yml`         | Push to `main` + weekly Monday               | Static security analysis (v4, JS/TS)      |
 | Commitlint      | `.github/workflows/commitlint.yml`     | Push/PR → `main`                             | Conventional commit format enforcement    |
 | Release Please  | `.github/workflows/release-please.yml` | Push → `main`                                | Auto CHANGELOG + GitHub Releases + semver |
-| Bundle Size     | `.github/workflows/bundle-size.yml`    | Push/PR → `apps/web/**`                      | Next.js chunk size tracking per commit    |
+| Bundle Size     | `.github/workflows/bundle-size.yml`    | Push/PR → `apps/web/**`                      | Lightweight Next.js bundle snapshot       |
+| Dependency Review | `.github/workflows/dependency-review.yml` | PR → `main` (manifest/lockfile changes) | Blocks risky runtime dependency changes   |
 | Dependabot      | `.github/dependabot.yml`               | Weekly Monday                                | Grouped dependency security/version PRs   |
 
-**Auto-fix behavior** (on `main` push only): Prettier + ESLint `--fix` run before quality gates. Commits `fix(ci): auto-fix code quality [prettier, eslint] [skip ci]` if dirty.
+**CI behavior**: workflows are verification-only. Formatting and linting are strict gates; CI does not rewrite branches.
+
+**Bun versioning**: CI and the bot Docker builder are pinned to Bun `1.2.23` via root `.bun-version` and workflow env.
 
 **Branch protection (`main`):** `Quality Gates` status check required. Owner bypass allowed (solo dev).
 
 **Vercel deploy** — triggered only via `VERCEL_DEPLOY_HOOK_URL` secret after quality gates pass. Native Vercel auto-deploy is disabled (`Ignored Build Step: exit 1`).
 
-**grammY deploy flow**: CI artifact → rsync to Droplet → `bun install --production` → `systemctl restart nezuko-grammy` → 60s health poll → auto-rollback on failure.
+**grammY deploy flow**: GitHub push to `main` triggers DigitalOcean App Platform via `.do/app.yaml` (`deploy_on_push: true`).
 
 **Release Please config**: `release-please-config.json` (monorepo — `apps/grammy` as `nezuko-grammy`, `apps/web` as `nezuko-web`). Version state in `.release-please-manifest.json`. Conventional commits drive semver bumps: `feat` = minor, `fix` = patch, `feat!` = major.
 
@@ -301,4 +303,4 @@ main()
 
 ---
 
-_Last Updated: 2026-03-16 (Phase 137 — Test Isolation migration finalized; full quality gates passing)_
+_Last Updated: 2026-03-16 (Phase 141 — GitHub Actions hardening finalized)_

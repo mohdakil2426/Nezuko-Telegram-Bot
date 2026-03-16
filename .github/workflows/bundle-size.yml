@@ -1,17 +1,17 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Nezuko — Next.js Bundle Size Analysis
 #
-# Tracks the size of the Next.js production bundle on every push to main.
-# Uses hashicorp/nextjs-bundle-analysis (most popular Next.js-specific action).
+# Captures a lightweight Next.js bundle snapshot on every web push/PR.
 #
 # What it does:
 #   - Builds the Next.js app
-#   - Parses .next/build-manifest.json and build stats
-#   - Stores bundle stats as a GitHub artifact
-#   - On PRs: compares against baseline and comments with size diff
-#   - Fails if a single bundle chunk exceeds the configured budget
+#   - Uploads the generated `.next/` directory as a short-lived artifact
+#   - Prints the heaviest emitted chunk files into the step summary
 #
-# Setup: No extra config needed — works out of the box with Next.js.
+# What it does NOT do:
+#   - comment on PRs
+#   - enforce bundle budgets
+#   - diff against a historical baseline automatically
 # ─────────────────────────────────────────────────────────────────────────────
 name: Bundle Size
 
@@ -31,7 +31,7 @@ defaults:
     working-directory: apps/web
 
 env:
-  BUN_VERSION: "latest"
+  BUN_VERSION: "1.2.23"
   NEXT_PUBLIC_INSFORGE_BASE_URL: "https://ci-stub.insforge.app"
   NEXT_PUBLIC_INSFORGE_ANON_KEY: "ci-stub-anon-key"
   NEXT_PUBLIC_USE_MOCK: "false"
@@ -42,27 +42,21 @@ jobs:
     name: Analyze Bundle
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Setup Bun ${{ env.BUN_VERSION }}
-        uses: oven-sh/setup-bun@v2
+      - name: Setup app toolchain
+        uses: ./.github/actions/setup-bun-app
         with:
+          app-path: apps/web
+          cache-prefix: web-deps
+          lockfile-path: apps/web/bun.lock
           bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Cache web dependencies
-        uses: actions/cache@v5
-        id: web-deps-cache
-        with:
-          path: apps/web/node_modules
-          key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/bun.lock') }}
-          restore-keys: web-deps-${{ runner.os }}-
-
-      - name: Install dependencies
-        if: steps.web-deps-cache.outputs.cache-hit != 'true'
-        run: bun install --frozen-lockfile
 
       # ── Build and capture bundle stats ─────────────────────────────────────
       - name: Build Next.js (webpack, with bundle stats)
@@ -72,8 +66,7 @@ jobs:
           # Tell Next.js to emit build stats for analysis
           ANALYZE: "false"
 
-      # ── Upload .next/analyze stats as artifact ─────────────────────────────
-      # On the next run these are compared to produce a diff.
+      # ── Upload .next output as a short-lived artifact ──────────────────────
       - name: Upload bundle stats
         uses: actions/upload-artifact@v7
         with:

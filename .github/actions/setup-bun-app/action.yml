@@ -1,0 +1,39 @@
+name: Setup Bun App
+description: Checkout-independent Bun setup, dependency cache restore, and install for app packages
+
+inputs:
+  app-path:
+    description: Relative path to the Bun app directory
+    required: true
+  cache-prefix:
+    description: Prefix to isolate dependency caches per app
+    required: true
+  lockfile-path:
+    description: Relative path to the Bun lockfile for cache key invalidation
+    required: true
+  bun-version:
+    description: Bun version to install
+    required: false
+    default: "1.2.23"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: ${{ inputs.bun-version }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      id: deps-cache
+      with:
+        path: ${{ inputs.app-path }}/node_modules
+        key: ${{ inputs.cache-prefix }}-${{ runner.os }}-bun-${{ inputs.bun-version }}-${{ hashFiles(inputs.lockfile-path) }}
+        restore-keys: ${{ inputs.cache-prefix }}-${{ runner.os }}-bun-${{ inputs.bun-version }}-
+
+    - name: Install dependencies
+      if: steps.deps-cache.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: ${{ inputs.app-path }}
+      run: bun install --frozen-lockfile

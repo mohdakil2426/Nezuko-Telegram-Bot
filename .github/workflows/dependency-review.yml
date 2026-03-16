@@ -1,0 +1,29 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/**/package.json"
+      - "apps/**/bun.lock"
+      - ".github/workflows/dependency-review.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    name: Review Dependency Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          fail-on-scopes: runtime

@@ -166,13 +166,9 @@ CI bot commits use `[skip ci]` suffix — never use this yourself.
 
 ### CI Pipeline — What Happens on `git push origin main`
 
-**Auto-fixed by CI (no action needed):**
+**CI verifies only — it does not rewrite your branch.**
 
-- Prettier formatting → `prettier --write`
-- ESLint fixable rules → `eslint --fix`
-- Committed as: `fix(ci): auto-fix code quality [prettier, eslint] [skip ci]`
-
-**NOT auto-fixed — you MUST fix before pushing:**
+**You MUST fix before pushing:**
 
 - TypeScript errors → type-check gate fails
 - Unfixable lint errors → lint gate fails
@@ -239,12 +235,13 @@ cd apps/web && bun run build           # zero errors
 
 | Workflow             | Trigger                       | Purpose                                  |
 | -------------------- | ----------------------------- | ---------------------------------------- |
-| `web-ci.yml`         | push/PR → main (web paths)    | Auto-fix + quality gates + Vercel deploy |
-| `grammy-ci.yml`      | push/PR → main (grammy paths) | Auto-fix + quality gates                 |
+| `web-ci.yml`         | push/PR → main (web paths)    | Quality gates + Vercel deploy            |
+| `grammy-ci.yml`      | push/PR → main (grammy paths) | Quality gates                            |
 | `codeql.yml`         | push + weekly                 | Security vulnerability scan              |
 | `commitlint.yml`     | push/PR → main                | Enforce conventional commit format       |
 | `release-please.yml` | push → main                   | Auto CHANGELOG + GitHub releases         |
 | `bundle-size.yml`    | push/PR → main (web paths)    | Next.js bundle size tracking             |
+| `dependency-review.yml` | PR → main (manifest/lockfile changes) | Block risky dependency changes      |
 | `dependabot.yml`     | weekly Monday                 | Auto dependency security PRs             |
 
 **Branch protection (`main`):** `Quality Gates` status check required. Owner can bypass for direct pushes (solo dev setup).
@@ -261,4 +258,4 @@ cd apps/web && bun run build           # zero errors
 
 ---
 
-_Last Updated: 2026-03-16 (CI/CD rules, commit format, workflows, branch protection, auto-fix behavior added)_
+_Last Updated: 2026-03-16 (CI/CD rules hardened, auto-fix removed, dependency review added)_

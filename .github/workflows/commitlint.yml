@@ -10,11 +10,10 @@
 # Examples:
 #   feat(bot): add /help command
 #   fix(web): resolve dashboard login loop
-#   ci: add auto-format step
+#   ci: tighten workflow permissions
 #   feat!: breaking API change  ← triggers major version bump
 #
 # Runs on PRs (validates all commits in the PR) and pushes to main.
-# Bot auto-fix commits [skip ci] are excluded from linting.
 # ─────────────────────────────────────────────────────────────────────────────
 name: Commit Lint
 
@@ -23,6 +22,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   commitlint:

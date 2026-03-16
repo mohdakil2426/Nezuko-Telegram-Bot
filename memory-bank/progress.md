@@ -1,9 +1,9 @@
 # Progress: What Works, What's Left
 
-## Current Phase: 140 — Dependency Update & Recharts 3 Migration ✅
+## Current Phase: 141 — GitHub Actions Hardening ✅
 
 > **Active Runtime**: `apps/grammy/` (Bun + grammY v1.41.1)
-> **Last Updated**: 2026-03-16 09:12 IST
+> **Last Updated**: 2026-03-16 18:40 IST
 
 ---
 
@@ -54,7 +54,7 @@
 | DigitalOcean App Platform (bot runtime) | ✅ Online                                                                                         |
 | Upstash Redis (`rediss://` TLS)         | ✅ Connected                                                                                      |
 | InsForge BaaS (PostgreSQL + Realtime)   | ✅ Healthy                                                                                        |
-| GitHub Actions CI (grammy + web)        | ✅ 7 workflows: grammy-ci, web-ci, grammy-deploy, codeql, commitlint, release-please, bundle-size |
+| GitHub Actions CI (grammy + web)        | ✅ Hardened: web-ci, grammy-ci, codeql, commitlint, release-please, bundle-size, dependency-review |
 | grammY Test Isolation                   | ✅ Migrated `tests/grammy` → `apps/grammy/tests` (package portability)                            |
 | Vercel (web hosting)                    | ✅ Deploy gated on CI (`web-ci` quality job must pass first)                                      |
 | Dependabot                              | ✅ Grouped weekly PRs for web + grammy + actions                                                  |
@@ -148,7 +148,7 @@
 | `grammy format:check`      | ✅ clean                                                      |
 | `grammy test`              | ✅ 163/163 pass (in local `apps/grammy/tests/`)               |
 | `grammy build`             | ✅ 0 errors                                                   |
-| `grammy docker build`      | ✅ fixed (`oven/bun:latest` in Dockerfile)                    |
+| `grammy docker build`      | ✅ fixed (`oven/bun:1.2.23` in Dockerfile)                    |
 | `web type-check`           | ✅ 0 errors (recharts 3.x + eslint 10)                        |
 | `web lint`                 | ✅ 0 warnings                                                 |
 | `web knip`                 | ✅ 0 errors                                                   |
@@ -166,9 +166,10 @@
 | `codeql.yml`         | ✅ Workflow live, weekly + push triggered                                          |
 | `commitlint.yml`     | ✅ Passing (new commits lowercase-compliant)                                       |
 | `release-please.yml` | ✅ `v4.4.0` pinned, node.js 24 opt-in at step scope, PR permission enabled in repo |
-| `bundle-size.yml`    | ✅ Tracks Next.js chunk sizes per commit                                           |
+| `bundle-size.yml`    | ✅ Lightweight Next.js bundle snapshot workflow                                    |
 | `dependabot.yml`     | ✅ Weekly grouped updates configured                                               |
-| Auto-fix CI          | ✅ Prettier + ESLint auto-commit on dirty push                                     |
+| `dependency-review.yml` | ✅ PR dependency risk gate added                                                |
+| Auto-fix CI          | ✅ Removed; CI now validates without rewriting branch history                      |
 | Vercel deploy gate   | ✅ Hook-only deploy, native auto-deploy disabled; lockfile fixed                   |
 | Branch protection    | ✅ `Quality Gates` required status check on `main`                                 |
 | README badges        | ✅ Web CI, Bot CI, CodeQL, License badges live                                     |

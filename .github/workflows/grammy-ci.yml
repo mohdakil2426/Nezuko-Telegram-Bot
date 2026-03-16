@@ -8,8 +8,8 @@
 #   GitHub → Settings → Branches → Add rule → main
 #   → "Require status checks to pass" → add "grammY Bot CI / Quality Gates"
 #
-# AUTO-FORMAT: If Prettier finds dirty files, CI auto-fixes and commits them
-# back. No failed builds for formatting mistakes.
+# FORMAT POLICY: CI does not push formatting commits back to the branch.
+# Formatting remains a strict gate so the tested SHA always matches the branch SHA.
 # ─────────────────────────────────────────────────────────────────────────────
 name: grammY Bot CI
 
@@ -34,81 +34,29 @@ defaults:
     working-directory: apps/grammy
 
 env:
-  BUN_VERSION: "latest"
+  BUN_VERSION: "1.2.23"
 
 jobs:
   quality:
     name: Quality Gates
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # Allow the job to push auto-format commits back to the branch.
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── Bun setup ──────────────────────────────────────────────────────────
-      - name: Setup Bun ${{ env.BUN_VERSION }}
-        uses: oven-sh/setup-bun@v2
+      - name: Setup app toolchain
+        uses: ./.github/actions/setup-bun-app
         with:
+          app-path: apps/grammy
+          cache-prefix: grammy-deps
+          lockfile-path: apps/grammy/bun.lock
           bun-version: ${{ env.BUN_VERSION }}
-
-      # ── Cache node_modules ─────────────────────────────────────────────────
-      - name: Cache grammy dependencies
-        uses: actions/cache@v5
-        id: grammy-deps-cache
-        with:
-          path: apps/grammy/node_modules
-          key: grammy-deps-${{ runner.os }}-${{ hashFiles('apps/grammy/bun.lock') }}
-          restore-keys: grammy-deps-${{ runner.os }}-
-
-      - name: Install dependencies
-        if: steps.grammy-deps-cache.outputs.cache-hit != 'true'
-        run: bun install --frozen-lockfile
-
-      # ── Auto-fix: Prettier + ESLint → single commit if dirty ───────────────
-      # What gets auto-fixed:
-      #   ✅ Prettier  → bun run format (src/ + tests/)
-      #   ✅ ESLint    → eslint src --fix (fixable rule violations)
-      # What is NOT auto-fixed (requires manual fix + re-push):
-      #   ❌ TypeScript errors  → type-check gate will fail
-      #   ❌ Unfixable lint     → lint gate will fail after --fix
-      #   ❌ Build / test errors → build/test gates will fail
-      # Only runs on direct pushes to main (PRs should fix locally).
-      - name: Auto-fix (Prettier + ESLint)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          FIXED_TOOLS=""
-
-          # 1. Prettier (root .prettierrc, covers src/ + tests/)
-          bun run format
-          if ! git diff --quiet; then
-            FIXED_TOOLS="prettier"
-          fi
-
-          # 2. ESLint --fix (ignore exit code — unfixable issues handled by lint gate)
-          bun x eslint src --fix --max-warnings 9999 || true
-          if ! git diff --quiet && [[ "$FIXED_TOOLS" != *"eslint"* ]]; then
-            FIXED_TOOLS="${FIXED_TOOLS:+$FIXED_TOOLS, }eslint"
-          fi
-
-          # Commit all auto-fixes in one go
-          if ! git diff --quiet || ! git diff --cached --quiet; then
-            git config user.name  "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add -A
-            git commit -m "fix(ci): auto-fix code quality [${FIXED_TOOLS}] [skip ci]"
-            git push
-            echo "AUTO_FIXED=true" >> "$GITHUB_ENV"
-            echo "FIXED_TOOLS=$FIXED_TOOLS" >> "$GITHUB_ENV"
-          else
-            echo "AUTO_FIXED=false" >> "$GITHUB_ENV"
-          fi
 
       # ── Gate 1: TypeScript ─────────────────────────────────────────────────
       - name: Type check

@@ -1,7 +1,7 @@
 # Active Context: Current State
 
-> **Last Updated**: 2026-03-16 09:12 IST
-> **Phase**: 140 — Dependency Update & Recharts 3 Migration ✅
+> **Last Updated**: 2026-03-16 18:40 IST
+> **Phase**: 141 — GitHub Actions Hardening ✅
 
 ---
 
@@ -10,6 +10,23 @@
 1. **Reseed live backend** — The canonical backend was reset; owner login → dashboard seed → vault configuration (master key) → re-adding bot instances.
 2. **Fix realtime Socket.IO auth** — Bot still falls back to polling when InsForge Socket.IO rejects its token.
 3. **Monitor first real data writes** — Confirm logs/status/verification/api telemetry populate as expected after reseed.
+
+## What Changed In Phase 141
+
+### GitHub Actions Hardening
+
+- **Auto-fix push-back removed** from `web-ci.yml` and `grammy-ci.yml`; CI is now verification-only so the tested SHA always matches the branch SHA.
+- **Exact Bun pinning** added via root `.bun-version` (`1.2.23`) and workflow env. The bot Docker builder now also uses `oven/bun:1.2.23`.
+- **Shared setup action** added at `.github/actions/setup-bun-app/action.yml` to centralize Bun setup, dependency cache restoration, and install steps for both apps.
+- **Vercel deploy hook hardened**: `web-ci.yml` now fails on non-2xx responses from `VERCEL_DEPLOY_HOOK_URL`.
+- **Dependency review workflow** added: `.github/workflows/dependency-review.yml` runs on PRs touching `package.json` or `bun.lock`.
+- **Permissions tightened**: explicit read-only `permissions` added where jobs do not need write access.
+- **Workflow drift cleaned up**: archived `grammy-deploy.yml` deleted; bundle-size comments updated to match actual behavior.
+
+### Follow-up Manual GitHub Settings
+
+- Add `Dependency Review / Review Dependency Changes` as a required branch protection check if merge blocking is desired.
+- Full-length SHA pinning policy is still a GitHub settings/process concern; workflows remain version-tag pinned, not commit-SHA pinned.
 
 ## What Changed In Phase 140
 

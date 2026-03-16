@@ -8,9 +8,8 @@
 # Setup: GitHub → Settings → Branches → Branch protection rules → main
 #   → "Require status checks to pass" → add "Web Dashboard CI / Quality Gates"
 #
-# AUTO-FORMAT: If Prettier finds dirty files, CI auto-fixes and commits them
-# back to the branch. The push triggers a fresh CI run — which then proceeds
-# to all gates clean. No failed builds for formatting mistakes.
+# FORMAT POLICY: CI does not push formatting commits back to the branch.
+# Formatting remains a strict gate so the tested SHA always matches the branch SHA.
 # ─────────────────────────────────────────────────────────────────────────────
 name: Web Dashboard CI
 
@@ -35,7 +34,7 @@ defaults:
     working-directory: apps/web
 
 env:
-  BUN_VERSION: "latest"
+  BUN_VERSION: "1.2.23"
   # Stub public env vars so Next.js can compile in CI without real secrets.
   # These are build-time NEXT_PUBLIC_ variables only — no server secrets here.
   NEXT_PUBLIC_INSFORGE_BASE_URL: "https://ci-stub.insforge.app"
@@ -48,78 +47,22 @@ jobs:
     name: Quality Gates
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # Allow the job to push auto-format commits back to the branch.
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          # Fetch full history so we can push commits back.
           fetch-depth: 0
-          # Use the GitHub Actions token so auto-format commits trigger CI.
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── Bun setup ──────────────────────────────────────────────────────────
-      - name: Setup Bun ${{ env.BUN_VERSION }}
-        uses: oven-sh/setup-bun@v2
+      - name: Setup app toolchain
+        uses: ./.github/actions/setup-bun-app
         with:
+          app-path: apps/web
+          cache-prefix: web-deps
+          lockfile-path: apps/web/bun.lock
           bun-version: ${{ env.BUN_VERSION }}
-
-      # ── Cache node_modules between runs ────────────────────────────────────
-      - name: Cache web dependencies
-        uses: actions/cache@v5
-        id: web-deps-cache
-        with:
-          path: apps/web/node_modules
-          key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/bun.lock') }}
-          restore-keys: web-deps-${{ runner.os }}-
-
-      - name: Install dependencies
-        if: steps.web-deps-cache.outputs.cache-hit != 'true'
-        run: bun install --frozen-lockfile
-
-      # ── Auto-fix: Prettier + ESLint → single commit if dirty ───────────────
-      # Runs BEFORE quality gate checks.
-      # What gets auto-fixed:
-      #   ✅ Prettier  → bun x prettier src --write
-      #   ✅ ESLint    → eslint src --fix  (fixable rule violations)
-      # What is NOT auto-fixed (requires manual fix + re-push):
-      #   ❌ TypeScript errors  → type-check gate will fail
-      #   ❌ Unfixable lint     → lint gate will fail after --fix
-      #   ❌ Build errors       → build gate will fail
-      # Only runs on direct pushes to main (PRs should fix locally).
-      - name: Auto-fix (Prettier + ESLint)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          FIXED_TOOLS=""
-
-          # 1. Prettier
-          bun x prettier src --write
-          if ! git diff --quiet; then
-            FIXED_TOOLS="prettier"
-          fi
-
-          # 2. ESLint --fix (ignore exit code — unfixable issues handled by lint gate)
-          bun x eslint src --fix --max-warnings 9999 || true
-          if ! git diff --quiet && [[ "$FIXED_TOOLS" != *"eslint"* ]]; then
-            FIXED_TOOLS="${FIXED_TOOLS:+$FIXED_TOOLS, }eslint"
-          fi
-
-          # Commit all auto-fixes in one go
-          if ! git diff --quiet || ! git diff --cached --quiet; then
-            git config user.name  "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add -A
-            git commit -m "fix(ci): auto-fix code quality [${FIXED_TOOLS}] [skip ci]"
-            git push
-            echo "AUTO_FIXED=true" >> "$GITHUB_ENV"
-            echo "FIXED_TOOLS=$FIXED_TOOLS" >> "$GITHUB_ENV"
-          else
-            echo "AUTO_FIXED=false" >> "$GITHUB_ENV"
-          fi
-        working-directory: apps/web
 
       # ── Gate 1: TypeScript ─────────────────────────────────────────────────
       - name: Type check
@@ -131,8 +74,7 @@ jobs:
 
       # ── Gate 3: Prettier check ─────────────────────────────────────────────
       # apps/web/.prettierrc includes prettier-plugin-tailwindcss.
-      # After the auto-format step this should always be clean on main.
-      # On PRs it acts as a strict gate — contributors must format locally.
+      # This is a strict gate on both pushes and PRs — contributors must format locally.
       - name: Format check
         run: bun x prettier src --check
 
@@ -171,8 +113,10 @@ jobs:
             du -sh .next/ 2>/dev/null || true
             echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
           fi
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Triggering Vercel deploy..." >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Vercel deploy job is eligible to run next." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   # ── Vercel Deploy — runs ONLY after quality gates pass ──────────────────────
   # Vercel auto-deploy is DISABLED via Ignored Build Step (`exit 1`).
@@ -183,6 +127,7 @@ jobs:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
     needs: quality
+    permissions: {}
     # Only deploy on pushes to main — not on PRs.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
@@ -191,8 +136,21 @@ jobs:
         # Override global working-directory (apps/web) — curl hits a URL, no app dir needed.
         working-directory: ${{ github.workspace }}
         run: |
-          curl -s -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" \
-            -o /dev/null -w "HTTP %{http_code}\n"
+          response_file="$(mktemp)"
+          http_code="$(
+            curl --fail-with-body --show-error --silent \
+              --output "$response_file" \
+              --write-out "%{http_code}" \
+              --request POST \
+              "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+          )"
+          echo "Vercel hook response: HTTP $http_code"
+          if [ -s "$response_file" ]; then
+            echo "Response body:"
+            cat "$response_file"
+          fi
           echo "### 🚀 Vercel Deploy Triggered" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "All quality gates passed — production deploy is in progress." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Hook response: \`HTTP $http_code\`" >> "$GITHUB_STEP_SUMMARY"
