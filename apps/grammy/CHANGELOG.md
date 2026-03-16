@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/compare/nezuko-grammy-v1.1.0...nezuko-grammy-v1.1.1) (2026-03-16)
+
+
+### 🔧 CI / Tooling
+
+* harden workflows, pin bun, and add dependency review ([378d7ce](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/commit/378d7cee8de0f5ba4d610cdd14bb5208d67d3c65))
+
 ## [1.1.0](https://github.com/mohdakil2426/Nezuko-Telegram-Bot/compare/nezuko-grammy-v1.0.0...nezuko-grammy-v1.1.0) (2026-03-16)
 
 
