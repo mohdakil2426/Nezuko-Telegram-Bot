@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["esnext"],
+    "types": ["bun", "node"],
+    "typeRoots": ["../node_modules/@types"],
+    "strict": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "grammy": ["../node_modules/grammy"],
+      "grammy/types": ["../node_modules/grammy/out/types.d.ts"],
+      "@grammyjs/*": ["../node_modules/@grammyjs/*"],
+      "@/*": ["../src/*"]
+    }
+  },
+  "include": ["**/*.ts", "../src/**/*.ts"],
+  "exclude": ["node_modules"]
+}

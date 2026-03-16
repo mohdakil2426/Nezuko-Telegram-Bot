@@ -60,30 +60,45 @@
 | **Redis**                | L1 cache, idempotency locks, moderation state (on same Droplet) | ⏳ Awaits Droplet                         |
 | **Docker**               | Bot containerisation (`apps/grammy/Dockerfile`)                 | ✅ Fixed (Bun build)                      |
 | **systemd**              | Bot process management on Droplet (`nezuko-grammy.service`)     | ✅ Service file ready                     |
-| **GitHub Actions**       | CI/CD for both apps                                             | ✅ Three workflows active                 |
+| **GitHub Actions**       | CI/CD for both apps                                             | ✅ 7 workflows active                     |
 
 ### CI/CD Workflows
 
-| Workflow      | File                                  | Trigger                                          |
-| ------------- | ------------------------------------- | ------------------------------------------------ |
-| grammY CI     | `.github/workflows/grammy-ci.yml`     | Push/PR to `apps/grammy/**` or `tests/grammy/**` |
-| grammY Deploy | `.github/workflows/grammy-deploy.yml` | After grammy-ci passes on `main` (or manual)     |
-| Web CI        | `.github/workflows/web-ci.yml`        | Push/PR to `apps/web/**`                         |
-| Vercel Deploy | Vercel GitHub App (native)            | Any push to any branch (auto)                    |
+| Workflow        | File                                   | Trigger                                      | Purpose                                   |
+| --------------- | -------------------------------------- | -------------------------------------------- | ----------------------------------------- |
+| grammY CI       | `.github/workflows/grammy-ci.yml`      | Push/PR → `apps/grammy/**`                   | Auto-fix + quality gates                  |
+| grammY Deploy   | `.github/workflows/grammy-deploy.yml`  | After grammy-ci passes on `main` (or manual) | rsync → Droplet → systemctl restart       |
+| Web CI          | `.github/workflows/web-ci.yml`         | Push/PR → `apps/web/**`                      | Auto-fix + quality gates + Vercel deploy  |
+| CodeQL Security | `.github/workflows/codeql.yml`         | Push to `main` + weekly Monday               | Static security analysis (v4, JS/TS)      |
+| Commitlint      | `.github/workflows/commitlint.yml`     | Push/PR → `main`                             | Conventional commit format enforcement    |
+| Release Please  | `.github/workflows/release-please.yml` | Push → `main`                                | Auto CHANGELOG + GitHub Releases + semver |
+| Bundle Size     | `.github/workflows/bundle-size.yml`    | Push/PR → `apps/web/**`                      | Next.js chunk size tracking per commit    |
+| Dependabot      | `.github/dependabot.yml`               | Weekly Monday                                | Grouped dependency security/version PRs   |
+
+**Auto-fix behavior** (on `main` push only): Prettier + ESLint `--fix` run before quality gates. Commits `fix(ci): auto-fix code quality [prettier, eslint] [skip ci]` if dirty.
+
+**Branch protection (`main`):** `Quality Gates` status check required. Owner bypass allowed (solo dev).
+
+**Vercel deploy** — triggered only via `VERCEL_DEPLOY_HOOK_URL` secret after quality gates pass. Native Vercel auto-deploy is disabled (`Ignored Build Step: exit 1`).
 
 **grammY deploy flow**: CI artifact → rsync to Droplet → `bun install --production` → `systemctl restart nezuko-grammy` → 60s health poll → auto-rollback on failure.
 
-**Required GitHub Secrets** (for bot deploy):
+**Release Please config**: `release-please-config.json` (monorepo — `apps/grammy` as `nezuko-grammy`, `apps/web` as `nezuko-web`). Version state in `.release-please-manifest.json`. Conventional commits drive semver bumps: `feat` = minor, `fix` = patch, `feat!` = major.
+
+**Commitlint config**: `commitlint.config.mjs` — 11 types, 100-char limit, lowercase subject. Ignores `[skip ci]`, Dependabot, Release Please commits.
+
+**Required GitHub Secrets**:
 
 ```
-DO_HOST            Droplet IP/hostname
-DO_PORT            SSH port (22)
-DO_USER            Service user (nezuko)
-DO_SSH_PRIVATE_KEY Ed25519 private key
-DO_KNOWN_HOSTS     ssh-keyscan -H <droplet-ip> output
-GRAMMY_REMOTE_DIR  /opt/nezuko/grammy
-GRAMMY_SERVICE     nezuko-grammy
-GRAMMY_HEALTH_URL  http://127.0.0.1:8080/health
+DO_HOST              Droplet IP/hostname
+DO_PORT              SSH port (22)
+DO_USER              Service user (nezuko)
+DO_SSH_PRIVATE_KEY   Ed25519 private key
+DO_KNOWN_HOSTS       ssh-keyscan -H <droplet-ip> output
+GRAMMY_REMOTE_DIR    /opt/nezuko/grammy
+GRAMMY_SERVICE       nezuko-grammy
+GRAMMY_HEALTH_URL    http://127.0.0.1:8080/health
+VERCEL_DEPLOY_HOOK_URL  Vercel deploy hook (web CI → Vercel)
 ```
 
 | **Bun** | Package manager (grammy + web) |
@@ -162,10 +177,10 @@ Run these within their respective `apps/<name>` directories.
 cd apps/grammy
 bun run type-check    # tsc --noEmit → 0 errors
 bun run lint          # eslint src/ --max-warnings 0 → 0 warnings
-bun run format        # prettier src/ ../../tests/grammy --write
-bun run format:check  # prettier src/ ../../tests/grammy --check
+bun run format        # prettier src/ tests/ --write
+bun run format:check  # prettier src/ tests/ --check
 bun run knip          # knip → 0 issues
-bun run test          # bun test → 163/163 passed
+bun run test          # bun test tests/ → 163/163 passed
 bun run test:coverage # bun test --coverage (80% thresholds)
 bun run build         # bun x tsc -p tsconfig.build.json → dist/
 
@@ -180,10 +195,10 @@ bun run build         # next build → 0 errors
 
 ### Prettier Configuration
 
-| File                   | Scope                     | Plugin                        |
-| ---------------------- | ------------------------- | ----------------------------- |
-| Root `.prettierrc`     | grammy src + tests/grammy | none (no tailwind)            |
-| `apps/web/.prettierrc` | web src only              | `prettier-plugin-tailwindcss` |
+| File                   | Scope              | Plugin                        |
+| ---------------------- | ------------------ | ----------------------------- |
+| Root `.prettierrc`     | grammy src + tests | none (no tailwind)            |
+| `apps/web/.prettierrc` | web src only       | `prettier-plugin-tailwindcss` |
 
 ---
 

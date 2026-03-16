@@ -142,13 +142,11 @@ The bot also re-checks stale verified users on group messages. If Telegram misse
 ```text
 nezuko/
 ├── apps/
-│   ├── grammy/       # Telegram bot runtime
+│   ├── grammy/       # Telegram bot runtime (with local /tests)
 │   └── web/          # Next.js dashboard
 ├── insforge/
 │   ├── migrations/   # SQL migrations
 │   └── functions/    # Edge functions
-├── tests/
-│   └── grammy/       # Bot tests
 ├── docs/
 ├── memory-bank/
 └── scripts/

@@ -18,13 +18,11 @@ on:
     branches: [main]
     paths:
       - "apps/grammy/**"
-      - "tests/grammy/**"
       - ".github/workflows/grammy-ci.yml"
   pull_request:
     branches: [main]
     paths:
       - "apps/grammy/**"
-      - "tests/grammy/**"
       - ".github/workflows/grammy-ci.yml"
 
 concurrency:
@@ -75,7 +73,7 @@ jobs:
 
       # ── Auto-fix: Prettier + ESLint → single commit if dirty ───────────────
       # What gets auto-fixed:
-      #   ✅ Prettier  → bun run format (src/ + tests/grammy/)
+      #   ✅ Prettier  → bun run format (src/ + tests/)
       #   ✅ ESLint    → eslint src --fix (fixable rule violations)
       # What is NOT auto-fixed (requires manual fix + re-push):
       #   ❌ TypeScript errors  → type-check gate will fail
@@ -87,7 +85,7 @@ jobs:
         run: |
           FIXED_TOOLS=""
 
-          # 1. Prettier (root .prettierrc, covers src/ + ../../tests/grammy/)
+          # 1. Prettier (root .prettierrc, covers src/ + tests/)
           bun run format
           if ! git diff --quiet; then
             FIXED_TOOLS="prettier"

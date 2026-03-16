@@ -10,11 +10,11 @@
     "start": "bun run dist/main.js",
     "type-check": "bun x tsc --noEmit",
     "lint": "bun x eslint src/ --max-warnings 0",
-    "format": "bun x prettier src/ ../../tests/grammy --write",
-    "format:check": "bun x prettier src/ ../../tests/grammy --check",
-    "test": "bun test ../../tests/grammy",
-    "test:watch": "bun test ../../tests/grammy --watch",
-    "test:coverage": "bun test ../../tests/grammy --coverage",
+    "format": "bun x prettier src/ tests/ --write",
+    "format:check": "bun x prettier src/ tests/ --check",
+    "test": "bun test tests/",
+    "test:watch": "bun test tests/ --watch",
+    "test:coverage": "bun test tests/ --coverage",
     "knip": "bun x knip"
   },
   "dependencies": {

@@ -26,6 +26,7 @@ Bot Engine (grammY / TS) ───────► fetch REST ──────�
 - **No custom API server** — both bot and web talk directly to InsForge REST / SDK.
 - **Bot DB access**: `apps/grammy/src/core/insforge-client.ts` — never raw PostgreSQL.
 - **Web DB access**: `@insforge/sdk` via `import { insforge } from "@/lib/insforge"`.
+
 ---
 
 ## Project Structure
@@ -34,14 +35,15 @@ Bot Engine (grammY / TS) ───────► fetch REST ──────�
 nezuko/
 ├── apps/
 │   ├── grammy/       # Canonical Telegram bot runtime (grammY + TypeScript)
-│   │   └── src/
-│   │       ├── composers/   # admin, channels, events, verify, fallback, migration
-│   │       ├── core/        # bot-factory, config, insforge client, realtime, cache, shutdown
-│   │       ├── database/    # repo helpers and shared DB types
-│   │       ├── middleware/  # admin-guard, group-only, permission-check, context-enricher
-│   │       ├── multi-bot/   # bot-manager, bot-lifecycle, bot-registry
-│   │       ├── services/    # verification, protection, member-sync, status-writer, command-worker
-│   │       └── utils/       # logger, health, messages, auto-delete
+│   │   ├── src/
+│   │   │   ├── composers/   # admin, channels, events, verify, fallback, migration
+│   │   │   ├── core/        # bot-factory, config, insforge client, realtime, cache, shutdown
+│   │   │   ├── database/    # repo helpers and shared DB types
+│   │   │   ├── middleware/  # admin-guard, group-only, permission-check, context-enricher
+│   │   │   ├── multi-bot/   # bot-manager, bot-lifecycle, bot-registry
+│   │   │   ├── services/    # verification, protection, member-sync, status-writer, command-worker
+│   │   │   └── utils/       # logger, health, messages, auto-delete
+│   │   └── tests/        # Isolated test suite (unit + integration)
 │   └── web/          # Next.js 16 Admin Dashboard
 │       └── src/
 │           ├── app/dashboard/
@@ -52,8 +54,6 @@ nezuko/
 ├── insforge/
 │   ├── migrations/
 │   └── functions/
-├── tests/
-│   └── grammy/       # grammY bot tests
 ├── openspec/
 ├── scripts/
 ├── memory-bank/
@@ -69,7 +69,7 @@ nezuko/
 | Type                  | Correct Location                               | Wrong                              |
 | --------------------- | ---------------------------------------------- | ---------------------------------- |
 | grammY source         | `apps/grammy/`                                 | `apps/bot/` (deleted)              |
-| grammY tests          | `tests/grammy/`                                | `apps/grammy/tests/`               |
+| grammY tests          | `apps/grammy/tests/`                           | `tests/grammy/` (deleted)          |
 | Web env               | `apps/web/.env.local`                          | Root `.env`                        |
 | grammY env            | `apps/grammy/.env`                             | Root `.env`                        |
 | Frontend deps         | `apps/web/package.json`                        | `npm`, `yarn` outside app rules    |
@@ -92,18 +92,20 @@ nezuko/
 - **Dev bypass guarded** — `NEXT_PUBLIC_DEV_LOGIN=true` only works when `NODE_ENV !== "production"`.
 - **Open redirect prevention** — validate `redirectTo` does not start with `//`.
 - **RLS on all tables** — keep InsForge security policies aligned with runtime behavior.
+
 ---
 
 ## Tech Stack
 
-| Layer        | Stack                                                                                              |
-| ------------ | -------------------------------------------------------------------------------------------------- |
-| **Bot**      | TypeScript 5.9.3, grammY 1.41.1, Bun, Node 22, ioredis 5.10.0, pino 10.3.1, zod 4.3.6, Socket.IO client 4.8.3 |
+| Layer        | Stack                                                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| **Bot**      | TypeScript 5.9.3, grammY 1.41.1, Bun, Node 22, ioredis 5.10.0, pino 10.3.1, zod 4.3.6, Socket.IO client 4.8.3          |
 | **Frontend** | Next.js 16.1.6, React 19.2.3, TypeScript 5.9.3, Tailwind v4, shadcn/ui, Recharts 2.15.4, Motion 12+, TanStack Query v5 |
-| **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions                         |
-| **Auth**     | InsForge Auth, `InsforgeMiddleware`, `insforge_session` cookie, RLS                                |
-| **Infra**    | Docker, Vercel, Caddy                                                                              |
-| **Package**  | `bun` for all TypeScript apps (grammy + web)                                                       |
+| **BaaS**     | InsForge — managed PostgreSQL, Realtime WebSocket, Storage, Edge Functions                                             |
+| **Auth**     | InsForge Auth, `InsforgeMiddleware`, `insforge_session` cookie, RLS                                                    |
+| **Infra**    | Docker, Vercel, Caddy                                                                                                  |
+| **Package**  | `bun` for all TypeScript apps (grammy + web)                                                                           |
+
 ---
 
 ## Coding Standards — TypeScript
@@ -118,50 +120,6 @@ nezuko/
 | Quotes          | Double    | project config            |
 | Trailing commas | ES5       | project config            |
 
-### TypeScript Coding Patterns
-
-```typescript
-// InsForge SDK — web
-import { insforge } from "@/lib/insforge";
-
-// grammY bot wiring
-import { Bot } from "grammy";
-import { run } from "@grammyjs/runner";
-
-// TanStack Query v5
-const { data, isPending, error } = useQuery({ ... });
-
-// Shared timing constants, not magic numbers
-refetchInterval: REFETCH_INTERVALS.STANDARD;
-staleTime: STALE_TIMES.SHORT;
-
-// Never do these:
-const value: any = something;
-```
-
-### grammY Bot Patterns
-
-```typescript
-// Canonical bot runtime lives in apps/grammy
-import { createBot } from "./core/bot-factory.js";
-import { syncBotCommands } from "./core/bot-commands.js";
-
-// Middleware order matters
-bot.use(sequentializeMiddleware);
-bot.use(hydrate());
-bot.use(chatMembers(cache.chatMembersAdapter));
-bot.use(contextEnricher(deps));
-
-// Multi-bot runtime
-const manager = new BotManager({ db, cache, logger, botFactory });
-await manager.initialize();
-manager.startSyncLoop();
-
-// Realtime command worker
-const commandWorker = new CommandWorker({ db, realtime, botManager: manager, botId: 0, logger });
-commandWorker.start();
-```
-
 ---
 
 ## Key Patterns
@@ -169,6 +127,8 @@ commandWorker.start();
 | Pattern                 | Implementation                                                                   |
 | ----------------------- | -------------------------------------------------------------------------------- |
 | **Run Bot**             | `cd apps/grammy && bun run dev`                                                  |
+| **Run Web**             | `cd apps/web && bun dev`                                                         |
+| **Run Redis**           | `docker compose -f docker-compose.local.yml up -d`                               |
 | **Bot Operating Modes** | `DASHBOARD_MODE=true` → multi-bot from DB; `false` → single bot from `BOT_TOKEN` |
 | **Bot Imports**         | Relative ESM imports within `apps/grammy/src`, package-root based                |
 | **Web Imports**         | `import { insforge } from "@/lib/insforge"`                                      |
@@ -182,122 +142,112 @@ commandWorker.start();
 
 ---
 
-## Pre-Commit Checklist
+## CI/CD, Quality Gates & Commit Rules
 
-> **⛔ ZERO-TOLERANCE**: Every gate below MUST pass before considering any task complete.
-> Running these checks is NOT optional. A single failure means the task is NOT done.
-> Fix the root cause — never suppress, skip, or `@ts-ignore` your way past a failure.
+### Commit Message Format — MANDATORY (Commitlint enforced)
+
+```
+<type>(<scope>): <description>   ← max 100 chars, lowercase, no period at end
+
+Types: feat | fix | docs | style | refactor | perf | test | build | ci | chore | revert
+Scope: optional (bot | web | ci | grammy | auth | db | etc.)
+
+feat(bot): add /help command          ✅
+fix(web): resolve login loop          ✅
+ci: update workflow timeout           ✅
+feat!: breaking API change            ✅  ← triggers major version bump
+some random message                   ❌
+WIP                                   ❌
+```
+
+CI bot commits use `[skip ci]` suffix — never use this yourself.
 
 ---
 
-### grammY Bot Quality Gates
+### CI Pipeline — What Happens on `git push origin main`
 
-### Run Services
+**Auto-fixed by CI (no action needed):**
 
-```bash
-cd apps/grammy && bun run dev      # Canonical bot runtime
-cd apps/web && bun dev             # Web dashboard
-docker compose -f docker-compose.local.yml up -d  # Redis
-```
+- Prettier formatting → `prettier --write`
+- ESLint fixable rules → `eslint --fix`
+- Committed as: `fix(ci): auto-fix code quality [prettier, eslint] [skip ci]`
 
-### Lint, Type-Check, Test
+**NOT auto-fixed — you MUST fix before pushing:**
 
-```bash
-# grammY bot
-cd apps/grammy && bun run type-check
-cd apps/grammy && bun run lint
-cd apps/grammy && bun run format          # prettier --write src/ + tests/grammy/
-cd apps/grammy && bun run format:check   # prettier --check  src/ + tests/grammy/
-cd apps/grammy && bun run knip            # find dead code
-cd apps/grammy && bun run test
-cd apps/grammy && bun run build
+- TypeScript errors → type-check gate fails
+- Unfixable lint errors → lint gate fails
+- Build errors → build gate fails
+- Test failures → test gate fails
 
-# web
-cd apps/web && bun run lint
-cd apps/web && bun x prettier src --write
-cd apps/web && bun x prettier src --check
-cd apps/web && bun run type-check
-cd apps/web && bun knip                    # find dead code
-cd apps/web && bun knip --fix              # auto-fix exports/files
-cd apps/web && bun run build
-```
-
-Run ALL commands, in order, every time you touch `apps/grammy/` or `tests/grammy/`:
-
-```bash
-# 1. Type safety — MUST exit 0, zero errors
-cd apps/grammy && bun run type-check
-
-# 2. Lint — MUST exit 0, zero warnings (--max-warnings 0 is enforced)
-cd apps/grammy && bun run lint
-
-# 3. Prettier — MUST show "All matched files use Prettier code style!"
-#    Covers both src/ and ../../tests/grammy (root .prettierrc, no tailwind plugin)
-cd apps/grammy && bun run format         # auto-fix
-cd apps/grammy && bun run format:check   # verify clean
-
-# 4. Knip — MUST show "Excellent, Knip found no issues."
-cd apps/grammy && bun run knip
-
-# 5. Tests — MUST show "X passed" with zero failures, zero skipped
-cd apps/grammy && bun run test
-
-# 6. Build — MUST produce dist/ with zero compile errors
-cd apps/grammy && bun run build
-```
+**Deploy gate:** Vercel deploys ONLY after `Web Dashboard CI / Quality Gates` passes. Broken builds never reach production.
 
 ---
 
-### Web Quality Gates
+### Quality Gates — Run BEFORE Every Commit
 
-Run ALL four commands, in order, every time you touch `apps/web/`:
+**grammY bot** (run when touching `apps/grammy/**`):
 
 ```bash
-# 1. Type safety — MUST exit 0, zero errors
-cd apps/web && bun run type-check
-
-# 2. Lint — MUST exit 0, zero warnings (--max-warnings 0 is enforced)
-cd apps/web && bun run lint
-
-# 3. Prettier — MUST show "All matched files use Prettier code style!"
-#    If it reports [warn] files, run --write first, then re-check:
-cd apps/web && bun x prettier src --write
-cd apps/web && bun x prettier src --check
-
-# 4. Knip — MUST show "Excellent, Knip found no issues."
-cd apps/web && bun knip
-
-# 5. Build — MUST complete with zero errors (validates RSC boundaries, routes, types)
-cd apps/web && bun run build
+cd apps/grammy && bun run type-check   # zero errors
+cd apps/grammy && bun run lint         # zero warnings
+cd apps/grammy && bun run format       # auto-fix prettier
+cd apps/grammy && bun run format:check # verify clean
+cd apps/grammy && bun run knip         # zero dead code
+cd apps/grammy && bun run test         # zero failures, zero skipped
+cd apps/grammy && bun run build        # produces dist/ cleanly
 ```
 
----
+**Web dashboard** (run when touching `apps/web/`):
 
-### Manual Verification Checklist
-
-Before closing any task, confirm ALL of the following:
-
-- [ ] Imports follow project patterns (`@/lib/insforge` for web, relative ESM `.js` for bot)
-- [ ] No hardcoded values — env vars, constants, or config for everything
-- [ ] No `any` types — use real types or generics
-- [ ] No `@ts-ignore` or `// eslint-disable` without a written justification comment
-- [ ] No `console.log` left in production code paths — use `logger` / `pino`
-- [ ] Realtime channel names unchanged — shared contract between bot and web
-- [ ] DB column names in TypeScript interfaces match actual PostgreSQL column names exactly
-- [ ] Memory bank updated if the change affects architecture, patterns, or project state
+```bash
+cd apps/web && bun run type-check      # zero errors
+cd apps/web && bun run lint            # zero warnings
+cd apps/web && bun x prettier src --write && bun x prettier src --check
+cd apps/web && bun knip                # zero dead code
+cd apps/web && bun run build           # zero errors
+```
 
 ---
 
 ### Hard Failure Rules
 
-| Gate                       | Rule                                                                                    |
-| -------------------------- | --------------------------------------------------------------------------------------- |
-| **type-check fails**       | Add real types. Never use `as any`, `as unknown as T`, or `@ts-ignore`.                 |
-| **lint warns/errors**      | Fix the code. Never add `eslint-disable` without a comment explaining why.              |
-| **prettier reports dirty** | Run `--write`, commit the formatted files, then verify `--check` is clean.              |
-| **any test fails**         | Fix the behavior OR fix the test — never delete or skip a test to make CI green.        |
-| **build fails**            | Fix the build. Do not hand off a broken deploy path under any circumstances.            |
-| **test count drops**       | Justify it. Removing tests requires explicit explanation of why coverage is maintained. |
+| Failure              | Rule                                                             |
+| -------------------- | ---------------------------------------------------------------- |
+| type-check fails     | Add real types. Never `as any`, `as unknown as T`, `@ts-ignore`. |
+| lint warns/errors    | Fix code. Never `eslint-disable` without justification comment.  |
+| prettier dirty       | Run `--write`, commit, verify `--check` clean.                   |
+| test fails           | Fix behavior OR fix test — never delete/skip to make CI green.   |
+| build fails          | Fix build. Never hand off a broken deploy path.                  |
+| test count drops     | Justify it explicitly.                                           |
+| knip finds dead code | Remove it. Never suppress knip warnings.                         |
+
+---
+
+### Manual Verification Checklist
+
+- [ ] Imports: `@/lib/insforge` for web, relative ESM `.js` for bot
+- [ ] No hardcoded values — use env vars, constants, or config
+- [ ] No `any` types — use real types or generics
+- [ ] No `console.log` in production paths — use `logger` / `pino`
+- [ ] Realtime channel names unchanged — shared contract bot ↔ web
+- [ ] DB column names in TS interfaces match exact PostgreSQL column names
+- [ ] Memory bank updated if change affects architecture, patterns, or project state
+
+---
+
+### GitHub Workflows Reference
+
+| Workflow             | Trigger                       | Purpose                                  |
+| -------------------- | ----------------------------- | ---------------------------------------- |
+| `web-ci.yml`         | push/PR → main (web paths)    | Auto-fix + quality gates + Vercel deploy |
+| `grammy-ci.yml`      | push/PR → main (grammy paths) | Auto-fix + quality gates                 |
+| `codeql.yml`         | push + weekly                 | Security vulnerability scan              |
+| `commitlint.yml`     | push/PR → main                | Enforce conventional commit format       |
+| `release-please.yml` | push → main                   | Auto CHANGELOG + GitHub releases         |
+| `bundle-size.yml`    | push/PR → main (web paths)    | Next.js bundle size tracking             |
+| `dependabot.yml`     | weekly Monday                 | Auto dependency security PRs             |
+
+**Branch protection (`main`):** `Quality Gates` status check required. Owner can bypass for direct pushes (solo dev setup).
 
 ---
 
@@ -309,70 +259,6 @@ Before closing any task, confirm ALL of the following:
 | **insforge** | DB ops, storage, edge functions |
 | **shadcn**   | UI component discovery          |
 
-## Skills
-
-**⚠️ MANDATORY: Read relevant skills BEFORE generating any code.**
-
-Skills are located in `.agents/skills/` — check the path column. Read the **SKILL.md** file inside each skill folder and there all revent reference files thats critical.
-
-**Skill Reading Rules:**
-
-1. **Read the ENTIRE SKILL.md** - Do NOT skip any line. Study everything thoroughly.
-2. **Follow all reference files** - If the skill mentions other files, examples, or resources, read those too, thats critical.
-3. **NEVER violate rules** - Skills contain rules, principles, guidelines, and best practices that MUST be followed.
-4. **No shortcuts** - Taking shortcuts by skipping skill refrence content leads to errors and tech debt.
-
-### Frontend (Web Dashboard)
-
-| Skill                           | When to Use                             | Path                                         |
-| ------------------------------- | --------------------------------------- | -------------------------------------------- |
-| **next-best-practices**         | Next.js patterns and boundaries         | `.agents/skills/next-best-practices/`        |
-| **next-cache-components**       | Next.js 16 cache behavior               | `.agents/skills/next-cache-components/`      |
-| **next-upgrade**                | Upgrade Next.js to latest version       | `.agents/skills/next-upgrade/`               |
-| **shadcn-ui**                   | shadcn/ui work                          | `.agents/skills/shadcn-ui`                   |
-| **tanstack-query**              | query/mutation/cache work               | `.agents/skills/tanstack-query/`             |
-| **typescript-expert**           | advanced TS/JS work                     | `.agents/skills/typescript-expert`           |
-| **vercel-react-best-practices** | React/Next performance                  | `.agents/skills/vercel-react-best-practices` |
-| **vercel-composition-patterns** | scalable component APIs                 | `.agents/skills/vercel-composition-patterns` |
-| **ui-ux-pro-max**               | UI/UX design work                       | `.agents/skills/ui-ux-pro-max`               |
-| **web-design-guidelines**       | accessibility/UI audits                 | `.agents/skills/web-design-guidelines`       |
-| **motion**                      | Motion animations                       | `.agents/skills/motion`                      |
-| **tailwind-design-system**      | Tailwind v4 design system work          | `.agents/skills/tailwind-design-system`      |
-| **react-doctor**                | Scan React code for issues              | `.agents/skills/react-doctor`                |
-
-### Backend (Bot & BaaS)
-
-| Skill                 | When to Use                        | Path                               |
-| --------------------- | ---------------------------------- | ---------------------------------- |
-| **grammy**            | Any bot work in `apps/grammy`      | `.agents/skills/grammy`            |
-| **insforge**         | Frontend SDK integration            | `.agents/skills/insforge`          |
-| **insforge-cli**     | Backend CLI, DB, functions, deploy  | `.agents/skills/insforge-cli`      |
-| **redis-development** | Redis optimization & patterns      | `.agents/skills/redis-development` |
-
-### DevOps & Tooling
-
-| Skill                           | When to Use                       | Path                                       |
-| ------------------------------- | --------------------------------- | ------------------------------------------ |
-| **brainstorming**               | Required before creative work     | `.agents/skills/brainstorming/`            |
-| **code-review-expert**          | Code review with senior lens      | `.agents/skills/code-review-expert/`       |
-| **docker-expert**              | Docker/container work              | `.agents/skills/docker-expert`             |
-| **github-actions-templates**    | CI/CD work                        | `.agents/skills/github-actions-templates/` |
-| **mermaid-diagrams**            | diagrams/architecture visuals     | `.agents/skills/mermaid-diagrams`          |
-| **playwright-cli**              | browser automation                | `.agents/skills/playwright-cli`            |
-| **powershell-expert**           | PowerShell scripts                | `.agents/skills/powershell-expert`         |
-| **skill-creator**              | skill updates                      | `.agents/skills/skill-creator`             |
-| **vitest**                     | Unit testing with Vitest           | `.agents/skills/vitest`                    |
-| **vercel-doctor**              | Optimize Vercel costs              | `.agents/skills/vercel-doctor`             |
-
-### Project Management
-
-| Skill                      | When to Use                              | Path                                     |
-| -------------------------- | ---------------------------------------- | ---------------------------------------- |
-| **openspec-propose**       | Propose new change with artifacts        | `.agents/skills/openspec-propose`        |
-| **openspec-explore**       | Research and clarify requirements        | `.agents/skills/openspec-explore`        |
-| **openspec-apply-change**  | Implement tasks from a change            | `.agents/skills/openspec-apply-change`   |
-| **openspec-archive-change**| Finalize and archive a completed change  | `.agents/skills/openspec-archive-change` |
-
 ---
 
-_Last Updated: 2026-03-14 (Skills updated to match .agents/skills/ folder; removed obsolete skills, added code-review-expert, insforge-cli, next-upgrade, openspec-propose, vitest)_
+_Last Updated: 2026-03-16 (CI/CD rules, commit format, workflows, branch protection, auto-fix behavior added)_

@@ -1,9 +1,9 @@
 # Progress: What Works, What's Left
 
-## Current Phase: 134 — Fresh InsForge Rebuild Applied Live
+## Current Phase: 137 — Test Isolation Migration Complete
 
 > **Active Runtime**: `apps/grammy/` (Bun + grammY v1.41.1)
-> **Last Updated**: 2026-03-15
+> **Last Updated**: 2026-03-16
 
 ---
 
@@ -49,65 +49,68 @@
 
 ### Infrastructure
 
-| Component                               | Status                               |
-| --------------------------------------- | ------------------------------------ |
-| DigitalOcean App Platform (bot runtime) | ✅ Online                            |
-| Upstash Redis (`rediss://` TLS)         | ✅ Connected                         |
-| InsForge BaaS (PostgreSQL + Realtime)   | ✅ Healthy                           |
-| GitHub Actions CI (grammy + web)        | ✅ `actions/checkout@v5`             |
-| Vercel (web hosting)                    | ✅ Deployed — latest `/login` proxy fix still pending |
+| Component                               | Status                                                                                            |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| DigitalOcean App Platform (bot runtime) | ✅ Online                                                                                         |
+| Upstash Redis (`rediss://` TLS)         | ✅ Connected                                                                                      |
+| InsForge BaaS (PostgreSQL + Realtime)   | ✅ Healthy                                                                                        |
+| GitHub Actions CI (grammy + web)        | ✅ 7 workflows: grammy-ci, web-ci, grammy-deploy, codeql, commitlint, release-please, bundle-size |
+| grammY Test Isolation                   | ✅ Migrated `tests/grammy` → `apps/grammy/tests` (package portability)                            |
+| Vercel (web hosting)                    | ✅ Deploy gated on CI (`web-ci` quality job must pass first)                                      |
+| Dependabot                              | ✅ Grouped weekly PRs for web + grammy + actions                                                  |
+| Branch protection (`main`)              | ✅ `Quality Gates` required status check                                                          |
 
 ### Database (Live — InsForge / Migration 028)
 
-| Table / Component                          | Status                                  |
-| ------------------------------------------ | --------------------------------------- |
-| `dashboard_admins`                         | ✅ auth allowlist anchor for dashboard RLS |
-| `owners`                                   | ✅ BIGINT user_id PK                    |
-| `bot_instances`                            | ✅ encrypted token store, soft-delete   |
-| `bot_status`                               | ✅ BIGINT bot_id + bot_instance_id      |
-| `protected_groups`                         | ✅                                      |
-| `enforced_channels`                        | ✅                                      |
-| `group_channel_links`                      | ✅ M:N with cascade                     |
-| `verification_log`                         | ✅ latency_ms, cached, error_type       |
-| `api_call_log`                             | ✅                                      |
-| `admin_logs`                               | ✅ realtime trigger                     |
-| `admin_commands`                           | ✅ status, payload, result JSONB        |
-| `nezuko_secrets`                           | ✅ Security Vault                       |
-| `bot_instances_safe` view                  | ✅ dashboard-safe bot listing           |
-| Dashboard/chart RPC set                    | ✅ recreated + live-verified            |
-| `get_group_verification_contract` RPC      | ✅ live                                 |
-| Admin-scoped RLS                           | ✅ live                                 |
-| Bot anon operational policies              | ✅ live                                 |
-| `admin_config`                             | ✅ removed from active schema           |
+| Table / Component                     | Status                                     |
+| ------------------------------------- | ------------------------------------------ |
+| `dashboard_admins`                    | ✅ auth allowlist anchor for dashboard RLS |
+| `owners`                              | ✅ BIGINT user_id PK                       |
+| `bot_instances`                       | ✅ encrypted token store, soft-delete      |
+| `bot_status`                          | ✅ BIGINT bot_id + bot_instance_id         |
+| `protected_groups`                    | ✅                                         |
+| `enforced_channels`                   | ✅                                         |
+| `group_channel_links`                 | ✅ M:N with cascade                        |
+| `verification_log`                    | ✅ latency_ms, cached, error_type          |
+| `api_call_log`                        | ✅                                         |
+| `admin_logs`                          | ✅ realtime trigger                        |
+| `admin_commands`                      | ✅ status, payload, result JSONB           |
+| `nezuko_secrets`                      | ✅ Security Vault                          |
+| `bot_instances_safe` view             | ✅ dashboard-safe bot listing              |
+| Dashboard/chart RPC set               | ✅ recreated + live-verified               |
+| `get_group_verification_contract` RPC | ✅ live                                    |
+| Admin-scoped RLS                      | ✅ live                                    |
+| Bot anon operational policies         | ✅ live                                    |
+| `admin_config`                        | ✅ removed from active schema              |
 
 ### Web Dashboard (`apps/web/`)
 
-| Feature                                      | Status                                        |
-| -------------------------------------------- | --------------------------------------------- |
-| Dashboard layout + routing                   | ✅                                            |
-| Bot status display (realtime)                | ✅                                            |
-| Admin commands (start/stop/restart)          | ✅                                            |
-| Analytics charts (verification, API calls)   | ✅                                            |
-| Settings page (vault actions)                | ✅                                            |
-| InsForge auth middleware (`proxy.ts`)        | ✅                                            |
-| Email/password sign-in                       | ✅ official SDK flow on `/login`              |
-| Google/GitHub sign-in                        | ✅ `signInWithOAuth()` on `/login`            |
-| Auth cookie sync via `/api/auth`             | ✅ official handlers + owner allowlist gate   |
-| First-login `dashboard_admins` sync          | ✅ server-side upsert through service key     |
-| Bot CRUD via `manage-bot` function           | ✅                                            |
-| Login compatibility callback route           | ✅ thin redirect-only `/auth/callback`        |
+| Feature                                    | Status                                      |
+| ------------------------------------------ | ------------------------------------------- |
+| Dashboard layout + routing                 | ✅                                          |
+| Bot status display (realtime)              | ✅                                          |
+| Admin commands (start/stop/restart)        | ✅                                          |
+| Analytics charts (verification, API calls) | ✅                                          |
+| Settings page (vault actions)              | ✅                                          |
+| InsForge auth middleware (`proxy.ts`)      | ✅                                          |
+| Email/password sign-in                     | ✅ official SDK flow on `/login`            |
+| Google/GitHub sign-in                      | ✅ `signInWithOAuth()` on `/login`          |
+| Auth cookie sync via `/api/auth`           | ✅ official handlers + owner allowlist gate |
+| First-login `dashboard_admins` sync        | ✅ server-side upsert through service key   |
+| Bot CRUD via `manage-bot` function         | ✅                                          |
+| Login compatibility callback route         | ✅ thin redirect-only `/auth/callback`      |
 
 ---
 
 ## ⚠️ Known Issues & Pending
 
-| Issue                                                             | Severity     | Status                                                                                                                                         |
-| ----------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Fresh backend requires reseeding**                              | **Critical** | All data was intentionally reset. Security vault master key and first allowlisted dashboard login still need to happen on the live app. |
-| **Realtime `connect_error: Invalid token`** on App Platform       | High         | InsForge Socket.IO rejects service key for realtime auth. Bot falls back to 30s polling — degraded but functional.                             |
-| Runner crash storm — 409 Conflict on App Platform redeploy        | Medium       | Happens when 2 replicas briefly run simultaneously. Self-heals via `restartRunnerOnly`. Mitigate: confirm instance_count=1 after every deploy. |
-| `update_settings` command handler not implemented                 | Low          | Logged and ignored (scaffold only).                                                                                                            |
-| Admin alert channel (bot → admin DM on error)                     | Low          | Not wired; `bot.catch()` only logs.                                                                                                            |
+| Issue                                                       | Severity     | Status                                                                                                                                         |
+| ----------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fresh backend requires reseeding**                        | **Critical** | All data was intentionally reset. Security vault master key and first allowlisted dashboard login still need to happen on the live app.        |
+| **Realtime `connect_error: Invalid token`** on App Platform | High         | InsForge Socket.IO rejects service key for realtime auth. Bot falls back to 30s polling — degraded but functional.                             |
+| Runner crash storm — 409 Conflict on App Platform redeploy  | Medium       | Happens when 2 replicas briefly run simultaneously. Self-heals via `restartRunnerOnly`. Mitigate: confirm instance_count=1 after every deploy. |
+| `update_settings` command handler not implemented           | Low          | Logged and ignored (scaffold only).                                                                                                            |
+| Admin alert channel (bot → admin DM on error)               | Low          | Not wired; `bot.catch()` only logs.                                                                                                            |
 
 ---
 
@@ -120,7 +123,7 @@
 | 024       | ✅ **2026-03-15** | `get_group_verification_contract` RPC + `join_request_preferred` backfill                                   |
 | 025       | ✅                | (previous)                                                                                                  |
 | 026       | ✅ **2026-03-15** | Lock down anon policies — removed READ/UPDATE on privileged tables; kept INSERT-only for bot runtime writes |
-| 028       | ✅ **2026-03-15** | Destructive fresh rebuild: canonical tables, RPCs, view, RLS, realtime triggers, dashboard admin model    |
+| 028       | ✅ **2026-03-15** | Destructive fresh rebuild: canonical tables, RPCs, view, RLS, realtime triggers, dashboard admin model      |
 
 ---
 
@@ -136,18 +139,34 @@
 
 ## 📊 Quality Gate Baseline (Phase 134)
 
-| Check                 | Result                                  |
-| --------------------- | --------------------------------------- |
-| `grammy type-check`   | ✅ 0 errors                             |
-| `grammy lint`         | ✅ 0 warnings                           |
-| `grammy format:check` | ✅ clean                                |
-| `grammy test`         | ✅ 163/163 pass                         |
-| `grammy build`        | ✅ 0 errors                             |
-| `web type-check`      | ✅ 0 errors                             |
-| `web lint`            | ✅ 0 warnings                           |
-| `web knip`            | ✅ clean                                |
-| `web prettier --check`| ✅ clean                                |
-| `web build`           | ✅ 0 errors                             |
-| Live migration 028 apply | ✅ successful through InsForge MCP   |
-| Live `manage-bot` redeploy | ✅ successful through InsForge MCP |
-| Live RPC smoke test   | ✅ dashboard + chart RPCs return correct empty-state shapes |
+| Check                      | Result                                                      |
+| -------------------------- | ----------------------------------------------------------- |
+| `grammy type-check`        | ✅ 0 errors                                                 |
+| `grammy lint`              | ✅ 0 warnings                                               |
+| `grammy format:check`      | ✅ clean                                                    |
+| `grammy test`              | ✅ 163/163 pass (in local `apps/grammy/tests/`)             |
+| `grammy build`             | ✅ 0 errors                                                 |
+| `web type-check`           | ✅ 0 errors                                                 |
+| `web lint`                 | ✅ 0 warnings                                               |
+| `web knip`                 | ✅ clean                                                    |
+| `web prettier --check`     | ✅ clean                                                    |
+| `web build`                | ✅ 0 errors                                                 |
+| Live migration 028 apply   | ✅ successful through InsForge MCP                          |
+| Live `manage-bot` redeploy | ✅ successful through InsForge MCP                          |
+| Live RPC smoke test        | ✅ dashboard + chart RPCs return correct empty-state shapes |
+
+## 📊 CI/CD Baseline (Phase 136)
+
+| Check                | Result                                                                    |
+| -------------------- | ------------------------------------------------------------------------- |
+| `codeql.yml`         | ✅ Workflow live, weekly + push triggered                                 |
+| `commitlint.yml`     | ✅ Conventional commits enforced via `wagoid/commitlint-github-action@v6` |
+| `release-please.yml` | ✅ Monorepo config active, v0.0.0 start                                   |
+| `bundle-size.yml`    | ✅ Tracks Next.js chunk sizes per commit                                  |
+| `dependabot.yml`     | ✅ Weekly grouped updates configured                                      |
+| Auto-fix CI          | ✅ Prettier + ESLint auto-commit on dirty push                            |
+| Vercel deploy gate   | ✅ Hook-only deploy, native auto-deploy disabled                          |
+| Branch protection    | ✅ `Quality Gates` required status check on `main`                        |
+| README badges        | ✅ Web CI, Bot CI, CodeQL, License badges live                            |
+| `GEMINI.md`          | ✅ Refactored — compact CI/CD rules, no duplication                       |
+| Test Isolation       | ✅ `tests/grammy/**` removed from CI triggers — now package-local         |

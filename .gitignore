@@ -128,12 +128,6 @@ apps/api/alembic/versions/*.pyc
 /apps/bot/logs/**/*
 !/apps/bot/logs/.gitkeep
 
-
-# Debug scripts in app roots (tests should be in tests/ folders)
-apps/*/test_*.py
-apps/*/init_db.py
-apps/*/*.db
-
 # next-agents-md
 .next-docs/
 
@@ -142,4 +136,3 @@ apps/*/*.db
 
 # InsForge & AI agent skills
 .insforge
-.akiltest

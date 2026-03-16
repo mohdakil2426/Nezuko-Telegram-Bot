@@ -1,9 +1,64 @@
 # Active Context: Current State
 
-> **Last Updated**: 2026-03-15 23:55 IST
-> **Phase**: 135 — Auth-sync whitelist removed; open registration enabled
+> **Last Updated**: 2026-03-16 06:15 IST
+> **Phase**: 137 — Test Isolation Migration Complete; Package Portability verified
 
 ---
+
+## Top Priority
+
+Test isolation migration is complete. `tests/grammy/` moved to `apps/grammy/tests/`. All quality gates verified. Next highest-value work: fix realtime Socket.IO auth for the bot (still degraded, falls back to polling), then test live owner login end-to-end.
+
+## What Changed In Phase 137
+
+### Project Structure — grammY Test Isolation
+
+- **Directory Move**: `tests/grammy/` (root) migrated to `apps/grammy/tests/`. Root `tests/` directory deleted.
+- **Improved Isolation**: `apps/grammy/` is now a fully self-contained package. All `../../..` path hacks in tests were removed.
+- **Config Refactoring**:
+  - `apps/grammy/tests/tsconfig.json`: Updated `typeRoots` and `paths` from root-relative to package-relative.
+  - `apps/grammy/package.json`: Updated 5 scripts (`format`, `test`, etc.) to point to local `tests/`.
+  - `apps/grammy/knip.json`: Updated tracking to local `tests/`.
+- **Import Refactoring**: Refactored relative source imports in all 31 test files to match new package depth.
+- **CI Workflow**: Removed legacy `tests/grammy/**` path triggers from `grammy-ci.yml`.
+
+### Documentation & Maintenance
+
+- **`GEMINI.md`**: Updated File Locations and Quality Gate examples to reflect the new test path.
+- **`.gitignore`**: Removed legacy debug script blocks and fixed misleading test folder comments.
+- **Verification**: Full quality gate suite (163 tests) verified in the new location.
+
+## What Changed In Phase 136
+
+### GitHub Actions — New Workflows Added
+
+- **`codeql.yml`** — CodeQL v4 security scanning (push + weekly Monday). Scans `apps/grammy/src` + `apps/web/src` with `security-extended` queries. Results visible in GitHub Security tab.
+- **`commitlint.yml`** — Enforces conventional commit format on all pushes/PRs to `main` via `wagoid/commitlint-github-action@v6`. Ignores `[skip ci]` and Dependabot commits.
+- **`release-please.yml`** — Auto-generates CHANGELOG.md + GitHub Releases from conventional commits. Monorepo config: `apps/grammy` (`nezuko-grammy`) and `apps/web` (`nezuko-web`) versioned independently. Config in `release-please-config.json` + `.release-please-manifest.json` (both at v0.0.0 start).
+- **`bundle-size.yml`** — Builds Next.js on every `apps/web` push, uploads `.next/` as artifact, prints chunk sizes to GitHub Step Summary. Baseline stored per commit SHA (30-day retention).
+- **`dependabot.yml`** — Weekly Monday grouped security/version updates for `apps/web`, `apps/grammy`, and GitHub Actions. Patch+minor combined into one PR, major separate. Enable in repo Settings → Security → Dependabot.
+
+### GitHub Actions — Existing Workflows Updated
+
+- **`web-ci.yml`** + **`grammy-ci.yml`**: Combined auto-fix step (Prettier + ESLint `--fix`) runs before quality gates on `main` push only. Fixes committed as `fix(ci): auto-fix code quality [prettier, eslint] [skip ci]`.
+- **`web-ci.yml`** deploy job: Triggers Vercel via `VERCEL_DEPLOY_HOOK_URL` secret only after `quality` job passes. Vercel's native auto-deploy is disabled (`Ignored Build Step: exit 1`).
+
+### New Config Files
+
+- **`commitlint.config.mjs`** — Conventional commits config: 11 types, 100-char header limit, lowercase subject, ignores bot/Dependabot/Release Please commits.
+- **`release-please-config.json`** — Monorepo release config with emoji changelog sections.
+- **`.release-please-manifest.json`** — Version tracker (both packages at `0.0.0`).
+
+### Branch Protection (`main`)
+
+- Required status check: `Quality Gates` (both web and grammy CI).
+- Dependabot grouped security updates enabled in repo settings.
+- Owner bypass allowed (solo dev — direct push after CI passes).
+
+### Documentation
+
+- **`README.md`** — CI/CodeQL/License badges added to header.
+- **`GEMINI.md`** — Refactored: old verbose Pre-Commit Checklist replaced with compact `CI/CD, Quality Gates & Commit Rules` section. Duplicate verbose gates removed. Run Web/Run Redis added to Key Patterns table.
 
 ## Top Priority
 

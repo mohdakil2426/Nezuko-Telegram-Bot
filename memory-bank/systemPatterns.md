@@ -1,378 +1,162 @@
 # System Patterns: Architecture & Implementation
 
 > **Active Runtime**: `apps/grammy/` (TypeScript + grammY v1.41.1)
-> **Last Updated**: 2026-03-15 (Phase 135)
-
----
-
-### 19 — Canonical InsForge Auth + Admin Bootstrap Pattern (Phase 134)
-
-The dashboard now uses one consistent auth model:
-
-1. `proxy.ts` uses `InsforgeMiddleware` for route protection.
-2. `/login` uses official SDK auth methods:
-   - `signInWithPassword`
-   - `signInWithOAuth`
-3. `/api/auth` uses official `createAuthRouteHandlers`.
-4. The app syncs every authenticated user to the server-side session:
-   - successful sync automatically upserts the user into `dashboard_admins` through `INSFORGE_SERVICE_KEY`.
-5. Dashboard/table access is then enforced by DB RLS using `dashboard_admins`.
-
-Critical implication:
-
-- A clean backend no longer needs a manual SQL seed for the first owner row.
-- The first successful login for any user creates the `dashboard_admins` record automatically.
-- This bootstrap path must stay server-side only; never allow authenticated users to self-insert into `dashboard_admins` through RLS.
-
-### 20 — Canonical Secure Bot Management Pattern (Phase 134)
-
-Bot token persistence is now strictly function-backed:
-
-- Web code must not write encrypted bot tokens directly to `bot_instances`.
-- `apps/web/src/lib/services/bots.service.ts` must use `insforge.functions.invoke("manage-bot")`.
-- `insforge/functions/manage-bot.js` is responsible for:
-  - validating the caller is an authenticated dashboard admin
-  - reading `master_key` from `nezuko_secrets`
-  - encrypting bot tokens server-side
-  - adding/updating/deleting `bot_instances`
-
-Dashboard reads should continue to use `bot_instances_safe`, not raw `bot_instances`.
-
-### 21 — Canonical Fresh Backend Contract (Phase 134)
-
-The active InsForge schema is now defined by `insforge/migrations/028_fresh_insforge_rebuild.sql`.
-
-Only these live app tables are canonical:
-
-- `dashboard_admins`
-- `owners`
-- `bot_instances`
-- `bot_status`
-- `protected_groups`
-- `enforced_channels`
-- `group_channel_links`
-- `verification_log`
-- `api_call_log`
-- `admin_logs`
-- `admin_commands`
-- `nezuko_secrets`
-
-`admin_config` is no longer part of the active contract and should not be reintroduced unless a concrete runtime dependency returns.
-
-The dashboard RPC contract is also canonicalized in migration 028; dashboard service-layer types should be treated as the source the SQL must satisfy.
-
----
-
-### 17 — Next.js 16 Optimization Patterns (Phase 126)
-
-#### 17.1 — Heavy Library Code-Splitting
-
-All visualization components (e.g., Recharts) must be dynamically imported with `ssr: false` and a loading skeleton to reduce entry bundle size and prevent hydration mismatch.
-
-```tsx
-const BarChart = dynamic(() => import("./bar-chart"), {
-  ssr: false,
-  loading: () => <Skeleton className="h-[200px]" />,
-});
-```
-
-#### 17.2 — Navigation Suspense Boundaries
-
-Components using `useSearchParams()` or other client-side navigation hooks must be wrapped in `<Suspense>` to avoid Next.js "Bailout to client-side rendering" rules.
-
-```tsx
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<LoadingSkeleton />}>
-      <LoginForm />
-    </Suspense>
-  );
-}
-```
-
-#### 17.3 — React Compiler State Safety
-
-Avoid `try/finally` for state updates (e.g., `setIsLoading(false)`) as the compiler can sometimes struggle with closure tracking in complex `finally` blocks. Prefer explicit updates in `try` and `catch`.
-
-```tsx
-// ✅ Preferred
-try {
-  setIsLoading(true);
-  await action();
-  setIsLoading(false);
-} catch (err) {
-  setIsLoading(false);
-  handleError(err);
-}
-```
-
-### 18 — Dev-Bypass Auth Pattern (2026-03-13)
-
-When `NEXT_PUBLIC_DEV_LOGIN=true`, the web app must not mount the InsForge browser provider in the root tree. Doing so causes client-side `/api/auth/refresh` attempts with no real session and pollutes the console during local QA.
-
-Pattern:
-
-```tsx
-// providers/insforge-provider-wrapper.tsx
-if (DEV_LOGIN) {
-  return <>{children}</>;
-}
-
-return <InsforgeProvider>{children}</InsforgeProvider>;
-```
-
-Client components that need auth state in dev mode should consume wrapper hooks from `src/lib/hooks/use-auth.ts`, which return a stable synthetic signed-out state instead of touching the SDK provider.
+> **Last Updated**: 2026-03-16 (Phase 136)
 
 ---
 
 ## Architecture Overview
 
-Nezuko is a **2-tier platform** with zero custom API server.
-Bot and web both talk directly to InsForge REST / SDK.
+Nezuko is a **2-tier platform** — zero custom API server. Bot and web both talk directly to InsForge REST / SDK.
 
 ```
-┌──────────────────────────┐    ┌─────────────────────────────────────────┐
-│  Web Dashboard (Next.js) │───►│  @insforge/sdk (TypeScript)             │
-└──────────────────────────┘    └───────────────────┬─────────────────────┘
+┌─────────────────────────┐     ┌──────────────────────────────────────────┐
+│  Web Dashboard (Next.js)│────►│  @insforge/sdk                           │
+└─────────────────────────┘     └───────────────────┬──────────────────────┘
                                                     │ HTTPS
-┌──────────────────────────┐    ┌───────────────────▼─────────────────────┐
-│  grammY Bot (TypeScript) │───►│  InsForge BaaS                          │
-│  InsForgeClient (fetch)  │    │  ┌────────────┐  ┌────────────────────┐ │
-│  InsForgeRealtimeClient  │◄───│  │ PostgreSQL │  │ Realtime (WS)      │ │
-│  (socket.io-client)      │    │  └─────┬──────┘  └────────────────────┘ │
-└──────────────────────────┘    │        │ DB Triggers (5 channels)        │
-                                │  ┌─────▼──────┐  ┌────────────────────┐ │
-                                │  │  Storage   │  │ Edge Functions     │ │
-                                │  └────────────┘  └────────────────────┘ │
-                                └─────────────────────────────────────────┘
+┌─────────────────────────┐     ┌───────────────────▼──────────────────────┐
+│  grammY Bot (TypeScript)│────►│  InsForge BaaS (PostgreSQL + Realtime WS)│
+│  InsForgeClient (fetch) │◄────│  DB Triggers → 5 Realtime channels       │
+│  InsForgeRealtimeClient │     │  Edge Functions (manage-bot)             │
+└─────────────────────────┘     └──────────────────────────────────────────┘
 ```
 
 ---
 
 ## grammY Bot Source Map
 
-```
+```text
 apps/grammy/src/
-├── main.ts               # Entry point: runStandaloneMode() + runDashboardMode()
-├── config.ts             # Zod v4 soft validation — all fields optional at schema level
-├── types.ts              # NezukoContext (HydrateFlavor<ConversationFlavor<Context & NezukoContextFlavor & ChatMembersFlavor>>) + BotDeps
-├── core/
-│   ├── bot-factory.ts    # createBot() + createBotWithDeps() + apiLogTransformer
-│   ├── bot-commands.ts   # syncBotCommands() — private/group/group-admin menu scopes
-│   ├── insforge-client.ts# InsForgeClient (native fetch REST — getRecords/postRecords/patchRecords/deleteRecords/rpc)
-│   ├── realtime-client.ts# InsForgeRealtimeClient (socket.io — subscribes to 5 channels)
-│   ├── cache.ts          # CacheClient wrapping ioredis — graceful degradation + bulk invalidation helpers
-│   ├── encryption.ts     # AES-256-GCM token encrypt/decrypt + getMasterKey() from vault
-│   ├── shutdown.ts       # setupShutdown() — SIGINT/SIGTERM handler
-│   ├── db-log-transport.ts # pino DestinationStream → admin_logs (WARN+ forwarding)
-│   └── constants.ts      # All timing, channel, cache prefix, allowed_updates constants
-├── middleware/
-│   ├── sequentialize.ts  # Per-chat sequentialize (MUST be first middleware)
-│   ├── hydrate.ts        # hydrate() install helper
-│   ├── context-enricher.ts# Injects db, cache, botId, log into ctx
-│   ├── admin-guard.ts    # Must be admin — replies on fail
-│   ├── group-only.ts     # Must be in group/supergroup
-│   └── permission-check.ts# Bot must have admin rights in group — replies on 403
-├── composers/
-│   ├── admin.ts          # /protect, /unprotect, /settings (→ settingsMenu), /status
-│   ├── channels.ts       # /channels, /verify, /stats
-│   ├── events.ts         # chat_member + chat_join_request handlers
-│   ├── verify.ts         # callback_query verification handler
-│   ├── fallback.ts       # Catch-all (always last)
-│   ├── migration.ts      # my_chat_member handler — group migration
-│   └── setup.ts          # /setup guided wizard (@grammyjs/conversations; Golden Rule compliant)
-├── menus/
-│   ├── settings.menu.ts  # Group admin /settings menu — dynamic channel range, Refresh, Close
-│   └── private.menu.ts   # Private DM menu — 4 sub-menus (Commands/How/About/QuickStart) + Back nav
-├── services/
-│   ├── verification.ts   # verifyMembership() — multi-channel AND logic + explicit verify/message recheck bypass, preloaded channels, parallel checks
-│   ├── verification-prompt.ts # Active prompt tracking + safe prompt deletion helpers
-│   ├── idempotency.ts    # acquireIdempotencyLock() — short-lived Redis NX guards
-│   ├── protection.ts     # muteUser(), unmuteUser(), kickUser()
-│   ├── channel-linker.ts # linkChannel(), unlinkChannel()
-│   ├── batch-verification.ts # batchVerify() — Map<userId, result>
-│   ├── member-sync.ts    # startMemberSync() — 15min interval
-│   ├── status-writer.ts  # startStatusWriter() — 30s heartbeat
-│   └── command-worker.ts # CommandWorker — realtime + 30s poll fallback
-├── multi-bot/
-│   ├── bot-manager.ts    # BotManager — initialize(), startSyncLoop(), handleCommand(), shutdown()
-│   ├── bot-lifecycle.ts  # BotLifecycleManager — startBot(), stopBot(), restartBot()
-│   └── bot-registry.ts   # BotRegistry — Map<botId, BotInstance>
-└── database/
-    ├── types.ts          # ProtectedGroup, EnforcedChannel, GroupChannelLink, VerificationLog, BotStatus
-    ├── group-contract.repo.ts # getGroupVerificationContract() — RPC first, direct-table fallback
-    ├── owner.repo.ts     # upsertOwner() — FK-safe owner upsert before protected_groups INSERT
-    ├── group.repo.ts     # getGroupChannels(), setGroupActive(), createProtectedGroup()
-    ├── channel.repo.ts   # updateSubscriberCount()
-    ├── link.repo.ts      # linkGroupChannel(), unlinkGroupChannel()
-    ├── verification.repo.ts # logVerification() — status: 'verified'|'restricted'|'error' only
-    └── bot-status.repo.ts# upsertBotStatus() — PATCH-then-POST pattern
-└── utils/
-    ├── logger.ts         # createLogger() — pino JSON logger with child() support
-    ├── messages.ts       # All user-facing HTML message strings (constants)
-    ├── auto-delete.ts    # scheduleDelete() — setTimeout → msg.delete()
-    ├── health.ts         # startHealthServer() — /health HTTP endpoint
-    ├── keep-alive.ts     # startKeepAlive() — self-ping loop for cloud idle-timeout prevention
-    ├── standalone-watchdog.ts # startStandaloneWatchdog() — task+poll supervision for standalone mode (created, not yet wired)
-    └── process-lock.ts   # acquireProcessLock() — prevents duplicate local bot starts
+├── main.ts, config.ts    # Entry points & Zod soft validation
+├── types.ts              # NezukoContext, BotDeps, VerificationResult, DashboardCommand
+├── core/                 # Bot factory, InsForge REST/Realtime clients, Cache, Encryption
+├── middleware/           # sequentialize, rate-limiter, hydrate, contextEnricher, guards
+├── composers/            # Command & event handlers (admin, channels, verify, setup, fallback)
+├── menus/                # Inline keyboards (settings.menu.ts, private.menu.ts)
+├── services/             # verification, protection, member-sync, status-writer, cmd-worker
+├── multi-bot/            # BotManager, BotLifecycleManager, BotRegistry (DASHBOARD_MODE)
+├── database/             # Repository layer over InsForge REST
+└── utils/                # logger, health, keep-alive, auto-delete, process-lock, watchdog
 ```
 
 ---
 
-## Key Implementation Patterns
-
-### 1 — Startup: Mode-Aware Entry Point
+## 1 — Operating Modes
 
 ```typescript
-// config.ts — Zod v4, all fields optional; empty string → undefined
-const config = loadConfig(); // never throws for missing creds
+// Standalone mode  (DASHBOARD_MODE=false, default)
+//   BOT_TOKEN from .env → single bot → long-polling via @grammyjs/runner
+//   InsForge optional — graceful degradation without DB
+//   statusWriter SKIPPED (no bot_instances row) — member sync runs if DB available
 
-// main.ts — mode detection first
-if (config.dashboardMode) {
-  if (!config.dbAvailable) process.exit(1); // fail fast with clear message
-  await runDashboardMode(config, logger);
-} else {
-  if (!config.botToken) process.exit(1);
-  await runStandaloneMode(config, logger); // degrades gracefully without InsForge
-}
-
-// Phase 107 — startup singleton protection
-const releaseLock = await acquireProcessLock(
-  config.dashboardMode ? "dashboard-mode" : `standalone-${config.botId}`,
-  logger
-);
-try {
-  // run selected mode...
-} finally {
-  releaseLock();
-}
+// Dashboard mode  (DASHBOARD_MODE=true)
+//   Reads bot_instances from InsForge DB → decrypts tokens → BotManager starts each
+//   Requires INSFORGE_BASE_URL + INSFORGE_SERVICE_KEY
+//   Full services: statusWriter (30s heartbeat) + memberSync (15min) + CommandWorker
 ```
 
-### 2 — Bot Wiring: Middleware Order (CRITICAL)
+---
+
+## 2 — NezukoContext Type (types.ts — actual)
 
 ```typescript
-// ── API Transformers (outgoing) ──────────────────────────────
-bot.api.config.use(autoRetry({ maxRetryAttempts: 3, maxDelaySeconds: 60 }));
-bot.api.config.use(htmlTransformer);    // custom Transformer — NOT parseMode()
-bot.api.config.use(apiLogTransformer);  // Phase 105: logs method/latency/success to api_call_log
+// ✅ Correct — includes CommandsFlavor (added Phase 135)
+export type NezukoContext = Context &
+  HydrateFlavor<Context> &
+  CommandsFlavor<Context> &
+  ConversationFlavor<Context> &
+  ChatMembersFlavor &
+  NezukoContextFlavor; // { db, cache, botId, log }
 
-// ── Middleware (upstream → downstream) ───────────────────────
-bot.use(sequentializeMiddleware);       // MUST be position 1
-bot.use(hydrate());                     // adds .editText(), .delete() on API results
-bot.use(chatMembers(cache.chatMembersAdapter));
-bot.use(contextEnricher(deps));         // injects db, cache, botId, log into ctx
-
-// ── Core commands (inline — not via singleton composer) ───────
-wireCoreCommands(bot, deps);            // /start, /help
-
-// ── Composers with real protected mounting ────────────────────
-// Phase 106 — each composer must be mounted inside a live boundary.
-bot.use(adminBoundary);
-bot.use(channelsBoundary);
-bot.use(migrationBoundary);
-bot.use(eventsBoundary);
-bot.use(verifyBoundary);
-bot.use(fallbackComposer);              // ALWAYS last, no boundary
-
-// ── Global catch ─────────────────────────────────────────────
-bot.catch(async (err) => { ... });
+// ❌ Wrong: old docs omitted CommandsFlavor
 ```
 
-### 3 — HTML Parse Mode (Phase 99 — Canonical)
+---
 
-> ⚠️ `@grammyjs/parse-mode` v2.2.1 does NOT export `parseMode()` or `ParseModeFlavor`. Use a raw `Transformer`:
+## 3 — Middleware & Composer Order (bot-factory.ts — CRITICAL)
+
+Full plugin installation order matters for correctness:
 
 ```typescript
-import type { Transformer } from "grammy";
+// ── API Transformers (outgoing, applied in order)
+bot.api.config.use(apiThrottler());      // FIRST — proactive rate queue
+bot.api.config.use(autoRetry({ maxRetryAttempts: 3, maxDelaySeconds: 10 })); // reactive 429/500
+bot.api.config.use(htmlTransformer);     // default parse_mode="HTML"
+bot.api.config.use(apiLogTransformer);   // fire-and-forget → api_call_log
 
-const HTML_PARSE_MODE_METHODS = new Set([
-  "sendMessage",
-  "sendPhoto",
-  "sendVideo",
-  "sendDocument",
-  "sendAnimation",
-  "sendAudio",
-  "sendVoice",
-  "editMessageText",
-  "editMessageCaption",
-  "sendPoll",
-  "copyMessage",
-]);
+// ── Middleware (upstream → downstream)
+bot.use(updateActivityMiddleware);       // tracks lastUpdateAt / lastPollAt for watchdog
+bot.use(sequentializeMiddleware);        // MUST be first stateful — per (chatId:userId)
+bot.use(limit({ timeFrame: 2000, limit: 3, storageClient: cache.redis })); // Redis rate-limit
+bot.use(hydrate());                      // adds .delete(), .editText() on API results
+bot.use(commands());                     // @grammyjs/commands flavor
+bot.use(chatMembers(cache.chatMembersAdapter)); // caches getChatMember results
+bot.use(autoQuote({ allowSendingWithoutReply: true }));
+bot.use(contextEnricher(deps));          // injects db, cache, botId, log into ctx
 
-const htmlTransformer: Transformer = (prev, method, payload, signal) => {
-  if (HTML_PARSE_MODE_METHODS.has(method) && payload !== null && payload !== undefined) {
-    const p = payload as Record<string, unknown>;
-    if (!p["parse_mode"]) p["parse_mode"] = "HTML";
-  }
-  return prev(method, payload, signal);
-};
+// ── Conversations (AFTER contextEnricher)
+bot.use(conversations());
+bot.use(setupWizardConversation);        // /setup guided wizard
 
-// Applied in both createBot() and createBotWithDeps()
-bot.api.config.use(htmlTransformer);
+// ── Menus (BEFORE composers — intercepts callback_query)
+bot.use(settingsMenu);
+bot.use(privateMenu);
+
+// ── Core commands (/start, /help) wired directly on bot
+wireCoreCommands(bot, deps);
+
+// ── Composers (each wrapped in errorBoundary, except fallback)
+mountProtectedComposer(setupComposer);   // /setup
+mountProtectedComposer(adminComposer);   // /protect /unprotect /settings /status
+mountProtectedComposer(channelsComposer);// /channels /verify /stats
+mountProtectedComposer(migrationComposer);
+mountProtectedComposer(eventsComposer);  // chat_member + chat_join_request
+mountProtectedComposer(verifyComposer);  // callback_query verify:{groupId}
+bot.use(fallbackComposer);               // ALWAYS last — no errorBoundary
+
+bot.catch(async (err) => { ... });       // global catch — handles 401/403/409
 ```
 
-### 4 — InsForge REST Client (TypeScript)
+---
+
+## 4 — InsForge REST Client Pattern (bot-side)
 
 ```typescript
-// All DB access goes through InsForgeClient — never raw PostgreSQL
-const client = new InsForgeClient({
-  baseUrl,
-  anonKey,
-  logger,
-  requestTimeoutMs: config.insforgeRequestTimeoutMs,
-});
+// ✅ Bot always uses InsForgeClient — NEVER @insforge/sdk
+const db = new InsForgeClient({ baseUrl, anonKey: serviceKey, logger, requestTimeoutMs });
 
-await client.getRecords<T>("table", { column: "eq.value" });
-await client.postRecords<T>("table", [{ col: "val" }]);
-await client.patchRecords<T>("table", { col: "eq.val" }, { col: "new" });
-await client.deleteRecords("table", { col: "eq.val" });
-await client.getSecret("master_key"); // reads from nezuko_secrets vault
+await db.getRecords<T>("table", { column: "eq.value" });
+await db.postRecords<T>("table", [{ col: "val" }]);
+await db.patchRecords<T>("table", { col: "eq.val" }, { col: "new" });
+await db.deleteRecords("table", { col: "eq.val" });
+await db.rpc<T>("function_name", { param: "value" });
+await db.getSecret("master_key"); // reads from nezuko_secrets vault
 
-// Phase 107 — all REST calls use AbortController timeouts so
-// slow InsForge/network failures do not stall command handling indefinitely.
-
-// ❌ Any import of @insforge/sdk in the grammy bot — use InsForgeClient instead
+// All calls have AbortController timeout — slow network never stalls handlers
 ```
 
-### 5 — UPSERT Pattern (PATCH-then-POST)
+---
+
+## 5 — UPSERT Pattern (PATCH-then-POST)
 
 ```typescript
-// ✅ Correct: PATCH first, POST only if no row matched
-const patched = await client.patchRecords<T>("bot_status", { bot_id: `eq.${botId}` }, data);
+// ✅ Correct — multi-UNIQUE tables break on Prefer: resolution=merge-duplicates
+const patched = await db.patchRecords<BotStatus>("bot_status", { bot_id: `eq.${botId}` }, data);
 if (patched.length === 0) {
-  await client.postRecords<T>("bot_status", [{ bot_id: botId, ...data }]);
+  await db.postRecords<BotStatus>("bot_status", [{ bot_id: botId, ...data }]);
 }
 
-// ❌ Wrong: Prefer: resolution=merge-duplicates fails on multi-UNIQUE tables
-// That header causes 409 when table has multiple UNIQUE columns
+// ❌ Wrong: Prefer: resolution=merge-duplicates → 409 when table has multiple UNIQUE cols
 ```
 
-### 6 — Multi-Bot Dashboard Flow
+---
 
-```typescript
-// Dashboard startup sequence
-const manager = new BotManager({ db, cache, logger, botFactory: createBotWithDeps });
+## 6 — Realtime Channel Contract
 
-await manager.initialize(); // fetches bot_instances; decrypts tokens; starts each bot
-manager.startSyncLoop(); // 30s reconciliation: starts new bots, stops removed ones
+Both bot (socket.io-client) and web (@insforge/sdk) share these channels.
+**Never rename without updating both sides.**
 
-const commandWorker = new CommandWorker({ db, realtime, botManager: manager, botId: 0, logger });
-commandWorker.start(); // listens on admin_commands channel; falls back to poll
-
-// Per-bot startup (inside BotLifecycleManager.startBot)
-createBotWithDeps(bot, deps); // wires all middleware + composers
-syncBotCommands(bot.api, log); // set command menu scopes
-run(bot, { runner: { fetch: { allowed_updates: [...ALLOWED_UPDATES] } } }); // long-poll
-startStatusWriter(db, botId, botInstanceId, log); // 30s DB heartbeat
-startMemberSync(bot.api, db, botId, log); // 15min count sync
-```
-
-### 7 — Realtime Channel Contract
-
-Shared between grammY bot (socket.io-client) and web (InsForge SDK).
-**Never rename channels without updating both sides.**
-
-| Channel         | Event                  | Source Trigger                 |
+| Channel         | Event                  | DB Trigger Source              |
 | --------------- | ---------------------- | ------------------------------ |
 | `dashboard`     | `verification`         | `verification_log` INSERT      |
 | `bot_status`    | `status_changed`       | `bot_status` INSERT/UPDATE     |
@@ -380,614 +164,269 @@ Shared between grammY bot (socket.io-client) and web (InsForge SDK).
 | `commands`      | `command_updated`      | `admin_commands` INSERT/UPDATE |
 | `bot_instances` | `bot_instance_changed` | `bot_instances` INSERT/UPDATE  |
 
-### 8 — Verification Flow
+---
+
+## 7 — Verification Flow
 
 ```typescript
-// 1. Resolve the group verification contract
+// 1. Resolve group contract (RPC first, direct-table fallback)
 const contract = await getGroupVerificationContract(db, groupId);
-// RPC first: get_group_verification_contract(p_group_id)
-// Fallback: protected_groups + group_channel_links + enforced_channels
+// → { groupId, enabled, joinRequestPreferred, channels[] }
 
-// 2. Join-request path
-// chat_join_request -> verifyMembership()
-// success   -> approve request + seed verified/join_request_approved cache + log verified
-// failure   -> decline request + DM missing channels + log restricted
+// 2. Join-request path: verifyMembership() → approve/decline + log
 
-// 3. Join path
-// new_chat_members -> mute user
-// if join_request_preferred and approval marker exists:
-//   seed verified cache and skip second mute/prompt cycle
-// else:
-//   send verification prompt with Join buttons + verify:{groupId} callback
+// 3. Group member join:
+//    mute user → if join_request_preferred + approval marker: reseed cache + skip
+//    else: send prompt with Join buttons + verify:{groupId} callback
 
-// 4. Verify button path
+// 4. Verify button (callback_query):
 const result = await verifyMembership(api, db, cache, groupId, userId, log, {
-  bypassNegativeCache: true,
+  bypassNegativeCache: true, // explicit clicks must not trust stale "0"
 });
-if (result.success) {
-  await unmuteUser(api, groupId, userId);
-  await cache.set(`verified:${groupId}:${userId}`, "1", "EX", VERIFIED_CACHE_TTL);
-  await logVerification(db, { status: "verified", ... });
-} else {
-  await logVerification(db, { status: "restricted", ... });
-  await ctx.answerCallbackQuery({ show_alert: true, text: VERIFY_MISSING_CHANNELS(...) });
-}
+// success → unmuteUser + seed verified cache + logVerification("verified")
+// failure → logVerification("restricted") + alert missing channels
 
-// Explicit verify clicks are latency-sensitive:
-// - debounce is scoped by (groupId, userId)
-// - verify lock is released when the callback completes
-// - fresh Telegram membership checks retry briefly to absorb rejoin propagation lag
+// 5. Channel leave:
+//    invalidate verified cache → seed enforcement_block (5min TTL)
+//    do NOT mute or prompt immediately; message path is the enforcement point
 
-// 5. Channel leave path
-// required-channel chat_member event -> write member cache
-// if left/kicked:
-//   invalidate verified cache for every linked group
-//   seed short-lived enforcement_block cache
-//   silently re-mute linked groups immediately
-//   do not prompt linked groups immediately
-//   rely on message-path enforcement for visible prompting
+// 6. Group message path (enforcement):
+//    verified cache hit → allow
+//    enforcement_block + member caches restored → clear block + allow
+//    else → delete msg + mute + single deduped prompt (idempotency lock)
 
-// 6. Group message path
-// if verified cache hit -> allow
-// else if enforcement_block is set and all member caches are positive:
-//   clear block + reseed verified cache + allow
-// else if latest DB verification is still fresh -> reseed cache and allow
-// else:
-//   re-run verifyMembership(..., { bypassNegativeCache: true, channels })
-//   success -> reseed cache and allow
-//   failure -> delete message + mute + log restricted + send one deduped prompt
-```
-
-### 8.5 — Delayed Prompt Dedupe (Phase 111)
-
-```typescript
-// Visible verification prompting is now message-driven for users who lose
-// required-channel membership after entering the group.
-
-const promptKey = `verification_prompt:${groupId}:${userId}`;
-
-// Channel leave path:
-//   invalidate verified cache only
-//   do not send a prompt
-
-// Group message path:
-//   delete blocked message first
-//   restrict user again
-//   if no active prompt key exists:
-//     send verification prompt
-//     store prompt message id in Redis
-
-// Verification success / group leave:
-//   delete active prompt if present
-//   clear prompt key
-```
-
-### 8.6 — Burst Message Cleanup While Enforcement Is In Flight (Phase 112)
-
-```typescript
-// The first blocked message may hold the short-lived enforcement lock while
-// verifyMembership() and prompt work run. Later blocked messages from the same
-// user must still be deleted even if they lose the lock.
-
-const lockAcquired = await acquireIdempotencyLock(cache, "message-enforce", [groupId, userId]);
-
-if (!lockAcquired) {
-  await ctx.deleteMessage().catch(() => {});
-  return;
-}
-
-// Only the lock winner performs verification + prompt work.
-```
-
-### 8.7 — Fast Enforcement Block State (Phase 113)
-
-```typescript
-const blockKey = `enforcement_block:${groupId}:${userId}`;
-
-// Required-channel leave:
-await cache.set(blockKey, "1", "EX", 300);
-// do not mute or prompt yet; the next blocked group message is the
-// visible enforcement point
-
-// Group message path:
-//   if blockKey exists and all member caches are now "1":
-//     clear block + reseed verified cache + allow
-//   otherwise:
-//     skip the latest-verification DB read and verify using preloaded channels
-```
-
-### 8.1 — Membership Cache Rules (Phase 108)
-
-```typescript
-MEMBER_CACHE_TTL = 300; // positive membership cache
-MEMBER_NEGATIVE_CACHE_TTL = 30; // negative membership cache
-
-// Explicit verify clicks must not trust stale cached "0" results.
-await verifyMembership(api, db, cache, groupId, userId, log, {
-  bypassNegativeCache: true,
-});
-
-// If Telegram still briefly reports "left" right after a real rejoin,
-// explicit verify performs a couple of short fresh retries before failing.
-```
-
-### 8.2 — Sequentialization Rules (Phase 108)
-
-```typescript
-// Busy groups should not serialize unrelated users behind one queue key.
-getSequentializeKey(ctx) => `${chatId}:${userId}`;  // ordinary user traffic
-getSequentializeKey(ctx) => `${chatId}`;            // slash commands + membership updates
-```
-
-### 8.3 — Verification Contract + Idempotency
-
-```typescript
-// Contract read prefers RPC but no longer hard-depends on it in production.
-const contract = await getGroupVerificationContract(db, groupId);
-// returns: { groupId, enabled, joinRequestPreferred, channels }
-
-// Duplicate callback/join-request work is suppressed with Redis NX locks
+// Idempotency locks (Redis NX):
 await acquireIdempotencyLock(cache, "verify", [groupId, userId]);
 await acquireIdempotencyLock(cache, "join-request", [groupId, userId]);
 await acquireIdempotencyLock(cache, "group-join", [groupId, userId]);
 await acquireIdempotencyLock(cache, "message-enforce", [groupId, userId]);
 ```
 
-### 8.9 — Managed Bot Recovery Must Be Serialized Per Bot ID
+---
+
+## 8 — Cache Constants & Key Patterns
 
 ```typescript
-// Runner watchdog/task failure recovery must not remove the bot from the
-// registry and then start a replacement outside the lifecycle lock, otherwise
-// the 30s sync loop can observe the gap and start the same bot a second time.
+MEMBER_CACHE_TTL = 300; // positive membership (5 min)
+MEMBER_NEGATIVE_CACHE_TTL = 30; // negative membership (30 sec)
+VERIFIED_CACHE_TTL = 3600; // verified set (1 hour)
+AUTO_DELETE_DELAY = 30_000; // auto-delete bot messages (30s)
 
-await lifecycle.restartBot(botId, config);
-
-// BotLifecycleManager now serializes start/stop/restart per bot id.
-// stopRunner() also swallows rejected runner.task() promises so cleanup still
-// completes after getUpdates 409 conflicts or failed runner tasks.
+// Key patterns:
+`member:${channelId}:${userId}` // chatMembers adapter
+`verified:${groupId}:${userId}` // full verification pass
+`enforcement_block:${groupId}:${userId}` // channel-leave flag
+`verification_prompt:${groupId}:${userId}`; // active prompt tracking
 ```
 
-### 8.4 — Channel-Side Invalidation + Message Recheck (Phase 110)
+---
+
+## 9 — Multi-Bot Dashboard Flow
 
 ```typescript
-// Required-channel chat_member updates refresh membership cache
-if (ctx.chat.type === "channel") {
-  await cache.set(`member:${channelId}:${userId}`, isMember ? "1" : "0", "EX", ttl);
-  if (!isMember) {
-    await cache.delMany?.([`verified:${groupId}:${userId}`, ...otherLinkedGroupKeys]);
-  }
-}
+// Dashboard startup:
+const manager = new BotManager({ db, cache, logger, botFactory: createBotWithDeps });
+await manager.initialize(); // fetch bot_instances → decrypt → start each
+manager.startSyncLoop(); // 30s reconcile: start new, stop removed
 
-// Missed channel-leave updates are recovered on the group message path.
-const latest = await getLatestVerificationState(db, groupId, userId);
-const recentlyVerified =
-  latest?.status === "verified" &&
-  Date.now() - Date.parse(latest.timestamp) <= VERIFIED_RECHECK_INTERVAL_MS;
+// Per-bot startup (BotLifecycleManager.startBot):
+createBotWithDeps(bot, deps); // wires all middleware + composers
+syncBotCommands(bot.api, log); // set command menu scopes
+run(bot, { runner: { fetch: { allowed_updates: ALLOWED_UPDATES } } }); // long-poll
+startStatusWriter(db, botId, botInstanceId, log); // 30s heartbeat → bot_status
+startMemberSync(bot.api, db, botId, log); // 15min subscriber count sync
 
-if (!recentlyVerified) {
-  const result = await verifyMembership(api, db, cache, groupId, userId, log, {
-    bypassNegativeCache: true,
-  });
-  if (!result.success) {
-    await muteUser(api, groupId, userId);
-    await logVerification(db, { status: "restricted", ... });
-    await sendVerificationPrompt(ctx, groupId, userName, channels);
-  }
-}
+// CommandWorker (processes admin_commands):
+const commandWorker = new CommandWorker({ db, realtime, botManager, botId: 0, logger });
+commandWorker.start(); // realtime subscription + 30s poll fallback
+
+// BotLifecycleManager serializes start/stop/restart per botId
+// (prevents registry gap that 30s sync loop could fill with a duplicate)
 ```
 
-### 9 — Test Patterns (Vitest v4)
+---
+
+## 10 — Database Schema (Migration 028 — Canonical)
+
+> **Source**: `insforge/migrations/028_fresh_insforge_rebuild.sql`
+
+### Tables
+
+| Table                 | Purpose                                 | Key Types                                     |
+| --------------------- | --------------------------------------- | --------------------------------------------- |
+| `dashboard_admins`    | Web dashboard user access list          | `user_id TEXT PK`                             |
+| `owners`              | Bot owner Telegram IDs                  | `user_id BIGINT PK`                           |
+| `bot_instances`       | Registered bots (encrypted tokens)      | `bot_id BIGINT UNIQUE`, `is_active BOOLEAN`   |
+| `bot_status`          | Live bot heartbeat                      | `bot_id BIGINT UNIQUE`, `bot_instance_id`     |
+| `protected_groups`    | Groups with enforcement                 | `group_id BIGINT PK`, FK → owners             |
+| `enforced_channels`   | Required channel subscriptions          | `channel_id BIGINT PK`, `linked_groups_count` |
+| `group_channel_links` | M:N group↔channel                       | FK cascade, `is_required BOOLEAN`             |
+| `verification_log`    | Per-verification analytics              | `status: 'verified'\|'restricted'\|'error'`   |
+| `api_call_log`        | Per-Telegram-API-call analytics         | `method`, `success`, `latency_ms`             |
+| `admin_logs`          | Bot WARN+ forwarded to dashboard        | `level`, `message`, `module`                  |
+| `admin_commands`      | Dashboard→Bot command queue             | `command_type`, `payload JSONB`, `status`     |
+| `nezuko_secrets`      | Security vault (AES-256-GCM master key) | `key_name TEXT UNIQUE`, `key_value TEXT`      |
+
+### Critical DB Rules
+
+```sql
+-- ⚠️ ALL Telegram IDs MUST be BIGINT (user_id, group_id, channel_id, bot_id)
+-- Bot IDs exceed INT4 max: 8265490825 > 2^31
+
+-- ⚠️ ALWAYS grant sequences after CREATE TABLE
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+-- Without this: every INSERT returns 401 Unauthorized via PostgREST
+
+-- ⚠️ verification_log.status CHECK allows ONLY: 'verified' | 'restricted' | 'error'
+-- 'failed' is NOT valid — causes silent 409 POST failure
+
+-- ⚠️ Denormalized counters (linked_channels_count, linked_groups_count):
+-- Always recalculate from group_channel_links rows — never increment/decrement
+```
+
+---
+
+## 11 — Auth & Security Patterns (Web)
 
 ```typescript
-// ✅ Test bot setup (from helpers/test-bot.ts)
-const { bot, apiCalls } = createTestBot();
+// Auth model (Next.js dashboard):
+// proxy.ts → InsforgeMiddleware (route protection)
+// /login   → signInWithPassword | signInWithOAuth
+// /api/auth → createAuthRouteHandlers
+// On success → auto-upserts user into dashboard_admins via INSFORGE_SERVICE_KEY
+
+// ⚠️ First login creates dashboard_admins record automatically
+// Never allow self-INSERT through RLS
+
+// Security guards:
+if (devLogin && process.env.NODE_ENV !== "production") return NextResponse.next();
+const BASE_URL = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
+if (!BASE_URL) throw new Error("required"); // no hardcoded fallback
+
+// Open redirect prevention:
+const redirectTo =
+  rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
+
+// Bot token management: ALWAYS via manage-bot edge function (server-side only)
+// Web must call insforge.functions.invoke("manage-bot") — never write tokens directly
+// Read-only dashboard view uses bot_instances_safe (without encrypted token column)
+```
+
+---
+
+## 12 — Web Dashboard Patterns
+
+```typescript
+// InsForge SDK (web only):
+import { insforge } from "@/lib/insforge";
+const { data, error } = await insforge.db.getRecords("protected_groups", {
+  filters: { enabled: "eq.true" },
+});
+
+// TanStack Query v5 (object syntax — not v4 function syntax):
+const { data, isPending } = useQuery({
+  queryKey: queryKeys.groups.list(),    // from @/lib/query-keys
+  queryFn: () => groupsService.getGroups(),
+  staleTime: STALE_TIMES.SHORT,
+});
+
+// Dev-bypass: never mount InsforgeProvider when NEXT_PUBLIC_DEV_LOGIN=true
+// (causes /api/auth/refresh noise with no real session)
+if (DEV_LOGIN) return <>{children}</>;
+return <InsforgeProvider>{children}</InsforgeProvider>;
+
+// Realtime: single RealtimeQueryCoordinatorProvider at root
+// Route hooks (useRealtimeActivity, useRealtimeLogs, etc.) consume coordinator state
+// Never create per-route socket subscriptions — causes disconnect on navigation
+
+// Next.js 16 caching:
+async function getCachedData() { "use cache"; cacheTag("my-tag"); }
+// Invalidate: updateTag("my-tag") inside server action
+
+// Recharts + heavy libs: dynamic import with ssr:false + Suspense skeleton
+// Link prefetch={false} on non-critical dashboard routes (Vercel cost optimization)
+```
+
+---
+
+## 13 — HTML Parse Mode (bot-side, canonical)
+
+```typescript
+// ⚠️ @grammyjs/parse-mode v2.2.1 does NOT export parseMode() or ParseModeFlavor
+// Use a raw Transformer — already applied in bot-factory.ts
+
+const htmlTransformer: Transformer = (prev, method, payload, signal) => {
+  if (HTML_PARSE_MODE_METHODS.has(method) && payload) {
+    const p = payload as Record<string, unknown>;
+    if (!p["parse_mode"]) p["parse_mode"] = "HTML";
+  }
+  return prev(method, payload, signal);
+};
+// Covered methods: sendMessage, sendPhoto, editMessageText, editMessageCaption, etc.
+```
+
+---
+
+## 14 — FK-Safe Owner Upsert
+
+```typescript
+// ⚠️ protected_groups.owner_id FK → owners.user_id
+// Always call upsertOwner() BEFORE createGroup()
+
+await upsertOwner(db, ownerId); // check-then-insert
+await createGroup(db, groupId, ownerId); // safe — FK exists
+```
+
+---
+
+## 15 — Test Patterns (Bun built-in runner)
+
+```typescript
+// Tests live at: apps/grammy/tests/ (post migration 2026-03-16)
+bun run test tests/
+
+const { bot, apiCalls } = createTestBot(); // from tests/helpers/test-bot.ts
 bot.use(contextEnricher(deps));
-bot.use(someComposer);
-await bot.handleUpdate(createMessageUpdate({ text: "/start" }));
-expect(apiCalls.find(c => c.method === "sendMessage")).toBeDefined();
+await bot.handleUpdate(createMessageUpdate({ text: "/protect @channel" }));
+expect(apiCalls.find((c) => c.method === "sendMessage")).toBeDefined();
 
-// ✅ Mock deps
 const deps = {
-  db: createMockDb(),
+  db: createMockDb(), // tests/helpers/mock-deps.ts
   cache: createMockCache(),
   botId: 12345678,
   logger: createMockLogger(),
 };
-vi.mocked(deps.db.getRecords).mockResolvedValue([...]);
-
-// ✅ Commands auto-get bot_command entity when text starts with /
-const update = createMessageUpdate({ text: "/protect @channel" });
-
-// ✅ bun test — native runner integrated
-
-test: { testTimeout: 10_000, include: [...] }
+// mock.mockResolvedValue([...]) — bun uses jest-compatible mock API
 ```
 
-### 10 — Quality Gate Commands
+---
 
-```bash
-cd apps/grammy
-bun run type-check    # 0 errors REQUIRED
-bun run lint          # 0 warnings REQUIRED (--max-warnings 0)
-bun run format        # prettier src/ ../../tests/grammy --write
-bun run format:check  # All matched files use Prettier code style! REQUIRED
-bun run knip          # Excellent, Knip found no issues. REQUIRED
-bun run test          # 163/163 REQUIRED — never decrease without justification
-bun run build         # dist/ produced with 0 errors REQUIRED
-
-cd apps/web
-bun run type-check    # 0 errors REQUIRED
-bun run lint          # 0 warnings REQUIRED
-bun x prettier src --write && bun x prettier src --check  # All clean REQUIRED
-bun run build         # Next.js build 0 errors REQUIRED
-```
-
-### 11 — DB Log Transport (Phase 105)
+## 16 — DB Log Transport & API Telemetry
 
 ```typescript
-// core/db-log-transport.ts — pino DestinationStream → admin_logs
-// WARN+ only (levelNum >= 40). Fire-and-forget — failures never propagate.
-export function createDbLogDestination(
-  db: InsForgeClient, botId: number | null
-): DestinationStream { ... }
-
-// Wired in main.ts (both modes) — after InsForge client is ready:
+// pino → admin_logs (WARN+ only, fire-and-forget, never propagates)
 const effectiveLogger = db
   ? createLogger(config.logLevel, [createDbLogDestination(db, null)])
   : logger;
+// botId=null in manager-level logger (avoids FK violation with botId=0 sentinel)
 
-// logger.ts now supports pino.multistream:
-export function createLogger(level: string, extras: DestinationStream[] = []): Logger
-// extras=[] → fast path (no multistream overhead)
-// extras=[dbTransport] → stdout + admin_logs
-```
-
-### 12 — API Call Telemetry (Phase 105)
-
-```typescript
-// bot-factory.ts — added after htmlTransformer
-const API_LOG_SKIP = new Set(["getUpdates"]); // exclude polling calls
-
-const apiLogTransformer: Transformer = async (prev, method, payload, signal) => {
-  if (API_LOG_SKIP.has(method)) return prev(method, payload, signal);
-  const start = performance.now();
-  const botIdForLog: number | null = deps.botId > 0 ? deps.botId : null; // FK safety
-  try {
-    const result = await prev(method, payload, signal);
-    db.postRecords("api_call_log", [
-      { bot_id: botIdForLog, method, success: true, latency_ms },
-    ]).catch(() => {});
-    return result;
-  } catch (err) {
-    db.postRecords("api_call_log", [
-      { bot_id: botIdForLog, method, success: false, latency_ms, error_type },
-    ]).catch(() => {});
-    throw err;
-  }
-};
-```
-
-### 13 — Verification Status Constraint (Phase 105)
-
-```typescript
-// ⚠️ DB CHECK on verification_log.status allows ONLY:
-//   'verified' | 'restricted' | 'error'
-// 'failed' is NOT allowed — it causes a silent 409 POST failure.
-// In verify.ts: use 'restricted' for non-member checks, 'error' for unexpected exceptions.
-export interface LogVerificationData {
-  status: "verified" | "restricted" | "error"; // NOT "failed"
-}
-```
-
-### 14 — Realtime Hook: Avoiding Reconnect Loop (Phase 105)
-
-```typescript
-// ⚠️ BUG-13 pattern — DO NOT put connectionState in the auto-connect useEffect deps.
-// It causes: connect() → state changes → cleanup runs → disconnect() → repeat.
-
-// ✅ CORRECT: Mirror state into a ref; read ref inside effect:
-const connectionStateRef = useRef<ConnectionState>("disconnected");
-useEffect(() => {
-  connectionStateRef.current = connectionState;
-}, [connectionState]);
-
-useEffect(() => {
-  const timer = setTimeout(() => {
-    if (connectionStateRef.current !== "connected" && connectionStateRef.current !== "connecting") {
-      connect();
-    }
-  }, 0);
-  return () => clearTimeout(timer); // DO NOT call disconnect() here
-}, [autoConnect, isSignedIn, connect, retryAttempt]); // connectionState NOT in deps
-
-// ✅ Unmount cleanup — separate effect using disconnectRef:
-const disconnectRef = useRef(disconnect);
-useEffect(() => {
-  disconnectRef.current = disconnect;
-}, [disconnect]);
-useEffect(() => () => disconnectRef.current(), []); // unmount only
-```
-
-### 16 — Dashboard Realtime Coordinator (Phase 113)
-
-```tsx
-<QueryClientProvider client={queryClient}>
-  <RealtimeQueryCoordinatorProvider>{children}</RealtimeQueryCoordinatorProvider>
-</QueryClientProvider>
-
-// The coordinator subscribes once, patches cache for logs/activity/bots,
-// and centrally invalidates aggregate dashboard/analytics/chart queries.
-// useRealtimeChart() now consumes connection state from the coordinator
-// instead of mounting its own websocket subscription per widget.
-```
-
-### 16.1 — Route-Level Realtime Hooks Must Reuse Coordinator State
-
-```tsx
-// After the coordinator exists, route/page convenience hooks must not become
-// effective owners of the shared socket lifecycle during navigation.
-// Wrappers such as useRealtimeActivity/useRealtimeLogs/useDashboardRealtime/
-// useBotsRealtime/useRealtime should return coordinator state when available,
-// and only fall back to useInsForgeRealtime when the coordinator is absent.
-
-// This avoids the regression where navigating between dashboard pages could
-// release channels or disconnect the shared socket, causing the UI to show
-// polling until a hard reload restored live updates.
-```
-
-### 8.8 — First Blocked Message After Channel Leave Must Stay Deterministic
-
-```typescript
-// required-channel leave remains silent and seeds enforcement_block.
-// On the first actually blocked group message:
-//   if enforcement_block exists and cached member state is fully restored:
-//     allow without deleting or prompting
-//   else:
-//     re-run verification
-//     if still failing -> delete message + restrict again + send exactly one prompt
-//
-// This keeps the UX quiet on channel leave while ensuring the first blocked
-// message is the visible enforcement flow for still-unverified users.
-```
-
-### 15 — FK-Safe Owner Upsert (Phase 105)
-
-```typescript
-// ⚠️ protected_groups.owner_id FK → owners.user_id.
-// If owners table is empty, any createGroup() call fails with 409 FK violation.
-// MUST call upsertOwner() first in channel-linker.ts:
-
-// owner.repo.ts
-export async function upsertOwner(db: InsForgeClient, ownerId: number): Promise<void> {
-  const existing = await db.getRecords<Owner>("owners", { user_id: `eq.${ownerId}` });
-  if (existing.length === 0) {
-    await db.postRecords<Owner>("owners", [{ user_id: ownerId }]);
-  }
-}
-
-// channel-linker.ts — Step 7 (BEFORE createGroup):
-await upsertOwner(db, ownerId); // ✅ always before createGroup()
-await createGroup(db, groupId, ownerId, groupTitle, memberCount);
+// API telemetry → api_call_log (all methods except getUpdates)
+// bot_id=null for standalone/sentinel bots (botId > 0 check before logging)
 ```
 
 ---
 
-## Database Schema (Migration 023 — Canonical)
-
-> **Canonical file**: `insforge/migrations/023_fresh_grammy_schema.sql`
-> Migrations 001–022 are historical. `023` is the single source of truth for the grammY era.
-
-### Core Tables
-
-| Table                 | Purpose                                    | Key Types                                                                      |
-| --------------------- | ------------------------------------------ | ------------------------------------------------------------------------------ |
-| `owners`              | Bot owner Telegram user IDs                | `user_id BIGINT PK`                                                            |
-| `bot_instances`       | Registered bots (`token_encrypted` column) | `bot_id BIGINT UNIQUE`, `is_active + is_deleted BOOLEAN`                       |
-| `protected_groups`    | Groups with verification enforcement       | `group_id BIGINT PK`, `params JSONB`, `linked_channels_count INT`, FK → owners |
-| `enforced_channels`   | Required channel subscriptions             | `channel_id BIGINT PK`, `subscriber_count INT`, `linked_groups_count INT`      |
-| `group_channel_links` | M:N group↔channel relationships            | FK cascade both ways, `is_required BOOLEAN`                                    |
-
-### Analytics Tables
-
-| Table              | Purpose                              | Key Columns                                                                        |
-| ------------------ | ------------------------------------ | ---------------------------------------------------------------------------------- |
-| `verification_log` | Per-verification analytics           | `status VARCHAR(20)`, `latency_ms INT`, `cached BOOLEAN`, `error_type VARCHAR(50)` |
-| `api_call_log`     | Per-Telegram-API-call analytics      | `method VARCHAR(50)`, `success BOOLEAN`, `latency_ms INT`                          |
-| `admin_logs`       | Bot log lines forwarded to dashboard | `level, logger, message, module, function, line_no, path`                          |
-
-### Runtime Tables
-
-| Table            | Purpose                         | Key Columns                                                       |
-| ---------------- | ------------------------------- | ----------------------------------------------------------------- |
-| `bot_status`     | Live bot heartbeat              | **`bot_id BIGINT UNIQUE`, `bot_instance_id BIGINT UNIQUE`**       |
-| `admin_commands` | Dashboard→Bot command queue     | `status VARCHAR(20)`, `command_type VARCHAR(50)`, `payload JSONB` |
-| `nezuko_secrets` | Security vault (AES master key) | `key_name TEXT UNIQUE`, `key_value TEXT`                          |
-
-### ⚠️ Critical Type Rules
-
-- **All Telegram IDs** MUST be `BIGINT` — `user_id`, `group_id`, `channel_id`, `bot_id`, `bot_instance_id`
-- Telegram Bot IDs regularly exceed INT4 max (2,147,483,647). `8265490825 > 2^31`.
-- Any `INTEGER` for a Telegram ID silently fails on UPSERT via PostgREST.
-
-### ⚠️ Critical Grant Rule (Phase 66)
-
-```sql
--- ALWAYS run after CREATE TABLE with SERIAL/auto-increment
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
-```
-
-Without sequence `USAGE`, every INSERT by the `anon` role returns **401 Unauthorized** via PostgREST.
-
-### ⚠️ Denormalized Counters
-
-`linked_channels_count` on `protected_groups` and `linked_groups_count` on `enforced_channels`
-are maintained by bot code — always **recalculate from actual rows**, never increment/decrement.
-
----
-
-## Web Dashboard Patterns
-
-### InsForge SDK Usage
+## 17 — Sequentialize Key Rules
 
 ```typescript
-// ✅ Correct: Always via the shared insforge client
-import { insforge } from "@/lib/insforge";
+// User traffic: per (chatId:userId) — avoids serializing unrelated users
+getSequentializeKey(ctx) => `${chatId}:${userId}`;
 
-const { data, error } = await insforge.db.getRecords("protected_groups", {
-  filters: { enabled: "eq.true" },
-});
-```
-
-### TanStack Query v5 Patterns
-
-```typescript
-// ✅ Correct: Object syntax (v5 — not v4 function syntax)
-const { data, isPending, error } = useQuery({
-  queryKey: queryKeys.groups.list(),
-  queryFn: () => groupsService.getGroups(),
-  refetchInterval: REFETCH_INTERVALS.STANDARD,  // named constant, not magic number
-  staleTime: STALE_TIMES.SHORT,
-});
-
-// ✅ Correct: Optimistic mutation with rollback
-return useMutation({
-  mutationFn: (id: number) => deleteItem(id),
-  onMutate: async (id) => {
-    await queryClient.cancelQueries({ queryKey: queryKeys.items.list() });
-    const previous = queryClient.getQueryData(queryKeys.items.list());
-    queryClient.setQueryData(queryKeys.items.list(), (old) => /* optimistic remove */);
-    return { previous };
-  },
-  onError: (_error, _id, context) => {
-    if (context?.previous) queryClient.setQueryData(queryKeys.items.list(), context.previous);
-  },
-  onSettled: () => { queryClient.invalidateQueries({ queryKey: queryKeys.items.all }); },
-});
-
-// ❌ Wrong: refetchIntervalInBackground: true (removed Phase 77 — wastes 25+ req/min)
-// ❌ Wrong: keepPreviousData (v4 API — not available in v5)
-// ❌ Wrong: isLoading (v5 uses isPending for queries without cached data)
-```
-
-### Query Keys Pattern
-
-```typescript
-// ✅ Correct: queryKeys factory in apps/web/src/lib/query-keys.ts
-import { queryKeys, REFETCH_INTERVALS, STALE_TIMES } from "@/lib/query-keys";
-
-queryKeys.groups.list(); // ["groups", "list"]
-queryKeys.groups.detail(id); // ["groups", "detail", id]
-```
-
-### Form Hardening Pattern (Zod + Server Actions)
-
-```typescript
-// ✅ Action
-"use server";
-export async function updateData(data: SchemaType) {
-  const validated = schema.safeParse(data);
-  if (!validated.success) return { error: "Validation failed" };
-  // ... secure DB operation via insforge SDK ...
-}
-```
-
-### Shared Components
-
-```tsx
-import { DataTable } from "@/components/shared/data-table";
-import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
-import { PageErrorState } from "@/components/shared/page-error-state";
-import { ChartErrorBoundary } from "@/components/charts/chart-error-boundary";
-
-<DataTable columns={columns} data={data} filterColumn="name" filterPlaceholder="Search..." />;
-```
-
-### Security Patterns (Proxy / Auth)
-
-```typescript
-// ✅ Dev bypass guarded by NODE_ENV
-if ((devLogin || useMock) && process.env.NODE_ENV !== "production") {
-  return NextResponse.next();
-}
-
-// ✅ No hardcoded fallback — throw if env var missing
-const BASE_URL = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
-if (!BASE_URL) throw new Error("NEXT_PUBLIC_INSFORGE_BASE_URL is required");
-
-// ✅ Open redirect prevention
-// ✅ Open redirect prevention
-const redirectTo =
-  rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
-```
-
-### 11 — Next.js 16 Caching & PPR Patterns (Phase 125)
-
-The dashboard leverages Next.js 16 Cache Components and Partial Prerendering (PPR) for high performance.
-
-#### `'use cache'` Directive
-
-Used for expensive or sensitive data fetching (e.g., Master Key). Unlike `unstable_cache`, it is native to the Next.js 16 runtime.
-
-```typescript
-async function getCachedData() {
-  "use cache";
-  cacheTag("my-tag");
-  // ... fetch data
-}
-```
-
-#### Atomic Invalidation with `updateTag`
-
-Used to invalidate cache immediately within a server action, ensuring the UI is consistent without background revalidation lag.
-
-```typescript
-export async function updateAction() {
-  // ... save data
-  updateTag("my-tag"); // Instant invalidation
-  revalidatePath("/dashboard/settings");
-}
-```
-
-#### Partial Prerendering (PPR)
-
-The Root Layout and page shells are static and prerendered. Dynamic components (Auth providers, Vault sections) are wrapped in `Suspense`.
-
-```tsx
-// Root Layout
-<Suspense>
-  <DynamicAuthProviderWrapper>
-    {children}
-  </DynamicAuthProviderWrapper>
-</Suspense>
-
-// Settings Page
-<SettingsPageContent>
-  <Suspense fallback={<Skeleton />}>
-    <VaultSection />
-  </Suspense>
-</SettingsPageContent>
-```
-
-#### Cost Optimization (Prefetching)
-
-To prevent excessive Vercel compute usage, `Link` prefetching is disabled for non-essential dashboard routes.
-
-```tsx
-<Link href="/dashboard/logs" prefetch={false}>
-  View Logs
-</Link>
-```
-
-### RPC Envelope Helper
-
-```tsx
-import { unwrapEnvelopeSeries, extractEnvelopeMetadata } from "@/lib/utils/rpc-helpers";
-
-const series = unwrapEnvelopeSeries<TrendPoint>(data);
-const { period, summary } = extractEnvelopeMetadata(data);
+// Commands + membership updates: per chatId
+getSequentializeKey(ctx) => `${chatId}`;
 ```
 
 ---
 
-_Last Updated: 2026-03-11 (Phase 126 — PTB bot fully removed; grammY is the sole runtime)_
+_Last Updated: 2026-03-16 (Phase 136 — full rewrite; accurate against codebase)_
