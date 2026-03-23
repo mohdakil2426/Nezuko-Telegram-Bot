@@ -47,7 +47,7 @@
     "eslint": "10.0.3",
     "eslint-config-next": "16.1.6",
     "eslint-plugin-react-compiler": "^19.1.0-rc.2",
-    "knip": "^5.86.0",
+    "knip": "^6.0.2",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "shadcn": "^4.0.8",
