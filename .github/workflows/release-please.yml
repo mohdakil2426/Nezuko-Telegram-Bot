@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: googleapis/release-please-action@v4.4.0
+      - uses: googleapis/release-please-action@v5.0.0
         # Opt into node.js 24 runtime now to silence the node.js 20 deprecation
         # warning. v4.x hardcodes node20 internally; this env var tells the runner
         # to use node.js 24 instead. Remove once release-please-action ships native
